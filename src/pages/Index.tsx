@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,12 +19,24 @@ import {
   Globe,
   Zap,
   Star,
-  Settings
+  Settings,
+  Package,
+  CreditCard,
+  Truck,
+  Bot,
+  Palette
 } from "lucide-react";
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
 import ToolsSection from "@/components/sections/ToolsSection";
 import ChatBotSection from "@/components/sections/ChatBotSection";
+import AslLearn from "./AslLearn";
+import AslSupplier from "./AslSupplier";
+import AslExpress from "./AslExpress";
+import AslVisit from "./AslVisit";
+import AslPay from "./AslPay";
+import AslAI from "./AslAI";
+import AslAvailable from "./AslAvailable";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -38,15 +49,35 @@ const Index = () => {
 
   const menuItems = [
     { id: "dashboard", label: "داشبورد", icon: BarChart3 },
-    { id: "steps", label: "مراحل", icon: BookOpen },
+    { id: "asllearn", label: "آموزش", icon: BookOpen },
+    { id: "aslsupplier", label: "تأمین‌کنندگان", icon: Users },
+    { id: "aslexpress", label: "ارسال", icon: Truck },
+    { id: "aslvisit", label: "ویزیتورها", icon: Globe },
+    { id: "aslpay", label: "دریافت پول", icon: CreditCard },
+    { id: "aslai", label: "هوش مصنوعی", icon: Bot },
+    { id: "aslavailable", label: "کالاهای موجود", icon: Package },
     { id: "tools", label: "ابزارها", icon: Wrench },
-    { id: "chatbot", label: "چت بات", icon: MessageSquare },
+    { id: "chatbot", label: "چت بات", icon: MessageSquare }
   ];
 
   const renderActiveSection = () => {
     switch (activeSection) {
       case "dashboard":
         return <DashboardSection />;
+      case "asllearn":
+        return <AslLearn />;
+      case "aslsupplier":
+        return <AslSupplier />;
+      case "aslexpress":
+        return <AslExpress />;
+      case "aslvisit":
+        return <AslVisit />;
+      case "aslpay":
+        return <AslPay />;
+      case "aslai":
+        return <AslAI />;
+      case "aslavailable":
+        return <AslAvailable />;
       case "steps":
         return <StepsSection />;
       case "tools":
@@ -119,7 +150,7 @@ const Index = () => {
         </div>
 
         {/* Navigation Menu */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 mb-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -127,15 +158,15 @@ const Index = () => {
               <Button
                 key={item.id}
                 variant={isActive ? "default" : "outline"}
-                className={`h-16 flex flex-col gap-2 rounded-3xl transition-all duration-300 ${
+                className={`h-20 flex flex-col gap-1 rounded-3xl transition-all duration-300 text-center ${
                   isActive
                     ? "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/25"
                     : "border-gray-700/50 bg-gray-900/30 hover:bg-gray-800/50 hover:border-orange-500/50 text-gray-300 hover:shadow-lg"
                 }`}
                 onClick={() => setActiveSection(item.id)}
               >
-                <Icon className={`w-5 h-5 ${isActive ? "text-white" : "text-gray-400"}`} />
-                <span className="text-sm font-medium">{item.label}</span>
+                <Icon className={`w-4 h-4 mx-auto ${isActive ? "text-white" : "text-gray-400"}`} />
+                <span className="text-xs font-medium leading-tight">{item.label}</span>
               </Button>
             );
           })}
