@@ -16,7 +16,8 @@ import {
   Search,
   CheckCircle,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from "lucide-react";
 
 const AslSupplier = () => {
