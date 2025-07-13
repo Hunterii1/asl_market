@@ -155,22 +155,22 @@ const Index = () => {
             return (
               <Button
                 key={item.id}
-                variant={isActive ? "default" : "outline"}
+                variant="outline"
                 className={`h-32 md:h-36 flex flex-col gap-3 rounded-3xl border border-border bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-lg hover:shadow-xl transition-all duration-300 text-sm font-bold leading-tight px-4 py-6 group ${
                   isActive
-                    ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white border-orange-400 shadow-xl shadow-orange-400/30 scale-105"
+                    ? "border-orange-400 shadow-xl shadow-orange-400/30 scale-105"
                     : "text-muted-foreground hover:shadow-lg hover:scale-105"
                 }`}
                 onClick={() => setActiveSection(item.id)}
               >
                 <div className={`w-12 h-12 md:w-14 md:h-14 mx-auto rounded-2xl flex items-center justify-center transition-all duration-300 ${
                   isActive 
-                    ? "bg-white/20 shadow-lg" 
+                    ? "bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg" 
                     : "bg-gradient-to-br from-orange-500/10 to-orange-600/10 group-hover:from-orange-500/20 group-hover:to-orange-600/20"
                 }`}>
                   <Icon className={`w-7 h-7 md:w-8 md:h-8 ${isActive ? "text-white" : "text-orange-400"} drop-shadow-lg`} />
                 </div>
-                <span className={`text-xs md:text-sm font-bold ${isActive ? "text-white" : "text-foreground"}`}>
+                <span className={`text-xs md:text-sm font-bold ${isActive ? "text-orange-400" : "text-foreground"}`}>
                   {item.label}
                 </span>
               </Button>
