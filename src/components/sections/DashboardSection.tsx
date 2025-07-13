@@ -28,28 +28,38 @@ const DashboardSection = () => {
     return num.toString().replace(/\d/g, (digit) => farsiDigits[parseInt(digit)]);
   };
 
+  // Sample sales data connected to payment confirmations
   const salesData = [
-    { name: 'شنبه', sales: 2400 },
-    { name: 'یکشنبه', sales: 1398 },
-    { name: 'دوشنبه', sales: 9800 },
-    { name: 'سه‌شنبه', sales: 3908 },
-    { name: 'چهارشنبه', sales: 4800 },
-    { name: 'پنج‌شنبه', sales: 3800 },
-    { name: 'جمعه', sales: 4300 },
+    { name: '۱۴۰۳/۰۸/۱۰', sales: 850 },
+    { name: '۱۴۰۳/۰۸/۱۲', sales: 1250 },
+    { name: '۱۴۰۳/۰۸/۱۵', sales: 675 },
+    { name: '۱۴۰۳/۰۸/۱۸', sales: 420 },
+    { name: '۱۴۰۳/۰۸/۲۰', sales: 890 },
+    { name: '۱۴۰۳/۰۸/۲۲', sales: 1100 },
   ];
 
-  const recentOrders = [
-    { id: '#۱۲۴۵۳', customer: 'احمد المصری', product: 'زعفران ممتاز', amount: '$۸۹۰', status: 'تکمیل شده', country: 'امارات' },
-    { id: '#۱۲۴۵۲', customer: 'فاطمه الزهرانی', product: 'خرما مجول', amount: '$۱،۲۵۰', status: 'در حال پردازش', country: 'عربستان' },
-    { id: '#۱۲۴۵۱', customer: 'عبدالله الکویتی', product: 'پسته اکبری', amount: '$۶۷۵', status: 'ارسال شده', country: 'کویت' },
-    { id: '#۱۲۴۵۰', customer: 'مریم القطری', product: 'برنج هندی', amount: '$۴۲۰', status: 'تکمیل شده', country: 'قطر' },
+  // Learning path steps
+  const learningSteps = [
+    { id: 1, title: "انتخاب محصول", completed: true, current: false },
+    { id: 2, title: "یافتن تأمین‌کننده", completed: true, current: false },
+    { id: 3, title: "تنظیم قیمت و بازاریابی", completed: false, current: true },
+    { id: 4, title: "راه‌اندازی فروش", completed: false, current: false },
+    { id: 5, title: "مدیریت ارسال", completed: false, current: false },
+    { id: 6, title: "دریافت پول و رشد", completed: false, current: false },
+  ];
+
+  const recentPayments = [
+    { id: '#PAY-۱۲۴۵۳', customer: 'احمد المصری', amount: '$۸۹۰', status: 'تکمیل شده', country: 'امارات', date: '۱۴۰۳/۰۸/۱۵' },
+    { id: '#PAY-۱۲۴۵۲', customer: 'فاطمه الزهرانی', amount: '$۱،۲۵۰', status: 'در حال پردازش', country: 'عربستان', date: '۱۴۰۳/۰۸/۲۰' },
+    { id: '#PAY-۱۲۴۵۱', customer: 'عبدالله الکویتی', amount: '$۶۷۵', status: 'تایید شده', country: 'کویت', date: '۱۴۰۳/۰۸/۱۸' },
+    { id: '#PAY-۱۲۴۵۰', customer: 'مریم القطری', amount: '$۴۲۰', status: 'تکمیل شده', country: 'قطر', date: '۱۴۰۳/۰۸/۱۲' },
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'تکمیل شده': return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'در حال پردازش': return 'bg-orange-500/20 text-orange-400 border-orange-500/30';
-      case 'ارسال شده': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'تایید شده': return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
@@ -220,16 +230,79 @@ const DashboardSection = () => {
 
   return (
     <div className="space-y-6">
-      {/* Sales Chart */}
+      {/* Learning Progress */}
+      <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-foreground">مسیر یادگیری شما</h3>
+              <p className="text-orange-300">مرحله ۳ از ۶ - در حال پیشرفت</p>
+            </div>
+            <div className="text-left">
+              <div className="text-2xl font-bold text-orange-400">۳۳%</div>
+              <p className="text-orange-300 text-sm">تکمیل شده</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {learningSteps.map((step) => (
+              <div
+                key={step.id}
+                className={`p-3 rounded-2xl border transition-all ${
+                  step.completed
+                    ? 'bg-green-500/20 border-green-500/30'
+                    : step.current
+                    ? 'bg-orange-500/20 border-orange-500/30 ring-2 ring-orange-500/50'
+                    : 'bg-muted/30 border-border'
+                }`}
+              >
+                <div className="text-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-2 ${
+                    step.completed
+                      ? 'bg-green-500 text-white'
+                      : step.current
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {step.completed ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <span className="text-xs font-bold">{step.id}</span>
+                    )}
+                  </div>
+                  <p className={`text-xs font-medium ${
+                    step.completed
+                      ? 'text-green-400'
+                      : step.current
+                      ? 'text-orange-400'
+                      : 'text-muted-foreground'
+                  }`}>
+                    {step.title}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="mt-6">
+            <Button className="bg-orange-500 hover:bg-orange-600 rounded-2xl">
+              <PlayCircle className="w-4 h-4 ml-2" />
+              ادامه مرحله فعلی
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Compact Sales Chart */}
       <Card className="rounded-2xl border border-border bg-card/90 shadow-sm hover:shadow-md transition-all duration-300">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-foreground text-xl font-bold">
             <BarChart3 className="w-5 h-5 text-orange-400" />
-            نمودار فروش هفتگی
+            نمودار فروش (متصل به دریافت پول)
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[320px] px-0 pt-2 pb-4">
+          <div className="h-[200px] px-0 pt-2 pb-4">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salesData} margin={{ top: 16, right: 8, left: 0, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border)/0.3)" />
@@ -268,13 +341,13 @@ const DashboardSection = () => {
         </CardContent>
       </Card>
 
-      {/* Recent Orders */}
+      {/* Recent Payments */}
       <Card className="bg-card/50 border-border rounded-3xl">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-foreground">
-              <Package className="w-5 h-5 text-orange-400" />
-              سفارش‌های اخیر
+              <CreditCard className="w-5 h-5 text-orange-400" />
+              دریافت‌های اخیر
             </CardTitle>
             <Button variant="outline" size="sm" className="border-border text-muted-foreground hover:bg-accent rounded-2xl">
               <Eye className="w-4 h-4 ml-2" />
@@ -284,23 +357,23 @@ const DashboardSection = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {recentOrders.map((order, index) => (
+            {recentPayments.map((payment, index) => (
               <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-4">
                   <div>
-                    <p className="font-medium text-foreground">{order.id}</p>
-                    <p className="text-sm text-muted-foreground">{order.customer}</p>
+                    <p className="font-medium text-foreground">{payment.id}</p>
+                    <p className="text-sm text-muted-foreground">{payment.customer}</p>
                   </div>
                   <div className="hidden md:block">
-                    <p className="text-sm text-foreground">{order.product}</p>
-                    <p className="text-xs text-muted-foreground">{order.country}</p>
+                    <p className="text-sm text-foreground">{payment.date}</p>
+                    <p className="text-xs text-muted-foreground">{payment.country}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-left">
-                    <p className="font-bold text-foreground">{order.amount}</p>
-                    <Badge variant="secondary" className={`${getStatusColor(order.status)} rounded-2xl`}>
-                      {order.status}
+                    <p className="font-bold text-foreground">{payment.amount}</p>
+                    <Badge variant="secondary" className={`${getStatusColor(payment.status)} rounded-2xl`}>
+                      {payment.status}
                     </Badge>
                   </div>
                   <Button variant="ghost" size="sm" className="text-orange-400 hover:bg-orange-500/10 rounded-2xl">

@@ -50,7 +50,10 @@ const AslSupplier = () => {
       joinDate: "۱۴۰۲/۰۳/۱۵",
       description: "تولیدکننده زعفران درجه یک با بیش از ۱۰ سال سابقه",
       category: "saffron",
-      contactRevealed: false
+      contactRevealed: false,
+      companySize: "متوسط",
+      capacity: "۱۰۰ کیلوگرم/ماه",
+      certifications: ["ISO 9001", "HACCP"]
     },
     {
       id: 2,
@@ -67,7 +70,10 @@ const AslSupplier = () => {
       joinDate: "۱۴۰۲/۰۵/۰۸",
       description: "تولید و بسته‌بندی انواع خرما با کیفیت صادراتی",
       category: "dates",
-      contactRevealed: false
+      contactRevealed: false,
+      companySize: "بزرگ",
+      capacity: "۵۰۰ کیلوگرم/ماه",
+      certifications: ["ارگانیک", "صادراتی"]
     },
     {
       id: 3,
@@ -84,7 +90,50 @@ const AslSupplier = () => {
       joinDate: "۱۴۰۱/۱۲/۲۰",
       description: "بزرگترین تولیدکننده پسته در استان کرمان",
       category: "pistachios",
-      contactRevealed: true
+      contactRevealed: true,
+      companySize: "بزرگ",
+      capacity: "۲۰۰ کیلوگرم/ماه",
+      certifications: ["ISO 22000", "BRC"]
+    },
+    {
+      id: 4,
+      name: "صنایع دستی اصفهان",
+      contact: "مریم صادقی",
+      phone: "09133456789",
+      email: "handicrafts@isfahan.ir",
+      city: "اصفهان",
+      province: "اصفهان",
+      products: ["فرش دستباف", "مینیاتور", "خاتم"],
+      rating: 4.7,
+      reviewCount: 15,
+      isVerified: true,
+      joinDate: "۱۴۰۲/۰۷/۱۲",
+      description: "تولیدکننده صنایع دستی اصیل ایرانی",
+      category: "handicrafts",
+      contactRevealed: false,
+      companySize: "کوچک",
+      capacity: "۲۰ قطعه/ماه",
+      certifications: ["اصالت", "دست‌ساز"]
+    },
+    {
+      id: 5,
+      name: "عسل طبیعی البرز",
+      contact: "حسن کریمی",
+      phone: "09121234567",
+      email: "honey@alborz.ir",
+      city: "کرج",
+      province: "البرز",
+      products: ["عسل چهل گیاه", "عسل آویشن", "عسل کنار"],
+      rating: 4.5,
+      reviewCount: 22,
+      isVerified: true,
+      joinDate: "۱۴۰۲/۰۴/۲۵",
+      description: "تولیدکننده عسل طبیعی و ارگانیک",
+      category: "food",
+      contactRevealed: false,
+      companySize: "کوچک",
+      capacity: "۵۰ کیلوگرم/ماه",
+      certifications: ["ارگانیک", "طبیعی"]
     }
   ];
 
@@ -110,6 +159,22 @@ const AslSupplier = () => {
 
   const SupplierBrowser = () => (
     <div className="space-y-6">
+      {/* Supplier Registration Link */}
+      <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-foreground mb-2">تأمین‌کننده هستید؟</h3>
+              <p className="text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
+            </div>
+            <Button className="bg-green-500 hover:bg-green-600 rounded-2xl">
+              <Plus className="w-4 h-4 ml-2" />
+              ثبت‌نام تأمین‌کننده
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">
         <CardContent className="p-6">
@@ -170,12 +235,12 @@ const AslSupplier = () => {
       {/* Suppliers List */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSuppliers.map((supplier) => (
-          <Card key={supplier.id} className="bg-card/80 border-border hover:border-border transition-all rounded-3xl">
+          <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-foreground">{supplier.name}</h4>
+                    <h4 className="font-bold text-foreground group-hover:text-orange-300 transition-colors">{supplier.name}</h4>
                     {supplier.isVerified && (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     )}
@@ -203,6 +268,16 @@ const AslSupplier = () => {
                   <Clock className="w-4 h-4" />
                   عضو از {supplier.joinDate}
                 </div>
+                
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Package className="w-4 h-4" />
+                  ظرفیت: {supplier.capacity}
+                </div>
+
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Users className="w-4 h-4" />
+                  اندازه: {supplier.companySize}
+                </div>
               </div>
 
               <p className="text-muted-foreground text-sm mb-4">{supplier.description}</p>
@@ -218,28 +293,39 @@ const AslSupplier = () => {
                 </div>
               </div>
 
+              <div className="mb-4">
+                <span className="text-muted-foreground text-sm block mb-2">گواهینامه‌ها:</span>
+                <div className="flex flex-wrap gap-1">
+                  {supplier.certifications.map((cert, index) => (
+                    <Badge key={index} className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-xl text-xs">
+                      {cert}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
               {/* Contact Information */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  {supplier.contactRevealed || dailyContactsUsed < maxDailyContacts ? (
+                  {supplier.contactRevealed ? (
                     <span className="text-foreground">{supplier.phone}</span>
                   ) : (
                     <span className="text-muted-foreground">09XX-XXX-XXXX</span>
                   )}
-                  {!supplier.contactRevealed && (
+                  {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
                     <Lock className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  {supplier.contactRevealed || dailyContactsUsed < maxDailyContacts ? (
+                  {supplier.contactRevealed ? (
                     <span className="text-foreground">{supplier.email}</span>
                   ) : (
                     <span className="text-muted-foreground">***@***.ir</span>
                   )}
-                  {!supplier.contactRevealed && (
+                  {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
                     <Lock className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
@@ -253,7 +339,7 @@ const AslSupplier = () => {
                     onClick={() => handleRevealContact(supplier.id)}
                   >
                     <Unlock className="w-4 h-4 ml-2" />
-                    مشاهده اطلاعات تماس
+                    باز کردن اطلاعات تماس
                   </Button>
                 ) : supplier.contactRevealed ? (
                   <Button 
@@ -261,7 +347,7 @@ const AslSupplier = () => {
                     className="flex-1 bg-green-500 hover:bg-green-600 rounded-2xl"
                   >
                     <CheckCircle className="w-4 h-4 ml-2" />
-                    اطلاعات تماس فعال
+                    اطلاعات باز شده
                   </Button>
                 ) : (
                   <Button 

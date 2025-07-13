@@ -49,13 +49,13 @@ const Index = () => {
   const menuItems = [
     { id: "dashboard", label: "داشبورد", icon: BarChart3 },
     { id: "asllearn", label: "آموزش", icon: BookOpen },
+    { id: "products", label: "محصولات تحقیقی", icon: Target },
     { id: "aslsupplier", label: "تأمین‌کنندگان", icon: Users },
     { id: "aslexpress", label: "ارسال", icon: Truck },
     { id: "aslvisit", label: "ویزیتورها", icon: Globe },
     { id: "aslpay", label: "دریافت پول", icon: CreditCard },
     { id: "aslai", label: "هوش مصنوعی", icon: Bot },
     { id: "aslavailable", label: "کالاهای موجود", icon: Package },
-    { id: "tools", label: "ابزارها", icon: Wrench },
   ];
 
   const renderActiveSection = () => {
@@ -64,6 +64,8 @@ const Index = () => {
         return <DashboardSection />;
       case "asllearn":
         return <AslLearn />;
+      case "products":
+        return <ProductsResearch />;
       case "aslsupplier":
         return <AslSupplier />;
       case "aslexpress":
@@ -76,10 +78,6 @@ const Index = () => {
         return <AslAI />;
       case "aslavailable":
         return <AslAvailable />;
-      case "steps":
-        return <StepsSection />;
-      case "tools":
-        return <ToolsSection />;
       default:
         return <DashboardSection />;
     }
@@ -149,7 +147,7 @@ const Index = () => {
         {/* TODO: کارت‌های آمار موقتاً غیرفعال شدند. برای استفاده مجدد فقط این بخش را از کامنت خارج کنید. */}
 
         {/* Navigation Menu */}
-        <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -157,15 +155,23 @@ const Index = () => {
               <Button
                 key={item.id}
                 variant={isActive ? "default" : "outline"}
-                className={`h-20 flex flex-col gap-1 rounded-2xl border border-border bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-sm transition-all duration-300 text-xs font-medium leading-tight px-2 py-2 ${
+                className={`h-32 md:h-36 flex flex-col gap-3 rounded-3xl border border-border bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-lg hover:shadow-xl transition-all duration-300 text-sm font-bold leading-tight px-4 py-6 group ${
                   isActive
-                    ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white border-orange-400 shadow-lg shadow-orange-400/20"
-                    : "text-muted-foreground hover:shadow-md"
+                    ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white border-orange-400 shadow-xl shadow-orange-400/30 scale-105"
+                    : "text-muted-foreground hover:shadow-lg hover:scale-105"
                 }`}
                 onClick={() => setActiveSection(item.id)}
               >
-                <Icon className={`w-5 h-5 mx-auto mb-1 ${isActive ? "text-white" : "text-muted-foreground"}`} />
-                <span>{item.label}</span>
+                <div className={`w-12 h-12 md:w-14 md:h-14 mx-auto rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                  isActive 
+                    ? "bg-white/20 shadow-lg" 
+                    : "bg-gradient-to-br from-orange-500/10 to-orange-600/10 group-hover:from-orange-500/20 group-hover:to-orange-600/20"
+                }`}>
+                  <Icon className={`w-7 h-7 md:w-8 md:h-8 ${isActive ? "text-white" : "text-orange-400"} drop-shadow-lg`} />
+                </div>
+                <span className={`text-xs md:text-sm font-bold ${isActive ? "text-white" : "text-foreground"}`}>
+                  {item.label}
+                </span>
               </Button>
             );
           })}
