@@ -15,6 +15,7 @@ import AslVisit from "./pages/AslVisit";
 import AslPay from "./pages/AslPay";
 import AslAI from "./pages/AslAI";
 import AslAvailable from "./pages/AslAvailable";
+import ProductsResearch from "./pages/ProductsResearch";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/aslpay" element={<AslPay />} />
             <Route path="/aslai" element={<AslAI />} />
             <Route path="/aslavailable" element={<AslAvailable />} />
+            <Route path="/products" element={<ProductsResearch />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

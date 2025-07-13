@@ -63,16 +63,16 @@ const AslAI = () => {
     },
     {
       id: "marketing",
-      title: "بازاریابی هوشمند",
+      title: "تولید محتوای بازاریابی",
       icon: Target,
-      description: "تولید محتوای بازاریابی مؤثر",
+      description: "ساخت محتوای تبلیغاتی و بازاریابی",
       color: "orange"
     },
     {
       id: "branding",
-      title: "طراحی برند",
+      title: "طراحی لوگو و بسته‌بندی",
       icon: Palette,
-      description: "ساخت لوگو و بسته‌بندی",
+      description: "طراحی هویت بصری و بسته‌بندی",
       color: "purple"
     }
   ];

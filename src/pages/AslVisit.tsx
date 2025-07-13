@@ -128,6 +128,22 @@ const AslVisit = () => {
 
   const VisitorBrowser = () => (
     <div className="space-y-6">
+      {/* Visitor Registration */}
+      <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-foreground mb-2">ویزیتور در کشورهای عربی هستید؟</h3>
+              <p className="text-blue-300">در شبکه ویزیتورهای اصل مارکت عضو شوید</p>
+            </div>
+            <Button className="bg-blue-500 hover:bg-blue-600 rounded-2xl">
+              <Plus className="w-4 h-4 ml-2" />
+              ثبت‌نام ویزیتور
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Country Filter */}
       <Card className="bg-card border-border rounded-3xl transition-colors duration-300">
         <CardContent className="p-6">
@@ -253,6 +269,111 @@ const AslVisit = () => {
     </div>
   );
 
+  const VisitorRegistration = () => (
+    <Card className="bg-card border-border rounded-3xl max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-foreground text-center">ثبت‌نام ویزیتور</CardTitle>
+        <p className="text-muted-foreground text-center">برای عضویت در شبکه ویزیتورهای اصل مارکت فرم زیر را تکمیل کنید</p>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-foreground font-medium mb-2 block">نام و نام خانوادگی</label>
+            <Input
+              placeholder="نام کامل خود را وارد کنید"
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+          </div>
+          <div>
+            <label className="text-foreground font-medium mb-2 block">شماره تلفن</label>
+            <Input
+              placeholder="شماره تلفن همراه"
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-foreground font-medium mb-2 block">کشور محل سکونت</label>
+            <Select>
+              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
+                <SelectValue placeholder="انتخاب کشور" />
+              </SelectTrigger>
+              <SelectContent className="bg-muted border-border">
+                {countries.map((country) => (
+                  <SelectItem key={country.code} value={country.code} className="text-foreground">
+                    {country.flag} {country.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-foreground font-medium mb-2 block">شهر</label>
+            <Input
+              placeholder="نام شهر محل سکونت"
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-foreground font-medium mb-2 block">شماره پاسپورت</label>
+          <Input
+            placeholder="شماره پاسپورت معتبر"
+            className="bg-muted border-border text-foreground rounded-2xl"
+          />
+        </div>
+
+        <div>
+          <label className="text-foreground font-medium mb-2 block">آدرس کامل</label>
+          <Textarea
+            placeholder="آدرس کامل محل سکونت خود را وارد کنید"
+            className="bg-muted border-border text-foreground rounded-2xl"
+            rows={3}
+          />
+        </div>
+
+        <div>
+          <label className="text-foreground font-medium mb-2 block">زبان‌های تسلط</label>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {["فارسی", "عربی", "انگلیسی", "فرانسوی", "آلمانی", "اسپانیایی"].map((lang) => (
+              <label key={lang} className="flex items-center gap-2">
+                <input type="checkbox" className="rounded" />
+                <span className="text-foreground text-sm">{lang}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-foreground font-medium mb-2 block">تجربه کاری</label>
+          <Textarea
+            placeholder="تجربه کاری و تخصص‌های خود را شرح دهید"
+            className="bg-muted border-border text-foreground rounded-2xl"
+            rows={3}
+          />
+        </div>
+
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
+          <h5 className="text-blue-300 font-medium mb-2">مدارک مورد نیاز:</h5>
+          <ul className="text-blue-200 text-sm space-y-1">
+            <li>• کپی پاسپورت معتبر</li>
+            <li>• مدرک اقامت در کشور مربوطه</li>
+            <li>• رزومه کاری</li>
+            <li>• معرفی‌نامه (در صورت وجود)</li>
+          </ul>
+        </div>
+
+        <Button className="w-full bg-blue-500 hover:bg-blue-600 rounded-2xl">
+          <User className="w-4 h-4 ml-2" />
+          ثبت درخواست ویزیتور
+        </Button>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
@@ -284,10 +405,22 @@ const AslVisit = () => {
           <Search className="w-4 h-4 ml-2" />
           جستجو ویزیتورها
         </Button>
+        <Button
+          variant={activeTab === "register" ? "default" : "outline"}
+          onClick={() => setActiveTab("register")}
+          className={`rounded-2xl transition-colors duration-300 ${
+            activeTab === "register"
+              ? "bg-blue-500 hover:bg-blue-600"
+              : "border-border text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <Plus className="w-4 h-4 ml-2" />
+          ثبت‌نام ویزیتور
+        </Button>
       </div>
 
       {/* Content */}
-      {activeTab === "browse" ? <VisitorBrowser /> : null}
+      {activeTab === "browse" ? <VisitorBrowser /> : <VisitorRegistration />}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
