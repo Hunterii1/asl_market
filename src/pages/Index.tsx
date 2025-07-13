@@ -36,6 +36,7 @@ import AslVisit from "./AslVisit";
 import AslPay from "./AslPay";
 import AslAI from "./AslAI";
 import AslAvailable from "./AslAvailable";
+import ProductsResearch from "./ProductsResearch";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");

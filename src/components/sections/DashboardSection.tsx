@@ -14,7 +14,10 @@ import {
   Plus,
   ShoppingCart,
   FileText,
-  UserPlus
+  UserPlus,
+  CheckCircle,
+  PlayCircle,
+  CreditCard
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { useState } from 'react';
@@ -133,7 +136,7 @@ const DashboardSection = () => {
             </Button>
           </div>
           <div className="space-y-3">
-            {recentOrders.map((order, index) => (
+            {recentPayments.map((order, index) => (
               <div key={index} className="p-4 bg-muted/50 rounded-2xl border border-border">
                 <div className="flex justify-between items-center">
                   <div>
