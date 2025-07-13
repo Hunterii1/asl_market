@@ -46,16 +46,16 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-orange-900 px-2 sm:px-0" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-900/20 px-2 sm:px-0" dir="rtl">
       <HeaderAuth />
       <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
-        <div className="w-full max-w-md bg-white/90 rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col items-center animate-fade-in">
+        <div className="w-full max-w-md bg-card/90 rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col items-center animate-fade-in border border-border">
           <div className="flex flex-col items-center mb-6">
             <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mb-2">
               <Globe className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">ثبت‌نام در اصل مارکت</h1>
-            <p className="text-sm text-gray-500 mt-1">سیستم هوشمند فروش بین‌المللی</p>
+            <h1 className="text-2xl font-bold text-foreground">ثبت‌نام در اصل مارکت</h1>
+            <p className="text-sm text-muted-foreground mt-1">سیستم هوشمند فروش بین‌المللی</p>
           </div>
           {step === 1 && (
             <form onSubmit={handleSignup} className="w-full">
@@ -65,10 +65,10 @@ const Signup = () => {
                   placeholder="شماره موبایل (مثال: 09123456789)"
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
-                  className="bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-black placeholder-gray-700 pr-12"
+                  className="bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-foreground placeholder-muted-foreground pr-12"
                   inputMode="tel"
                   maxLength={11}
-                  style={{color:'#111',fontWeight:600,fontSize:'1rem',background:'#fff'}}
+                  style={{fontWeight:600,fontSize:'1rem'}}
                 />
                 {/* div خالی برای تراز با آیکون چشم */}
                 <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5" />
@@ -79,21 +79,21 @@ const Signup = () => {
                   placeholder="رمز عبور"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-black placeholder-gray-700 pr-12"
-                  style={{color:'#111',fontWeight:600,fontSize:'1rem',background:'#fff'}}
+                  className="bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-foreground placeholder-muted-foreground pr-12"
+                  style={{fontWeight:600,fontSize:'1rem'}}
                 />
                 <button
                   type="button"
                   tabIndex={-1}
                   onClick={() => setShowPassword(v => !v)}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-orange-500 focus:outline-none"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-orange-500 focus:outline-none"
                   aria-label={showPassword ? "مخفی کردن رمز" : "نمایش رمز"}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
               {error && (
-                <div className={`text-red-500 mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
+                <div className={`text-destructive mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
                   {error}
                 </div>
               )}
@@ -102,29 +102,29 @@ const Signup = () => {
           )}
           {step === 2 && (
             <form onSubmit={handleOtp} className={`w-full transition-opacity duration-400 ${otpFade ? 'animate-fade-in-otp' : 'animate-fade-out-otp'}`}>
-              <div className="mb-4 text-center text-gray-700 text-base font-medium">کد تایید به شماره <span className="text-orange-600 font-bold">{phone}</span> ارسال شد.</div>
+              <div className="mb-4 text-center text-foreground text-base font-medium">کد تایید به شماره <span className="text-orange-600 font-bold">{phone}</span> ارسال شد.</div>
               <Input
                 type="text"
                 placeholder="کد تایید ۴ رقمی"
                 value={otp}
                 onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0,4))}
-                className="mb-4 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 text-center tracking-widest text-lg text-black placeholder-gray-700"
+                className="mb-4 bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-center tracking-widest text-lg text-foreground placeholder-muted-foreground"
                 inputMode="numeric"
                 maxLength={4}
-                style={{color:'#111',fontWeight:700,fontSize:'1.2rem',letterSpacing:'0.3em',background:'#fff'}}
+                style={{fontWeight:700,fontSize:'1.2rem',letterSpacing:'0.3em'}}
               />
               {error && (
-                <div className={`text-red-500 mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
+                <div className={`text-destructive mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
                   {error}
                 </div>
               )}
               <Button type="submit" className="w-full h-12 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg rounded-xl shadow-lg transition-all">ثبت‌نام</Button>
-              <div className="mt-4 text-center text-sm text-gray-600">
+              <div className="mt-4 text-center text-sm text-muted-foreground">
                 کد را دریافت نکردید؟ <button type="button" className="text-orange-600 hover:underline font-bold" onClick={()=>{setStep(1); setOtpFade(false);}}>ویرایش شماره</button>
               </div>
             </form>
           )}
-          <div className="mt-6 text-center text-sm text-gray-600">
+          <div className="mt-6 text-center text-sm text-muted-foreground">
             قبلا ثبت‌نام کرده‌اید؟ <a href="/login" className="text-orange-600 hover:underline font-bold">ورود</a>
           </div>
         </div>

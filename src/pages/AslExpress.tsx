@@ -121,7 +121,7 @@ const AslExpress = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
       <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
         <CardContent className="p-6">
@@ -130,7 +130,7 @@ const AslExpress = () => {
               <Truck className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">اصل اکسپرس</h2>
+              <h2 className="text-2xl font-bold text-foreground">اصل اکسپرس</h2>
               <p className="text-green-300">محاسبه هزینه و زمان ارسال بین‌المللی</p>
             </div>
           </div>
@@ -139,9 +139,9 @@ const AslExpress = () => {
 
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Calculator Form */}
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-foreground flex items-center gap-2">
               <Calculator className="w-6 h-6 text-green-400" />
               محاسبه هزینه ارسال
             </CardTitle>
@@ -149,7 +149,7 @@ const AslExpress = () => {
           <CardContent className="space-y-6">
             {/* Package Dimensions */}
             <div>
-              <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+              <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
                 <Package className="w-5 h-5 text-green-400" />
                 ابعاد و وزن بسته
               </h4>
@@ -158,14 +158,14 @@ const AslExpress = () => {
                   placeholder="طول (سانتی‌متر)"
                   value={length}
                   onChange={(e) => setLength(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+                  className="bg-muted border-border text-foreground rounded-2xl"
                   type="number"
                 />
                 <Input
                   placeholder="عرض (سانتی‌متر)"
                   value={width}
                   onChange={(e) => setWidth(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+                  className="bg-muted border-border text-foreground rounded-2xl"
                   type="number"
                 />
               </div>
@@ -174,14 +174,14 @@ const AslExpress = () => {
                   placeholder="ارتفاع (سانتی‌متر)"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+                  className="bg-muted border-border text-foreground rounded-2xl"
                   type="number"
                 />
                 <Input
                   placeholder="وزن (کیلوگرم)"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+                  className="bg-muted border-border text-foreground rounded-2xl"
                   type="number"
                 />
               </div>
@@ -189,17 +189,17 @@ const AslExpress = () => {
 
             {/* Destination */}
             <div>
-              <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+              <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
                 <MapPin className="w-5 h-5 text-green-400" />
                 کشور مقصد
               </h4>
               <Select value={destination} onValueChange={setDestination}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+                <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                   <SelectValue placeholder="انتخاب کشور مقصد" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {countries.map((country) => (
-                    <SelectItem key={country.code} value={country.code} className="text-white">
+                    <SelectItem key={country.code} value={country.code} className="text-foreground">
                       {country.flag} {country.name}
                     </SelectItem>
                   ))}
@@ -209,7 +209,7 @@ const AslExpress = () => {
 
             {/* Shipping Method */}
             <div>
-              <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+              <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
                 <Clock className="w-5 h-5 text-green-400" />
                 روش ارسال
               </h4>
@@ -222,26 +222,26 @@ const AslExpress = () => {
                       className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                         shippingMethod === method.id
                           ? "border-green-500 bg-green-500/10"
-                          : "border-gray-700 bg-gray-800/30 hover:border-gray-600"
+                          : "border-border bg-muted/30 hover:border-border"
                       }`}
                       onClick={() => setShippingMethod(method.id)}
                     >
                       <div className="flex items-center gap-3">
                         <Icon className={`w-5 h-5 ${
-                          shippingMethod === method.id ? "text-green-400" : "text-gray-400"
+                          shippingMethod === method.id ? "text-green-400" : "text-muted-foreground"
                         }`} />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <span className={`font-medium ${
-                              shippingMethod === method.id ? "text-green-300" : "text-white"
+                              shippingMethod === method.id ? "text-green-300" : "text-foreground"
                             }`}>
                               {method.name}
                             </span>
-                            <Badge className="bg-gray-700 text-gray-300 rounded-full">
+                            <Badge className="bg-muted text-muted-foreground rounded-full">
                               {method.deliveryTime}
                             </Badge>
                           </div>
-                          <p className="text-gray-400 text-sm mt-1">{method.description}</p>
+                          <p className="text-muted-foreground text-sm mt-1">{method.description}</p>
                         </div>
                       </div>
                     </div>
@@ -262,7 +262,7 @@ const AslExpress = () => {
               <Button 
                 onClick={resetCalculation}
                 variant="outline"
-                className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl"
+                className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
               >
                 پاک کردن
               </Button>
@@ -273,22 +273,22 @@ const AslExpress = () => {
         {/* Results */}
         <div className="space-y-6">
           {calculationResult ? (
-            <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+            <Card className="bg-card/80 border-border rounded-3xl">
               <CardHeader>
-                <CardTitle className="text-white flex items-center gap-2">
+                <CardTitle className="text-foreground flex items-center gap-2">
                   <CheckCircle className="w-6 h-6 text-green-400" />
                   نتیجه محاسبه
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-800/50 rounded-2xl p-4">
-                    <div className="text-gray-400 text-sm">وزن واقعی</div>
-                    <div className="text-white font-bold">{calculationResult.weight} کیلوگرم</div>
+                  <div className="bg-muted/50 rounded-2xl p-4">
+                    <div className="text-muted-foreground text-sm">وزن واقعی</div>
+                    <div className="text-foreground font-bold">{calculationResult.weight} کیلوگرم</div>
                   </div>
-                  <div className="bg-gray-800/50 rounded-2xl p-4">
-                    <div className="text-gray-400 text-sm">وزن حجمی</div>
-                    <div className="text-white font-bold">{calculationResult.volumetricWeight} کیلوگرم</div>
+                  <div className="bg-muted/50 rounded-2xl p-4">
+                    <div className="text-muted-foreground text-sm">وزن حجمی</div>
+                    <div className="text-foreground font-bold">{calculationResult.volumetricWeight} کیلوگرم</div>
                   </div>
                 </div>
 
@@ -297,28 +297,28 @@ const AslExpress = () => {
                     <Info className="w-5 h-5 text-blue-400" />
                     <span className="text-blue-300 font-medium">وزن قابل محاسبه</span>
                   </div>
-                  <div className="text-white text-lg font-bold">{calculationResult.chargeableWeight} کیلوگرم</div>
+                  <div className="text-foreground text-lg font-bold">{calculationResult.chargeableWeight} کیلوگرم</div>
                   <div className="text-blue-300 text-sm">بیشترین مقدار بین وزن واقعی و حجمی</div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">روش ارسال:</span>
+                    <span className="text-muted-foreground">روش ارسال:</span>
                     <div className="flex items-center gap-2">
                       <calculationResult.method.icon className="w-4 h-4 text-green-400" />
-                      <span className="text-white">{calculationResult.method.name}</span>
+                      <span className="text-foreground">{calculationResult.method.name}</span>
                     </div>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">مقصد:</span>
-                    <span className="text-white">
+                    <span className="text-muted-foreground">مقصد:</span>
+                    <span className="text-foreground">
                       {calculationResult.destination.flag} {calculationResult.destination.name}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400">زمان تحویل:</span>
+                    <span className="text-muted-foreground">زمان تحویل:</span>
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
                       {calculationResult.estimatedDelivery}
                     </Badge>
@@ -345,13 +345,13 @@ const AslExpress = () => {
               </CardContent>
             </Card>
           ) : (
-            <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+            <Card className="bg-card/80 border-border rounded-3xl">
               <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-gray-800 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                  <Calculator className="w-8 h-8 text-gray-400" />
+                <div className="w-16 h-16 bg-muted rounded-3xl flex items-center justify-center mx-auto mb-4">
+                  <Calculator className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-white font-medium mb-2">محاسبه هزینه ارسال</h3>
-                <p className="text-gray-400 text-sm">
+                <h3 className="text-foreground font-medium mb-2">محاسبه هزینه ارسال</h3>
+                <p className="text-muted-foreground text-sm">
                   اطلاعات بسته و مقصد را وارد کنید تا هزینه ارسال محاسبه شود
                 </p>
               </CardContent>
@@ -359,9 +359,9 @@ const AslExpress = () => {
           )}
 
           {/* Shipping Info */}
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card className="bg-card/80 border-border rounded-3xl">
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-foreground flex items-center gap-2">
                 <Info className="w-6 h-6 text-blue-400" />
                 اطلاعات مهم ارسال
               </CardTitle>
@@ -370,24 +370,24 @@ const AslExpress = () => {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5" />
                 <div>
-                  <div className="text-white font-medium">محاسبه وزن حجمی</div>
-                  <div className="text-gray-400 text-sm">طول × عرض × ارتفاع ÷ ۵۰۰۰</div>
+                  <div className="text-foreground font-medium">محاسبه وزن حجمی</div>
+                  <div className="text-muted-foreground text-sm">طول × عرض × ارتفاع ÷ ۵۰۰۰</div>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-5 h-5 text-green-400 mt-0.5" />
                 <div>
-                  <div className="text-white font-medium">بیمه رایگان</div>
-                  <div className="text-gray-400 text-sm">تا ۱۰۰۰ دلار برای تمام محموله‌ها</div>
+                  <div className="text-foreground font-medium">بیمه رایگان</div>
+                  <div className="text-muted-foreground text-sm">تا ۱۰۰۰ دلار برای تمام محموله‌ها</div>
                 </div>
               </div>
               
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-blue-400 mt-0.5" />
                 <div>
-                  <div className="text-white font-medium">پیگیری آنلاین</div>
-                  <div className="text-gray-400 text-sm">امکان پیگیری لحظه‌ای محموله</div>
+                  <div className="text-foreground font-medium">پیگیری آنلاین</div>
+                  <div className="text-muted-foreground text-sm">امکان پیگیری لحظه‌ای محموله</div>
                 </div>
               </div>
             </CardContent>
@@ -397,31 +397,31 @@ const AslExpress = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۸</div>
-            <p className="text-sm text-gray-400">کشور تحت پوشش</p>
+            <div className="text-2xl font-bold text-foreground">۸</div>
+            <p className="text-sm text-muted-foreground">کشور تحت پوشش</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۲-۳</div>
-            <p className="text-sm text-gray-400">روز ارسال سریع</p>
+            <div className="text-2xl font-bold text-foreground">۲-۳</div>
+            <p className="text-sm text-muted-foreground">روز ارسال سریع</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۹۸%</div>
-            <p className="text-sm text-gray-400">نرخ تحویل موفق</p>
+            <div className="text-2xl font-bold text-foreground">۹۸%</div>
+            <p className="text-sm text-muted-foreground">نرخ تحویل موفق</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۲۴/۷</div>
-            <p className="text-sm text-gray-400">پشتیبانی</p>
+            <div className="text-2xl font-bold text-foreground">۲۴/۷</div>
+            <p className="text-sm text-muted-foreground">پشتیبانی</p>
           </CardContent>
         </Card>
       </div>

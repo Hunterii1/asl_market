@@ -115,9 +115,9 @@ const AslPay = () => {
   };
 
   const PaymentRequestForm = () => (
-    <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+    <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
+        <CardTitle className="text-foreground flex items-center gap-2">
           <Plus className="w-6 h-6 text-green-400" />
           درخواست دریافت پول
         </CardTitle>
@@ -125,7 +125,7 @@ const AslPay = () => {
       <CardContent className="space-y-6">
         {/* Amount and Currency */}
         <div>
-          <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
             <DollarSign className="w-5 h-5 text-green-400" />
             مبلغ و ارز
           </h4>
@@ -134,21 +134,21 @@ const AslPay = () => {
               placeholder="مبلغ"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
               type="number"
             />
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                 <SelectValue placeholder="انتخاب ارز" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="USD" className="text-white">دلار آمریکا (USD)</SelectItem>
-                <SelectItem value="AED" className="text-white">درهم امارات (AED)</SelectItem>
-                <SelectItem value="SAR" className="text-white">ریال سعودی (SAR)</SelectItem>
-                <SelectItem value="KWD" className="text-white">دینار کویت (KWD)</SelectItem>
-                <SelectItem value="QAR" className="text-white">ریال قطر (QAR)</SelectItem>
-                <SelectItem value="BHD" className="text-white">دینار بحرین (BHD)</SelectItem>
-                <SelectItem value="OMR" className="text-white">ریال عمان (OMR)</SelectItem>
+              <SelectContent className="bg-muted border-border">
+                <SelectItem value="USD" className="text-foreground">دلار آمریکا (USD)</SelectItem>
+                <SelectItem value="AED" className="text-foreground">درهم امارات (AED)</SelectItem>
+                <SelectItem value="SAR" className="text-foreground">ریال سعودی (SAR)</SelectItem>
+                <SelectItem value="KWD" className="text-foreground">دینار کویت (KWD)</SelectItem>
+                <SelectItem value="QAR" className="text-foreground">ریال قطر (QAR)</SelectItem>
+                <SelectItem value="BHD" className="text-foreground">دینار بحرین (BHD)</SelectItem>
+                <SelectItem value="OMR" className="text-foreground">ریال عمان (OMR)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -156,14 +156,14 @@ const AslPay = () => {
 
         {/* Source Country */}
         <div>
-          <h4 className="text-white font-medium mb-3">کشور مبدا</h4>
+          <h4 className="text-foreground font-medium mb-3">کشور مبدا</h4>
           <Select value={sourceCountry} onValueChange={setSourceCountry}>
-            <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+            <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
               <SelectValue placeholder="انتخاب کشور مبدا" />
             </SelectTrigger>
-            <SelectContent className="bg-gray-800 border-gray-700">
+            <SelectContent className="bg-muted border-border">
               {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code} className="text-white">
+                <SelectItem key={country.code} value={country.code} className="text-foreground">
                   {country.flag} {country.name}
                 </SelectItem>
               ))}
@@ -173,29 +173,29 @@ const AslPay = () => {
 
         {/* Bank Card Information */}
         <div>
-          <h4 className="text-white font-medium mb-3 flex items-center gap-2">
+          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-green-400" />
             اطلاعات کارت بانکی ایرانی
           </h4>
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               placeholder="شماره کارت (۱۶ رقم)"
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
               maxLength={19}
             />
             <Input
               placeholder="نام صاحب کارت"
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
             />
           </div>
           <div className="grid md:grid-cols-2 gap-4 mt-4">
             <Input
               placeholder="شماره شبا (IR)"
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
             />
             <Input
               placeholder="نام بانک"
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
             />
           </div>
         </div>
@@ -234,18 +234,18 @@ const AslPay = () => {
         const country = countries.find(c => c.code === request.sourceCountry);
         
         return (
-          <Card key={request.id} className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card key={request.id} className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-white">{request.id}</h4>
+                    <h4 className="font-bold text-foreground">{request.id}</h4>
                     <Badge className={`${getStatusColor(request.status)} rounded-full`}>
                       <StatusIcon className="w-3 h-3 ml-1" />
                       {getStatusText(request.status)}
                     </Badge>
                   </div>
-                  <div className="text-gray-400 text-sm">
+                  <div className="text-muted-foreground text-sm">
                     ایجاد شده: {request.createdAt}
                     {request.completedAt && (
                       <span className="mr-4">تکمیل شده: {request.completedAt}</span>
@@ -253,11 +253,11 @@ const AslPay = () => {
                   </div>
                 </div>
                 <div className="text-left">
-                  <div className="text-2xl font-bold text-white">
+                  <div className="text-2xl font-bold text-foreground">
                     {request.amount.toLocaleString()} {request.currency}
                   </div>
                   {country && (
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-muted-foreground text-sm">
                       {country.flag} {country.name}
                     </div>
                   )}
@@ -266,27 +266,27 @@ const AslPay = () => {
 
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-3">
-                  <h5 className="text-white font-medium">جزئیات درخواست</h5>
+                  <h5 className="text-foreground font-medium">جزئیات درخواست</h5>
                   
                   {request.bankAccount && (
                     <div className="flex items-center gap-2 text-sm">
-                      <Banknote className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-400">حساب مقصد:</span>
-                      <span className="text-white font-mono">{request.bankAccount}</span>
+                      <Banknote className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">حساب مقصد:</span>
+                      <span className="text-foreground font-mono">{request.bankAccount}</span>
                     </div>
                   )}
                   
                   {request.userBankCard && (
                     <div className="flex items-center gap-2 text-sm">
-                      <CreditCard className="w-4 h-4 text-gray-400" />
-                      <span className="text-gray-400">کارت شما:</span>
-                      <span className="text-white font-mono">{request.userBankCard}</span>
+                      <CreditCard className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">کارت شما:</span>
+                      <span className="text-foreground font-mono">{request.userBankCard}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <h5 className="text-white font-medium">عملیات</h5>
+                  <h5 className="text-foreground font-medium">عملیات</h5>
                   
                   <div className="flex flex-wrap gap-2">
                     {request.status === "processing" && request.bankAccount && (
@@ -297,13 +297,13 @@ const AslPay = () => {
                     )}
                     
                     {request.receipt && (
-                      <Button size="sm" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+                      <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                         <Download className="w-4 h-4 ml-2" />
                         دانلود فیش
                       </Button>
                     )}
                     
-                    <Button size="sm" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+                    <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                       <Eye className="w-4 h-4 ml-2" />
                       جزئیات
                     </Button>
@@ -312,12 +312,12 @@ const AslPay = () => {
               </div>
 
               {/* Progress Steps */}
-              <div className="mt-6 pt-6 border-t border-gray-700">
+              <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-center justify-between">
                   <div className={`flex items-center gap-2 ${
                     ["pending", "processing", "completed"].includes(request.status) 
                       ? "text-green-400" 
-                      : "text-gray-500"
+                      : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm">درخواست ثبت شد</span>
@@ -326,7 +326,7 @@ const AslPay = () => {
                   <div className={`flex items-center gap-2 ${
                     ["processing", "completed"].includes(request.status) 
                       ? "text-green-400" 
-                      : "text-gray-500"
+                      : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm">تایید کارشناس</span>
@@ -335,7 +335,7 @@ const AslPay = () => {
                   <div className={`flex items-center gap-2 ${
                     request.status === "completed" 
                       ? "text-green-400" 
-                      : "text-gray-500"
+                      : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm">واریز به حساب</span>
@@ -350,16 +350,16 @@ const AslPay = () => {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
-      <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
+      <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl transition-colors duration-300">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-3xl flex items-center justify-center">
               <CreditCard className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">اصل پی</h2>
+              <h2 className="text-2xl font-bold text-foreground">اصل پی</h2>
               <p className="text-green-300">سیستم دریافت پول بین‌المللی</p>
             </div>
           </div>
@@ -374,7 +374,7 @@ const AslPay = () => {
           className={`rounded-2xl ${
             activeTab === "request"
               ? "bg-green-500 hover:bg-green-600"
-              : "border-gray-700 text-gray-300 hover:bg-gray-800"
+              : "border-border text-muted-foreground hover:bg-muted"
           }`}
         >
           <Plus className="w-4 h-4 ml-2" />
@@ -386,7 +386,7 @@ const AslPay = () => {
           className={`rounded-2xl ${
             activeTab === "history"
               ? "bg-green-500 hover:bg-green-600"
-              : "border-gray-700 text-gray-300 hover:bg-gray-800"
+              : "border-border text-muted-foreground hover:bg-muted"
           }`}
         >
           <FileText className="w-4 h-4 ml-2" />
@@ -399,31 +399,31 @@ const AslPay = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۱۲</div>
-            <p className="text-sm text-gray-400">درخواست کل</p>
+            <div className="text-2xl font-bold text-foreground">۱۲</div>
+            <p className="text-sm text-muted-foreground">درخواست کل</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۸</div>
-            <p className="text-sm text-gray-400">تکمیل شده</p>
+            <div className="text-2xl font-bold text-foreground">۸</div>
+            <p className="text-sm text-muted-foreground">تکمیل شده</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">$۱۵,۲۴۰</div>
-            <p className="text-sm text-gray-400">کل دریافتی</p>
+            <div className="text-2xl font-bold text-foreground">$۱۵,۲۴۰</div>
+            <p className="text-sm text-muted-foreground">کل دریافتی</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۲۴ ساعت</div>
-            <p className="text-sm text-gray-400">میانگین پردازش</p>
+            <div className="text-2xl font-bold text-foreground">۲۴ ساعت</div>
+            <p className="text-sm text-muted-foreground">میانگین پردازش</p>
           </CardContent>
         </Card>
       </div>

@@ -188,39 +188,39 @@ const ToolsSection = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 transition-colors duration-300">
       {/* Header */}
       <div className="text-center">
-        <h2 className="text-3xl font-bold text-white mb-4">جعبه ابزار حرفه‌ای</h2>
-        <p className="text-gray-400 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-bold text-foreground mb-4">جعبه ابزار حرفه‌ای</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
           مجموعه کاملی از ابزارها، قالب‌ها و منابع مورد نیاز برای موفقیت در فروش بین‌المللی
         </p>
       </div>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{toFarsiNumber(24)}+</div>
-            <p className="text-sm text-gray-400">ابزار تخصصی</p>
+            <div className="text-2xl font-bold text-foreground">{toFarsiNumber(24)}+</div>
+            <p className="text-sm text-muted-foreground">ابزار تخصصی</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{toFarsiNumber(12)}+</div>
-            <p className="text-sm text-gray-400">قالب آماده</p>
+            <div className="text-2xl font-bold text-foreground">{toFarsiNumber(12)}+</div>
+            <p className="text-sm text-muted-foreground">قالب آماده</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{toFarsiNumber(8)}+</div>
-            <p className="text-sm text-gray-400">سرویس پرمیوم</p>
+            <div className="text-2xl font-bold text-foreground">{toFarsiNumber(8)}+</div>
+            <p className="text-sm text-muted-foreground">سرویس پرمیوم</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">{toFarsiNumber(50)}+</div>
-            <p className="text-sm text-gray-400">راهنمای جامع</p>
+            <div className="text-2xl font-bold text-foreground">{toFarsiNumber(50)}+</div>
+            <p className="text-sm text-muted-foreground">راهنمای جامع</p>
           </CardContent>
         </Card>
       </div>
@@ -231,7 +231,7 @@ const ToolsSection = () => {
         return (
           <Card key={categoryIndex} className={`bg-gradient-to-r ${getColorClasses(category.color)} rounded-3xl`}>
             <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-white">
+              <CardTitle className="flex items-center gap-3 text-foreground">
                 <div className={`w-10 h-10 ${getIconColorClasses(category.color)} rounded-2xl flex items-center justify-center`}>
                   <CategoryIcon className="w-5 h-5" />
                 </div>
@@ -243,34 +243,34 @@ const ToolsSection = () => {
                 {category.tools.map((tool, toolIndex) => {
                   const ToolIcon = tool.icon;
                   return (
-                    <Card key={toolIndex} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-all group rounded-3xl">
+                    <Card key={toolIndex} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="w-10 h-10 bg-gray-800 rounded-2xl flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                            <ToolIcon className="w-5 h-5 text-gray-400 group-hover:text-orange-400 transition-colors" />
+                          <div className="w-10 h-10 bg-muted rounded-2xl flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                            <ToolIcon className="w-5 h-5 text-muted group-hover:text-orange-400 transition-colors" />
                           </div>
                           <div className="flex items-center gap-1">
                             <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                            <span className="text-xs text-gray-400">{tool.rating.toString().replace('.', '.')}</span>
+                            <span className="text-xs text-muted-foreground">{tool.rating.toString().replace('.', '.')}</span>
                           </div>
                         </div>
                         
-                        <h3 className="font-semibold text-white mb-2 group-hover:text-orange-300 transition-colors">
+                        <h3 className="font-semibold text-foreground mb-2 group-hover:text-orange-300 transition-colors">
                           {tool.name}
                         </h3>
-                        <p className="text-sm text-gray-400 mb-3">{tool.description}</p>
+                        <p className="text-sm text-muted-foreground mb-3">{tool.description}</p>
                         
                         <div className="space-y-2 mb-4">
                           {tool.features.map((feature, featureIndex) => (
                             <div key={featureIndex} className="flex items-center gap-2">
                               <div className="w-1 h-1 bg-orange-400 rounded-full"></div>
-                              <span className="text-xs text-gray-400">{feature}</span>
+                              <span className="text-xs text-muted-foreground">{feature}</span>
                             </div>
                           ))}
                         </div>
                         
                         <div className="flex items-center justify-between mb-3">
-                          <Badge variant="secondary" className="bg-gray-800 text-gray-300 rounded-2xl">
+                          <Badge variant="secondary" className="bg-muted text-muted-foreground rounded-2xl">
                             {tool.type}
                           </Badge>
                           <span className="font-bold text-orange-400">{tool.price}</span>
@@ -279,7 +279,7 @@ const ToolsSection = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full border-gray-700 text-gray-300 hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-300 rounded-2xl"
+                          className="w-full border-border text-muted-foreground hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-300 rounded-2xl"
                         >
                           {tool.price === "رایگان" ? (
                             <>
@@ -309,8 +309,8 @@ const ToolsSection = () => {
           <div className="w-16 h-16 bg-orange-500/20 rounded-3xl flex items-center justify-center mx-auto mb-4">
             <Zap className="w-8 h-8 text-orange-400" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">نیاز به ابزار خاصی دارید؟</h3>
-          <p className="text-gray-300 mb-6 max-w-md mx-auto">
+          <h3 className="text-2xl font-bold text-foreground mb-2">نیاز به ابزار خاصی دارید؟</h3>
+          <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             تیم ما آماده ساخت ابزارهای تخصصی متناسب با نیاز کسب‌وکار شماست
           </p>
           <Button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-3xl">

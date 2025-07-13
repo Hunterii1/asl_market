@@ -51,7 +51,7 @@ const AslAI = () => {
       id: "coach",
       title: "کوچینگ هوشمند",
       icon: Bot,
-      description: "راهنمایی گام به گام برای فروش بین‌المللی",
+      description: "راهنمای گام به گام برای فروش",
       color: "blue"
     },
     {
@@ -94,9 +94,9 @@ const AslAI = () => {
 
   const CoachingSection = () => (
     <div className="space-y-6">
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl h-[500px] flex flex-col">
-        <CardHeader className="border-b border-gray-700/50">
-          <CardTitle className="text-white flex items-center gap-2">
+      <Card className="bg-card/80 border-border rounded-3xl h-[500px] flex flex-col">
+        <CardHeader className="border-b border-border/50">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Bot className="w-5 h-5 text-blue-400" />
             کوچ هوشمند اصل مارکت
           </CardTitle>
@@ -119,7 +119,7 @@ const AslAI = () => {
                   className={`max-w-[70%] p-4 rounded-3xl ${
                     message.type === 'user'
                       ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white'
-                      : 'bg-gray-800/50 text-gray-200'
+                      : 'bg-muted/50 text-muted-foreground'
                   }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-line">{message.message}</p>
@@ -132,14 +132,14 @@ const AslAI = () => {
           </div>
         </CardContent>
 
-        <div className="p-4 border-t border-gray-700/50">
+        <div className="p-4 border-t border-border/50">
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
               <Textarea
                 value={chatMessage}
                 onChange={(e) => setChatMessage(e.target.value)}
                 placeholder="سوال خود را بپرسید..."
-                className="w-full bg-gray-800/50 border border-gray-700 rounded-3xl text-white placeholder-gray-400 resize-none"
+                className="w-full bg-muted border border-border rounded-3xl text-foreground placeholder-muted-foreground resize-none"
                 rows={2}
               />
             </div>
@@ -155,9 +155,9 @@ const AslAI = () => {
       </Card>
 
       {/* Quick Questions */}
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white">سوالات متداول</CardTitle>
+          <CardTitle className="text-foreground">سوالات متداول</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-3">
@@ -170,7 +170,7 @@ const AslAI = () => {
               <Button
                 key={index}
                 variant="outline"
-                className="text-right border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl p-4 h-auto"
+                className="text-right border-border text-muted-foreground hover:bg-muted rounded-2xl p-4 h-auto"
                 onClick={() => setChatMessage(question)}
               >
                 {question}
@@ -184,9 +184,9 @@ const AslAI = () => {
 
   const TranslatorSection = () => (
     <div className="space-y-6">
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Languages className="w-5 h-5 text-green-400" />
             مترجم تخصصی تجاری
           </CardTitle>
@@ -194,24 +194,24 @@ const AslAI = () => {
         <CardContent className="space-y-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="text-white font-medium mb-3 block">متن فارسی</label>
+              <label className="text-foreground font-medium mb-3 block">متن فارسی</label>
               <Textarea
                 value={translationText}
                 onChange={(e) => setTranslationText(e.target.value)}
                 placeholder="متن خود را برای ترجمه وارد کنید..."
-                className="bg-gray-800 border-gray-700 text-white rounded-2xl h-40"
+                className="bg-muted border-border text-foreground rounded-2xl h-40"
               />
             </div>
             
             <div>
-              <label className="text-white font-medium mb-3 block">ترجمه عربی</label>
-              <div className="bg-gray-800 border border-gray-700 rounded-2xl h-40 p-3 text-white">
+              <label className="text-foreground font-medium mb-3 block">ترجمه عربی</label>
+              <div className="bg-muted border border-border rounded-2xl h-40 p-3 text-foreground">
                 {translationText ? (
-                  <div className="text-gray-300">
+                  <div className="text-muted-foreground">
                     ترجمه متن شما اینجا نمایش داده می‌شود...
                   </div>
                 ) : (
-                  <div className="text-gray-500 text-center mt-12">
+                  <div className="text-muted-foreground text-center mt-12">
                     متن خود را وارد کنید
                   </div>
                 )}
@@ -224,11 +224,11 @@ const AslAI = () => {
               <Languages className="w-4 h-4 ml-2" />
               ترجمه
             </Button>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+            <Button variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
               <Copy className="w-4 h-4 ml-2" />
               کپی
             </Button>
-            <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+            <Button variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
               <Download className="w-4 h-4 ml-2" />
               دانلود
             </Button>
@@ -237,9 +237,9 @@ const AslAI = () => {
       </Card>
 
       {/* Translation Templates */}
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white">قالب‌های آماده</CardTitle>
+          <CardTitle className="text-foreground">قالب‌های آماده</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-4">
@@ -252,7 +252,7 @@ const AslAI = () => {
               <Button
                 key={index}
                 variant="outline"
-                className="text-right border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl p-4 h-auto"
+                className="text-right border-border text-muted-foreground hover:bg-muted rounded-2xl p-4 h-auto"
               >
                 <FileText className="w-4 h-4 ml-2" />
                 {template.title}
@@ -266,9 +266,9 @@ const AslAI = () => {
 
   const MarketingSection = () => (
     <div className="space-y-6">
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Target className="w-5 h-5 text-orange-400" />
             تولید محتوای بازاریابی
           </CardTitle>
@@ -277,24 +277,24 @@ const AslAI = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               placeholder="نام محصول"
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
             />
             <Select>
-              <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                 <SelectValue placeholder="نوع محتوا" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="social" className="text-white">پست شبکه اجتماعی</SelectItem>
-                <SelectItem value="email" className="text-white">ایمیل بازاریابی</SelectItem>
-                <SelectItem value="ad" className="text-white">تبلیغ آنلاین</SelectItem>
-                <SelectItem value="catalog" className="text-white">کاتالوگ محصول</SelectItem>
+              <SelectContent className="bg-muted border-border">
+                <SelectItem value="social" className="text-foreground">پست شبکه اجتماعی</SelectItem>
+                <SelectItem value="email" className="text-foreground">ایمیل بازاریابی</SelectItem>
+                <SelectItem value="ad" className="text-foreground">تبلیغ آنلاین</SelectItem>
+                <SelectItem value="catalog" className="text-foreground">کاتالوگ محصول</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Textarea
             placeholder="توضیحات محصول و نکات مهم..."
-            className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+            className="bg-muted border-border text-foreground rounded-2xl"
             rows={4}
           />
 
@@ -307,28 +307,28 @@ const AslAI = () => {
 
       {/* Marketing Templates */}
       <div>
-        <h3 className="text-white font-bold mb-4">نمونه محتواهای تولید شده</h3>
+        <h3 className="text-foreground font-bold mb-4">نمونه محتواهای تولید شده</h3>
         <div className="space-y-4">
           {marketingTemplates.map((template) => (
-            <Card key={template.id} className="bg-gray-900/50 border-gray-800 rounded-3xl">
+            <Card key={template.id} className="bg-card/80 border-border rounded-3xl">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <h4 className="text-white font-medium">{template.title}</h4>
+                  <h4 className="text-foreground font-medium">{template.title}</h4>
                   <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-full">
                     {template.type === 'social' ? 'شبکه اجتماعی' : 'ایمیل'}
                   </Badge>
                 </div>
-                <div className="bg-gray-800/50 rounded-2xl p-4 mb-4">
-                  <pre className="text-gray-300 text-sm whitespace-pre-wrap font-sans">
+                <div className="bg-muted/50 rounded-2xl p-4 mb-4">
+                  <pre className="text-muted-foreground text-sm whitespace-pre-wrap font-sans">
                     {template.content}
                   </pre>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+                  <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                     <Copy className="w-4 h-4 ml-2" />
                     کپی
                   </Button>
-                  <Button size="sm" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+                  <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                     <Download className="w-4 h-4 ml-2" />
                     دانلود
                   </Button>
@@ -343,9 +343,9 @@ const AslAI = () => {
 
   const BrandingSection = () => (
     <div className="space-y-6">
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white flex items-center gap-2">
+          <CardTitle className="text-foreground flex items-center gap-2">
             <Palette className="w-5 h-5 text-purple-400" />
             طراحی برند و بسته‌بندی
           </CardTitle>
@@ -356,24 +356,24 @@ const AslAI = () => {
               placeholder="نام تجاری"
               value={brandName}
               onChange={(e) => setBrandName(e.target.value)}
-              className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+              className="bg-muted border-border text-foreground rounded-2xl"
             />
             <Select value={businessType} onValueChange={setBusinessType}>
-              <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                 <SelectValue placeholder="نوع کسب‌وکار" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="food" className="text-white">مواد غذایی</SelectItem>
-                <SelectItem value="handicraft" className="text-white">صنایع دستی</SelectItem>
-                <SelectItem value="textile" className="text-white">نساجی</SelectItem>
-                <SelectItem value="cosmetic" className="text-white">آرایشی بهداشتی</SelectItem>
+              <SelectContent className="bg-muted border-border">
+                <SelectItem value="food" className="text-foreground">مواد غذایی</SelectItem>
+                <SelectItem value="handicraft" className="text-foreground">صنایع دستی</SelectItem>
+                <SelectItem value="textile" className="text-foreground">نساجی</SelectItem>
+                <SelectItem value="cosmetic" className="text-foreground">آرایشی بهداشتی</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <Textarea
             placeholder="توضیحات برند، ارزش‌ها و پیام مورد نظر..."
-            className="bg-gray-800 border-gray-700 text-white rounded-2xl"
+            className="bg-muted border-border text-foreground rounded-2xl"
             rows={4}
           />
 
@@ -391,20 +391,20 @@ const AslAI = () => {
       </Card>
 
       {/* Design Gallery */}
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardHeader>
-          <CardTitle className="text-white">گالری طراحی‌ها</CardTitle>
+          <CardTitle className="text-foreground">گالری طراحی‌ها</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div key={item} className="bg-gray-800/50 rounded-2xl p-6 text-center">
+              <div key={item} className="bg-muted/50 rounded-2xl p-6 text-center">
                 <div className="w-16 h-16 bg-gradient-to-br from-purple-500/20 to-purple-600/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
                   <Wand2 className="w-8 h-8 text-purple-400" />
                 </div>
-                <h4 className="text-white font-medium mb-2">طراحی {item}</h4>
-                <p className="text-gray-400 text-sm mb-3">نمونه طراحی لوگو</p>
-                <Button size="sm" variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+                <h4 className="text-foreground font-medium mb-2">طراحی {item}</h4>
+                <p className="text-muted-foreground text-sm mb-3">نمونه طراحی لوگو</p>
+                <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                   مشاهده
                 </Button>
               </div>
@@ -426,7 +426,7 @@ const AslAI = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
       <Card className="bg-gradient-to-r from-purple-900/20 to-purple-800/20 border-purple-700/50 rounded-3xl">
         <CardContent className="p-6">
@@ -435,7 +435,7 @@ const AslAI = () => {
               <Bot className="w-8 h-8 text-purple-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">اصل AI</h2>
+              <h2 className="text-2xl font-bold text-foreground">اصل AI</h2>
               <p className="text-purple-300">کوچینگ و مترجم هوش مصنوعی</p>
             </div>
           </div>
@@ -454,11 +454,11 @@ const AslAI = () => {
               className={`h-20 flex flex-col gap-2 rounded-3xl transition-all duration-300 ${
                 isActive
                   ? `bg-gradient-to-br from-${service.color}-500 to-${service.color}-600 border-${service.color}-500 text-white shadow-lg`
-                  : "border-gray-700/50 bg-gray-900/30 hover:bg-gray-800/50 hover:border-gray-600 text-gray-300"
+                  : "border-border bg-muted/30 hover:bg-muted/50 hover:border-border text-muted-foreground"
               }`}
               onClick={() => setActiveTab(service.id)}
             >
-              <Icon className={`w-6 h-6 ${isActive ? "text-white" : "text-gray-400"}`} />
+              <Icon className={`w-6 h-6 ${isActive ? "text-white" : "text-muted-foreground"}`} />
               <div className="text-center">
                 <div className="text-sm font-medium">{service.title}</div>
                 <div className="text-xs opacity-70">{service.description}</div>
@@ -475,31 +475,31 @@ const AslAI = () => {
 
       {/* AI Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۱,۲۳۴</div>
-            <p className="text-sm text-gray-400">سوال پاسخ داده شده</p>
+            <div className="text-2xl font-bold text-foreground">۱,۲۳۴</div>
+            <p className="text-sm text-muted-foreground">سوال پاسخ داده شده</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۸۹۲</div>
-            <p className="text-sm text-gray-400">متن ترجمه شده</p>
+            <div className="text-2xl font-bold text-foreground">۸۹۲</div>
+            <p className="text-sm text-muted-foreground">متن ترجمه شده</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۴۵۶</div>
-            <p className="text-sm text-gray-400">محتوای تولید شده</p>
+            <div className="text-2xl font-bold text-foreground">۴۵۶</div>
+            <p className="text-sm text-muted-foreground">محتوای تولید شده</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۱۲۳</div>
-            <p className="text-sm text-gray-400">طراحی انجام شده</p>
+            <div className="text-2xl font-bold text-foreground">۱۲۳</div>
+            <p className="text-sm text-muted-foreground">طراحی انجام شده</p>
           </CardContent>
         </Card>
       </div>

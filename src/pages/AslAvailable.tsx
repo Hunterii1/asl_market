@@ -171,7 +171,7 @@ const AslAvailable = () => {
               <Package className="w-8 h-8 text-green-400" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">کالاهای موجود</h2>
+              <h2 className="text-2xl font-bold text-foreground">کالاهای موجود</h2>
               <p className="text-green-300">محصولات آماده برای فروش افیلیتی</p>
             </div>
           </div>
@@ -179,29 +179,29 @@ const AslAvailable = () => {
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+      <Card className="bg-card/80 border-border rounded-3xl">
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
                 placeholder="جستجو در محصولات..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 bg-gray-800 border-gray-700 text-white rounded-2xl"
+                className="pr-10 bg-muted border-border text-foreground rounded-2xl"
               />
             </div>
 
             {/* Filters */}
             <div className="grid md:grid-cols-4 gap-4">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+                <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                   <SelectValue placeholder="دسته‌بندی" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id} className="text-white">
+                    <SelectItem key={category.id} value={category.id} className="text-foreground">
                       {category.name} ({category.count})
                     </SelectItem>
                   ))}
@@ -209,12 +209,12 @@ const AslAvailable = () => {
               </Select>
 
               <Select value={selectedCondition} onValueChange={setSelectedCondition}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+                <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                   <SelectValue placeholder="وضعیت" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {conditions.map((condition) => (
-                    <SelectItem key={condition.id} value={condition.id} className="text-white">
+                    <SelectItem key={condition.id} value={condition.id} className="text-foreground">
                       {condition.name}
                     </SelectItem>
                   ))}
@@ -222,19 +222,19 @@ const AslAvailable = () => {
               </Select>
 
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="bg-gray-800 border-gray-700 text-white rounded-2xl">
+                <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
                   <SelectValue placeholder="مکان" />
                 </SelectTrigger>
-                <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectContent className="bg-muted border-border">
                   {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id} className="text-white">
+                    <SelectItem key={location.id} value={location.id} className="text-foreground">
                       {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl">
+              <Button variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                 <Filter className="w-4 h-4 ml-2" />
                 فیلتر پیشرفته
               </Button>
@@ -246,7 +246,7 @@ const AslAvailable = () => {
       {/* Items Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
-          <Card key={item.id} className="bg-gray-900/50 border-gray-800 hover:border-gray-700 transition-all group rounded-3xl">
+          <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
             <CardContent className="p-0">
               <div className="relative">
                 <img
@@ -273,24 +273,24 @@ const AslAvailable = () => {
               </div>
 
               <div className="p-6">
-                <h4 className="font-bold text-white mb-2 group-hover:text-green-300 transition-colors">
+                <h4 className="font-bold text-foreground mb-2 group-hover:text-green-300 transition-colors">
                   {item.name}
                 </h4>
-                <p className="text-gray-400 text-sm mb-4">{item.description}</p>
+                <p className="text-muted-foreground text-sm mb-4">{item.description}</p>
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">مقدار:</span>
-                    <span className="text-white">{item.quantity} {item.unit}</span>
+                    <span className="text-muted-foreground text-sm">مقدار:</span>
+                    <span className="text-foreground">{item.quantity} {item.unit}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">قیمت:</span>
-                    <span className="text-white font-bold">${item.price}</span>
+                    <span className="text-muted-foreground text-sm">قیمت:</span>
+                    <span className="text-foreground font-bold">${item.price}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-gray-400 text-sm">کمیسیون:</span>
+                    <span className="text-muted-foreground text-sm">کمیسیون:</span>
                     <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-full">
                       {item.affiliateCommission}%
                     </Badge>
@@ -299,22 +299,22 @@ const AslAvailable = () => {
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-400">مکان:</span>
-                    <span className="text-white">{item.location}</span>
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">مکان:</span>
+                    <span className="text-foreground">{item.location}</span>
                   </div>
                   
                   <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-400">فروشنده:</span>
-                    <span className="text-white">{item.owner}</span>
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">فروشنده:</span>
+                    <span className="text-foreground">{item.owner}</span>
                     <div className="flex items-center gap-1">
                       <Star className="w-3 h-3 text-yellow-400 fill-current" />
                       <span className="text-yellow-400 text-xs">{item.ownerRating}</span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Eye className="w-4 h-4" />
                       {item.views} بازدید
@@ -337,7 +337,7 @@ const AslAvailable = () => {
                   <Button 
                     size="sm" 
                     variant="outline" 
-                    className="border-gray-700 text-gray-300 hover:bg-gray-800 rounded-2xl"
+                    className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
                   >
                     <Eye className="w-4 h-4 ml-2" />
                     جزئیات
@@ -351,31 +351,31 @@ const AslAvailable = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۴۵</div>
-            <p className="text-sm text-gray-400">محصول موجود</p>
+            <div className="text-2xl font-bold text-foreground">۴۵</div>
+            <p className="text-sm text-muted-foreground">محصول موجود</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۲۸</div>
-            <p className="text-sm text-gray-400">فروشنده فعال</p>
+            <div className="text-2xl font-bold text-foreground">۲۸</div>
+            <p className="text-sm text-muted-foreground">فروشنده فعال</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">۱۵%</div>
-            <p className="text-sm text-gray-400">میانگین کمیسیون</p>
+            <div className="text-2xl font-bold text-foreground">۱۵%</div>
+            <p className="text-sm text-muted-foreground">میانگین کمیسیون</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+        <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-white">$۱۲,۳۴۵</div>
-            <p className="text-sm text-gray-400">ارزش کل محصولات</p>
+            <div className="text-2xl font-bold text-foreground">$۱۲,۳۴۵</div>
+            <p className="text-sm text-muted-foreground">ارزش کل محصولات</p>
           </CardContent>
         </Card>
       </div>

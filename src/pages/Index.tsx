@@ -7,7 +7,7 @@ import {
   BarChart3, 
   TrendingUp, 
   Users, 
-  DollarSign, 
+  DollarSign,
   ArrowUpRight,
   Target,
   CheckCircle,
@@ -29,7 +29,6 @@ import {
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
 import ToolsSection from "@/components/sections/ToolsSection";
-import ChatBotSection from "@/components/sections/ChatBotSection";
 import AslLearn from "./AslLearn";
 import AslSupplier from "./AslSupplier";
 import AslExpress from "./AslExpress";
@@ -57,7 +56,6 @@ const Index = () => {
     { id: "aslai", label: "هوش مصنوعی", icon: Bot },
     { id: "aslavailable", label: "کالاهای موجود", icon: Package },
     { id: "tools", label: "ابزارها", icon: Wrench },
-    { id: "chatbot", label: "چت بات", icon: MessageSquare }
   ];
 
   const renderActiveSection = () => {
@@ -82,72 +80,73 @@ const Index = () => {
         return <StepsSection />;
       case "tools":
         return <ToolsSection />;
-      case "chatbot":
-        return <ChatBotSection />;
       default:
         return <DashboardSection />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl">
       {/* Header */}
       <HeaderAuth />
       <div className="container mx-auto px-4 py-6">
         {/* Stats Cards */}
+        {/**
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card className="rounded-2xl border border-border bg-card/90 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-3xl flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center shadow-sm">
+                  <Users className="w-5 h-5 text-blue-500 dark:text-blue-400" />
                 </div>
-                <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 rounded-full">کل</Badge>
+                <Badge className="bg-blue-100 dark:bg-blue-500/20 text-blue-500 dark:text-blue-300 border-none rounded-full px-2 py-0.5 text-xs">کل</Badge>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{toFarsiNumber(7)}</div>
-              <p className="text-sm text-gray-400">مخاطبین شبکه</p>
+              <div className="text-2xl font-bold text-foreground mb-1">{toFarsiNumber(7)}</div>
+              <p className="text-sm text-muted-foreground">مخاطبین شبکه</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card className="rounded-2xl border border-border bg-card/90 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-green-500/20 rounded-3xl flex items-center justify-center">
-                  <Star className="w-5 h-5 text-green-400" />
+                <div className="w-10 h-10 bg-green-100 dark:bg-green-500/20 rounded-2xl flex items-center justify-center shadow-sm">
+                  <Star className="w-5 h-5 text-green-500 dark:text-green-400" />
                 </div>
-                <Badge className="bg-green-500/20 text-green-300 border-green-500/30 rounded-full">VIP</Badge>
+                <Badge className="bg-green-100 dark:bg-green-500/20 text-green-500 dark:text-green-300 border-none rounded-full px-2 py-0.5 text-xs">VIP</Badge>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{toFarsiNumber(2)}</div>
-              <p className="text-sm text-gray-400">مخاطبین VIP</p>
+              <div className="text-2xl font-bold text-foreground mb-1">{toFarsiNumber(2)}</div>
+              <p className="text-sm text-muted-foreground">مخاطبین VIP</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card className="rounded-2xl border border-border bg-card/90 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-3xl flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-orange-400" />
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/20 rounded-2xl flex items-center justify-center shadow-sm">
+                  <AlertTriangle className="w-5 h-5 text-orange-500 dark:text-orange-400" />
                 </div>
-                <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30 rounded-full">اقدام</Badge>
+                <Badge className="bg-orange-100 dark:bg-orange-500/20 text-orange-500 dark:text-orange-300 border-none rounded-full px-2 py-0.5 text-xs">اقدام</Badge>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{toFarsiNumber(4)}</div>
-              <p className="text-sm text-gray-400">نیاز به توجه فوری</p>
+              <div className="text-2xl font-bold text-foreground mb-1">{toFarsiNumber(4)}</div>
+              <p className="text-sm text-muted-foreground">نیاز به توجه فوری</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gray-900/50 border-gray-800 rounded-3xl">
+          <Card className="rounded-2xl border border-border bg-card/90 shadow-sm hover:shadow-md transition-all duration-300">
             <CardContent className="p-4">
               <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-purple-500/20 rounded-3xl flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center shadow-sm">
+                  <TrendingUp className="w-5 h-5 text-purple-500 dark:text-purple-400" />
                 </div>
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30 rounded-full">فرصت</Badge>
+                <Badge className="bg-purple-100 dark:bg-purple-500/20 text-purple-500 dark:text-purple-300 border-none rounded-full px-2 py-0.5 text-xs">فرصت</Badge>
               </div>
-              <div className="text-2xl font-bold text-white mb-1">{toFarsiNumber(0)}</div>
-              <p className="text-sm text-gray-400">فرصت‌های رشد</p>
+              <div className="text-2xl font-bold text-foreground mb-1">{toFarsiNumber(0)}</div>
+              <p className="text-sm text-muted-foreground">فرصت‌های رشد</p>
             </CardContent>
           </Card>
         </div>
+        */}
+        {/* TODO: کارت‌های آمار موقتاً غیرفعال شدند. برای استفاده مجدد فقط این بخش را از کامنت خارج کنید. */}
 
         {/* Navigation Menu */}
         <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 mb-6">
@@ -158,15 +157,15 @@ const Index = () => {
               <Button
                 key={item.id}
                 variant={isActive ? "default" : "outline"}
-                className={`h-20 flex flex-col gap-1 rounded-3xl transition-all duration-300 text-center ${
+                className={`h-20 flex flex-col gap-1 rounded-2xl border border-border bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-sm transition-all duration-300 text-xs font-medium leading-tight px-2 py-2 ${
                   isActive
-                    ? "bg-gradient-to-br from-orange-500 to-orange-600 border-orange-500 text-white shadow-lg shadow-orange-500/25"
-                    : "border-gray-700/50 bg-gray-900/30 hover:bg-gray-800/50 hover:border-orange-500/50 text-gray-300 hover:shadow-lg"
+                    ? "bg-gradient-to-br from-orange-400 to-orange-500 text-white border-orange-400 shadow-lg shadow-orange-400/20"
+                    : "text-muted-foreground hover:shadow-md"
                 }`}
                 onClick={() => setActiveSection(item.id)}
               >
-                <Icon className={`w-4 h-4 mx-auto ${isActive ? "text-white" : "text-gray-400"}`} />
-                <span className="text-xs font-medium leading-tight">{item.label}</span>
+                <Icon className={`w-5 h-5 mx-auto mb-1 ${isActive ? "text-white" : "text-muted-foreground"}`} />
+                <span>{item.label}</span>
               </Button>
             );
           })}
