@@ -1,14 +1,32 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# robots.txt for ASL Market (aslmarket.com)
+# اصل مارکت - سیستم هوشمند فروش بین‌المللی
 
 User-agent: *
 Allow: /
+
+# Important pages
+Allow: /login
+Allow: /signup
+Allow: /asllearn
+Allow: /products
+Allow: /aslsupplier
+Allow: /aslexpress
+Allow: /aslvisit
+Allow: /aslpay
+Allow: /aslai
+Allow: /aslavailable
+
+# Static assets
+Allow: /favicon.svg
+Allow: /favicon.ico
+Allow: /og-image.svg
+
+# Block admin areas (if any in future)
+Disallow: /admin/
+Disallow: /api/internal/
+
+# Sitemap
+Sitemap: https://aslmarket.com/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1

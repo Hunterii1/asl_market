@@ -1,0 +1,95 @@
+{
+  "name": "اصل مارکت - سیستم هوشمند فروش بین‌المللی",
+  "short_name": "اصل مارکت",
+  "description": "پلتفرم جامع فروش محصولات ایرانی در بازارهای عربی. زعفران، خرما، پسته، فرش و صنایع دستی با بهترین قیمت و کیفیت.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#f97316",
+  "orientation": "portrait-primary",
+  "dir": "rtl",
+  "lang": "fa",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["business", "productivity", "shopping"],
+  "screenshots": [
+    {
+      "src": "/og-image.svg",
+      "sizes": "1200x630",
+      "type": "image/svg+xml",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "آموزش",
+      "short_name": "آموزش", 
+      "description": "دسترسی سریع به بخش آموزش",
+      "url": "/asllearn",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "محصولات",
+      "short_name": "محصولات",
+      "description": "مشاهده محصولات موجود",
+      "url": "/products", 
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "تأمین‌کنندگان",
+      "short_name": "تأمین‌کنندگان",
+      "description": "لیست تأمین‌کنندگان",
+      "url": "/aslsupplier",
+      "icons": [
+        {
+          "src": "/favicon.svg", 
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "هوش مصنوعی",
+      "short_name": "AI",
+      "description": "ابزارهای هوش مصنوعی",
+      "url": "/aslai",
+      "icons": [
+        {
+          "src": "/favicon.svg",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+} 
