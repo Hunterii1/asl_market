@@ -7,11 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
 import HeaderAuth from "@/components/ui/HeaderAuth";
+import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, UserPlus, ArrowRight } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
   const { register, isLoading, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -36,12 +38,22 @@ const Signup = () => {
 
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError("رمز عبور و تکرار آن باید یکسان باشند");
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "رمز عبور و تکرار آن باید یکسان باشند",
+        duration: 5000,
+      });
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("رمز عبور باید حداقل ۶ کاراکتر باشد");
+      toast({
+        variant: "destructive",
+        title: "خطا", 
+        description: "رمز عبور باید حداقل ۶ کاراکتر باشد",
+        duration: 5000,
+      });
       return;
     }
 
@@ -50,7 +62,8 @@ const Signup = () => {
       await register(registerData);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "خطا در ثبت‌نام");
+      // Error toast is handled in api.ts
+      console.error("Registration error:", err);
     }
   };
 

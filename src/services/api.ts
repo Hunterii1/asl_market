@@ -1,3 +1,6 @@
+import { getErrorMessage, translateSuccess } from '@/utils/errorMessages';
+import { toast } from '@/hooks/use-toast';
+
 const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 export interface User {
@@ -72,10 +75,29 @@ class ApiService {
 
   private async handleResponse(response: Response) {
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Network error' }));
-      throw new Error(error.error || 'Request failed');
+      const error = await response.json().catch(() => ({ error: 'Failed to fetch' }));
+      const errorMessage = getErrorMessage(error.error || error.message || 'Request failed');
+      
+      // Show Persian error toast
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: errorMessage,
+        duration: 5000,
+      });
+      
+      throw new Error(errorMessage);
     }
     return response.json();
+  }
+
+  private showSuccessToast(message: string) {
+    const persianMessage = translateSuccess(message);
+    toast({
+      title: "موفقیت",
+      description: persianMessage,
+      duration: 3000,
+    });
   }
 
   // Authentication
@@ -94,6 +116,7 @@ class ApiService {
     if (data.data?.token) {
       console.log('💾 Storing login token:', data.data.token.substring(0, 20) + '...');
       localStorage.setItem('auth_token', data.data.token);
+      this.showSuccessToast('Login successful');
     } else {
       console.error('❌ No token in login response:', data);
     }
@@ -116,6 +139,7 @@ class ApiService {
     if (data.data?.token) {
       console.log('💾 Storing register token:', data.data.token.substring(0, 20) + '...');
       localStorage.setItem('auth_token', data.data.token);
+      this.showSuccessToast('Registration successful');
     } else {
       console.error('❌ No token in register response:', data);
     }

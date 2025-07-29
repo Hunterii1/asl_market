@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { apiService, type Chat, type Message, type ChatRequest } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { translateSuccess } from "@/utils/errorMessages";
 import { 
   Bot, 
   MessageSquare, 
@@ -28,6 +30,7 @@ import { useNavigate } from "react-router-dom";
 const AslAI = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -140,6 +143,7 @@ const AslAI = () => {
       setChats(response.chats);
     } catch (error) {
       console.error("Failed to load chats:", error);
+      // Error toast is handled in api.ts
     } finally {
       setIsLoading(false);
     }
@@ -164,6 +168,7 @@ const AslAI = () => {
       setIsDrawerOpen(false); // Close drawer after selecting chat on mobile
     } catch (error) {
       console.error("Failed to load chat:", error);
+      // Error toast is handled in api.ts
     }
   };
 
@@ -223,7 +228,7 @@ const AslAI = () => {
       
     } catch (error) {
       console.error("Failed to send message:", error);
-      // TODO: Show error toast
+      // Error toast is handled in api.ts
     } finally {
       setIsSending(false);
     }
@@ -256,8 +261,16 @@ const AslAI = () => {
         currentChatRef.current = null;
         setMessages([]);
       }
+
+      // Show success message
+      toast({
+        title: "موفقیت",
+        description: translateSuccess("Chat deleted"),
+        duration: 3000,
+      });
     } catch (error) {
       console.error("Failed to delete chat:", error);
+      // Error toast is handled in api.ts
     }
   };
 

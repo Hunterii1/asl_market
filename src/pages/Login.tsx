@@ -33,7 +33,8 @@ const Login = () => {
       await login(formData);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "خطا در ورود");
+      // Error toast is handled in api.ts
+      console.error("Login error:", err);
     }
   };
 
