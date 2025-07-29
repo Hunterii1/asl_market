@@ -6,7 +6,7 @@ const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-      return 'https://api.asllmarket.com/api/v1';
+      return 'https://asllmarket.com/backend/api/v1';
     }
   }
   return 'http://localhost:8080/api/v1';
