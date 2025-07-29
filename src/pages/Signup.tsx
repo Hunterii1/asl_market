@@ -1,168 +1,247 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Globe, Eye, EyeOff } from "lucide-react";
-import HeaderAuth from "@/components/ui/HeaderAuth";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
+import { Eye, EyeOff, UserPlus, ArrowRight } from "lucide-react";
 
 const Signup = () => {
-  const [step, setStep] = useState(1); // 1: phone+pass, 2: otp
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
-  const [animateError, setAnimateError] = useState(false);
-  const [otpFade, setOtpFade] = useState(false); // fade for OTP
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { register, isLoading, isAuthenticated } = useAuth();
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignup = (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  if (isAuthenticated) {
+    navigate("/");
+    return null;
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^09\d{9}$/.test(phone) || !password) {
-      setError("لطفا شماره موبایل معتبر و رمز عبور را وارد کنید");
-      setAnimateError(true);
-      setTimeout(() => setAnimateError(false), 500);
+    setError(null);
+
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("رمز عبور و تکرار آن باید یکسان باشند");
       return;
     }
-    setError("");
-    setOtp("");
-    setTimeout(() => setStep(2), 200); // slight delay for fade
-    setOtpFade(true);
+
+    if (formData.password.length < 6) {
+      setError("رمز عبور باید حداقل ۶ کاراکتر باشد");
+      return;
+    }
+
+    try {
+      const { confirmPassword, ...registerData } = formData;
+      await register(registerData);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "خطا در ثبت‌نام");
+    }
   };
 
-  const handleOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length !== 4) {
-      setError("کد تایید ۴ رقمی را وارد کنید");
-      setAnimateError(true);
-      setTimeout(() => setAnimateError(false), 500);
-      return;
-    }
-    setOtpFade(false); // start fade-out
-    setTimeout(() => {
-      localStorage.setItem("authUser", JSON.stringify({ phone }));
-      navigate("/");
-    }, 400); // match fade duration
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-900/20 px-2 sm:px-0" dir="rtl">
-      <HeaderAuth />
-      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
-        <div className="w-full max-w-md bg-card/90 rounded-3xl shadow-2xl p-6 sm:p-8 flex flex-col items-center animate-fade-in border border-border">
-          <div className="flex flex-col items-center mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mb-2">
-              <Globe className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground">ثبت‌نام در اصل مارکت</h1>
-            <p className="text-sm text-muted-foreground mt-1">سیستم هوشمند فروش بین‌المللی</p>
-          </div>
-          {step === 1 && (
-            <form onSubmit={handleSignup} className="w-full">
-              <div className="relative mb-4">
-                <Input
-                  type="tel"
-                  placeholder="شماره موبایل (مثال: 09123456789)"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  className="bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-foreground placeholder-muted-foreground pr-12"
-                  inputMode="tel"
-                  maxLength={11}
-                  style={{fontWeight:600,fontSize:'1rem'}}
-                />
-                {/* div خالی برای تراز با آیکون چشم */}
-                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5" />
-              </div>
-              <div className="relative mb-4">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  placeholder="رمز عبور"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  className="bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-right text-foreground placeholder-muted-foreground pr-12"
-                  style={{fontWeight:600,fontSize:'1rem'}}
-                />
-                <button
-                  type="button"
-                  tabIndex={-1}
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-orange-500 focus:outline-none"
-                  aria-label={showPassword ? "مخفی کردن رمز" : "نمایش رمز"}
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-              {error && (
-                <div className={`text-destructive mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
-                  {error}
-                </div>
-              )}
-              <Button type="submit" className="w-full h-12 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg rounded-xl shadow-lg transition-all">دریافت کد تایید</Button>
-            </form>
-          )}
-          {step === 2 && (
-            <form onSubmit={handleOtp} className={`w-full transition-opacity duration-400 ${otpFade ? 'animate-fade-in-otp' : 'animate-fade-out-otp'}`}>
-              <div className="mb-4 text-center text-foreground text-base font-medium">کد تایید به شماره <span className="text-orange-600 font-bold">{phone}</span> ارسال شد.</div>
-              <Input
-                type="text"
-                placeholder="کد تایید ۴ رقمی"
-                value={otp}
-                onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, "").slice(0,4))}
-                className="mb-4 bg-background border-border rounded-xl focus:ring-2 focus:ring-orange-500 text-center tracking-widest text-lg text-foreground placeholder-muted-foreground"
-                inputMode="numeric"
-                maxLength={4}
-                style={{fontWeight:700,fontSize:'1.2rem',letterSpacing:'0.3em'}}
-              />
-              {error && (
-                <div className={`text-destructive mb-4 text-sm text-center font-medium transition-all duration-300 ${animateError ? 'animate-shake' : ''}`}>
-                  {error}
-                </div>
-              )}
-              <Button type="submit" className="w-full h-12 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-lg rounded-xl shadow-lg transition-all">ثبت‌نام</Button>
-              <div className="mt-4 text-center text-sm text-muted-foreground">
-                کد را دریافت نکردید؟ <button type="button" className="text-orange-600 hover:underline font-bold" onClick={()=>{setStep(1); setOtpFade(false);}}>ویرایش شماره</button>
-              </div>
-            </form>
-          )}
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            قبلا ثبت‌نام کرده‌اید؟ <a href="/login" className="text-orange-600 hover:underline font-bold">ورود</a>
-          </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-2">اصل مارکت</h1>
+          <p className="text-muted-foreground">حساب کاربری جدید ایجاد کنید</p>
         </div>
+
+        <Card className="bg-card/80 border-border rounded-3xl shadow-xl">
+          <CardHeader>
+            <CardTitle className="text-center text-foreground flex items-center justify-center gap-2">
+              <UserPlus className="w-6 h-6 text-orange-400" />
+              ثبت‌نام
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && (
+              <Alert className="border-red-500/50 bg-red-500/10">
+                <AlertDescription className="text-red-400">{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="text-foreground">نام</Label>
+                  <Input
+                    id="first_name"
+                    name="first_name"
+                    type="text"
+                    placeholder="نام"
+                    value={formData.first_name}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border text-foreground rounded-2xl"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="text-foreground">نام خانوادگی</Label>
+                  <Input
+                    id="last_name"
+                    name="last_name"
+                    type="text"
+                    placeholder="نام خانوادگی"
+                    value={formData.last_name}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border text-foreground rounded-2xl"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-foreground">ایمیل</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="bg-background border-border text-foreground rounded-2xl"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-foreground">شماره تلفن (اختیاری)</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="09123456789"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="bg-background border-border text-foreground rounded-2xl"
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-foreground">رمز عبور</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="حداقل ۶ کاراکتر"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    minLength={6}
+                    className="bg-background border-border text-foreground rounded-2xl pl-12"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute left-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" className="text-foreground">تکرار رمز عبور</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="رمز عبور را مجدداً وارد کنید"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border text-foreground rounded-2xl pl-12"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute left-0 top-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    disabled={isLoading}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl h-12 font-medium"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    در حال ثبت‌نام...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <ArrowRight className="w-4 h-4" />
+                    ثبت‌نام
+                  </div>
+                )}
+              </Button>
+            </form>
+
+            <div className="text-center">
+              <p className="text-muted-foreground">
+                قبلاً ثبت‌نام کرده‌اید؟{" "}
+                <Link
+                  to="/login"
+                  className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
+                >
+                  وارد شوید
+                </Link>
+              </p>
+            </div>
+
+            <div className="text-center">
+              <Link
+                to="/"
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm"
+              >
+                بازگشت به صفحه اصلی
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: none; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.7s cubic-bezier(.4,0,.2,1);
-        }
-        @keyframes fade-in-otp {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        .animate-fade-in-otp {
-          animation: fade-in-otp 0.4s cubic-bezier(.4,0,.2,1);
-        }
-        @keyframes fade-out-otp {
-          from { opacity: 1; }
-          to { opacity: 0; }
-        }
-        .animate-fade-out-otp {
-          animation: fade-out-otp 0.4s cubic-bezier(.4,0,.2,1);
-        }
-        @keyframes shake {
-          0% { transform: translateX(0); }
-          20% { transform: translateX(-8px); }
-          40% { transform: translateX(8px); }
-          60% { transform: translateX(-8px); }
-          80% { transform: translateX(8px); }
-          100% { transform: translateX(0); }
-        }
-        .animate-shake {
-          animation: shake 0.4s cubic-bezier(.4,0,.2,1);
-        }
-      `}</style>
     </div>
   );
 };

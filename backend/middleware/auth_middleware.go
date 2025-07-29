@@ -1,0 +1,82 @@
+package middleware
+
+import (
+	"net/http"
+	"strings"
+
+	"asl-market-backend/utils"
+
+	"github.com/gin-gonic/gin"
+)
+
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Authorization header is required",
+			})
+			c.Abort()
+			return
+		}
+
+		// Check if it starts with "Bearer "
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid authorization header format",
+			})
+			c.Abort()
+			return
+		}
+
+		// Extract token
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Token is required",
+			})
+			c.Abort()
+			return
+		}
+
+		// Validate token
+		claims, err := utils.ValidateToken(token)
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid or expired token",
+			})
+			c.Abort()
+			return
+		}
+
+		// Set user information in context
+		c.Set("user_id", claims.UserID)
+		c.Set("user_email", claims.Email)
+
+		c.Next()
+	}
+}
+
+// OptionalAuthMiddleware - allows both authenticated and unauthenticated access
+func OptionalAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.Next()
+			return
+		}
+
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			if token != "" {
+				claims, err := utils.ValidateToken(token)
+				if err == nil {
+					c.Set("user_id", claims.UserID)
+					c.Set("user_email", claims.Email)
+				}
+			}
+		}
+
+		c.Next()
+	}
+}

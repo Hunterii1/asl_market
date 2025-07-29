@@ -1,0 +1,31 @@
+server:
+  port: "8080"
+  host: "localhost"
+
+database:
+  host: "localhost"
+  port: "3306"
+  user: "asl_user"
+  password: "asl_password_2024"
+  name: "asl_market"
+
+jwt:
+  secret: "your_super_secret_jwt_key_change_in_production"
+  expiry_hours: 24
+
+cors:
+  allowed_origins: 
+    - "http://localhost:5173"
+    - "http://localhost:3000"
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "OPTIONS"
+  allowed_headers:
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization"
+    - "X-Requested-With" 
