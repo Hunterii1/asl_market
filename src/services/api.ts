@@ -1,7 +1,22 @@
 import { getErrorMessage, translateSuccess } from '@/utils/errorMessages';
 import { toast } from '@/hooks/use-toast';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
+// Determine API base URL based on environment
+const getApiBaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+      return 'https://api.asllmarket.com/api/v1';
+    }
+  }
+  return 'http://localhost:8080/api/v1';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Debug logging
+console.log('🌐 API Base URL:', API_BASE_URL);
+console.log('🏠 Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'server-side');
 
 export interface User {
   id: number;
@@ -91,6 +106,40 @@ class ApiService {
     return response.json();
   }
 
+  private async makeRequest(url: string, options: RequestInit = {}) {
+    try {
+      console.log(`🌐 Making request to: ${url}`);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
+      return this.handleResponse(response);
+    } catch (error) {
+      console.error(`❌ Network error for ${url}:`, error);
+      
+      let errorMessage = 'خطا در ارتباط با سرور';
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'سرور در دسترس نیست. لطفاً اتصال اینترنت خود را بررسی کنید.';
+      } else if (error instanceof Error) {
+        errorMessage = getErrorMessage(error.message);
+      }
+      
+      // Show network error toast
+      toast({
+        variant: "destructive", 
+        title: "خطای شبکه",
+        description: errorMessage,
+        duration: 8000,
+      });
+      
+      throw new Error(errorMessage);
+    }
+  }
+
   private showSuccessToast(message: string) {
     const persianMessage = translateSuccess(message);
     toast({
@@ -102,15 +151,10 @@ class ApiService {
 
   // Authentication
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    const data = await this.makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(credentials),
     });
-
-    const data = await this.handleResponse(response);
     
     // Store token in localStorage
     if (data.data?.token) {
@@ -125,15 +169,10 @@ class ApiService {
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    const data = await this.makeRequest(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(userData),
     });
-
-    const data = await this.handleResponse(response);
     
     // Store token in localStorage
     if (data.data?.token) {
@@ -148,14 +187,12 @@ class ApiService {
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/me`, {
+    const data = await this.makeRequest(`${API_BASE_URL}/me`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
       },
     });
-
-    const data = await this.handleResponse(response);
     return data.data;
   }
 
@@ -229,49 +266,40 @@ class ApiService {
 
   // AI Chat methods
   async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
-    const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+    return this.makeRequest(`${API_BASE_URL}/ai/chat`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
         ...this.getAuthHeaders(),
       },
       body: JSON.stringify(request),
     });
-
-    return this.handleResponse(response);
   }
 
   async getChats(): Promise<ChatsResponse> {
-    const response = await fetch(`${API_BASE_URL}/ai/chats`, {
+    return this.makeRequest(`${API_BASE_URL}/ai/chats`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
       },
     });
-
-    return this.handleResponse(response);
   }
 
   async getChat(chatId: number): Promise<{ chat: Chat }> {
-    const response = await fetch(`${API_BASE_URL}/ai/chats/${chatId}`, {
+    return this.makeRequest(`${API_BASE_URL}/ai/chats/${chatId}`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
       },
     });
-
-    return this.handleResponse(response);
   }
 
   async deleteChat(chatId: number): Promise<{ message: string }> {
-    const response = await fetch(`${API_BASE_URL}/ai/chats/${chatId}`, {
+    return this.makeRequest(`${API_BASE_URL}/ai/chats/${chatId}`, {
       method: 'DELETE',
       headers: {
         ...this.getAuthHeaders(),
       },
     });
-
-    return this.handleResponse(response);
   }
 
   // Auth helpers

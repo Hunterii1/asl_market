@@ -22,6 +22,13 @@ self.addEventListener('install', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
+  // Skip caching for API requests
+  if (event.request.url.includes('/api/') || 
+      event.request.url.includes('api.asllmarket.com') ||
+      event.request.url.includes('localhost:8080')) {
+    return; // Let the browser handle API requests normally
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then(function(response) {
@@ -31,7 +38,10 @@ self.addEventListener('fetch', function(event) {
         }
         return fetch(event.request);
       }
-    )
+      .catch(function() {
+        // If fetch fails, return cached offline page or fallback
+        return caches.match('/');
+      }))
   );
 });
 
