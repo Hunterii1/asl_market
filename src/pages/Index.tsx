@@ -3,6 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HeaderAuth from "@/components/ui/HeaderAuth";
+import { useAuth } from "@/hooks/useAuth";
+import AuthRequiredModal from "@/components/AuthRequiredModal";
+import { Logo } from "@/components/ui/Logo";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -16,7 +19,7 @@ import {
   MessageSquare,
   Wrench,
   BookOpen,
-  Globe,
+
   Zap,
   Star,
   Settings,
@@ -40,6 +43,9 @@ import ProductsResearch from "./ProductsResearch";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState("");
+  const { isAuthenticated } = useAuth();
 
   // Convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -53,32 +59,45 @@ const Index = () => {
     { id: "products", label: "محصولات تحقیقی", icon: Target },
     { id: "aslsupplier", label: "تأمین‌کنندگان", icon: Users },
     { id: "aslexpress", label: "ارسال", icon: Truck },
-    { id: "aslvisit", label: "ویزیتورها", icon: Globe },
+    { id: "aslvisit", label: "ویزیتورها", icon: Logo },
     { id: "aslpay", label: "دریافت پول", icon: CreditCard },
     { id: "aslai", label: "هوش مصنوعی", icon: Bot },
     { id: "aslavailable", label: "کالاهای موجود", icon: Package },
   ];
+
+  const handleSectionClick = (sectionId: string, sectionLabel: string) => {
+    // Features that require authentication
+    const protectedFeatures = ["asllearn", "aslsupplier", "aslexpress", "aslvisit", "aslpay", "aslai", "aslavailable"];
+    
+    if (protectedFeatures.includes(sectionId) && !isAuthenticated) {
+      setSelectedFeature(sectionLabel);
+      setAuthModalOpen(true);
+      return;
+    }
+    
+    setActiveSection(sectionId);
+  };
 
   const renderActiveSection = () => {
     switch (activeSection) {
       case "dashboard":
         return <DashboardSection />;
       case "asllearn":
-        return <AslLearn />;
+        return isAuthenticated ? <AslLearn /> : <DashboardSection />;
       case "products":
         return <ProductsResearch />;
       case "aslsupplier":
-        return <AslSupplier />;
+        return isAuthenticated ? <AslSupplier /> : <DashboardSection />;
       case "aslexpress":
-        return <AslExpress />;
+        return isAuthenticated ? <AslExpress /> : <DashboardSection />;
       case "aslvisit":
-        return <AslVisit />;
+        return isAuthenticated ? <AslVisit /> : <DashboardSection />;
       case "aslpay":
-        return <AslPay />;
+        return isAuthenticated ? <AslPay /> : <DashboardSection />;
       case "aslai":
-        return <AslAI />;
+        return isAuthenticated ? <AslAI /> : <DashboardSection />;
       case "aslavailable":
-        return <AslAvailable />;
+        return isAuthenticated ? <AslAvailable /> : <DashboardSection />;
       default:
         return <DashboardSection />;
     }
@@ -88,9 +107,9 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
       {/* Header */}
       <HeaderAuth />
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Navigation Menu */}
-        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -98,21 +117,21 @@ const Index = () => {
               <Button
                 key={item.id}
                 variant="outline"
-                className={`h-24 md:h-36 w-full flex flex-col gap-2 md:gap-3 rounded-2xl md:rounded-3xl border-0 md:border border-border bg-transparent md:bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-none md:shadow-lg hover:shadow-xl transition-all duration-300 text-xs md:text-sm font-bold leading-tight px-2 md:px-4 py-3 md:py-6 group ${
+                className={`h-20 sm:h-24 md:h-36 w-full flex flex-col gap-1 sm:gap-2 md:gap-3 rounded-2xl sm:rounded-2xl md:rounded-3xl border-0 sm:border border-border bg-transparent sm:bg-card/80 hover:bg-accent hover:border-orange-400/40 text-center shadow-none sm:shadow-lg hover:shadow-xl transition-all duration-300 text-xs sm:text-sm font-bold leading-tight px-1 sm:px-2 md:px-4 py-2 sm:py-3 md:py-6 group ${
                   isActive
-                    ? "bg-gradient-to-br from-orange-100 to-orange-200 md:border-orange-400 md:shadow-xl md:shadow-orange-400/30 md:scale-105"
-                    : "text-muted-foreground md:hover:shadow-lg md:hover:scale-105"
+                    ? "bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 sm:border-orange-400 sm:shadow-xl sm:shadow-orange-400/30 sm:scale-105"
+                    : "text-muted-foreground sm:hover:shadow-lg sm:hover:scale-105"
                 }`}
-                onClick={() => setActiveSection(item.id)}
+                onClick={() => handleSectionClick(item.id, item.label)}
               >
-                <div className={`w-16 h-16 md:w-14 md:h-14 mx-auto rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                <div className={`w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 mx-auto rounded-2xl sm:rounded-xl md:rounded-2xl flex items-center justify-center transition-all duration-300 ${
                   isActive 
                     ? "bg-gradient-to-br from-orange-400 to-orange-500 shadow-lg" 
-                    : "bg-transparent md:bg-gradient-to-br md:from-orange-500/10 md:to-orange-600/10 group-hover:from-orange-500/20 group-hover:to-orange-600/20"
+                    : "bg-transparent sm:bg-gradient-to-br sm:from-orange-500/10 sm:to-orange-600/10 group-hover:from-orange-500/20 group-hover:to-orange-600/20"
                 }`}>
-                  <Icon className={`w-8 h-8 md:w-10 md:h-10 ${isActive ? "text-white" : "text-orange-400"} drop-shadow-lg`} />
+                  <Icon className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 ${isActive ? "text-white" : "text-orange-400"} drop-shadow-lg`} />
                 </div>
-                <span className={`text-xs md:text-sm font-bold ${isActive ? "text-orange-600" : "text-foreground"} leading-tight`}>
+                <span className={`text-xs sm:text-sm font-bold ${isActive ? "text-orange-600 dark:text-orange-400" : "text-foreground"} leading-tight text-center`}>
                   {item.label}
                 </span>
               </Button>
@@ -124,6 +143,13 @@ const Index = () => {
         <div className="animate-fade-in">
           {renderActiveSection()}
         </div>
+
+        {/* Auth Required Modal */}
+        <AuthRequiredModal 
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          featureName={selectedFeature}
+        />
       </div>
     </div>
   );

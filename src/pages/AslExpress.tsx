@@ -131,7 +131,7 @@ const AslExpress = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">اصل اکسپرس</h2>
-              <p className="text-green-300">محاسبه هزینه و زمان ارسال بین‌المللی</p>
+              <p className="text-green-600 dark:text-green-300">محاسبه هزینه و زمان ارسال بین‌المللی</p>
             </div>
           </div>
         </CardContent>
@@ -228,12 +228,12 @@ const AslExpress = () => {
                     >
                       <div className="flex items-center gap-3">
                         <Icon className={`w-5 h-5 ${
-                          shippingMethod === method.id ? "text-green-400" : "text-muted-foreground"
+                          shippingMethod === method.id ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
                         }`} />
                         <div className="flex-1">
                           <div className="flex items-center justify-between">
                             <span className={`font-medium ${
-                              shippingMethod === method.id ? "text-green-300" : "text-foreground"
+                              shippingMethod === method.id ? "text-green-600 dark:text-green-300" : "text-foreground"
                             }`}>
                               {method.name}
                             </span>
@@ -329,11 +329,11 @@ const AslExpress = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-5 h-5 text-green-400" />
-                      <span className="text-green-300 font-medium">هزینه کل ارسال</span>
+                      <span className="text-green-600 dark:text-green-300 font-medium">هزینه کل ارسال</span>
                     </div>
                     <div className="text-right">
-                      <div className="text-green-400 text-2xl font-bold">${calculationResult.finalPrice}</div>
-                      <div className="text-green-300 text-sm">تومان تقریبی: {(parseFloat(calculationResult.finalPrice) * 50000).toLocaleString()}</div>
+                                      <div className="text-green-600 dark:text-green-400 text-2xl font-bold">${calculationResult.finalPrice}</div>
+                <div className="text-green-600 dark:text-green-300 text-sm">تومان تقریبی: {(parseFloat(calculationResult.finalPrice) * 50000).toLocaleString()}</div>
                     </div>
                   </div>
                 </div>

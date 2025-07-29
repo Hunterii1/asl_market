@@ -166,7 +166,7 @@ const AslSupplier = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-foreground mb-2">تأمین‌کننده هستید؟</h3>
-              <p className="text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
+              <p className="text-green-600 dark:text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
             </div>
             <Button className="bg-green-500 hover:bg-green-600 rounded-2xl">
               <Plus className="w-4 h-4 ml-2" />
@@ -241,7 +241,7 @@ const AslSupplier = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-foreground group-hover:text-orange-300 transition-colors">{supplier.name}</h4>
+                    <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">{supplier.name}</h4>
                     {supplier.isVerified && (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     )}
@@ -388,7 +388,7 @@ const AslSupplier = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">تأمین‌کنندگان اصل</h2>
-              <p className="text-orange-300">شبکه تأمین‌کنندگان معتبر و باکیفیت</p>
+              <p className="text-orange-600 dark:text-orange-300">شبکه تأمین‌کنندگان معتبر و باکیفیت</p>
             </div>
           </div>
         </CardContent>

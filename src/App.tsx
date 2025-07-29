@@ -34,52 +34,16 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               
-              {/* Protected routes */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Index />
-                </ProtectedRoute>
-              } />
-              <Route path="/asllearn" element={
-                <ProtectedRoute>
-                  <AslLearn />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslsupplier" element={
-                <ProtectedRoute>
-                  <AslSupplier />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslexpress" element={
-                <ProtectedRoute>
-                  <AslExpress />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslvisit" element={
-                <ProtectedRoute>
-                  <AslVisit />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslpay" element={
-                <ProtectedRoute>
-                  <AslPay />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslai" element={
-                <ProtectedRoute>
-                  <AslAI />
-                </ProtectedRoute>
-              } />
-              <Route path="/aslavailable" element={
-                <ProtectedRoute>
-                  <AslAvailable />
-                </ProtectedRoute>
-              } />
-              <Route path="/products" element={
-                <ProtectedRoute>
-                  <ProductsResearch />
-                </ProtectedRoute>
-              } />
+              {/* Public routes - accessible without authentication */}
+              <Route path="/" element={<Index />} />
+              <Route path="/asllearn" element={<AslLearn />} />
+              <Route path="/aslsupplier" element={<AslSupplier />} />
+              <Route path="/aslexpress" element={<AslExpress />} />
+              <Route path="/aslvisit" element={<AslVisit />} />
+              <Route path="/aslpay" element={<AslPay />} />
+              <Route path="/aslai" element={<AslAI />} />
+              <Route path="/aslavailable" element={<AslAvailable />} />
+              <Route path="/products" element={<ProductsResearch />} />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

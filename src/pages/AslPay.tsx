@@ -316,7 +316,7 @@ const AslPay = () => {
                 <div className="flex items-center justify-between">
                   <div className={`flex items-center gap-2 ${
                     ["pending", "processing", "completed"].includes(request.status) 
-                      ? "text-green-400" 
+                      ? "text-green-600 dark:text-green-400" 
                       : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
@@ -325,7 +325,7 @@ const AslPay = () => {
                   
                   <div className={`flex items-center gap-2 ${
                     ["processing", "completed"].includes(request.status) 
-                      ? "text-green-400" 
+                      ? "text-green-600 dark:text-green-400" 
                       : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
@@ -334,7 +334,7 @@ const AslPay = () => {
                   
                   <div className={`flex items-center gap-2 ${
                     request.status === "completed" 
-                      ? "text-green-400" 
+                      ? "text-green-600 dark:text-green-400" 
                       : "text-muted-foreground"
                   }`}>
                     <CheckCircle className="w-4 h-4" />
@@ -360,7 +360,7 @@ const AslPay = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">اصل پی</h2>
-              <p className="text-green-300">سیستم دریافت پول بین‌المللی</p>
+              <p className="text-green-600 dark:text-green-300">سیستم دریافت پول بین‌المللی</p>
             </div>
           </div>
         </CardContent>

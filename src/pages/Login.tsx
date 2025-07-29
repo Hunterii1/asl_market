@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 import { Eye, EyeOff, LogIn, ArrowRight } from "lucide-react";
 
 const Login = () => {
@@ -44,22 +45,24 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <HeaderAuth />
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-3 sm:p-4">
+        <div className="w-full max-w-sm sm:max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">اصل مارکت</h1>
-          <p className="text-muted-foreground">به پنل کاربری خود وارد شوید</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">اصل مارکت</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">به پنل کاربری خود وارد شوید</p>
         </div>
 
-        <Card className="bg-card/80 border-border rounded-3xl shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-center text-foreground flex items-center justify-center gap-2">
-              <LogIn className="w-6 h-6 text-orange-400" />
+        <Card className="bg-card/80 border-border rounded-2xl sm:rounded-3xl shadow-xl">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-center text-foreground flex items-center justify-center gap-2 text-lg sm:text-xl">
+              <LogIn className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />
               ورود به حساب کاربری
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
             {error && (
               <Alert className="border-red-500/50 bg-red-500/10">
                 <AlertDescription className="text-red-400">{error}</AlertDescription>
@@ -69,33 +72,33 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-foreground">ایمیل</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="example@email.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="bg-background border-border text-foreground rounded-2xl"
-                  disabled={isLoading}
-                />
+                                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="example@email.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border text-foreground rounded-xl sm:rounded-2xl h-11 sm:h-10"
+                    disabled={isLoading}
+                  />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password" className="text-foreground">رمز عبور</Label>
                 <div className="relative">
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="رمز عبور خود را وارد کنید"
-                    value={formData.password}
-                    onChange={handleChange}
-                    required
-                    className="bg-background border-border text-foreground rounded-2xl pl-12"
-                    disabled={isLoading}
-                  />
+                                      <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="رمز عبور خود را وارد کنید"
+                      value={formData.password}
+                      onChange={handleChange}
+                      required
+                      className="bg-background border-border text-foreground rounded-xl sm:rounded-2xl pl-12 h-11 sm:h-10"
+                      disabled={isLoading}
+                    />
                   <Button
                     type="button"
                     variant="ghost"
@@ -133,7 +136,7 @@ const Login = () => {
                 حساب کاربری ندارید؟{" "}
                 <Link
                   to="/signup"
-                  className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
+                  className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
                 >
                   ثبت‌نام کنید
                 </Link>
@@ -150,15 +153,7 @@ const Login = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Demo Account Info */}
-        <Card className="mt-4 bg-blue-500/10 border-blue-500/30 rounded-2xl">
-          <CardContent className="p-4">
-            <p className="text-blue-400 text-sm text-center">
-              💡 برای تست: ahmad@example.com / password123
-            </p>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );

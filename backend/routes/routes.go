@@ -58,6 +58,12 @@ func SetupRoutes(router *gin.Engine) {
 		protected.GET("/my-products", getMyProducts)
 		protected.POST("/orders", createOrder)
 		protected.PUT("/profile", updateProfile)
+
+		// AI Chat routes
+		protected.POST("/ai/chat", controllers.Chat)
+		protected.GET("/ai/chats", controllers.GetChats)
+		protected.GET("/ai/chats/:id", controllers.GetChat)
+		protected.DELETE("/ai/chats/:id", controllers.DeleteChat)
 	}
 }
 

@@ -28,9 +28,45 @@ export interface RegisterRequest {
   phone?: string;
 }
 
+// Chat interfaces
+export interface Message {
+  id: number;
+  chat_id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Chat {
+  id: number;
+  user_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  messages?: Message[];
+}
+
+export interface ChatRequest {
+  message: string;
+  chat_id?: number;
+}
+
+export interface ChatResponse {
+  chat_id: number;
+  message: string;
+  response: string;
+  messages: Message[];
+}
+
+export interface ChatsResponse {
+  chats: Chat[];
+}
+
 class ApiService {
   private getAuthHeaders() {
     const token = localStorage.getItem('auth_token');
+    console.log('🔑 Token from localStorage:', token ? 'exists' : 'missing');
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
@@ -56,7 +92,10 @@ class ApiService {
     
     // Store token in localStorage
     if (data.data?.token) {
+      console.log('💾 Storing login token:', data.data.token.substring(0, 20) + '...');
       localStorage.setItem('auth_token', data.data.token);
+    } else {
+      console.error('❌ No token in login response:', data);
     }
     
     return data.data;
@@ -75,7 +114,10 @@ class ApiService {
     
     // Store token in localStorage
     if (data.data?.token) {
+      console.log('💾 Storing register token:', data.data.token.substring(0, 20) + '...');
       localStorage.setItem('auth_token', data.data.token);
+    } else {
+      console.error('❌ No token in register response:', data);
     }
     
     return data.data;
@@ -153,6 +195,53 @@ class ApiService {
   async getUserProducts() {
     const response = await fetch(`${API_BASE_URL}/my-products`, {
       method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+
+    return this.handleResponse(response);
+  }
+
+  // AI Chat methods
+  async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
+    const response = await fetch(`${API_BASE_URL}/ai/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(request),
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async getChats(): Promise<ChatsResponse> {
+    const response = await fetch(`${API_BASE_URL}/ai/chats`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async getChat(chatId: number): Promise<{ chat: Chat }> {
+    const response = await fetch(`${API_BASE_URL}/ai/chats/${chatId}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+
+    return this.handleResponse(response);
+  }
+
+  async deleteChat(chatId: number): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/ai/chats/${chatId}`, {
+      method: 'DELETE',
       headers: {
         ...this.getAuthHeaders(),
       },

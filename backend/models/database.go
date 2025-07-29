@@ -36,7 +36,7 @@ func ConnectDatabase() {
 	log.Println("Database connected successfully")
 
 	// Auto-migrate models
-	if err := database.AutoMigrate(&User{}); err != nil {
+	if err := database.AutoMigrate(&User{}, &Chat{}, &Message{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 

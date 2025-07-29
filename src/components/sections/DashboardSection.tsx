@@ -8,7 +8,6 @@ import {
   DollarSign, 
   Package, 
   Users,
-  Globe,
   ArrowUpRight,
   Eye,
   Plus,
@@ -72,7 +71,7 @@ const DashboardSection = () => {
       return (
         <div className="bg-card border border-border rounded-2xl p-3 shadow-xl">
           <p className="text-muted-foreground">{`${label}`}</p>
-          <p className="text-orange-400 font-bold">
+                        <p className="text-orange-600 dark:text-orange-400 font-bold">
             {`فروش: ${toFarsiNumber(payload[0].value)}`}
           </p>
         </div>
@@ -179,7 +178,7 @@ const DashboardSection = () => {
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-muted/50 border-border rounded-2xl">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-400">{toFarsiNumber(15600)}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{toFarsiNumber(15600)}</div>
                 <p className="text-sm text-muted-foreground">کل فروش (دلار)</p>
               </CardContent>
             </Card>
@@ -239,11 +238,11 @@ const DashboardSection = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-foreground">مسیر یادگیری شما</h3>
-              <p className="text-orange-300">مرحله ۳ از ۶ - در حال پیشرفت</p>
+              <p className="text-orange-600 dark:text-orange-300">مرحله ۳ از ۶ - در حال پیشرفت</p>
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold text-orange-400">۳۳%</div>
-              <p className="text-orange-300 text-sm">تکمیل شده</p>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">۳۳%</div>
+                              <p className="text-orange-600 dark:text-orange-300 text-sm">تکمیل شده</p>
             </div>
           </div>
           
@@ -301,7 +300,7 @@ const DashboardSection = () => {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-foreground text-xl font-bold">
             <BarChart3 className="w-5 h-5 text-orange-400" />
-            نمودار فروش (متصل به دریافت پول)
+            نمودار فروش 
           </CardTitle>
         </CardHeader>
         <CardContent>

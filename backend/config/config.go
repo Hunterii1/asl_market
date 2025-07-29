@@ -11,6 +11,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	CORS     CORSConfig     `mapstructure:"cors"`
+	OpenAI   OpenAIConfig   `mapstructure:"openai"`
 }
 
 type ServerConfig struct {
@@ -37,6 +38,14 @@ type CORSConfig struct {
 	AllowedHeaders []string `mapstructure:"allowed_headers"`
 }
 
+type OpenAIConfig struct {
+	APIKey      string  `mapstructure:"api_key"`
+	APIURL      string  `mapstructure:"api_url"`
+	Model       string  `mapstructure:"model"`
+	MaxTokens   int     `mapstructure:"max_tokens"`
+	Temperature float64 `mapstructure:"temperature"`
+}
+
 var AppConfig *Config
 
 func LoadConfig() {
@@ -50,6 +59,10 @@ func LoadConfig() {
 	viper.SetDefault("server.host", "localhost")
 	viper.SetDefault("jwt.secret", "default_secret_change_in_production")
 	viper.SetDefault("jwt.expiry_hours", 24)
+	viper.SetDefault("openai.api_url", "https://api.openai.com/v1/chat/completions")
+	viper.SetDefault("openai.model", "gpt-3.5-turbo")
+	viper.SetDefault("openai.max_tokens", 1000)
+	viper.SetDefault("openai.temperature", 0.7)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Error reading config file: %v", err)

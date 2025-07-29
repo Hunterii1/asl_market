@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Logo } from "@/components/ui/Logo";
 import { 
   Calculator, 
   FileText, 
-  Globe, 
   TrendingUp, 
   Package, 
   CreditCard, 
@@ -133,7 +133,7 @@ const ToolsSection = () => {
     },
     {
       title: "ابزارهای بازاریابی",
-      icon: Globe,
+      icon: Logo,
       color: "orange",
       tools: [
         {
@@ -151,7 +151,7 @@ const ToolsSection = () => {
           type: "سرویس",
           rating: 4.9,
           price: "۱۰ هزار تومان/صفحه",
-          icon: Globe,
+          icon: Logo,
           features: ["ترجمه تخصصی", "ویرایش", "تأیید بومی"]
         },
         {
@@ -255,7 +255,7 @@ const ToolsSection = () => {
                           </div>
                         </div>
                         
-                        <h3 className="font-semibold text-foreground mb-2 group-hover:text-orange-300 transition-colors">
+                        <h3 className="font-semibold text-foreground mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
                           {tool.name}
                         </h3>
                         <p className="text-sm text-muted-foreground mb-3">{tool.description}</p>
@@ -279,7 +279,7 @@ const ToolsSection = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          className="w-full border-border text-muted-foreground hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-300 rounded-2xl"
+                          className="w-full border-border text-muted-foreground hover:bg-orange-500/10 hover:border-orange-500/50 hover:text-orange-600 dark:hover:text-orange-300 rounded-2xl"
                         >
                           {tool.price === "رایگان" ? (
                             <>

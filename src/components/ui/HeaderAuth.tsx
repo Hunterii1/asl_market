@@ -2,6 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +16,9 @@ import {
   User, 
   LogOut, 
   Settings, 
-  Bell,
-  Globe
+  Bell
 } from "lucide-react";
+import { Logo } from "./Logo";
 
 const HeaderAuth = () => {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
@@ -35,19 +36,22 @@ const HeaderAuth = () => {
   if (isLoading) {
     return (
       <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
+                <Logo className="text-white" size={20} />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground">اصل مارکت</h1>
+              <div className="hidden sm:block">
+                <h1 className="text-lg sm:text-xl font-bold text-foreground">اصل مارکت</h1>
                 <p className="text-xs text-muted-foreground">سیستم هوشمند فروش بین‌المللی</p>
               </div>
+              <div className="block sm:hidden">
+                <h1 className="text-lg font-bold text-foreground">اصل مارکت</h1>
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-muted rounded-full animate-pulse"></div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-muted rounded-full animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -61,27 +65,28 @@ const HeaderAuth = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-                <Globe className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center p-1">
+                <Logo className="text-white" size={24} />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">اصل مارکت</h1>
                 <p className="text-xs text-muted-foreground">سیستم هوشمند فروش بین‌المللی</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <ThemeToggle />
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate("/login")}
-                className="border-border text-foreground hover:bg-muted rounded-2xl"
+                className="border-border text-foreground hover:bg-muted rounded-xl sm:rounded-2xl text-xs sm:text-sm px-2 sm:px-3"
               >
                 ورود
               </Button>
               <Button 
                 size="sm" 
                 onClick={() => navigate("/signup")}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl"
+                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm px-2 sm:px-3"
               >
                 ثبت‌نام
               </Button>
@@ -94,23 +99,29 @@ const HeaderAuth = () => {
 
   return (
     <header className="bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-3">
+      <div className="container mx-auto px-3 sm:px-4 py-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center">
-              <Globe className="w-6 h-6 text-white" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
+              <Logo className="text-white" size={20} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-foreground">اصل مارکت</h1>
+            <div className="hidden sm:block">
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">اصل مارکت</h1>
               <p className="text-xs text-muted-foreground">سیستم هوشمند فروش بین‌المللی</p>
+            </div>
+            <div className="block sm:hidden">
+              <h1 className="text-lg font-bold text-foreground">اصل مارکت</h1>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 text-xs bg-orange-500 text-white rounded-full p-0 flex items-center justify-center">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+            
+            {/* Notifications - hidden on mobile when authenticated */}
+            <Button variant="ghost" size="sm" className="relative hidden sm:flex">
+              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+              <Badge className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 text-xs bg-orange-500 text-white rounded-full p-0 flex items-center justify-center">
                 3
               </Badge>
             </Button>
@@ -118,13 +129,13 @@ const HeaderAuth = () => {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-3 p-2 rounded-2xl hover:bg-muted">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-sm font-bold">
+                <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
+                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
                       {user ? getInitials(user.first_name, user.last_name) : "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="text-right hidden md:block">
+                  <div className="text-right hidden lg:block">
                     <p className="text-sm font-medium text-foreground">
                       {user ? `${user.first_name} ${user.last_name}` : "کاربر"}
                     </p>

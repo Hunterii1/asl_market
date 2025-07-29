@@ -11,7 +11,7 @@ import {
   Star, 
   Phone, 
   Mail, 
-  Globe,
+
   User,
   CheckCircle,
   Clock,

@@ -8,7 +8,7 @@ import {
   Target, 
   Search, 
   TrendingUp, 
-  Globe, 
+ 
   DollarSign,
   BarChart3,
   Eye,
@@ -268,7 +268,7 @@ const ProductsResearch = () => {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">حاشیه سود:</span>
-                    <span className="text-green-400 font-bold">{product.profitMargin}</span>
+                    <span className="text-green-600 dark:text-green-400 font-bold">{product.profitMargin}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -285,7 +285,7 @@ const ProductsResearch = () => {
 
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">سرمایه اولیه:</span>
-                    <span className="text-orange-400 font-bold">${product.minInvestment.toLocaleString()}</span>
+                    <span className="text-orange-600 dark:text-orange-400 font-bold">${product.minInvestment.toLocaleString()}</span>
                   </div>
                 </div>
 

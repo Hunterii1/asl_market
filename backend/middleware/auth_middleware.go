@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"asl-market-backend/models"
 	"asl-market-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -49,9 +50,21 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Get user from database
+		db := models.GetDB()
+		var user models.User
+		if err := db.First(&user, claims.UserID).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "User not found",
+			})
+			c.Abort()
+			return
+		}
+
 		// Set user information in context
 		c.Set("user_id", claims.UserID)
 		c.Set("user_email", claims.Email)
+		c.Set("user", user)
 
 		c.Next()
 	}
@@ -71,8 +84,14 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 			if token != "" {
 				claims, err := utils.ValidateToken(token)
 				if err == nil {
-					c.Set("user_id", claims.UserID)
-					c.Set("user_email", claims.Email)
+					// Get user from database
+					db := models.GetDB()
+					var user models.User
+					if err := db.First(&user, claims.UserID).Error; err == nil {
+						c.Set("user_id", claims.UserID)
+						c.Set("user_email", claims.Email)
+						c.Set("user", user)
+					}
 				}
 			}
 		}

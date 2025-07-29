@@ -198,13 +198,13 @@ const AslLearn = () => {
                     className="w-full h-48 object-cover rounded-t-3xl"
                   />
                   <div className="absolute top-4 right-4">
-                    <Badge className="bg-orange-100/60 dark:bg-orange-500/20 text-orange-600 dark:text-orange-300 border-orange-200/70 dark:border-orange-500/30 rounded-full">
+                    <Badge className="bg-orange-100/60 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-200/70 dark:border-orange-500/30 rounded-full">
                       تقاضا: {product.marketDemand}%
                     </Badge>
                   </div>
                 </div>
                 <div className="p-6">
-                  <h4 className="font-bold text-foreground mb-2 group-hover:text-orange-500 dark:group-hover:text-orange-300 transition-colors">
+                  <h4 className="font-bold text-foreground mb-2 group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
                     {product.name}
                   </h4>
                   <p className="text-muted-foreground text-sm mb-4">{product.description}</p>
@@ -331,7 +331,7 @@ const AslLearn = () => {
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
             <div className="w-12 h-12 bg-green-200/40 dark:bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <Users className="w-6 h-6 text-green-500 dark:text-green-400" />
+              <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-2xl font-bold text-foreground">۱۲۳</div>
             <p className="text-sm text-muted-foreground">دانشجوی فعال</p>
@@ -341,7 +341,7 @@ const AslLearn = () => {
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
             <div className="w-12 h-12 bg-orange-200/40 dark:bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-              <TrendingUp className="w-6 h-6 text-orange-500 dark:text-orange-400" />
+              <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="text-2xl font-bold text-foreground">۸۷%</div>
             <p className="text-sm text-muted-foreground">نرخ موفقیت</p>

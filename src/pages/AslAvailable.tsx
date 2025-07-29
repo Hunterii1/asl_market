@@ -172,7 +172,7 @@ const AslAvailable = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">کالاهای موجود</h2>
-              <p className="text-green-300">محصولات آماده برای فروش افیلیتی</p>
+              <p className="text-green-600 dark:text-green-300">محصولات آماده برای فروش افیلیتی</p>
             </div>
           </div>
         </CardContent>
@@ -273,7 +273,7 @@ const AslAvailable = () => {
               </div>
 
               <div className="p-6">
-                <h4 className="font-bold text-foreground mb-2 group-hover:text-green-300 transition-colors">
+                <h4 className="font-bold text-foreground mb-2 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors">
                   {item.name}
                 </h4>
                 <p className="text-muted-foreground text-sm mb-4">{item.description}</p>

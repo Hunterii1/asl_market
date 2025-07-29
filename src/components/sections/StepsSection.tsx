@@ -493,7 +493,7 @@ const StepsSection = () => {
                         {getResourceIcon(resource.type)}
                       </div>
                       <div className="flex-1">
-                        <p className="text-white group-hover:text-orange-300 transition-colors font-medium">{resource.name}</p>
+                        <p className="text-white group-hover:text-orange-100 transition-colors font-medium">{resource.name}</p>
                         <p className="text-xs text-gray-400 capitalize">{resource.type}</p>
                       </div>
                       <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-orange-400 transition-colors" />

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/useAuth";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 import { Eye, EyeOff, UserPlus, ArrowRight } from "lucide-react";
 
 const Signup = () => {
@@ -61,22 +62,24 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <HeaderAuth />
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center p-3 sm:p-4">
+        <div className="w-full max-w-sm sm:max-w-md">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">اصل مارکت</h1>
-          <p className="text-muted-foreground">حساب کاربری جدید ایجاد کنید</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">اصل مارکت</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">حساب کاربری جدید ایجاد کنید</p>
         </div>
 
-        <Card className="bg-card/80 border-border rounded-3xl shadow-xl">
-          <CardHeader>
-            <CardTitle className="text-center text-foreground flex items-center justify-center gap-2">
-              <UserPlus className="w-6 h-6 text-orange-400" />
+        <Card className="bg-card/80 border-border rounded-2xl sm:rounded-3xl shadow-xl">
+          <CardHeader className="pb-4 sm:pb-6">
+            <CardTitle className="text-center text-foreground flex items-center justify-center gap-2 text-lg sm:text-xl">
+              <UserPlus className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400" />
               ثبت‌نام
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6">
             {error && (
               <Alert className="border-red-500/50 bg-red-500/10">
                 <AlertDescription className="text-red-400">{error}</AlertDescription>
@@ -87,17 +90,17 @@ const Signup = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name" className="text-foreground">نام</Label>
-                  <Input
-                    id="first_name"
-                    name="first_name"
-                    type="text"
-                    placeholder="نام"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    required
-                    className="bg-background border-border text-foreground rounded-2xl"
-                    disabled={isLoading}
-                  />
+                                      <Input
+                      id="first_name"
+                      name="first_name"
+                      type="text"
+                      placeholder="نام"
+                      value={formData.first_name}
+                      onChange={handleChange}
+                      required
+                      className="bg-background border-border text-foreground rounded-xl sm:rounded-2xl h-11 sm:h-10"
+                      disabled={isLoading}
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -224,7 +227,7 @@ const Signup = () => {
                 قبلاً ثبت‌نام کرده‌اید؟{" "}
                 <Link
                   to="/login"
-                  className="text-orange-400 hover:text-orange-300 font-medium transition-colors"
+                  className="text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-300 font-medium transition-colors"
                 >
                   وارد شوید
                 </Link>
@@ -241,6 +244,7 @@ const Signup = () => {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
