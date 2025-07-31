@@ -1,6 +1,6 @@
 server:
   port: "8080"
-  host: "localhost"  # فقط localhost (nginx proxy میکنه)
+  host: "127.0.0.1"  # فقط localhost (nginx proxy میکنه)
 
 database:
   host: "localhost"

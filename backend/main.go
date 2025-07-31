@@ -7,6 +7,7 @@ import (
 	"asl-market-backend/config"
 	"asl-market-backend/models"
 	"asl-market-backend/routes"
+	"asl-market-backend/services"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -18,6 +19,10 @@ func main() {
 
 	// Connect to database
 	models.ConnectDatabase()
+
+	// Initialize Telegram bot service
+	_ = services.GetTelegramService()
+	log.Printf("Telegram bot initialized for admin ID: %d", services.ADMIN_ID)
 
 	// Set Gin mode
 	gin.SetMode(gin.ReleaseMode)

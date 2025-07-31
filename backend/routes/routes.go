@@ -50,20 +50,29 @@ func SetupRoutes(router *gin.Engine) {
 		// User routes
 		protected.GET("/me", authController.Me)
 
-		// Dashboard routes
-		protected.GET("/dashboard", getDashboard)
+		// License routes (no license check needed)
+		protected.POST("/license/verify", controllers.VerifyLicense)
+		protected.GET("/license/status", controllers.CheckLicenseStatus)
 
-		// User-specific data
-		protected.GET("/my-orders", getMyOrders)
-		protected.GET("/my-products", getMyProducts)
-		protected.POST("/orders", createOrder)
-		protected.PUT("/profile", updateProfile)
+		// License-protected routes
+		licensed := protected.Group("/")
+		licensed.Use(middleware.LicenseMiddleware())
+		{
+			// Dashboard routes
+			licensed.GET("/dashboard", getDashboard)
 
-		// AI Chat routes
-		protected.POST("/ai/chat", controllers.Chat)
-		protected.GET("/ai/chats", controllers.GetChats)
-		protected.GET("/ai/chats/:id", controllers.GetChat)
-		protected.DELETE("/ai/chats/:id", controllers.DeleteChat)
+			// User-specific data
+			licensed.GET("/my-orders", getMyOrders)
+			licensed.GET("/my-products", getMyProducts)
+			licensed.POST("/orders", createOrder)
+			licensed.PUT("/profile", updateProfile)
+
+			// AI Chat routes
+			licensed.POST("/ai/chat", controllers.Chat)
+			licensed.GET("/ai/chats", controllers.GetChats)
+			licensed.GET("/ai/chats/:id", controllers.GetChat)
+			licensed.DELETE("/ai/chats/:id", controllers.DeleteChat)
+		}
 	}
 }
 
