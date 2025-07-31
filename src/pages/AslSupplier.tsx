@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LicenseGate } from '@/components/LicenseGate';
 import { Input } from "@/components/ui/input";
 import { 
   Users, 
@@ -378,21 +379,22 @@ const AslSupplier = () => {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in transition-colors duration-300">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-3xl flex items-center justify-center">
-              <Users className="w-8 h-8 text-orange-400" />
+    <LicenseGate>
+      <div className="space-y-6 animate-fade-in transition-colors duration-300">
+        {/* Header */}
+        <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-3xl flex items-center justify-center">
+                <Users className="w-8 h-8 text-orange-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">تأمین‌کنندگان اصل</h2>
+                <p className="text-orange-600 dark:text-orange-300">شبکه تأمین‌کنندگان معتبر و باکیفیت</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">تأمین‌کنندگان اصل</h2>
-              <p className="text-orange-600 dark:text-orange-300">شبکه تأمین‌کنندگان معتبر و باکیفیت</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Content */}
       <SupplierBrowser />
@@ -428,6 +430,7 @@ const AslSupplier = () => {
         </Card>
       </div>
     </div>
+    </LicenseGate>
   );
 };
 

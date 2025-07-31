@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
@@ -375,6 +376,7 @@ const AslVisit = () => {
   );
 
   return (
+    <LicenseGate>
     <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
       <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl transition-colors duration-300">
@@ -453,6 +455,7 @@ const AslVisit = () => {
         </Card>
       </div>
     </div>
+    </LicenseGate>
   );
 };
 

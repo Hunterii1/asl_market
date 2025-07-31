@@ -25,6 +25,8 @@ export interface User {
   email: string;
   phone: string;
   is_active: boolean;
+  license?: string;
+  is_approved?: boolean;
   created_at: string;
 }
 
@@ -79,6 +81,15 @@ export interface ChatResponse {
 
 export interface ChatsResponse {
   chats: Chat[];
+}
+
+export interface LicenseRequest {
+  license: string;
+}
+
+export interface LicenseStatus {
+  is_approved: boolean;
+  has_license: boolean;
 }
 
 class ApiService {
@@ -296,6 +307,26 @@ class ApiService {
   async deleteChat(chatId: number): Promise<{ message: string }> {
     return this.makeRequest(`${API_BASE_URL}/ai/chats/${chatId}`, {
       method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // License methods
+  async verifyLicense(license: string): Promise<{ message: string; status: string }> {
+    return this.makeRequest(`${API_BASE_URL}/license/verify`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ license }),
+    });
+  }
+
+  async checkLicenseStatus(): Promise<LicenseStatus> {
+    return this.makeRequest(`${API_BASE_URL}/license/status`, {
+      method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
       },

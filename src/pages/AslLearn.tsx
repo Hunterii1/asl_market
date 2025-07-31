@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { 
-  BookOpen, 
-  Target, 
-  Play, 
-  CheckCircle, 
+import {
+  BookOpen,
+  Target,
+  Play,
+  CheckCircle,
   Search,
   Filter,
   Star,
@@ -15,6 +15,7 @@ import {
   Users,
   TrendingUp
 } from "lucide-react";
+import { LicenseGate } from '@/components/LicenseGate';
 
 const AslLearn = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -131,21 +132,22 @@ const AslLearn = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-200/40 dark:bg-blue-500/20 rounded-3xl flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+    <LicenseGate>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-blue-200/40 dark:bg-blue-500/20 rounded-3xl flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">آموزش اصل مارکت</h2>
+                <p className="text-blue-600 dark:text-blue-300">انتخاب محصول و آموزش فروش حرفه‌ای</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">آموزش اصل مارکت</h2>
-              <p className="text-blue-600 dark:text-blue-300">انتخاب محصول و آموزش فروش حرفه‌ای</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Search and Filter */}
       <Card className="bg-card/70 border-border rounded-3xl">
@@ -359,6 +361,7 @@ const AslLearn = () => {
         </Card>
       </div>
     </div>
+    </LicenseGate>
   );
 };
 

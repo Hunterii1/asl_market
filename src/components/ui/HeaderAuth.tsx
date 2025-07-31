@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,10 +20,12 @@ import {
   Bell
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { apiService, LicenseStatus } from "@/services/api";
 
 const HeaderAuth = () => {
   const { user, isAuthenticated, logout, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
 
   const handleLogout = () => {
     logout();
@@ -31,6 +34,21 @@ const HeaderAuth = () => {
 
   const getInitials = (firstName: string, lastName: string) => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  };
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkLicenseStatus();
+    }
+  }, [isAuthenticated]);
+
+  const checkLicenseStatus = async () => {
+    try {
+      const status = await apiService.checkLicenseStatus();
+      setLicenseStatus(status);
+    } catch (error) {
+      console.error('Error checking license status:', error);
+    }
   };
 
   if (isLoading) {
@@ -118,6 +136,16 @@ const HeaderAuth = () => {
             {/* Theme Toggle */}
             <ThemeToggle />
             
+            {/* License Status */}
+            {licenseStatus && (
+              <Badge 
+                variant={licenseStatus.is_approved ? "default" : (licenseStatus.has_license ? "secondary" : "destructive")}
+                className="hidden sm:flex"
+              >
+                {licenseStatus.is_approved ? "لایسنس فعال" : (licenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
+              </Badge>
+            )}
+            
             {/* Notifications - hidden on mobile when authenticated */}
             <Button variant="ghost" size="sm" className="relative hidden sm:flex">
               <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
@@ -146,7 +174,17 @@ const HeaderAuth = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
-                <DropdownMenuLabel className="text-foreground">حساب کاربری</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-foreground">
+                  حساب کاربری
+                  {licenseStatus && (
+                    <Badge 
+                      variant={licenseStatus.is_approved ? "default" : (licenseStatus.has_license ? "secondary" : "destructive")}
+                      className="mt-2 sm:hidden"
+                    >
+                      {licenseStatus.is_approved ? "لایسنس فعال" : (licenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
+                    </Badge>
+                  )}
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
                   <User className="w-4 h-4 ml-2" />

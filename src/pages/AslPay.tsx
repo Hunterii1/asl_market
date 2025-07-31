@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { 
   CreditCard, 
@@ -350,6 +351,7 @@ const AslPay = () => {
   );
 
   return (
+    <LicenseGate>
     <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
       <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl transition-colors duration-300">
@@ -428,6 +430,7 @@ const AslPay = () => {
         </Card>
       </div>
     </div>
+    </LicenseGate>
   );
 };
 

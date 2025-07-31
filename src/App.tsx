@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { LicenseRequiredRoute } from "@/components/LicenseRequiredRoute";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -35,17 +36,65 @@ const App = () => (
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              
-              {/* Public routes - accessible without authentication */}
               <Route path="/" element={<Index />} />
-              <Route path="/asllearn" element={<AslLearn />} />
-              <Route path="/aslsupplier" element={<AslSupplier />} />
-              <Route path="/aslexpress" element={<AslExpress />} />
-              <Route path="/aslvisit" element={<AslVisit />} />
-              <Route path="/aslpay" element={<AslPay />} />
-              <Route path="/aslai" element={<AslAI />} />
-              <Route path="/aslavailable" element={<AslAvailable />} />
-              <Route path="/products" element={<ProductsResearch />} />
+              
+              {/* Protected routes - require authentication and license */}
+              <Route path="/asllearn" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslLearn />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslsupplier" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslSupplier />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslexpress" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslExpress />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslvisit" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslVisit />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslpay" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslPay />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslai" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslAI />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/aslavailable" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslAvailable />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/products" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <ProductsResearch />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
               
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />

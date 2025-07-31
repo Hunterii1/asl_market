@@ -1,5 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { apiService, User, LoginRequest, RegisterRequest } from '@/services/api';
+import { apiService, User, LoginRequest, RegisterRequest, LicenseStatus } from '@/services/api';
+import { LicenseRequestModal } from '@/components/LicenseRequestModal';
 
 interface AuthContextType {
   user: User | null;
@@ -16,12 +17,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showLicenseModal, setShowLicenseModal] = useState(false);
+  const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+
+  const checkLicenseStatus = async () => {
+    try {
+      if (user) {
+        const status = await apiService.checkLicenseStatus();
+        setLicenseStatus(status);
+        if (!status.has_license) {
+          setShowLicenseModal(true);
+        }
+      }
+    } catch (error) {
+      console.error('License check failed:', error);
+    }
+  };
 
   const checkAuth = async () => {
     try {
       if (apiService.isAuthenticated()) {
         const userData = await apiService.getCurrentUser();
         setUser(userData);
+        // Check license status after getting user data
+        await checkLicenseStatus();
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -38,6 +57,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const authData = await apiService.login(credentials);
       setUser(authData.user);
+      // Check license status after login
+      await checkLicenseStatus();
     } catch (error) {
       throw error;
     } finally {
@@ -50,6 +71,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const authData = await apiService.register(userData);
       setUser(authData.user);
+      // Check license status after registration
+      await checkLicenseStatus();
     } catch (error) {
       throw error;
     } finally {
@@ -60,6 +83,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     apiService.logout();
     setUser(null);
+    setLicenseStatus(null);
+    setShowLicenseModal(false);
   };
 
   useEffect(() => {
@@ -79,6 +104,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
+      {showLicenseModal && (
+        <LicenseRequestModal onClose={() => setShowLicenseModal(false)} />
+      )}
     </AuthContext.Provider>
   );
 };
