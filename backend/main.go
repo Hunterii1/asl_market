@@ -22,7 +22,7 @@ func main() {
 
 	// Initialize Telegram bot service
 	_ = services.GetTelegramService()
-	log.Printf("Telegram bot initialized for admin ID: %d", services.ADMIN_ID)
+	log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
 
 	// Set Gin mode
 	gin.SetMode(gin.ReleaseMode)
