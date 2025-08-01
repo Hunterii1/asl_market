@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"asl-market-backend/models"
 
@@ -31,29 +32,45 @@ func LicenseMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Create response with user's license status
+		licenseStatus := gin.H{
+			"needs_license": user.License == "",
+			"has_license":   user.License != "",
+			"is_approved":   user.IsApproved,
+		}
+
+		// Check if this is an AI endpoint
+		isAIEndpoint := strings.HasPrefix(c.Request.URL.Path, "/api/v1/ai/")
+
 		// Check if user has license and it's approved
 		if user.License == "" {
+			errorMsg := "شما نیاز به لایسنس دارید"
+			if isAIEndpoint {
+				errorMsg = "برای استفاده از هوش مصنوعی نیاز به لایسنس دارید. لطفا ابتدا لایسنس خود را وارد کنید."
+			}
 			c.JSON(http.StatusForbidden, gin.H{
-				"error":         "شما نیاز به لایسنس دارید",
-				"needs_license": true,
-				"has_license":   false,
-				"is_approved":   false,
+				"error":          errorMsg,
+				"license_status": licenseStatus,
 			})
 			c.Abort()
 			return
 		}
 
 		if !user.IsApproved {
+			errorMsg := "لایسنس شما هنوز تأیید نشده است"
+			if isAIEndpoint {
+				errorMsg = "لایسنس شما برای استفاده از هوش مصنوعی هنوز تأیید نشده است. لطفا منتظر تأیید ادمین باشید."
+			}
 			c.JSON(http.StatusForbidden, gin.H{
-				"error":         "لایسنس شما هنوز تأیید نشده است",
-				"needs_license": false,
-				"has_license":   true,
-				"is_approved":   false,
+				"error":          errorMsg,
+				"license_status": licenseStatus,
 			})
 			c.Abort()
 			return
 		}
 
+		// Add license status to context for other middleware/handlers
+		c.Set("license_status", licenseStatus)
 		c.Next()
 	}
 }
