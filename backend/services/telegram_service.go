@@ -295,9 +295,11 @@ func (s *TelegramService) showFilteredUsers(chatID int64, filter string, page in
 	case "approved":
 		query = query.Where("is_approved = ?", true)
 	case "pending":
-		query = query.Where("license != '' AND is_approved = ?", false)
+		// Changed condition: show users who have license and are not approved
+		query = query.Where("license IS NOT NULL AND license != '' AND is_approved = ?", false)
 	case "rejected":
-		query = query.Where("license = '' AND is_approved = ?", false)
+		// Changed condition: show users who don't have license and are not approved
+		query = query.Where("(license IS NULL OR license = '') AND is_approved = ?", false)
 	}
 
 	// Get total count
@@ -326,6 +328,12 @@ func (s *TelegramService) showFilteredUsers(chatID int64, filter string, page in
 	// Send header with total count
 	headerMsg := fmt.Sprintf("%s\nتعداد کل: %d", filterName, total)
 	s.bot.Send(tgbotapi.NewMessage(chatID, headerMsg))
+
+	if total == 0 {
+		msg := tgbotapi.NewMessage(chatID, "📝 هیچ کاربری در این دسته وجود ندارد.")
+		s.bot.Send(msg)
+		return
+	}
 
 	// Send each user as a separate message
 	for _, user := range users {
