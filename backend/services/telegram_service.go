@@ -260,86 +260,221 @@ func (s *TelegramService) showSettings(chatID int64) {
 }
 
 func (s *TelegramService) showUsersList(chatID int64, page int) {
+	// First show user categories
+	message := "👥 لطفا نوع کاربران مورد نظر را انتخاب کنید:"
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ کاربران تأیید شده", "userlist_approved"),
+			tgbotapi.NewInlineKeyboardButtonData("⏳ در انتظار تأیید", "userlist_pending"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("❌ کاربران رد شده", "userlist_rejected"),
+			tgbotapi.NewInlineKeyboardButtonData("👥 همه کاربران", "userlist_all"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔍 جستجوی پیشرفته", "userlist_search"),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showFilteredUsers(chatID int64, filter string, page int) {
 	const perPage = 5
 	offset := (page - 1) * perPage
 
 	var users []models.User
 	var total int64
+	query := s.db.Model(&models.User{})
 
-	s.db.Model(&models.User{}).Count(&total)
-	if err := s.db.Offset(offset).Limit(perPage).Find(&users).Error; err != nil {
+	// Apply filter
+	switch filter {
+	case "approved":
+		query = query.Where("is_approved = ?", true)
+	case "pending":
+		query = query.Where("license != '' AND is_approved = ?", false)
+	case "rejected":
+		query = query.Where("license = '' AND is_approved = ?", false)
+	}
+
+	// Get total count
+	query.Count(&total)
+
+	// Get paginated results
+	if err := query.Offset(offset).Limit(perPage).Find(&users).Error; err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست کاربران")
 		s.bot.Send(msg)
 		return
 	}
 
-	// Calculate total pages
-	totalPages := (int(total) + perPage - 1) / perPage
+	// Show filter type in header
+	var filterName string
+	switch filter {
+	case "approved":
+		filterName = "✅ کاربران تأیید شده"
+	case "pending":
+		filterName = "⏳ کاربران در انتظار تأیید"
+	case "rejected":
+		filterName = "❌ کاربران رد شده"
+	default:
+		filterName = "👥 همه کاربران"
+	}
 
-	// Send each user as a separate message with their own action buttons
+	// Send header with total count
+	headerMsg := fmt.Sprintf("%s\nتعداد کل: %d", filterName, total)
+	s.bot.Send(tgbotapi.NewMessage(chatID, headerMsg))
+
+	// Send each user as a separate message
 	for _, user := range users {
-		message := fmt.Sprintf("🔹 ID: %d\n👤 %s %s\n📧 %s\n📱 %s\n✅ تأیید شده: %v",
-			user.ID, user.FirstName, user.LastName, user.Email, user.Phone, user.IsApproved)
+		message := fmt.Sprintf("🔹 ID: %d\n👤 %s %s\n📧 %s\n📱 %s",
+			user.ID, user.FirstName, user.LastName, user.Email, user.Phone)
+
+		if filter == "pending" {
+			message += fmt.Sprintf("\n🔑 لایسنس: %s", user.License)
+		} else {
+			message += fmt.Sprintf("\n✅ تأیید شده: %v", user.IsApproved)
+		}
 
 		var keyboard [][]tgbotapi.InlineKeyboardButton
 
-		// Add user action buttons
-		if !user.IsApproved {
+		// Add appropriate action buttons based on user status
+		switch filter {
+		case "pending":
 			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید کاربر", fmt.Sprintf("approve_%d", user.ID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌ رد کاربر", fmt.Sprintf("reject_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("approve_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("reject_%d", user.ID)),
+			))
+		case "rejected":
+			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔄 درخواست مجدد", fmt.Sprintf("reactivate_%d", user.ID)),
 			))
 		}
 
-		// Add view details button
+		// Add common action buttons
 		keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("👁 مشاهده جزئیات", fmt.Sprintf("details_%d", user.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("👁 جزئیات", fmt.Sprintf("details_%d", user.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("📝 پیام", fmt.Sprintf("message_%d", user.ID)),
 		))
 
 		msg := tgbotapi.NewMessage(chatID, message)
-		if len(keyboard) > 0 {
-			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-		}
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 		s.bot.Send(msg)
 	}
 
-	// Send pagination message separately
-	if totalPages > 1 {
-		paginationMsg := fmt.Sprintf("📄 صفحه %d از %d", page, totalPages)
+	// Add pagination if needed
+	if total > int64(perPage) {
+		totalPages := (int(total) + perPage - 1) / perPage
 		var paginationKeyboard [][]tgbotapi.InlineKeyboardButton
 		var row []tgbotapi.InlineKeyboardButton
 
 		if page > 1 {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("◀️ صفحه قبل", fmt.Sprintf("page_%d", page-1)))
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+				"◀️ صفحه قبل",
+				fmt.Sprintf("page_%s_%d", filter, page-1),
+			))
 		}
 		if page < totalPages {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("صفحه بعد ▶️", fmt.Sprintf("page_%d", page+1)))
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData(
+				"صفحه بعد ▶️",
+				fmt.Sprintf("page_%s_%d", filter, page+1),
+			))
 		}
+
+		// Add filter selection button
+		row = append(row, tgbotapi.NewInlineKeyboardButtonData("🔄 تغییر فیلتر", "userlist_filter"))
+
 		paginationKeyboard = append(paginationKeyboard, row)
 
-		msg := tgbotapi.NewMessage(chatID, paginationMsg)
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📄 صفحه %d از %d", page, totalPages))
 		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(paginationKeyboard...)
 		s.bot.Send(msg)
 	}
+}
+
+func (s *TelegramService) showAdvancedSearch(chatID int64) {
+	message := "🔍 جستجوی پیشرفته کاربران\n\n" +
+		"لطفا یکی از موارد زیر را انتخاب کنید:"
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🆔 جستجو با شناسه", "search_by_id"),
+			tgbotapi.NewInlineKeyboardButtonData("📧 جستجو با ایمیل", "search_by_email"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📱 جستجو با شماره تماس", "search_by_phone"),
+			tgbotapi.NewInlineKeyboardButtonData("👤 جستجو با نام", "search_by_name"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت به لیست", "userlist_back"),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
 }
 
 func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 	chatID := query.Message.Chat.ID
 
-	// Handle pagination
-	if strings.HasPrefix(data, "page_") {
-		parts := strings.Split(data, "_")
-		if len(parts) != 2 {
-			return
-		}
-		if page, err := strconv.Atoi(parts[1]); err == nil {
-			s.showUsersList(chatID, page)
+	// Handle user list filters
+	if strings.HasPrefix(data, "userlist_") {
+		filter := strings.TrimPrefix(data, "userlist_")
+		switch filter {
+		case "approved":
+			s.showFilteredUsers(chatID, "approved", 1)
+		case "pending":
+			s.showFilteredUsers(chatID, "pending", 1)
+		case "rejected":
+			s.showFilteredUsers(chatID, "rejected", 1)
+		case "all":
+			s.showFilteredUsers(chatID, "all", 1)
+		case "search":
+			s.showAdvancedSearch(chatID)
+		case "filter":
+			s.showUsersList(chatID, 1) // Show filter options again
+		case "back":
+			s.showUsersList(chatID, 1)
 		}
 		return
 	}
 
-	// Extract action and user ID
+	// Handle pagination with filters
+	if strings.HasPrefix(data, "page_") {
+		parts := strings.Split(strings.TrimPrefix(data, "page_"), "_")
+		if len(parts) == 2 {
+			filter := parts[0]
+			if page, err := strconv.Atoi(parts[1]); err == nil {
+				s.showFilteredUsers(chatID, filter, page)
+			}
+		}
+		return
+	}
+
+	// Handle search methods
+	if strings.HasPrefix(data, "search_by_") {
+		searchType := strings.TrimPrefix(data, "search_by_")
+		var prompt string
+		switch searchType {
+		case "id":
+			prompt = "🔍 لطفا شناسه کاربر را وارد کنید:"
+		case "email":
+			prompt = "🔍 لطفا ایمیل کاربر را وارد کنید:"
+		case "phone":
+			prompt = "🔍 لطفا شماره تماس کاربر را وارد کنید:"
+		case "name":
+			prompt = "🔍 لطفا نام کاربر را وارد کنید:"
+		}
+		msg := tgbotapi.NewMessage(chatID, prompt)
+		s.bot.Send(msg)
+		return
+	}
+
+	// Handle other actions (approve, reject, etc.)
 	parts := strings.Split(data, "_")
 	if len(parts) != 2 {
 		return
@@ -356,38 +491,50 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
-	// Handle different actions
+	switch action {
+	case "approve", "reject", "reactivate":
+		s.handleUserStatusChange(chatID, &user, action)
+	case "details":
+		s.showUserDetails(chatID, user)
+	case "message":
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📝 لطفا پیام خود را برای %s %s وارد کنید:", user.FirstName, user.LastName))
+		s.bot.Send(msg)
+	}
+}
+
+func (s *TelegramService) handleUserStatusChange(chatID int64, user *models.User, action string) {
+	var response string
 	switch action {
 	case "approve":
 		user.IsApproved = true
-		if err := s.db.Save(&user).Error; err != nil {
-			s.sendCallbackResponse(query, "❌ خطا در تأیید کاربر")
-			return
+		if err := s.db.Save(user).Error; err != nil {
+			response = "❌ خطا در تأیید کاربر"
+		} else {
+			response = fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName)
 		}
-		s.sendCallbackResponse(query, fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName))
 
 	case "reject":
 		user.IsApproved = false
 		user.License = ""
-		if err := s.db.Save(&user).Error; err != nil {
-			s.sendCallbackResponse(query, "❌ خطا در رد درخواست کاربر")
-			return
+		if err := s.db.Save(user).Error; err != nil {
+			response = "❌ خطا در رد درخواست کاربر"
+		} else {
+			response = fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName)
 		}
-		s.sendCallbackResponse(query, fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName))
 
-	case "details", "profile":
-		// Show detailed user information
-		s.showUserDetails(chatID, user)
-
-	case "stats":
-		// Show user statistics
-		s.showUserStats(chatID, user)
-
-	case "note", "message":
-		// Show message input prompt
-		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📝 لطفا پیام خود را برای %s %s وارد کنید:", user.FirstName, user.LastName))
-		s.bot.Send(msg)
+	case "reactivate":
+		// Just clear the rejection status
+		user.IsApproved = false
+		user.License = ""
+		if err := s.db.Save(user).Error; err != nil {
+			response = "❌ خطا در فعال‌سازی مجدد کاربر"
+		} else {
+			response = fmt.Sprintf("🔄 کاربر %s %s می‌تواند مجدداً درخواست دهد", user.FirstName, user.LastName)
+		}
 	}
+
+	msg := tgbotapi.NewMessage(chatID, response)
+	s.bot.Send(msg)
 }
 
 func (s *TelegramService) sendCallbackResponse(query *tgbotapi.CallbackQuery, message string) {
