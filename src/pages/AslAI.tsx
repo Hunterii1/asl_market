@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { LicenseGate } from '@/components/LicenseGate';
 import { apiService, type Chat, type Message, type ChatRequest } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -421,6 +422,7 @@ const AslAI = () => {
   }
 
   return (
+    <LicenseGate>
     <div className="min-h-screen bg-background" dir="rtl">
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
@@ -687,6 +689,7 @@ const AslAI = () => {
         </div>
       </div>
     </div>
+    </LicenseGate>
   );
 };
 
