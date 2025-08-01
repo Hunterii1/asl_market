@@ -13,8 +13,20 @@ import (
 	"gorm.io/gorm"
 )
 
-const ADMIN_ID = 76599340
+// Define admin IDs as a slice
+var ADMIN_IDS = []int64{76599340, 276043481}
+
 const ASL_PLATFORM_LICENSE = "ASL-PLATFORM-2024"
+
+// Helper function to check if a user is admin
+func isAdmin(userID int64) bool {
+	for _, adminID := range ADMIN_IDS {
+		if userID == adminID {
+			return true
+		}
+	}
+	return false
+}
 
 // Menu constants
 const (
@@ -61,6 +73,11 @@ func (s *TelegramService) startBot() {
 	for update := range updates {
 		// Handle callback queries (button clicks)
 		if update.CallbackQuery != nil {
+			if !isAdmin(update.CallbackQuery.From.ID) {
+				callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "شما دسترسی به این بات را ندارید.")
+				s.bot.Request(callback)
+				continue
+			}
 			go s.handleCallbackQuery(update.CallbackQuery)
 			continue
 		}
@@ -70,8 +87,8 @@ func (s *TelegramService) startBot() {
 			continue
 		}
 
-		// Only process messages from admin
-		if update.Message.From.ID != ADMIN_ID {
+		// Only process messages from admins
+		if !isAdmin(update.Message.From.ID) {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "شما دسترسی به این بات را ندارید.")
 			s.bot.Send(msg)
 			continue
@@ -255,7 +272,7 @@ func (s *TelegramService) showPendingRequests(chatID int64) {
 func (s *TelegramService) showSettings(chatID int64) {
 	msg := tgbotapi.NewMessage(chatID, "⚙️ تنظیمات:\n\n"+
 		"🔑 لایسنس فعلی: "+ASL_PLATFORM_LICENSE+"\n"+
-		"👤 شناسه ادمین: "+fmt.Sprint(ADMIN_ID))
+		"👤 شناسه ادمین: "+fmt.Sprint(ADMIN_IDS))
 	s.bot.Send(msg)
 }
 
@@ -614,8 +631,14 @@ func (s *TelegramService) SendLicenseRequest(user *models.User) error {
 		),
 	)
 
-	msg := tgbotapi.NewMessage(ADMIN_ID, message)
-	msg.ReplyMarkup = keyboard
-	_, err := s.bot.Send(msg)
-	return err
+	// Send message to all admins
+	var firstError error
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil && firstError == nil {
+			firstError = err
+		}
+	}
+	return firstError
 }
