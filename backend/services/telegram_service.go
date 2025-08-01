@@ -374,7 +374,7 @@ func (s *TelegramService) showFilteredUsers(chatID int64, filter string, page in
 			))
 		case "rejected":
 			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("🔄 درخواست مجدد", fmt.Sprintf("reactivate_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("🔄 بررسی مجدد", fmt.Sprintf("recheck_%d", user.ID)),
 			))
 		}
 
@@ -517,7 +517,7 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	}
 
 	switch action {
-	case "approve", "reject", "reactivate":
+	case "approve", "reject", "recheck":
 		s.handleUserStatusChange(chatID, &user, action)
 	case "details":
 		s.showUserDetails(chatID, user)
@@ -529,6 +529,7 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 
 func (s *TelegramService) handleUserStatusChange(chatID int64, user *models.User, action string) {
 	var response string
+
 	switch action {
 	case "approve":
 		user.IsApproved = true
@@ -547,14 +548,13 @@ func (s *TelegramService) handleUserStatusChange(chatID int64, user *models.User
 			response = fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName)
 		}
 
-	case "reactivate":
-		// Just clear the rejection status
-		user.IsApproved = false
-		user.License = ""
+	case "recheck":
+		// Simply change status to approved
+		user.IsApproved = true
 		if err := s.db.Save(user).Error; err != nil {
-			response = "❌ خطا در فعال‌سازی مجدد کاربر"
+			response = "❌ خطا در بررسی مجدد کاربر"
 		} else {
-			response = fmt.Sprintf("🔄 کاربر %s %s می‌تواند مجدداً درخواست دهد", user.FirstName, user.LastName)
+			response = fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName)
 		}
 	}
 
