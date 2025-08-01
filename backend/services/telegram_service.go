@@ -168,32 +168,37 @@ func (s *TelegramService) handleSearch(chatID int64, query string) {
 		return
 	}
 
-	response := fmt.Sprintf("📋 اطلاعات کاربر:\n\n"+
+	message := fmt.Sprintf("📋 اطلاعات کاربر:\n\n"+
 		"👤 نام: %s %s\n"+
 		"📧 ایمیل: %s\n"+
 		"📱 تلفن: %s\n"+
 		"🔑 لایسنس: %s\n"+
-		"✅ تأیید شده: %v\n",
+		"✅ تأیید شده: %v",
 		user.FirstName, user.LastName,
 		user.Email,
 		user.Phone,
 		user.License,
 		user.IsApproved)
 
+	var keyboard [][]tgbotapi.InlineKeyboardButton
+
 	// Add approve/reject buttons if user has license but not approved
-	var keyboard tgbotapi.InlineKeyboardMarkup
 	if user.License != "" && !user.IsApproved {
-		keyboard = tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("approve_%d", user.ID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("reject_%d", user.ID)),
-			),
-		)
+		keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ تأیید کاربر", fmt.Sprintf("approve_%d", user.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ رد کاربر", fmt.Sprintf("reject_%d", user.ID)),
+		))
 	}
 
-	msg := tgbotapi.NewMessage(chatID, response)
-	if user.License != "" && !user.IsApproved {
-		msg.ReplyMarkup = keyboard
+	// Add additional action buttons
+	keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+		tgbotapi.NewInlineKeyboardButtonData("📊 آمار فعالیت", fmt.Sprintf("stats_%d", user.ID)),
+		tgbotapi.NewInlineKeyboardButtonData("📝 یادداشت", fmt.Sprintf("note_%d", user.ID)),
+	))
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	if len(keyboard) > 0 {
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 	}
 	s.bot.Send(msg)
 }
@@ -212,14 +217,32 @@ func (s *TelegramService) showPendingRequests(chatID int64) {
 		return
 	}
 
+	// Send header message
+	headerMsg := tgbotapi.NewMessage(chatID, "📋 لیست درخواست‌های در انتظار تأیید:")
+	s.bot.Send(headerMsg)
+
+	// Send each request as a separate message with its own buttons
 	for _, user := range users {
-		message := fmt.Sprintf("👤 %s %s\n📧 %s\n🔑 %s\n",
-			user.FirstName, user.LastName, user.Email, user.License)
+		message := fmt.Sprintf("🆕 درخواست جدید\n\n"+
+			"👤 نام: %s %s\n"+
+			"📧 ایمیل: %s\n"+
+			"📱 تلفن: %s\n"+
+			"🔑 لایسنس: %s\n"+
+			"📅 تاریخ درخواست: %s",
+			user.FirstName, user.LastName,
+			user.Email,
+			user.Phone,
+			user.License,
+			"اکنون") // TODO: Add request date to user model
 
 		keyboard := tgbotapi.NewInlineKeyboardMarkup(
 			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("approve_%d", user.ID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("reject_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید درخواست", fmt.Sprintf("approve_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("❌ رد درخواست", fmt.Sprintf("reject_%d", user.ID)),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👁 بررسی پروفایل", fmt.Sprintf("profile_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("📝 ارسال پیام", fmt.Sprintf("message_%d", user.ID)),
 			),
 		)
 
@@ -250,33 +273,54 @@ func (s *TelegramService) showUsersList(chatID int64, page int) {
 		return
 	}
 
-	response := "👥 لیست کاربران:\n\n"
-	for _, user := range users {
-		response += fmt.Sprintf("🔹 ID: %d\n👤 %s %s\n📧 %s\n📱 %s\n✅ تأیید شده: %v\n➖➖➖➖➖➖\n",
-			user.ID, user.FirstName, user.LastName, user.Email, user.Phone, user.IsApproved)
-	}
-
 	// Calculate total pages
 	totalPages := (int(total) + perPage - 1) / perPage
 
-	// Add pagination buttons if needed
-	var keyboard tgbotapi.InlineKeyboardMarkup
-	if totalPages > 1 {
-		var row []tgbotapi.InlineKeyboardButton
-		if page > 1 {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("◀️ قبلی", fmt.Sprintf("page_%d", page-1)))
+	// Send each user as a separate message with their own action buttons
+	for _, user := range users {
+		message := fmt.Sprintf("🔹 ID: %d\n👤 %s %s\n📧 %s\n📱 %s\n✅ تأیید شده: %v",
+			user.ID, user.FirstName, user.LastName, user.Email, user.Phone, user.IsApproved)
+
+		var keyboard [][]tgbotapi.InlineKeyboardButton
+
+		// Add user action buttons
+		if !user.IsApproved {
+			keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید کاربر", fmt.Sprintf("approve_%d", user.ID)),
+				tgbotapi.NewInlineKeyboardButtonData("❌ رد کاربر", fmt.Sprintf("reject_%d", user.ID)),
+			))
 		}
-		if page < totalPages {
-			row = append(row, tgbotapi.NewInlineKeyboardButtonData("بعدی ▶️", fmt.Sprintf("page_%d", page+1)))
+
+		// Add view details button
+		keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("👁 مشاهده جزئیات", fmt.Sprintf("details_%d", user.ID)),
+		))
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		if len(keyboard) > 0 {
+			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
 		}
-		keyboard = tgbotapi.NewInlineKeyboardMarkup(row)
+		s.bot.Send(msg)
 	}
 
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("%s\nصفحه %d از %d", response, page, totalPages))
+	// Send pagination message separately
 	if totalPages > 1 {
-		msg.ReplyMarkup = keyboard
+		paginationMsg := fmt.Sprintf("📄 صفحه %d از %d", page, totalPages)
+		var paginationKeyboard [][]tgbotapi.InlineKeyboardButton
+		var row []tgbotapi.InlineKeyboardButton
+
+		if page > 1 {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("◀️ صفحه قبل", fmt.Sprintf("page_%d", page-1)))
+		}
+		if page < totalPages {
+			row = append(row, tgbotapi.NewInlineKeyboardButtonData("صفحه بعد ▶️", fmt.Sprintf("page_%d", page+1)))
+		}
+		paginationKeyboard = append(paginationKeyboard, row)
+
+		msg := tgbotapi.NewMessage(chatID, paginationMsg)
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(paginationKeyboard...)
+		s.bot.Send(msg)
 	}
-	s.bot.Send(msg)
 }
 
 func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
@@ -295,51 +339,105 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
-	// Handle user actions (approve/reject)
-	if strings.HasPrefix(data, "approve_") || strings.HasPrefix(data, "reject_") {
-		parts := strings.Split(data, "_")
-		if len(parts) != 2 {
+	// Extract action and user ID
+	parts := strings.Split(data, "_")
+	if len(parts) != 2 {
+		return
+	}
+
+	action := parts[0]
+	userID, err := strconv.ParseUint(parts[1], 10, 32)
+	if err != nil {
+		return
+	}
+
+	var user models.User
+	if err := s.db.First(&user, userID).Error; err != nil {
+		return
+	}
+
+	// Handle different actions
+	switch action {
+	case "approve":
+		user.IsApproved = true
+		if err := s.db.Save(&user).Error; err != nil {
+			s.sendCallbackResponse(query, "❌ خطا در تأیید کاربر")
 			return
 		}
+		s.sendCallbackResponse(query, fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName))
 
-		userID, err := strconv.ParseUint(parts[1], 10, 32)
-		if err != nil {
+	case "reject":
+		user.IsApproved = false
+		user.License = ""
+		if err := s.db.Save(&user).Error; err != nil {
+			s.sendCallbackResponse(query, "❌ خطا در رد درخواست کاربر")
 			return
 		}
+		s.sendCallbackResponse(query, fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName))
 
-		var user models.User
-		if err := s.db.First(&user, userID).Error; err != nil {
-			return
-		}
+	case "details", "profile":
+		// Show detailed user information
+		s.showUserDetails(chatID, user)
 
-		var response string
-		switch parts[0] {
-		case "approve":
-			user.IsApproved = true
-			if err := s.db.Save(&user).Error; err != nil {
-				response = "❌ خطا در تأیید کاربر"
-			} else {
-				response = fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName)
-			}
+	case "stats":
+		// Show user statistics
+		s.showUserStats(chatID, user)
 
-		case "reject":
-			user.IsApproved = false
-			user.License = ""
-			if err := s.db.Save(&user).Error; err != nil {
-				response = "❌ خطا در رد درخواست کاربر"
-			} else {
-				response = fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName)
-			}
-		}
-
-		// Answer callback query
-		callback := tgbotapi.NewCallback(query.ID, "")
-		s.bot.Request(callback)
-
-		// Send confirmation message
-		msg := tgbotapi.NewMessage(chatID, response)
+	case "note", "message":
+		// Show message input prompt
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📝 لطفا پیام خود را برای %s %s وارد کنید:", user.FirstName, user.LastName))
 		s.bot.Send(msg)
 	}
+}
+
+func (s *TelegramService) sendCallbackResponse(query *tgbotapi.CallbackQuery, message string) {
+	// Answer callback query
+	callback := tgbotapi.NewCallback(query.ID, "")
+	s.bot.Request(callback)
+
+	// Update the original message to show the result
+	msg := tgbotapi.NewEditMessageText(query.Message.Chat.ID, query.Message.MessageID, query.Message.Text+"\n\n"+message)
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showUserDetails(chatID int64, user models.User) {
+	message := fmt.Sprintf("👤 اطلاعات کامل کاربر:\n\n"+
+		"نام: %s %s\n"+
+		"ایمیل: %s\n"+
+		"تلفن: %s\n"+
+		"لایسنس: %s\n"+
+		"وضعیت تأیید: %v\n"+
+		"تاریخ ثبت‌نام: %s",
+		user.FirstName, user.LastName,
+		user.Email,
+		user.Phone,
+		user.License,
+		user.IsApproved,
+		"اکنون") // TODO: Add registration date to user model
+
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📊 آمار فعالیت", fmt.Sprintf("stats_%d", user.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("📝 ارسال پیام", fmt.Sprintf("message_%d", user.ID)),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showUserStats(chatID int64, user models.User) {
+	// TODO: Implement user statistics
+	message := fmt.Sprintf("📊 آمار فعالیت %s %s:\n\n"+
+		"تعداد ورود: -\n"+
+		"آخرین فعالیت: -\n"+
+		"وضعیت فعلی: %v",
+		user.FirstName, user.LastName,
+		user.IsApproved)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	s.bot.Send(msg)
 }
 
 func (s *TelegramService) SendLicenseRequest(user *models.User) error {
