@@ -57,6 +57,11 @@ const (
 	MENU_ALL_SUPPLIERS      = "📋 همه تأمین‌کنندگان"
 	MENU_SUPPLIER_STATS     = "📊 آمار تأمین‌کنندگان"
 
+	// Supplier action buttons
+	MENU_APPROVE_SUPPLIER = "✅ تأیید"
+	MENU_REJECT_SUPPLIER  = "❌ رد"
+	MENU_VIEW_SUPPLIER    = "👁️ جزئیات"
+
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
 	MENU_NEXT_PAGE = "➡️ صفحه بعد"
@@ -84,7 +89,8 @@ var paginationMutex = sync.RWMutex{}
 // User session states
 type SessionState struct {
 	ChatID          int64
-	WaitingForInput string // "license_count", "search_query", etc.
+	WaitingForInput string                 // "license_count", "search_query", "supplier_action", "reject_reason", etc.
+	Data            map[string]interface{} // Additional session data
 }
 
 var sessionStates = make(map[int64]*SessionState)
@@ -265,8 +271,29 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
+			case "reject_reason":
+				// Process rejection reason
+				sessionMutex.RLock()
+				state := sessionStates[message.Chat.ID]
+				sessionMutex.RUnlock()
+
+				if state != nil && state.Data != nil {
+					if supplierID, ok := state.Data["supplier_id"].(uint); ok {
+						s.handleSupplierReject(message.Chat.ID, supplierID, message.Text)
+					}
+				}
+
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
 			}
 		} else {
+			// Check for supplier command patterns
+			if s.handleSupplierCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
 			// No active session - show help message
 			msg := tgbotapi.NewMessage(message.Chat.ID,
 				"❓ **راهنمای استفاده:**\n\n"+
@@ -1081,15 +1108,14 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 			var productCount int64
 			s.db.Model(&models.SupplierProduct{}).Where("supplier_id = ?", supplier.ID).Count(&productCount)
 
-			message.WriteString(fmt.Sprintf(
+			supplierInfo := fmt.Sprintf(
 				"**%d. %s %s**\n"+
 					"📧 نام: %s\n"+
 					"📱 موبایل: %s\n"+
 					"🏘️ شهر: %s\n"+
 					"📦 تعداد محصولات: %d\n"+
 					"🗓️ تاریخ ثبت‌نام: %s\n"+
-					"%s وضعیت: %s | %s نوع کسب‌وکار\n"+
-					"➖➖➖➖➖➖➖➖\n",
+					"%s وضعیت: %s | %s نوع کسب‌وکار\n",
 				startItem+i,
 				statusIcon,
 				supplier.FullName,
@@ -1101,7 +1127,18 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 				statusIcon,
 				supplier.Status,
 				businessIcon,
-			))
+			)
+
+			// Add action buttons for pending suppliers
+			if supplier.Status == "pending" {
+				supplierInfo += fmt.Sprintf(
+					"🔘 عملیات: /view_%d | /approve_%d | /reject_%d\n",
+					supplier.ID, supplier.ID, supplier.ID,
+				)
+			}
+
+			supplierInfo += "➖➖➖➖➖➖➖➖\n"
+			message.WriteString(supplierInfo)
 		}
 	}
 
@@ -1195,6 +1232,199 @@ func (s *TelegramService) showSupplierStats(chatID int64) {
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
+}
+
+// Supplier Command Handlers
+
+func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool {
+	// Check for supplier action commands: /view_123, /approve_123, /reject_123
+	if strings.HasPrefix(text, "/view_") {
+		supplierIDStr := strings.TrimPrefix(text, "/view_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.showSupplierDetails(chatID, uint(supplierID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/approve_") {
+		supplierIDStr := strings.TrimPrefix(text, "/approve_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.handleSupplierApprove(chatID, uint(supplierID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/reject_") {
+		supplierIDStr := strings.TrimPrefix(text, "/reject_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.promptSupplierReject(chatID, uint(supplierID))
+			return true
+		}
+	}
+	return false
+}
+
+func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
+	var supplier models.Supplier
+	err := s.db.Preload("User").Preload("Products").Where("id = ?", supplierID).First(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build detailed message
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("**📋 جزئیات تأمین‌کننده #%d**\n\n", supplier.ID))
+
+	// Personal Info
+	message.WriteString("**👤 اطلاعات شخصی:**\n")
+	message.WriteString(fmt.Sprintf("• نام کامل: %s\n", supplier.FullName))
+	message.WriteString(fmt.Sprintf("• موبایل: %s\n", supplier.Mobile))
+	if supplier.BrandName != "" {
+		message.WriteString(fmt.Sprintf("• نام برند: %s\n", supplier.BrandName))
+	}
+	message.WriteString(fmt.Sprintf("• شهر: %s\n", supplier.City))
+	message.WriteString(fmt.Sprintf("• آدرس: %s\n", supplier.Address))
+
+	// Business Info
+	message.WriteString("\n**🏢 اطلاعات کسب‌وکار:**\n")
+	if supplier.HasRegisteredBusiness {
+		message.WriteString("• کسب‌وکار ثبت‌شده: ✅ بله\n")
+		if supplier.BusinessRegistrationNum != "" {
+			message.WriteString(fmt.Sprintf("• شماره ثبت: %s\n", supplier.BusinessRegistrationNum))
+		}
+	} else {
+		message.WriteString("• کسب‌وکار ثبت‌شده: ❌ خیر\n")
+	}
+
+	// Export Experience
+	if supplier.HasExportExperience {
+		message.WriteString("• سابقه صادراتی: ✅ دارد\n")
+		if supplier.ExportPrice != "" {
+			message.WriteString(fmt.Sprintf("• قیمت صادراتی: %s\n", supplier.ExportPrice))
+		}
+	} else {
+		message.WriteString("• سابقه صادراتی: ❌ ندارد\n")
+	}
+
+	// Pricing
+	message.WriteString("\n**💰 قیمت‌گذاری:**\n")
+	message.WriteString(fmt.Sprintf("• قیمت عمده حداقلی: %s\n", supplier.WholesaleMinPrice))
+	if supplier.WholesaleHighVolumePrice != "" {
+		message.WriteString(fmt.Sprintf("• قیمت عمده حجم بالا: %s\n", supplier.WholesaleHighVolumePrice))
+	}
+	if supplier.CanProducePrivateLabel {
+		message.WriteString("• تولید برند خصوصی: ✅ امکان‌پذیر\n")
+	}
+
+	// Products
+	message.WriteString(fmt.Sprintf("\n**📦 محصولات (%d عدد):**\n", len(supplier.Products)))
+	for i, product := range supplier.Products {
+		message.WriteString(fmt.Sprintf("%d. **%s** (%s)\n", i+1, product.ProductName, product.ProductType))
+		message.WriteString(fmt.Sprintf("   توضیحات: %s\n", product.Description))
+		message.WriteString(fmt.Sprintf("   تولید ماهانه: %s\n", product.MonthlyProductionMin))
+		if product.NeedsExportLicense {
+			message.WriteString("   نیاز به مجوز صادراتی: ✅\n")
+			if product.RequiredLicenseType != "" {
+				message.WriteString(fmt.Sprintf("   نوع مجوز: %s\n", product.RequiredLicenseType))
+			}
+		}
+		message.WriteString("\n")
+	}
+
+	// Status
+	message.WriteString(fmt.Sprintf("**📊 وضعیت:** %s\n", supplier.Status))
+	message.WriteString(fmt.Sprintf("**🗓️ تاریخ ثبت‌نام:** %s\n", supplier.CreatedAt.Format("2006/01/02 15:04")))
+	if supplier.ApprovedAt != nil {
+		message.WriteString(fmt.Sprintf("**✅ تاریخ تأیید:** %s\n", supplier.ApprovedAt.Format("2006/01/02 15:04")))
+	}
+	if supplier.AdminNotes != "" {
+		message.WriteString(fmt.Sprintf("**📝 یادداشت ادمین:** %s\n", supplier.AdminNotes))
+	}
+
+	// Action buttons for pending suppliers
+	var keyboard tgbotapi.ReplyKeyboardMarkup
+	if supplier.Status == "pending" {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/approve_%d", supplier.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/reject_%d", supplier.ID)),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	} else {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	}
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleSupplierApprove(chatID int64, supplierID uint) {
+	// Find admin user ID for approval
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.ApproveSupplier(s.db, supplierID, adminID, "تأیید شده توسط ادمین")
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تأیید تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✅ تأمین‌کننده #%d با موفقیت تأیید شد", supplierID))
+	s.bot.Send(msg)
+
+	// Show pending suppliers list again
+	s.showSuppliersList(chatID, "pending", 1)
+}
+
+func (s *TelegramService) promptSupplierReject(chatID int64, supplierID uint) {
+	// Set session state to wait for rejection reason
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "reject_reason",
+		Data: map[string]interface{}{
+			"supplier_id": supplierID,
+		},
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📝 لطفا دلیل رد تأمین‌کننده #%d را وارد کنید:", supplierID))
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleSupplierReject(chatID int64, supplierID uint, reason string) {
+	// Find admin user ID for rejection
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.RejectSupplier(s.db, supplierID, adminID, reason)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ تأمین‌کننده #%d رد شد\n📝 دلیل: %s", supplierID, reason))
+	s.bot.Send(msg)
+
+	// Show pending suppliers list again
+	s.showSuppliersList(chatID, "pending", 1)
 }
 
 // Helper functions
