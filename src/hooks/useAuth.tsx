@@ -8,10 +8,13 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  licenseStatus: LicenseStatus | null;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (userData: RegisterRequest) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
+  checkLicenseStatus: () => Promise<void>;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,6 +123,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshUserData = async () => {
+    try {
+      if (apiService.isAuthenticated()) {
+        const userData = await apiService.getCurrentUser();
+        setUser(userData);
+        await checkLicenseStatus();
+      }
+    } catch (error) {
+      console.error('Failed to refresh user data:', error);
+    }
+  };
+
   const logout = () => {
     apiService.logout();
     licenseStorage.clearStoredLicense(); // پاک کردن اطلاعات لایسنس محلی
@@ -136,10 +151,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     isLoading,
     isAuthenticated: !!user,
+    licenseStatus,
     login,
     register,
     logout,
     checkAuth,
+    checkLicenseStatus,
+    refreshUserData,
   };
 
   return (

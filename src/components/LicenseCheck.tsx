@@ -15,7 +15,7 @@ export function LicenseCheck() {
   const [license, setLicense] = useState('');
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<LicenseStatus | null>(null);
-  const { user } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -70,12 +70,14 @@ export function LicenseCheck() {
         licenseStorage.storeLicenseInfo(license, new Date().toISOString(), user.email);
       }
       
-      checkLicenseStatus(); // Refresh status
+      // Refresh both local and auth context status
+      await checkLicenseStatus();
+      await refreshUserData();
       
       // Navigate to main page after successful activation
       setTimeout(() => {
         navigate('/');
-      }, 2000);
+      }, 1500);
       
     } catch (error) {
       // Error toast is handled by apiService

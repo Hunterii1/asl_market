@@ -73,6 +73,15 @@ type UserPagination struct {
 var userPaginationStates = make(map[int64]*UserPagination)
 var paginationMutex = sync.RWMutex{}
 
+// User session states
+type SessionState struct {
+	ChatID          int64
+	WaitingForInput string // "license_count", "search_query", etc.
+}
+
+var sessionStates = make(map[int64]*SessionState)
+var sessionMutex = sync.RWMutex{}
+
 var (
 	telegramService     *TelegramService
 	telegramServiceOnce sync.Once
@@ -174,6 +183,13 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showUsersList(message.Chat.ID, "unlicensed", 1)
 	case MENU_SEARCH_USER:
 		s.showSearchPrompt(message.Chat.ID)
+		// Set session state to wait for search query
+		sessionMutex.Lock()
+		sessionStates[message.Chat.ID] = &SessionState{
+			ChatID:          message.Chat.ID,
+			WaitingForInput: "search_query",
+		}
+		sessionMutex.Unlock()
 	case MENU_USER_STATS:
 		s.showUserStats(message.Chat.ID)
 	case MENU_PREV_PAGE:
@@ -190,6 +206,13 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showLicenseMenu(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
+		// Set session state to wait for license count
+		sessionMutex.Lock()
+		sessionStates[message.Chat.ID] = &SessionState{
+			ChatID:          message.Chat.ID,
+			WaitingForInput: "license_count",
+		}
+		sessionMutex.Unlock()
 	case MENU_LIST_LICENSES:
 		s.showLicensesList(message.Chat.ID, 1)
 	case MENU_SETTINGS:
@@ -197,13 +220,53 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case "🔙 بازگشت به منو اصلی":
 		s.showMainMenu(message.Chat.ID)
 	default:
-		// Handle search queries, license generation count, or other text input
-		if strings.Contains(message.Text, "@") {
-			s.handleSearch(message.Chat.ID, message.Text)
-		} else if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
-			s.handleGenerateLicenses(message.Chat.ID, count, message.From.ID)
-		} else if strings.ContainsAny(message.Text, "0123456789") {
-			s.handleSearch(message.Chat.ID, message.Text)
+		// Check session state for input handling
+		sessionMutex.RLock()
+		state, exists := sessionStates[message.Chat.ID]
+		sessionMutex.RUnlock()
+
+		if exists {
+			switch state.WaitingForInput {
+			case "license_count":
+				if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
+					s.handleGenerateLicenses(message.Chat.ID, count, message.From.ID)
+					// Clear session state
+					sessionMutex.Lock()
+					delete(sessionStates, message.Chat.ID)
+					sessionMutex.Unlock()
+				} else {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ لطفا عددی بین 1 تا 100 وارد کنید.")
+					s.bot.Send(msg)
+				}
+			case "search_query":
+				s.handleSearch(message.Chat.ID, message.Text)
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+			}
+		} else {
+			// No active session - show help message
+			msg := tgbotapi.NewMessage(message.Chat.ID,
+				"❓ **راهنمای استفاده:**\n\n"+
+					"برای تولید لایسنس: ابتدا '➕ تولید لایسنس' را انتخاب کنید\n"+
+					"برای جستجو: ابتدا '🔍 جستجو کاربر' را انتخاب کنید\n\n"+
+					"یا از منوی زیر استفاده کنید:")
+			msg.ParseMode = "Markdown"
+
+			// Show main menu
+			keyboard := tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_STATS),
+					tgbotapi.NewKeyboardButton(MENU_USERS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_LICENSES),
+					tgbotapi.NewKeyboardButton(MENU_SETTINGS),
+				),
+			)
+			msg.ReplyMarkup = keyboard
+			s.bot.Send(msg)
 		}
 	}
 }

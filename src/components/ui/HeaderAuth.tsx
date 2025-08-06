@@ -23,7 +23,7 @@ import { Logo } from "./Logo";
 import { apiService, LicenseStatus } from "@/services/api";
 
 const HeaderAuth = () => {
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const { user, isAuthenticated, logout, isLoading, licenseStatus: authLicenseStatus } = useAuth();
   const navigate = useNavigate();
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
 
@@ -36,11 +36,14 @@ const HeaderAuth = () => {
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
   };
 
+  // Use license status from auth context or fallback to local state
+  const currentLicenseStatus = authLicenseStatus || licenseStatus;
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !authLicenseStatus) {
       checkLicenseStatus();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLicenseStatus]);
 
   const checkLicenseStatus = async () => {
     try {
@@ -137,12 +140,12 @@ const HeaderAuth = () => {
             <ThemeToggle />
             
             {/* License Status */}
-            {licenseStatus && (
+            {currentLicenseStatus && (
               <Badge 
-                variant={licenseStatus.is_approved ? "default" : (licenseStatus.has_license ? "secondary" : "destructive")}
+                variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
                 className="hidden sm:flex"
               >
-                {licenseStatus.is_approved ? "لایسنس فعال" : (licenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
+                {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
               </Badge>
             )}
             
@@ -176,12 +179,12 @@ const HeaderAuth = () => {
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
                 <DropdownMenuLabel className="text-foreground">
                   حساب کاربری
-                  {licenseStatus && (
+                  {currentLicenseStatus && (
                     <Badge 
-                      variant={licenseStatus.is_approved ? "default" : (licenseStatus.has_license ? "secondary" : "destructive")}
+                      variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
                       className="mt-2 sm:hidden"
                     >
-                      {licenseStatus.is_approved ? "لایسنس فعال" : (licenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
+                      {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
                     </Badge>
                   )}
                 </DropdownMenuLabel>
