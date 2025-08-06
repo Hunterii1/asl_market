@@ -70,6 +70,12 @@ const (
 	MENU_ALL_VISITORS      = "📋 همه ویزیتورها"
 	MENU_VISITOR_STATS     = "📊 آمار ویزیتورها"
 
+	// Research products management sub-menus
+	MENU_RESEARCH_PRODUCTS      = "🔬 مدیریت محصولات تحقیقی"
+	MENU_ADD_RESEARCH_PRODUCT   = "➕ اضافه کردن محصول"
+	MENU_LIST_RESEARCH_PRODUCTS = "📋 لیست محصولات"
+	MENU_RESEARCH_PRODUCT_STATS = "📊 آمار محصولات"
+
 	// Visitor action buttons
 	MENU_APPROVE_VISITOR = "✅ تأیید"
 	MENU_REJECT_VISITOR  = "❌ رد"
@@ -184,6 +190,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_VISITORS),
+			tgbotapi.NewKeyboardButton(MENU_RESEARCH_PRODUCTS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -259,6 +268,14 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showVisitorsList(message.Chat.ID, "all", 1)
 	case MENU_VISITOR_STATS:
 		s.showVisitorStats(message.Chat.ID)
+	case MENU_RESEARCH_PRODUCTS:
+		s.showResearchProductsMenu(message.Chat.ID)
+	case MENU_ADD_RESEARCH_PRODUCT:
+		s.promptAddResearchProduct(message.Chat.ID)
+	case MENU_LIST_RESEARCH_PRODUCTS:
+		s.showResearchProductsList(message.Chat.ID)
+	case MENU_RESEARCH_PRODUCT_STATS:
+		s.showResearchProductsStats(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count
@@ -331,6 +348,12 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
+			case "research_product_name":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "name")
+			case "research_product_category":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "category")
+			case "research_product_description":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "description")
 			}
 		} else {
 			// Check for supplier command patterns
@@ -920,6 +943,13 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		}
 		msg := tgbotapi.NewMessage(chatID, prompt)
 		s.bot.Send(msg)
+		return
+	}
+
+	// Handle demand button callbacks
+	if strings.HasPrefix(data, "demand_") {
+		demand := strings.TrimPrefix(data, "demand_")
+		s.handleResearchProductCreation(chatID, demand, "market_demand")
 		return
 	}
 
@@ -1691,6 +1721,272 @@ func getSafePercentage(part, total int64) float64 {
 		return 0
 	}
 	return float64(part) / float64(total) * 100
+}
+
+// Research Products Management Functions
+
+func (s *TelegramService) showResearchProductsMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ADD_RESEARCH_PRODUCT),
+			tgbotapi.NewKeyboardButton(MENU_LIST_RESEARCH_PRODUCTS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_RESEARCH_PRODUCT_STATS),
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID,
+		"🔬 **مدیریت محصولات تحقیقی**\n\n"+
+			"با استفاده از این بخش می‌توانید:\n\n"+
+			"➕ **اضافه کردن محصول**: افزودن محصول جدید به لیست\n"+
+			"📋 **لیست محصولات**: مشاهده و مدیریت محصولات موجود\n"+
+			"📊 **آمار محصولات**: نمایش آمار کلی محصولات\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) promptAddResearchProduct(chatID int64) {
+	// Set session state for product creation
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "research_product_name",
+		Data: map[string]interface{}{
+			"step": "name",
+		},
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID,
+		"🔬 **افزودن محصول تحقیقی جدید**\n\n"+
+			"لطفا نام محصول را وارد کنید:\n\n"+
+			"*مثال:* زعفران سرگل، خرما مجول، فرش دستباف")
+
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showResearchProductsList(chatID int64) {
+	products, err := models.GetActiveResearchProducts()
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست محصولات")
+		s.bot.Send(msg)
+		return
+	}
+
+	if len(products) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "📋 **لیست محصولات تحقیقی**\n\nهنوز محصولی اضافه نشده است.")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	text := "📋 **لیست محصولات تحقیقی**\n\n"
+	text += fmt.Sprintf("📊 **آمار:** %d محصول\n\n", len(products))
+
+	for i, product := range products {
+		if i >= 10 { // Limit to 10 products per message
+			text += "...\n\n💡 *برای مشاهده محصولات بیشتر از /products استفاده کنید*"
+			break
+		}
+
+		marketDemandEmoji := "📊"
+		switch product.MarketDemand {
+		case "high":
+			marketDemandEmoji = "🔥"
+		case "medium":
+			marketDemandEmoji = "📈"
+		case "low":
+			marketDemandEmoji = "📉"
+		}
+
+		text += fmt.Sprintf("%d. **%s**\n", i+1, product.Name)
+		text += fmt.Sprintf("🏷️ دسته: %s\n", product.Category)
+		if product.ExportValue != "" {
+			text += fmt.Sprintf("💰 صادرات: %s\n", product.ExportValue)
+		}
+		text += fmt.Sprintf("%s تقاضا: %s\n", marketDemandEmoji, product.MarketDemand)
+		text += fmt.Sprintf("📅 ثبت: %s\n", product.CreatedAt.Format("2006/01/02"))
+		text += "➖➖➖➖➖➖➖➖\n"
+	}
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showResearchProductsStats(chatID int64) {
+	var total int64
+	s.db.Model(&models.ResearchProduct{}).Where("status = ?", "active").Count(&total)
+
+	var categories []string
+	s.db.Model(&models.ResearchProduct{}).
+		Distinct("category").
+		Where("status = ?", "active").
+		Pluck("category", &categories)
+
+	var highDemand, mediumDemand, lowDemand int64
+	s.db.Model(&models.ResearchProduct{}).Where("market_demand = ? AND status = ?", "high", "active").Count(&highDemand)
+	s.db.Model(&models.ResearchProduct{}).Where("market_demand = ? AND status = ?", "medium", "active").Count(&mediumDemand)
+	s.db.Model(&models.ResearchProduct{}).Where("market_demand = ? AND status = ?", "low", "active").Count(&lowDemand)
+
+	// Get latest product
+	var latestProduct models.ResearchProduct
+	err := s.db.Where("status = ?", "active").Order("created_at DESC").First(&latestProduct).Error
+
+	latestProductName := "هیچ کدام"
+	latestProductDate := "---"
+	if err == nil {
+		latestProductName = latestProduct.Name
+		latestProductDate = latestProduct.CreatedAt.Format("2006/01/02")
+	}
+
+	text := fmt.Sprintf(
+		"📊 **آمار محصولات تحقیقی**\n\n"+
+			"📈 **آمار کلی:**\n"+
+			"• تعداد کل محصولات: `%d`\n"+
+			"• تعداد دسته‌بندی‌ها: `%d`\n\n"+
+			"🔥 **تقاضای بازار:**\n"+
+			"• تقاضای بالا: `%d` محصول (%.1f%%)\n"+
+			"• تقاضای متوسط: `%d` محصول (%.1f%%)\n"+
+			"• تقاضای پایین: `%d` محصول (%.1f%%)\n\n"+
+			"📦 **آخرین محصول:**\n"+
+			"• نام: **%s**\n"+
+			"• تاریخ افزودن: `%s`\n\n"+
+			"🏷️ **دسته‌بندی‌ها:** %s",
+		total,
+		len(categories),
+		highDemand, getSafePercentage(highDemand, total),
+		mediumDemand, getSafePercentage(mediumDemand, total),
+		lowDemand, getSafePercentage(lowDemand, total),
+		latestProductName,
+		latestProductDate,
+		strings.Join(categories, "، "),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step string) {
+	sessionMutex.RLock()
+	state := sessionStates[chatID]
+	sessionMutex.RUnlock()
+
+	if state == nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در فرآیند ایجاد محصول")
+		s.bot.Send(msg)
+		return
+	}
+
+	switch step {
+	case "name":
+		// Store product name and ask for category
+		sessionMutex.Lock()
+		state.Data["name"] = text
+		state.Data["step"] = "category"
+		state.WaitingForInput = "research_product_category"
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ نام محصول ثبت شد: **"+text+"**\n\n"+
+				"حالا دسته‌بندی محصول را وارد کنید:\n\n"+
+				"*مثال:* کشاورزی، صنایع دستی، مواد غذایی، نساجی، معدن")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+
+	case "category":
+		// Store category and ask for description
+		sessionMutex.Lock()
+		state.Data["category"] = text
+		state.Data["step"] = "description"
+		state.WaitingForInput = "research_product_description"
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ دسته‌بندی ثبت شد: **"+text+"**\n\n"+
+				"توضیحات محصول را وارد کنید:\n\n"+
+				"*مثال:* زعفران درجه یک صادراتی با کیفیت بالا مناسب برای صادرات")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+
+	case "description":
+		// Store description and ask for market demand
+		sessionMutex.Lock()
+		state.Data["description"] = text
+		state.Data["step"] = "market_demand"
+		state.WaitingForInput = "research_product_market_demand"
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔥 بالا", "demand_high"),
+				tgbotapi.NewInlineKeyboardButtonData("📈 متوسط", "demand_medium"),
+				tgbotapi.NewInlineKeyboardButtonData("📉 پایین", "demand_low"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ توضیحات ثبت شد\n\n"+
+				"تقاضای بازار برای این محصول چگونه است؟")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "market_demand":
+		// Create the product
+		name := state.Data["name"].(string)
+		category := state.Data["category"].(string)
+		description := state.Data["description"].(string)
+
+		// Get admin ID (assuming first admin for simplicity)
+		var adminID uint = 1 // This should be the actual admin ID
+
+		productReq := models.ResearchProductRequest{
+			Name:         name,
+			Category:     category,
+			Description:  description,
+			MarketDemand: text,
+			Priority:     0,
+		}
+
+		product, err := models.CreateResearchProduct(productReq, adminID)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا در ایجاد محصول: "+err.Error())
+			s.bot.Send(msg)
+		} else {
+			successMsg := fmt.Sprintf(
+				"✅ **محصول تحقیقی با موفقیت اضافه شد!**\n\n"+
+					"📦 **نام:** %s\n"+
+					"🏷️ **دسته:** %s\n"+
+					"📝 **توضیحات:** %s\n"+
+					"🔥 **تقاضای بازار:** %s\n"+
+					"🆔 **شناسه:** #%d",
+				product.Name,
+				product.Category,
+				product.Description,
+				product.MarketDemand,
+				product.ID,
+			)
+
+			msg := tgbotapi.NewMessage(chatID, successMsg)
+			msg.ParseMode = "Markdown"
+			s.bot.Send(msg)
+		}
+
+		// Clear session state
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
+
+		// Return to research products menu
+		s.showResearchProductsMenu(chatID)
+	}
 }
 
 func getSafeAverage(total, count int64) float64 {

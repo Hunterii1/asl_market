@@ -77,6 +77,18 @@ func SetupRoutes(router *gin.Engine) {
 		protected.POST("/admin/visitors/:id/reject", controllers.RejectVisitorByAdmin)
 		protected.PUT("/admin/visitors/:id/status", controllers.UpdateVisitorStatus)
 
+		// Research products routes (public access)
+		protected.GET("/research-products", controllers.GetResearchProducts)
+		protected.GET("/research-products/active", controllers.GetActiveResearchProducts)
+		protected.GET("/research-products/categories", controllers.GetResearchProductCategories)
+		protected.GET("/research-products/:id", controllers.GetResearchProduct)
+
+		// Admin research products management routes
+		protected.POST("/admin/research-products", controllers.CreateResearchProduct)
+		protected.PUT("/admin/research-products/:id", controllers.UpdateResearchProduct)
+		protected.DELETE("/admin/research-products/:id", controllers.DeleteResearchProduct)
+		protected.PATCH("/admin/research-products/:id/status", controllers.UpdateResearchProductStatus)
+
 		// License-protected routes
 		licensed := protected.Group("/")
 		licensed.Use(middleware.LicenseMiddleware())
