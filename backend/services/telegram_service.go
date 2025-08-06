@@ -62,6 +62,19 @@ const (
 	MENU_REJECT_SUPPLIER  = "❌ رد"
 	MENU_VIEW_SUPPLIER    = "👁️ جزئیات"
 
+	// Visitor management sub-menus
+	MENU_VISITORS          = "🚶‍♂️ مدیریت ویزیتورها"
+	MENU_PENDING_VISITORS  = "⏳ ویزیتورهای در انتظار"
+	MENU_APPROVED_VISITORS = "✅ ویزیتورهای تأیید شده"
+	MENU_REJECTED_VISITORS = "❌ ویزیتورهای رد شده"
+	MENU_ALL_VISITORS      = "📋 همه ویزیتورها"
+	MENU_VISITOR_STATS     = "📊 آمار ویزیتورها"
+
+	// Visitor action buttons
+	MENU_APPROVE_VISITOR = "✅ تأیید"
+	MENU_REJECT_VISITOR  = "❌ رد"
+	MENU_VIEW_VISITOR    = "👁️ جزئیات"
+
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
 	MENU_NEXT_PAGE = "➡️ صفحه بعد"
@@ -170,7 +183,10 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_VISITORS),
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 		),
 	)
@@ -231,6 +247,18 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSuppliersList(message.Chat.ID, "all", 1)
 	case MENU_SUPPLIER_STATS:
 		s.showSupplierStats(message.Chat.ID)
+	case MENU_VISITORS:
+		s.showVisitorMenu(message.Chat.ID)
+	case MENU_PENDING_VISITORS:
+		s.showVisitorsList(message.Chat.ID, "pending", 1)
+	case MENU_APPROVED_VISITORS:
+		s.showVisitorsList(message.Chat.ID, "approved", 1)
+	case MENU_REJECTED_VISITORS:
+		s.showVisitorsList(message.Chat.ID, "rejected", 1)
+	case MENU_ALL_VISITORS:
+		s.showVisitorsList(message.Chat.ID, "all", 1)
+	case MENU_VISITOR_STATS:
+		s.showVisitorStats(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count

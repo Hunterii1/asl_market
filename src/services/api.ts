@@ -372,6 +372,94 @@ class ApiService {
     });
   }
 
+  // Visitor methods
+  async registerVisitor(visitorData: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor/register`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(visitorData),
+    });
+  }
+
+  async getMyVisitorStatus(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor/status`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getApprovedVisitors(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitors`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getVisitorsForAdmin(params: {
+    page?: number;
+    per_page?: number;
+    status?: string;
+    search?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.status) queryParams.append('status', params.status);
+    if (params.search) queryParams.append('search', params.search);
+
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getVisitorDetails(visitorId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors/${visitorId}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async approveVisitor(visitorId: number, data: { admin_notes?: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors/${visitorId}/approve`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async rejectVisitor(visitorId: number, data: { admin_notes: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors/${visitorId}/reject`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateVisitorStatus(visitorId: number, data: { status: string; admin_notes?: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors/${visitorId}/status`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
   // Auth helpers
   logout() {
     localStorage.removeItem('auth_token');
