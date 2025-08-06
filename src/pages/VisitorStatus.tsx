@@ -102,11 +102,9 @@ export default function VisitorStatus() {
     const fetchVisitorStatus = async () => {
       try {
         console.log('🔍 Fetching visitor status...');
-        const response = await apiService.getMyVisitorStatus();
-        console.log('✅ API Response:', response);
-        const data: VisitorStatusResponse = response.data;
+        const data = await apiService.getMyVisitorStatus();
+        console.log('✅ API Response data:', data);
         
-        console.log('📊 Parsed data:', data);
         setHasVisitor(data.has_visitor);
         if (data.visitor) {
           setVisitorData(data.visitor);
@@ -125,8 +123,8 @@ export default function VisitorStatus() {
           setHasVisitor(false);
         } else {
           toast({
-            title: "خطا",
-            description: error.response?.data?.error || "خطا در دریافت اطلاعات ویزیتور",
+            title: "خطا", 
+            description: error.message || "خطا در دریافت اطلاعات ویزیتور",
             variant: "destructive",
           });
         }
