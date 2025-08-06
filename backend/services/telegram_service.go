@@ -30,11 +30,13 @@ func isAdmin(userID int64) bool {
 
 // Menu constants
 const (
-	MENU_USERS    = "👥 لیست کاربران"
-	MENU_STATS    = "📊 آمار سیستم"
-	MENU_SEARCH   = "🔍 جستجوی کاربر"
-	MENU_PENDING  = "⏳ درخواست‌های در انتظار"
-	MENU_SETTINGS = "⚙️ تنظیمات"
+	MENU_USERS         = "👥 لیست کاربران"
+	MENU_STATS         = "📊 آمار سیستم"
+	MENU_SEARCH        = "🔍 جستجوی کاربر"
+	MENU_LICENSES      = "🔑 مدیریت لایسنس"
+	MENU_GENERATE      = "➕ تولید لایسنس"
+	MENU_LIST_LICENSES = "📋 لیست لایسنس‌ها"
+	MENU_SETTINGS      = "⚙️ تنظیمات"
 )
 
 type TelegramService struct {
@@ -112,8 +114,8 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_STATS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_LICENSES),
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
-			tgbotapi.NewKeyboardButton(MENU_PENDING),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
@@ -121,7 +123,8 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 	)
 	keyboard.ResizeKeyboard = true
 
-	msg := tgbotapi.NewMessage(chatID, "به پنل مدیریت ASL Market خوش آمدید.\nلطفا یکی از گزینه‌های زیر را انتخاب کنید:")
+	msg := tgbotapi.NewMessage(chatID, "🎛️ به پنل مدیریت ASL Market خوش آمدید.\n\n🔑 **سیستم لایسنس جدید:**\n- لایسنس‌ها یکبار مصرف هستند\n- بعد از استفاده غیرفعال می‌شوند\n- تأیید اتوماتیک\n\nلطفا یکی از گزینه‌های زیر را انتخاب کنید:")
+	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
@@ -134,29 +137,47 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showStats(message.Chat.ID)
 	case MENU_SEARCH:
 		s.showSearchPrompt(message.Chat.ID)
-	case MENU_PENDING:
-		s.showPendingRequests(message.Chat.ID)
+	case MENU_LICENSES:
+		s.showLicenseMenu(message.Chat.ID)
+	case MENU_GENERATE:
+		s.showGeneratePrompt(message.Chat.ID)
+	case MENU_LIST_LICENSES:
+		s.showLicensesList(message.Chat.ID, 1)
 	case MENU_SETTINGS:
 		s.showSettings(message.Chat.ID)
+	case "🔙 بازگشت به منو اصلی":
+		s.showMainMenu(message.Chat.ID)
 	default:
-		// Handle search queries or other text input
-		if strings.Contains(message.Text, "@") || strings.ContainsAny(message.Text, "0123456789") {
+		// Handle search queries, license generation count, or other text input
+		if strings.Contains(message.Text, "@") {
+			s.handleSearch(message.Chat.ID, message.Text)
+		} else if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
+			s.handleGenerateLicenses(message.Chat.ID, count, message.From.ID)
+		} else if strings.ContainsAny(message.Text, "0123456789") {
 			s.handleSearch(message.Chat.ID, message.Text)
 		}
 	}
 }
 
 func (s *TelegramService) showStats(chatID int64) {
-	var totalUsers, approvedUsers, pendingUsers int64
+	var totalUsers, usersWithLicense int64
+	var totalLicenses, usedLicenses, availableLicenses int64
+
 	s.db.Model(&models.User{}).Count(&totalUsers)
-	s.db.Model(&models.User{}).Where("is_approved = ?", true).Count(&approvedUsers)
-	s.db.Model(&models.User{}).Where("license != '' AND is_approved = ?", false).Count(&pendingUsers)
+	s.db.Model(&models.License{}).Where("is_used = ?", true).Distinct("used_by").Count(&usersWithLicense)
+
+	s.db.Model(&models.License{}).Count(&totalLicenses)
+	s.db.Model(&models.License{}).Where("is_used = ?", true).Count(&usedLicenses)
+	availableLicenses = totalLicenses - usedLicenses
 
 	response := fmt.Sprintf("📊 آمار سیستم:\n\n"+
 		"👥 تعداد کل کاربران: %d\n"+
-		"✅ کاربران تأیید شده: %d\n"+
-		"⏳ در انتظار تأیید: %d\n",
-		totalUsers, approvedUsers, pendingUsers)
+		"✅ کاربران دارای لایسنس: %d\n\n"+
+		"🔑 آمار لایسنس‌ها:\n"+
+		"📦 کل لایسنس‌ها: %d\n"+
+		"✅ استفاده شده: %d\n"+
+		"🆓 در دسترس: %d",
+		totalUsers, usersWithLicense, totalLicenses, usedLicenses, availableLicenses)
 
 	msg := tgbotapi.NewMessage(chatID, response)
 	s.bot.Send(msg)
@@ -185,94 +206,47 @@ func (s *TelegramService) handleSearch(chatID int64, query string) {
 		return
 	}
 
+	// Check if user has license
+	hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+	var licenseInfo string
+	if hasLicense {
+		if license, err := models.GetUserLicense(s.db, user.ID); err == nil {
+			licenseInfo = fmt.Sprintf("✅ دارای لایسنس: %s", license.Code)
+		} else {
+			licenseInfo = "✅ دارای لایسنس"
+		}
+	} else {
+		licenseInfo = "❌ بدون لایسنس"
+	}
+
 	message := fmt.Sprintf("📋 اطلاعات کاربر:\n\n"+
 		"👤 نام: %s %s\n"+
 		"📧 ایمیل: %s\n"+
 		"📱 تلفن: %s\n"+
-		"🔑 لایسنس: %s\n"+
-		"✅ تأیید شده: %v",
+		"🔑 وضعیت لایسنس: %s",
 		user.FirstName, user.LastName,
 		user.Email,
 		user.Phone,
-		user.License,
-		user.IsApproved)
+		licenseInfo)
 
-	var keyboard [][]tgbotapi.InlineKeyboardButton
-
-	// Add approve/reject buttons if user has license but not approved
-	if user.License != "" && !user.IsApproved {
-		keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ تأیید کاربر", fmt.Sprintf("approve_%d", user.ID)),
-			tgbotapi.NewInlineKeyboardButtonData("❌ رد کاربر", fmt.Sprintf("reject_%d", user.ID)),
-		))
-	}
-
-	// Add additional action buttons
-	keyboard = append(keyboard, tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData("📊 آمار فعالیت", fmt.Sprintf("stats_%d", user.ID)),
-		tgbotapi.NewInlineKeyboardButtonData("📝 یادداشت", fmt.Sprintf("note_%d", user.ID)),
-	))
+	// Add action buttons
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📊 آمار فعالیت", fmt.Sprintf("stats_%d", user.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("📝 یادداشت", fmt.Sprintf("note_%d", user.ID)),
+		),
+	)
 
 	msg := tgbotapi.NewMessage(chatID, message)
-	if len(keyboard) > 0 {
-		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-	}
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
-func (s *TelegramService) showPendingRequests(chatID int64) {
-	var users []models.User
-	if err := s.db.Where("license != '' AND is_approved = ?", false).Find(&users).Error; err != nil {
-		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست درخواست‌ها")
-		s.bot.Send(msg)
-		return
-	}
-
-	if len(users) == 0 {
-		msg := tgbotapi.NewMessage(chatID, "📝 هیچ درخواست در انتظار تأییدی وجود ندارد.")
-		s.bot.Send(msg)
-		return
-	}
-
-	// Send header message
-	headerMsg := tgbotapi.NewMessage(chatID, "📋 لیست درخواست‌های در انتظار تأیید:")
-	s.bot.Send(headerMsg)
-
-	// Send each request as a separate message with its own buttons
-	for _, user := range users {
-		message := fmt.Sprintf("🆕 درخواست جدید\n\n"+
-			"👤 نام: %s %s\n"+
-			"📧 ایمیل: %s\n"+
-			"📱 تلفن: %s\n"+
-			"🔑 لایسنس: %s\n"+
-			"📅 تاریخ درخواست: %s",
-			user.FirstName, user.LastName,
-			user.Email,
-			user.Phone,
-			user.License,
-			"اکنون") // TODO: Add request date to user model
-
-		keyboard := tgbotapi.NewInlineKeyboardMarkup(
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("✅ تأیید درخواست", fmt.Sprintf("approve_%d", user.ID)),
-				tgbotapi.NewInlineKeyboardButtonData("❌ رد درخواست", fmt.Sprintf("reject_%d", user.ID)),
-			),
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData("👁 بررسی پروفایل", fmt.Sprintf("profile_%d", user.ID)),
-				tgbotapi.NewInlineKeyboardButtonData("📝 ارسال پیام", fmt.Sprintf("message_%d", user.ID)),
-			),
-		)
-
-		msg := tgbotapi.NewMessage(chatID, message)
-		msg.ReplyMarkup = keyboard
-		s.bot.Send(msg)
-	}
-}
-
 func (s *TelegramService) showSettings(chatID int64) {
-	msg := tgbotapi.NewMessage(chatID, "⚙️ تنظیمات:\n\n"+
-		"🔑 لایسنس فعلی: "+ASL_PLATFORM_LICENSE+"\n"+
-		"👤 شناسه ادمین: "+fmt.Sprint(ADMIN_IDS))
+	msg := tgbotapi.NewMessage(chatID, "⚙️ تنظیمات سیستم:\n\n"+
+		"🎛️ نوع سیستم: لایسنس یکبار مصرف\n"+
+		"👤 ادمین‌ها: "+fmt.Sprint(ADMIN_IDS)+"\n"+
+		"🔑 حداکثر تولید لایسنس: 100 عدد در هر درخواست")
 	s.bot.Send(msg)
 }
 
@@ -357,10 +331,16 @@ func (s *TelegramService) showFilteredUsers(chatID int64, filter string, page in
 		message := fmt.Sprintf("🔹 ID: %d\n👤 %s %s\n📧 %s\n📱 %s",
 			user.ID, user.FirstName, user.LastName, user.Email, user.Phone)
 
-		if filter == "pending" {
-			message += fmt.Sprintf("\n🔑 لایسنس: %s", user.License)
+		// بررسی وضعیت لایسنس کاربر
+		hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+		if hasLicense {
+			if license, err := models.GetUserLicense(s.db, user.ID); err == nil {
+				message += fmt.Sprintf("\n🔑 لایسنس: %s", license.Code)
+			} else {
+				message += "\n🔑 دارای لایسنس"
+			}
 		} else {
-			message += fmt.Sprintf("\n✅ تأیید شده: %v", user.IsApproved)
+			message += "\n❌ بدون لایسنس"
 		}
 
 		var keyboard [][]tgbotapi.InlineKeyboardButton
@@ -532,29 +512,34 @@ func (s *TelegramService) handleUserStatusChange(chatID int64, user *models.User
 
 	switch action {
 	case "approve":
-		user.IsApproved = true
+		// در سیستم جدید تأیید خودکار است، اما می‌توانیم کاربر را فعال/غیرفعال کنیم
+		user.IsActive = true
 		if err := s.db.Save(user).Error; err != nil {
-			response = "❌ خطا در تأیید کاربر"
+			response = "❌ خطا در فعال کردن کاربر"
 		} else {
-			response = fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName)
+			response = fmt.Sprintf("✅ کاربر %s %s فعال شد", user.FirstName, user.LastName)
 		}
 
 	case "reject":
-		user.IsApproved = false
-		user.License = ""
+		// غیرفعال کردن کاربر
+		user.IsActive = false
 		if err := s.db.Save(user).Error; err != nil {
-			response = "❌ خطا در رد درخواست کاربر"
+			response = "❌ خطا در غیرفعال کردن کاربر"
 		} else {
-			response = fmt.Sprintf("❌ درخواست کاربر %s %s رد شد", user.FirstName, user.LastName)
+			response = fmt.Sprintf("❌ کاربر %s %s غیرفعال شد", user.FirstName, user.LastName)
 		}
 
 	case "recheck":
-		// Simply change status to approved
-		user.IsApproved = true
-		if err := s.db.Save(user).Error; err != nil {
-			response = "❌ خطا در بررسی مجدد کاربر"
+		// Refresh user data and check license status
+		if err := s.db.First(user, user.ID).Error; err != nil {
+			response = "❌ خطا در بروزرسانی اطلاعات کاربر"
 		} else {
-			response = fmt.Sprintf("✅ کاربر %s %s با موفقیت تأیید شد", user.FirstName, user.LastName)
+			hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+			licenseStatus := "❌ بدون لایسنس"
+			if hasLicense {
+				licenseStatus = "✅ دارای لایسنس"
+			}
+			response = fmt.Sprintf("🔄 اطلاعات کاربر %s %s بروزرسانی شد\n%s", user.FirstName, user.LastName, licenseStatus)
 		}
 	}
 
@@ -573,19 +558,30 @@ func (s *TelegramService) sendCallbackResponse(query *tgbotapi.CallbackQuery, me
 }
 
 func (s *TelegramService) showUserDetails(chatID int64, user models.User) {
+	// بررسی وضعیت لایسنس
+	hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+	licenseInfo := "❌ بدون لایسنس"
+	if hasLicense {
+		if license, err := models.GetUserLicense(s.db, user.ID); err == nil {
+			licenseInfo = fmt.Sprintf("✅ لایسنس: %s", license.Code)
+		} else {
+			licenseInfo = "✅ دارای لایسنس"
+		}
+	}
+
 	message := fmt.Sprintf("👤 اطلاعات کامل کاربر:\n\n"+
 		"نام: %s %s\n"+
 		"ایمیل: %s\n"+
 		"تلفن: %s\n"+
-		"لایسنس: %s\n"+
-		"وضعیت تأیید: %v\n"+
+		"🔑 %s\n"+
+		"وضعیت حساب: %s\n"+
 		"تاریخ ثبت‌نام: %s",
 		user.FirstName, user.LastName,
 		user.Email,
 		user.Phone,
-		user.License,
-		user.IsApproved,
-		"اکنون") // TODO: Add registration date to user model
+		licenseInfo,
+		map[bool]string{true: "فعال", false: "غیرفعال"}[user.IsActive],
+		user.CreatedAt.Format("2006/01/02 15:04"))
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
@@ -601,44 +597,209 @@ func (s *TelegramService) showUserDetails(chatID int64, user models.User) {
 
 func (s *TelegramService) showUserStats(chatID int64, user models.User) {
 	// TODO: Implement user statistics
+	hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+	licenseStatus := "❌ بدون لایسنس"
+	if hasLicense {
+		licenseStatus = "✅ دارای لایسنس"
+	}
+
 	message := fmt.Sprintf("📊 آمار فعالیت %s %s:\n\n"+
 		"تعداد ورود: -\n"+
 		"آخرین فعالیت: -\n"+
-		"وضعیت فعلی: %v",
+		"وضعیت لایسنس: %s\n"+
+		"وضعیت حساب: %s",
 		user.FirstName, user.LastName,
-		user.IsApproved)
+		licenseStatus,
+		map[bool]string{true: "فعال", false: "غیرفعال"}[user.IsActive])
 
 	msg := tgbotapi.NewMessage(chatID, message)
 	s.bot.Send(msg)
 }
 
+// SendLicenseRequest is deprecated in the new license system
+// Licenses are now auto-approved and one-time use
 func (s *TelegramService) SendLicenseRequest(user *models.User) error {
-	message := fmt.Sprintf("🆕 درخواست تأیید لایسنس جدید\n\n"+
-		"👤 نام: %s %s\n"+
-		"📧 ایمیل: %s\n"+
-		"📱 تلفن: %s\n"+
-		"🔑 لایسنس: %s\n\n"+
-		"لطفا درخواست را تأیید یا رد کنید.",
-		user.FirstName, user.LastName,
-		user.Email,
-		user.Phone,
-		user.License)
+	// در سیستم جدید لایسنس‌ها خودکار تأیید می‌شوند
+	// این متد فقط برای سازگاری با کد قدیمی نگه داشته شده است
+	return nil
+}
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("approve_%d", user.ID)),
-			tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("reject_%d", user.ID)),
+// New License Management Methods
+
+func (s *TelegramService) showLicenseMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_GENERATE),
+			tgbotapi.NewKeyboardButton(MENU_LIST_LICENSES),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("🔙 بازگشت به منو اصلی"),
 		),
 	)
+	keyboard.ResizeKeyboard = true
 
-	// Send message to all admins
-	var firstError error
-	for _, adminID := range ADMIN_IDS {
-		msg := tgbotapi.NewMessage(adminID, message)
-		msg.ReplyMarkup = keyboard
-		if _, err := s.bot.Send(msg); err != nil && firstError == nil {
-			firstError = err
-		}
+	msg := tgbotapi.NewMessage(chatID, "🔑 **مدیریت لایسنس‌ها**\n\n"+
+		"در این بخش می‌توانید:\n"+
+		"• لایسنس‌های جدید تولید کنید\n"+
+		"• لیست لایسنس‌ها را مشاهده کنید\n"+
+		"• وضعیت استفاده از لایسنس‌ها را بررسی کنید\n\n"+
+		"لطفا یکی از گزینه‌های زیر را انتخاب کنید:")
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showGeneratePrompt(chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, "➕ **تولید لایسنس جدید**\n\n"+
+		"لطفا تعداد لایسنس‌هایی که می‌خواهید تولید کنید را وارد کنید:\n\n"+
+		"• حداقل: 1 عدد\n"+
+		"• حداکثر: 100 عدد\n\n"+
+		"مثال: 10")
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, adminTelegramID int64) {
+	// Find admin user by telegram ID (this is a simplified approach)
+	// In a real scenario, you'd have a mapping between telegram IDs and user IDs
+	adminID := uint(adminTelegramID) // Simplified for now
+
+	licenses, err := models.GenerateLicenses(s.db, count, adminID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در تولید لایسنس‌ها: %v", err))
+		s.bot.Send(msg)
+		return
 	}
-	return firstError
+
+	// Send success message
+	successMsg := fmt.Sprintf("✅ **%d لایسنس با موفقیت تولید شد!**\n\n", count)
+	successMsgObj := tgbotapi.NewMessage(chatID, successMsg)
+	successMsgObj.ParseMode = "Markdown"
+	s.bot.Send(successMsgObj)
+
+	// Send licenses in chunks (Telegram has message length limits)
+	chunkSize := 10
+	for i := 0; i < len(licenses); i += chunkSize {
+		end := i + chunkSize
+		if end > len(licenses) {
+			end = len(licenses)
+		}
+
+		var message strings.Builder
+		message.WriteString(fmt.Sprintf("🔑 **لایسنس‌های %d تا %d:**\n\n", i+1, end))
+
+		for j, license := range licenses[i:end] {
+			message.WriteString(fmt.Sprintf("`%d.` `%s`\n", i+j+1, license))
+		}
+
+		msg := tgbotapi.NewMessage(chatID, message.String())
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+	}
+
+	// Send final instructions
+	instructionsMsg := "📋 **دستورالعمل:**\n\n" +
+		"• هر لایسنس فقط یک بار قابل استفاده است\n" +
+		"• بعد از استفاده، لایسنس غیرفعال می‌شود\n" +
+		"• لایسنس‌ها برای فروش دستی آماده هستند\n" +
+		"• کاربران بعد از وارد کردن لایسنس بلافاصله دسترسی پیدا می‌کنند"
+
+	finalMsg := tgbotapi.NewMessage(chatID, instructionsMsg)
+	finalMsg.ParseMode = "Markdown"
+	s.bot.Send(finalMsg)
+}
+
+func (s *TelegramService) showLicensesList(chatID int64, page int) {
+	const pageSize = 20
+	offset := (page - 1) * pageSize
+
+	var licenses []models.License
+	var total int64
+
+	// Get total count
+	s.db.Model(&models.License{}).Count(&total)
+
+	// Get licenses for current page
+	if err := s.db.Preload("User").Preload("Admin").
+		Order("created_at DESC").
+		Limit(pageSize).Offset(offset).
+		Find(&licenses).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست لایسنس‌ها")
+		s.bot.Send(msg)
+		return
+	}
+
+	if len(licenses) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "📝 هیچ لایسنسی یافت نشد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create header message
+	var headerBuilder strings.Builder
+	headerBuilder.WriteString(fmt.Sprintf("📋 **لیست لایسنس‌ها** (صفحه %d)\n\n", page))
+	headerBuilder.WriteString(fmt.Sprintf("📊 تعداد کل: %d\n\n", total))
+
+	headerMsg := tgbotapi.NewMessage(chatID, headerBuilder.String())
+	headerMsg.ParseMode = "Markdown"
+	s.bot.Send(headerMsg)
+
+	// Send licenses
+	for i, license := range licenses {
+		var status, userInfo string
+		if license.IsUsed {
+			status = "❌ استفاده شده"
+			if license.User != nil {
+				userInfo = fmt.Sprintf("👤 کاربر: %s %s (%s)",
+					license.User.FirstName, license.User.LastName, license.User.Email)
+			}
+		} else {
+			status = "✅ قابل استفاده"
+			userInfo = "👤 کاربر: ---"
+		}
+
+		adminInfo := fmt.Sprintf("🛠 تولید شده توسط: %s %s",
+			license.Admin.FirstName, license.Admin.LastName)
+
+		message := fmt.Sprintf("🔑 **لایسنس #%d**\n\n"+
+			"`%s`\n\n"+
+			"📊 وضعیت: %s\n"+
+			"%s\n"+
+			"%s\n"+
+			"📅 تاریخ تولید: %s",
+			offset+i+1,
+			license.Code,
+			status,
+			userInfo,
+			adminInfo,
+			license.CreatedAt.Format("2006/01/02 15:04"))
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+	}
+
+	// Pagination buttons
+	var buttons [][]tgbotapi.InlineKeyboardButton
+	var navRow []tgbotapi.InlineKeyboardButton
+
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("◀️ قبلی", fmt.Sprintf("licenses_page_%d", page-1)))
+	}
+
+	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewInlineKeyboardButtonData("بعدی ▶️", fmt.Sprintf("licenses_page_%d", page+1)))
+	}
+
+	if len(navRow) > 0 {
+		buttons = append(buttons, navRow)
+	}
+
+	if len(buttons) > 0 {
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(buttons...)
+		paginationMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("📄 صفحه %d از %d", page, totalPages))
+		paginationMsg.ReplyMarkup = keyboard
+		s.bot.Send(paginationMsg)
+	}
 }

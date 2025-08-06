@@ -22,11 +22,13 @@ func LicenseMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Get user from database
-		var user models.User
-		if err := models.GetDB().First(&user, userID).Error; err != nil {
+		userIDUint := userID.(uint)
+
+		// Check if user has valid license
+		hasLicense, err := models.CheckUserLicense(models.GetDB(), userIDUint)
+		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "خطا در دریافت اطلاعات کاربر",
+				"error": "خطا در بررسی وضعیت لایسنس",
 			})
 			c.Abort()
 			return
@@ -34,32 +36,20 @@ func LicenseMiddleware() gin.HandlerFunc {
 
 		// Create response with user's license status
 		licenseStatus := gin.H{
-			"needs_license": user.License == "",
-			"has_license":   user.License != "",
-			"is_approved":   user.IsApproved,
+			"needs_license": !hasLicense,
+			"has_license":   hasLicense,
+			"is_approved":   hasLicense, // Auto-approved now
+			"is_active":     hasLicense,
 		}
 
 		// Check if this is an AI endpoint
 		isAIEndpoint := strings.HasPrefix(c.Request.URL.Path, "/api/v1/ai/")
 
-		// Check if user has license and it's approved
-		if user.License == "" {
-			errorMsg := "شما نیاز به لایسنس دارید"
+		// Check if user has valid license
+		if !hasLicense {
+			errorMsg := "شما نیاز به لایسنس معتبر دارید"
 			if isAIEndpoint {
-				errorMsg = "برای استفاده از هوش مصنوعی نیاز به لایسنس دارید. لطفا ابتدا لایسنس خود را وارد کنید."
-			}
-			c.JSON(http.StatusForbidden, gin.H{
-				"error":          errorMsg,
-				"license_status": licenseStatus,
-			})
-			c.Abort()
-			return
-		}
-
-		if !user.IsApproved {
-			errorMsg := "لایسنس شما هنوز تأیید نشده است"
-			if isAIEndpoint {
-				errorMsg = "لایسنس شما برای استفاده از هوش مصنوعی هنوز تأیید نشده است. لطفا منتظر تأیید ادمین باشید."
+				errorMsg = "برای استفاده از هوش مصنوعی نیاز به لایسنس معتبر دارید. لطفا ابتدا لایسنس خود را وارد کنید."
 			}
 			c.JSON(http.StatusForbidden, gin.H{
 				"error":          errorMsg,

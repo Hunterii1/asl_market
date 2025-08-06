@@ -53,6 +53,7 @@ func SetupRoutes(router *gin.Engine) {
 		// License routes (no license check needed)
 		protected.POST("/license/verify", controllers.VerifyLicense)
 		protected.GET("/license/status", controllers.CheckLicenseStatus)
+		protected.GET("/license/info", controllers.GetUserLicenseInfo)
 
 		// License-protected routes
 		licensed := protected.Group("/")

@@ -7,18 +7,16 @@ import (
 )
 
 type User struct {
-	ID         uint           `json:"id" gorm:"primaryKey"`
-	FirstName  string         `json:"first_name" gorm:"size:100;not null"`
-	LastName   string         `json:"last_name" gorm:"size:100;not null"`
-	Email      string         `json:"email" gorm:"uniqueIndex;size:255;not null"`
-	Password   string         `json:"-" gorm:"size:255;not null"`
-	Phone      string         `json:"phone" gorm:"size:255"`
-	IsActive   bool           `json:"is_active" gorm:"default:true"`
-	License    string         `json:"license" gorm:"size:255"`
-	IsApproved bool           `json:"is_approved" gorm:"default:false"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `json:"-" gorm:"index"`
+	ID        uint           `json:"id" gorm:"primaryKey"`
+	FirstName string         `json:"first_name" gorm:"size:100;not null"`
+	LastName  string         `json:"last_name" gorm:"size:100;not null"`
+	Email     string         `json:"email" gorm:"uniqueIndex;size:255;not null"`
+	Password  string         `json:"-" gorm:"size:255;not null"`
+	Phone     string         `json:"phone" gorm:"size:255"`
+	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 type LoginRequest struct {
@@ -35,15 +33,13 @@ type RegisterRequest struct {
 }
 
 type UserResponse struct {
-	ID         uint      `json:"id"`
-	FirstName  string    `json:"first_name"`
-	LastName   string    `json:"last_name"`
-	Email      string    `json:"email"`
-	Phone      string    `json:"phone"`
-	IsActive   bool      `json:"is_active"`
-	License    string    `json:"license"`
-	IsApproved bool      `json:"is_approved"`
-	CreatedAt  time.Time `json:"created_at"`
+	ID        uint      `json:"id"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Email     string    `json:"email"`
+	Phone     string    `json:"phone"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type AuthResponse struct {
@@ -53,14 +49,12 @@ type AuthResponse struct {
 
 func (u *User) ToResponse() UserResponse {
 	return UserResponse{
-		ID:         u.ID,
-		FirstName:  u.FirstName,
-		LastName:   u.LastName,
-		Email:      u.Email,
-		Phone:      u.Phone,
-		IsActive:   u.IsActive,
-		License:    u.License,
-		IsApproved: u.IsApproved,
-		CreatedAt:  u.CreatedAt,
+		ID:        u.ID,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Email:     u.Email,
+		Phone:     u.Phone,
+		IsActive:  u.IsActive,
+		CreatedAt: u.CreatedAt,
 	}
 }
