@@ -25,6 +25,9 @@ import ProductsResearch from "./pages/ProductsResearch";
 import SupplierRegistration from "./pages/SupplierRegistration";
 import SupplierStatus from "./pages/SupplierStatus";
 import ApprovedSuppliers from "./pages/ApprovedSuppliers";
+import VisitorRegistration from "./pages/VisitorRegistration";
+import VisitorStatus from "./pages/VisitorStatus";
+import ApprovedVisitors from "./pages/ApprovedVisitors";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +62,23 @@ const App = () => (
               <Route path="/approved-suppliers" element={
                 <ProtectedRoute>
                   <ApprovedSuppliers />
+                </ProtectedRoute>
+              } />
+
+              {/* Visitor routes */}
+              <Route path="/visitor-registration" element={
+                <ProtectedRoute>
+                  <VisitorRegistration />
+                </ProtectedRoute>
+              } />
+              <Route path="/visitor-status" element={
+                <ProtectedRoute>
+                  <VisitorStatus />
+                </ProtectedRoute>
+              } />
+              <Route path="/approved-visitors" element={
+                <ProtectedRoute>
+                  <ApprovedVisitors />
                 </ProtectedRoute>
               } />
               

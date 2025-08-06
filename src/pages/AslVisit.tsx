@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 
 const AslVisit = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("browse");
   const [selectedCountry, setSelectedCountry] = useState("");
 
@@ -367,7 +369,10 @@ const AslVisit = () => {
           </ul>
         </div>
 
-        <Button className="w-full bg-blue-500 hover:bg-blue-600 rounded-2xl">
+        <Button 
+          onClick={() => navigate("/visitor-registration")}
+          className="w-full bg-blue-500 hover:bg-blue-600 rounded-2xl"
+        >
           <User className="w-4 h-4 ml-2" />
           ثبت درخواست ویزیتور
         </Button>
@@ -408,21 +413,25 @@ const AslVisit = () => {
           جستجو ویزیتورها
         </Button>
         <Button
-          variant={activeTab === "register" ? "default" : "outline"}
-          onClick={() => setActiveTab("register")}
-          className={`rounded-2xl transition-colors duration-300 ${
-            activeTab === "register"
-              ? "bg-blue-500 hover:bg-blue-600"
-              : "border-border text-muted-foreground hover:bg-muted"
-          }`}
+          variant="outline"
+          onClick={() => navigate("/visitor-registration")}
+          className="rounded-2xl border-border text-muted-foreground hover:bg-muted transition-colors duration-300"
         >
           <Plus className="w-4 h-4 ml-2" />
           ثبت‌نام ویزیتور
         </Button>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/visitor-status")}
+          className="rounded-2xl border-border text-muted-foreground hover:bg-muted transition-colors duration-300"
+        >
+          <CheckCircle className="w-4 h-4 ml-2" />
+          وضعیت ویزیتور
+        </Button>
       </div>
 
       {/* Content */}
-      {activeTab === "browse" ? <VisitorBrowser /> : <VisitorRegistration />}
+      {activeTab === "browse" && <VisitorBrowser />}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
