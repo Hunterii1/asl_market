@@ -1,5 +1,6 @@
 import { getErrorMessage, translateSuccess } from '@/utils/errorMessages';
 import { toast } from '@/hooks/use-toast';
+import { errorHandler } from '@/utils/errorHandler';
 
 // Determine API base URL based on environment
 const getApiBaseUrl = () => {
@@ -90,6 +91,13 @@ export interface LicenseRequest {
 export interface LicenseStatus {
   is_approved: boolean;
   has_license: boolean;
+  is_active: boolean;
+}
+
+export interface LicenseInfo {
+  license_code: string;
+  activated_at: string;
+  is_active: boolean;
 }
 
 class ApiService {
@@ -101,16 +109,26 @@ class ApiService {
 
   private async handleResponse(response: Response) {
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Failed to fetch' }));
-      const errorMessage = getErrorMessage(error.error || error.message || 'Request failed');
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { 
+          error: 'خطا در دریافت پاسخ از سرور',
+          statusCode: response.status 
+        };
+      }
+
+      // اضافه کردن status code به error data
+      errorData.statusCode = response.status;
       
-      // Show Persian error toast
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: errorMessage,
-        duration: 5000,
-      });
+      // استفاده از error handler جدید
+      const errorMessage = errorHandler.handleApiError({
+        response: {
+          data: errorData,
+          status: response.status
+        }
+      }, 'خطا در درخواست به سرور');
       
       throw new Error(errorMessage);
     }
@@ -131,21 +149,8 @@ class ApiService {
     } catch (error) {
       console.error(`❌ Network error for ${url}:`, error);
       
-      let errorMessage = 'خطا در ارتباط با سرور';
-      
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMessage = 'سرور در دسترس نیست. لطفاً اتصال اینترنت خود را بررسی کنید.';
-      } else if (error instanceof Error) {
-        errorMessage = getErrorMessage(error.message);
-      }
-      
-      // Show network error toast
-      toast({
-        variant: "destructive", 
-        title: "خطای شبکه",
-        description: errorMessage,
-        duration: 8000,
-      });
+      // استفاده از error handler برای خطاهای شبکه
+      const errorMessage = errorHandler.handleApiError(error, 'خطا در ارتباط با سرور');
       
       throw new Error(errorMessage);
     }
@@ -153,11 +158,7 @@ class ApiService {
 
   private showSuccessToast(message: string) {
     const persianMessage = translateSuccess(message);
-    toast({
-      title: "موفقیت",
-      description: persianMessage,
-      duration: 3000,
-    });
+    errorHandler.showSuccess(persianMessage);
   }
 
   // Authentication
@@ -326,6 +327,15 @@ class ApiService {
 
   async checkLicenseStatus(): Promise<LicenseStatus> {
     return this.makeRequest(`${API_BASE_URL}/license/status`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getLicenseInfo(): Promise<LicenseInfo> {
+    return this.makeRequest(`${API_BASE_URL}/license/info`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),

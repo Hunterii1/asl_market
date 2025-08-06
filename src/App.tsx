@@ -8,6 +8,8 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { LicenseRequiredRoute } from "@/components/LicenseRequiredRoute";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { ErrorTestPanel } from "@/components/ErrorTestPanel";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -24,14 +26,16 @@ import ProductsResearch from "./pages/ProductsResearch";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <ThemeProvider defaultTheme="dark" storageKey="asl-market-theme">
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <ConnectionStatus />
-          <BrowserRouter>
+  <ErrorBoundary>
+    <ThemeProvider defaultTheme="dark" storageKey="asl-market-theme">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
+            <ConnectionStatus />
+            <ErrorTestPanel />
+            <BrowserRouter>
             <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -99,11 +103,12 @@ const App = () => (
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+            </BrowserRouter>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

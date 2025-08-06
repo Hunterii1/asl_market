@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { apiService, User, LoginRequest, RegisterRequest, LicenseStatus } from '@/services/api';
 import { LicenseRequestModal } from '@/components/LicenseRequestModal';
+import { licenseStorage } from '@/utils/licenseStorage';
+import { errorHandler } from '@/utils/errorHandler';
 
 interface AuthContextType {
   user: User | null;
@@ -25,12 +27,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         const status = await apiService.checkLicenseStatus();
         setLicenseStatus(status);
-        if (!status.has_license) {
-          setShowLicenseModal(true);
+        
+        if (status.has_license && status.is_active) {
+          // کاربر لایسنس دارد، اطلاعات لایسنس را دریافت و ذخیره کن
+          try {
+            const licenseInfo = await apiService.getLicenseInfo();
+            licenseStorage.storeLicenseInfo(
+              licenseInfo.license_code,
+              licenseInfo.activated_at,
+              user.email
+            );
+          } catch (err) {
+            console.error('Failed to fetch license info:', err);
+          }
+        } else if (!status.has_license) {
+          // کاربر لایسنس ندارد، سعی در بازیابی از storage محلی
+          const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
+          
+          if (!recoveryAttempted) {
+            setShowLicenseModal(true);
+          }
         }
       }
     } catch (error) {
       console.error('License check failed:', error);
+      
+      // بررسی اینکه آیا خطا مربوط به لایسنس یا احراز هویت است
+      const isLicenseError = errorHandler.handleLicenseError(error);
+      const isAuthError = errorHandler.handleAuthError(error);
+      
+      if (!isLicenseError && !isAuthError) {
+        // در صورت خطا، سعی در بازیابی از storage محلی
+        if (user && licenseStorage.hasStoredLicense() && licenseStorage.isStoredLicenseValid()) {
+          const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
+          if (!recoveryAttempted) {
+            setShowLicenseModal(true);
+          }
+        } else {
+          setShowLicenseModal(true);
+        }
+      }
     }
   };
 
@@ -44,6 +80,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      
+      // استفاده از error handler
+      errorHandler.handleAuthError(error);
+      
       // Token might be expired, clear it
       apiService.logout();
       setUser(null);
@@ -82,6 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     apiService.logout();
+    licenseStorage.clearStoredLicense(); // پاک کردن اطلاعات لایسنس محلی
     setUser(null);
     setLicenseStatus(null);
     setShowLicenseModal(false);
