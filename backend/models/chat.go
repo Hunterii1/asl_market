@@ -11,7 +11,7 @@ type Chat struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	UserID    uint           `json:"user_id" gorm:"not null;index"`
 	User      User           `json:"user" gorm:"foreignKey:UserID"`
-	Title     string         `json:"title" gorm:"size:255"`
+	Title     string         `json:"title" gorm:"size:255;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -24,7 +24,7 @@ type Message struct {
 	ChatID    uint           `json:"chat_id" gorm:"not null;index"`
 	Chat      Chat           `json:"-" gorm:"foreignKey:ChatID"`
 	Role      string         `json:"role" gorm:"size:20;not null"` // "user" or "assistant"
-	Content   string         `json:"content" gorm:"type:text;not null"`
+	Content   string         `json:"content" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci;not null"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`

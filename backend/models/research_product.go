@@ -9,9 +9,9 @@ import (
 // ResearchProduct represents a research product in the system
 type ResearchProduct struct {
 	ID          uint   `json:"id" gorm:"primaryKey"`
-	Name        string `json:"name" gorm:"size:255;not null"`
-	Category    string `json:"category" gorm:"size:100;not null"`
-	Description string `json:"description" gorm:"type:text"`
+	Name        string `json:"name" gorm:"size:255;charset:utf8mb4;collation:utf8mb4_unicode_ci;not null"`
+	Category    string `json:"category" gorm:"size:100;charset:utf8mb4;collation:utf8mb4_unicode_ci;not null"`
+	Description string `json:"description" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 
 	// Market Information
 	ExportValue      string `json:"export_value" gorm:"size:100"`     // مقدار صادرات
@@ -21,10 +21,10 @@ type ResearchProduct struct {
 	CompetitionLevel string `json:"competition_level" gorm:"size:50"` // سطح رقابت: high, medium, low
 
 	// Additional Details
-	TargetCountries  string `json:"target_countries" gorm:"type:text"`  // کشورهای هدف
-	SeasonalFactors  string `json:"seasonal_factors" gorm:"type:text"`  // عوامل فصلی
-	RequiredLicenses string `json:"required_licenses" gorm:"type:text"` // مجوزهای مورد نیاز
-	QualityStandards string `json:"quality_standards" gorm:"type:text"` // استانداردهای کیفی
+	TargetCountries  string `json:"target_countries" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // کشورهای هدف
+	SeasonalFactors  string `json:"seasonal_factors" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // عوامل فصلی
+	RequiredLicenses string `json:"required_licenses" gorm:"type:text"`                                             // مجوزهای مورد نیاز
+	QualityStandards string `json:"quality_standards" gorm:"type:text"`                                             // استانداردهای کیفی
 
 	// Administrative
 	Status       string `json:"status" gorm:"size:20;default:'active'"` // active, inactive
