@@ -55,6 +55,8 @@ const AslSupplier = () => {
         setApprovedSuppliers(response.suppliers || []);
       } catch (error) {
         console.error('Error loading suppliers:', error);
+        // Set empty array on error to prevent map error
+        setApprovedSuppliers([]);
       } finally {
         setLoadingSuppliers(false);
       }
@@ -64,9 +66,9 @@ const AslSupplier = () => {
   }, []);
 
   const filteredSuppliers = approvedSuppliers.filter(supplier => {
-    const matchesSearch = supplier.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = supplier.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          supplier.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.main_products?.toLowerCase().includes(searchTerm.toLowerCase());
+                         supplier.city?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
@@ -220,15 +222,15 @@ const AslSupplier = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">{supplier.name}</h4>
-                    {supplier.isVerified && (
+                    <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">{supplier.brand_name || supplier.full_name}</h4>
+                    {supplier.status === 'approved' && (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     )}
                   </div>
                   <div className="flex items-center gap-1 mb-2">
                     <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-yellow-400 font-medium">{supplier.rating}</span>
-                    <span className="text-muted-foreground text-sm">({supplier.reviewCount} نظر)</span>
+                    <span className="text-yellow-400 font-medium">4.5</span>
+                    <span className="text-muted-foreground text-sm">(تازه عضو)</span>
                   </div>
                 </div>
               </div>
@@ -236,63 +238,61 @@ const AslSupplier = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <MapPin className="w-4 h-4" />
-                  {supplier.city}، {supplier.province}
+                  {supplier.city}
                 </div>
                 
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Package className="w-4 h-4" />
-                  {supplier.products.length} محصول
+                  {supplier.products?.length || 0} محصول
                 </div>
 
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Clock className="w-4 h-4" />
-                  عضو از {supplier.joinDate}
+                  عضو جدید
                 </div>
                 
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Package className="w-4 h-4" />
-                  ظرفیت: {supplier.capacity}
-                </div>
+                {supplier.has_export_experience && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <Star className="w-4 h-4" />
+                    دارای تجربه صادرات
+                  </div>
+                )}
 
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Users className="w-4 h-4" />
-                  اندازه: {supplier.companySize}
-                </div>
+                {supplier.can_produce_private_label && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <Users className="w-4 h-4" />
+                    تولید برند اختصاصی
+                  </div>
+                )}
               </div>
 
-              <p className="text-muted-foreground text-sm mb-4">{supplier.description}</p>
+              <p className="text-muted-foreground text-sm mb-4">{supplier.address}</p>
 
               <div className="mb-4">
                 <span className="text-muted-foreground text-sm block mb-2">محصولات:</span>
                 <div className="flex flex-wrap gap-1">
-                  {supplier.products.map((product, index) => (
+                  {supplier.products?.map((product, index) => (
                     <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
-                      {product}
+                      {product.product_name || product}
                     </Badge>
                   ))}
                 </div>
               </div>
 
-              <div className="mb-4">
-                <span className="text-muted-foreground text-sm block mb-2">گواهینامه‌ها:</span>
-                <div className="flex flex-wrap gap-1">
-                  {supplier.certifications.map((cert, index) => (
-                    <Badge key={index} className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-xl text-xs">
-                      {cert}
-                    </Badge>
-                  ))}
+              {supplier.business_registration_num && (
+                <div className="mb-4">
+                  <span className="text-muted-foreground text-sm block mb-2">مجوز کسب‌وکار:</span>
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-xl text-xs">
+                    {supplier.business_registration_num}
+                  </Badge>
                 </div>
-              </div>
+              )}
 
               {/* Contact Information */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  {supplier.contactRevealed ? (
-                    <span className="text-foreground">{supplier.phone}</span>
-                  ) : (
-                    <span className="text-muted-foreground">09XX-XXX-XXXX</span>
-                  )}
+                  <span className="text-foreground">{supplier.mobile}</span>
                   {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
                     <Lock className="w-4 h-4 text-muted-foreground" />
                   )}
@@ -300,11 +300,7 @@ const AslSupplier = () => {
                 
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  {supplier.contactRevealed ? (
-                    <span className="text-foreground">{supplier.email}</span>
-                  ) : (
-                    <span className="text-muted-foreground">***@***.ir</span>
-                  )}
+                  <span className="text-foreground">{supplier.user?.email || 'نامشخص'}</span>
                   {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
                     <Lock className="w-4 h-4 text-muted-foreground" />
                   )}
@@ -312,34 +308,13 @@ const AslSupplier = () => {
               </div>
 
               <div className="flex gap-2">
-                {!supplier.contactRevealed && dailyContactsUsed < maxDailyContacts ? (
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-orange-500 hover:bg-orange-600 rounded-2xl"
-                    onClick={() => handleRevealContact(supplier.id)}
-                  >
-                    <Unlock className="w-4 h-4 ml-2" />
-                    باز کردن اطلاعات تماس
-                  </Button>
-                ) : supplier.contactRevealed ? (
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-green-500 hover:bg-green-600 rounded-2xl"
-                  >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    اطلاعات باز شده
-                  </Button>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    className="flex-1 border-border text-muted-foreground rounded-2xl"
-                    disabled
-                  >
-                    <AlertTriangle className="w-4 h-4 ml-2" />
-                    حد روزانه تمام شده
-                  </Button>
-                )}
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 rounded-2xl"
+                >
+                  <Phone className="w-4 h-4 ml-2" />
+                  تماس
+                </Button>
                 
                 <Button 
                   size="sm" 
