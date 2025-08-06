@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -89,39 +88,13 @@ func GetMyVisitorStatus(c *gin.Context) {
 
 	userIDUint := userID.(uint)
 
-	// Debug logging
-	fmt.Printf("🔍 Looking for visitor with user_id: %d\n", userIDUint)
-
 	visitor, err := models.GetVisitorByUserID(models.GetDB(), userIDUint)
 	if err != nil {
-		// Additional debug - check if any visitor exists at all
-		var allVisitors []models.Visitor
-		models.GetDB().Find(&allVisitors)
-		fmt.Printf("🔍 Total visitors in DB: %d\n", len(allVisitors))
-		for _, v := range allVisitors {
-			fmt.Printf("🔍 Visitor ID: %d, UserID: %d, Name: %s\n", v.ID, v.UserID, v.FullName)
-		}
-
-		// PERMANENT FIX: Update first visitor's user_id to current user
-		if userIDUint == 24 && len(allVisitors) > 0 {
-			// Update the first visitor's user_id to 24
-			firstVisitor := &allVisitors[0]
-			err := models.GetDB().Model(firstVisitor).Update("user_id", userIDUint).Error
-			if err != nil {
-				fmt.Printf("❌ Failed to update visitor user_id: %v\n", err)
-			} else {
-				fmt.Printf("✅ Updated visitor ID %d user_id to %d\n", firstVisitor.ID, userIDUint)
-				firstVisitor.UserID = userIDUint
-			}
-			visitor = firstVisitor
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{
-				"has_visitor":   false,
-				"message":       "شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید",
-				"debug_user_id": userIDUint,
-			})
-			return
-		}
+		c.JSON(http.StatusNotFound, gin.H{
+			"has_visitor": false,
+			"message":     "شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید",
+		})
+		return
 	}
 
 	// Convert to response format
