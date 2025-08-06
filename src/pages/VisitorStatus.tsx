@@ -101,18 +101,32 @@ export default function VisitorStatus() {
   useEffect(() => {
     const fetchVisitorStatus = async () => {
       try {
+        console.log('🔍 Fetching visitor status...');
         const response = await apiService.getMyVisitorStatus();
+        console.log('✅ API Response:', response);
         const data: VisitorStatusResponse = response.data;
         
+        console.log('📊 Parsed data:', data);
         setHasVisitor(data.has_visitor);
         if (data.visitor) {
           setVisitorData(data.visitor);
+          console.log('👤 Visitor data set:', data.visitor);
         }
       } catch (error: any) {
-        if (error.response?.status !== 404) {
+        console.error('❌ API Error:', error);
+        console.error('📝 Error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
+        
+        if (error.response?.status === 404) {
+          // Handle 404 - no visitor found
+          setHasVisitor(false);
+        } else {
           toast({
             title: "خطا",
-            description: "خطا در دریافت اطلاعات ویزیتور",
+            description: error.response?.data?.error || "خطا در دریافت اطلاعات ویزیتور",
             variant: "destructive",
           });
         }

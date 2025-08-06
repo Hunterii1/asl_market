@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -88,14 +89,20 @@ func GetMyVisitorStatus(c *gin.Context) {
 
 	userIDUint := userID.(uint)
 
+	// Debug log
+	fmt.Printf("🔍 GetMyVisitorStatus called for user ID: %d\n", userIDUint)
+
 	visitor, err := models.GetVisitorByUserID(models.GetDB(), userIDUint)
 	if err != nil {
+		fmt.Printf("❌ Visitor not found for user ID %d: %v\n", userIDUint, err)
 		c.JSON(http.StatusNotFound, gin.H{
 			"has_visitor": false,
 			"message":     "شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید",
 		})
 		return
 	}
+
+	fmt.Printf("✅ Found visitor ID %d for user ID %d\n", visitor.ID, userIDUint)
 
 	// Convert to response format
 	response := models.VisitorResponse{
