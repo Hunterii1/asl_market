@@ -40,7 +40,6 @@ func SetupRoutes(router *gin.Engine) {
 		// but will include user info if authenticated
 		public.GET("/dashboard/stats", getDashboardStats)
 		public.GET("/products", getProducts)
-		public.GET("/suppliers", getSuppliers)
 	}
 
 	// Protected routes (authentication required)
@@ -118,16 +117,6 @@ func getProducts(c *gin.Context) {
 		"data": []gin.H{
 			{"id": 1, "name": "زعفران سرگل", "category": "saffron"},
 			{"id": 2, "name": "خرما مجول", "category": "dates"},
-		},
-	})
-}
-
-func getSuppliers(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Suppliers list",
-		"data": []gin.H{
-			{"id": 1, "name": "شرکت زعفران طلایی", "verified": true},
-			{"id": 2, "name": "باغات خرمای جنوب", "verified": true},
 		},
 	})
 }
