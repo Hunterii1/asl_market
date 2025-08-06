@@ -1132,7 +1132,7 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 			// Add action buttons for pending suppliers
 			if supplier.Status == "pending" {
 				supplierInfo += fmt.Sprintf(
-					"🔘 عملیات: /view_%d | /approve_%d | /reject_%d\n",
+					"🔘 عملیات: /view%d | /approve%d | /reject%d\n",
 					supplier.ID, supplier.ID, supplier.ID,
 				)
 			}
@@ -1237,21 +1237,21 @@ func (s *TelegramService) showSupplierStats(chatID int64) {
 // Supplier Command Handlers
 
 func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool {
-	// Check for supplier action commands: /view_123, /approve_123, /reject_123
-	if strings.HasPrefix(text, "/view_") {
-		supplierIDStr := strings.TrimPrefix(text, "/view_")
+	// Check for supplier action commands: /view123, /approve123, /reject123
+	if strings.HasPrefix(text, "/view") && len(text) > 5 {
+		supplierIDStr := strings.TrimPrefix(text, "/view")
 		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
 			s.showSupplierDetails(chatID, uint(supplierID))
 			return true
 		}
-	} else if strings.HasPrefix(text, "/approve_") {
-		supplierIDStr := strings.TrimPrefix(text, "/approve_")
+	} else if strings.HasPrefix(text, "/approve") && len(text) > 8 {
+		supplierIDStr := strings.TrimPrefix(text, "/approve")
 		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
 			s.handleSupplierApprove(chatID, uint(supplierID))
 			return true
 		}
-	} else if strings.HasPrefix(text, "/reject_") {
-		supplierIDStr := strings.TrimPrefix(text, "/reject_")
+	} else if strings.HasPrefix(text, "/reject") && len(text) > 7 {
+		supplierIDStr := strings.TrimPrefix(text, "/reject")
 		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
 			s.promptSupplierReject(chatID, uint(supplierID))
 			return true
@@ -1344,8 +1344,8 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 	if supplier.Status == "pending" {
 		keyboard = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(fmt.Sprintf("/approve_%d", supplier.ID)),
-				tgbotapi.NewKeyboardButton(fmt.Sprintf("/reject_%d", supplier.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/approve%d", supplier.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/reject%d", supplier.ID)),
 			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(MENU_BACK),
