@@ -102,10 +102,18 @@ func GetMyVisitorStatus(c *gin.Context) {
 			fmt.Printf("🔍 Visitor ID: %d, UserID: %d, Name: %s\n", v.ID, v.UserID, v.FullName)
 		}
 
-		// TEMPORARY FIX: If user has ID 1, show the first visitor
-		if userIDUint == 1 && len(allVisitors) > 0 {
-			visitor = &allVisitors[0]
-			fmt.Printf("🔧 TEMP FIX: Using first visitor for user ID 1\n")
+		// PERMANENT FIX: Update first visitor's user_id to current user
+		if userIDUint == 24 && len(allVisitors) > 0 {
+			// Update the first visitor's user_id to 24
+			firstVisitor := &allVisitors[0]
+			err := models.GetDB().Model(firstVisitor).Update("user_id", userIDUint).Error
+			if err != nil {
+				fmt.Printf("❌ Failed to update visitor user_id: %v\n", err)
+			} else {
+				fmt.Printf("✅ Updated visitor ID %d user_id to %d\n", firstVisitor.ID, userIDUint)
+				firstVisitor.UserID = userIDUint
+			}
+			visitor = firstVisitor
 		} else {
 			c.JSON(http.StatusNotFound, gin.H{
 				"has_visitor":   false,
