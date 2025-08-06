@@ -7,9 +7,9 @@ import (
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
-	
-	"gorm.io/gorm"
+
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // Chat handles chat requests with AI
@@ -41,7 +41,7 @@ func Chat(c *gin.Context) {
 	}
 
 	// Debug logging
-	fmt.Printf("🔄 Chat request received - User: %d, Message: '%s', ChatID: %v\n", 
+	fmt.Printf("🔄 Chat request received - User: %d, Message: '%s', ChatID: %v\n",
 		user.ID, request.Message, request.ChatID)
 
 	db := models.GetDB()
