@@ -6,8 +6,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"asl-market-backend/models"
+	"asl-market-backend/utils"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"gorm.io/gorm"
@@ -30,19 +32,46 @@ func isAdmin(userID int64) bool {
 
 // Menu constants
 const (
-	MENU_USERS         = "👥 لیست کاربران"
+	MENU_USERS         = "👥 مدیریت کاربران"
 	MENU_STATS         = "📊 آمار سیستم"
 	MENU_SEARCH        = "🔍 جستجوی کاربر"
 	MENU_LICENSES      = "🔑 مدیریت لایسنس"
 	MENU_GENERATE      = "➕ تولید لایسنس"
 	MENU_LIST_LICENSES = "📋 لیست لایسنس‌ها"
 	MENU_SETTINGS      = "⚙️ تنظیمات"
+
+	// User management sub-menus
+	MENU_ALL_USERS        = "📄 همه کاربران"
+	MENU_ACTIVE_USERS     = "✅ کاربران فعال"
+	MENU_INACTIVE_USERS   = "❌ کاربران غیرفعال"
+	MENU_LICENSED_USERS   = "🔑 کاربران با لایسنس"
+	MENU_UNLICENSED_USERS = "🚫 کاربران بدون لایسنس"
+	MENU_SEARCH_USER      = "🔍 جستجو کاربر"
+	MENU_USER_STATS       = "📊 آمار کاربران"
+
+	// Navigation
+	MENU_PREV_PAGE = "⬅️ صفحه قبل"
+	MENU_NEXT_PAGE = "➡️ صفحه بعد"
+	MENU_BACK      = "🔙 بازگشت"
 )
 
 type TelegramService struct {
 	bot *tgbotapi.BotAPI
 	db  *gorm.DB
 }
+
+// Pagination structure for user management
+type UserPagination struct {
+	ChatID      int64
+	Page        int
+	PerPage     int
+	FilterType  string // "all", "active", "inactive", "licensed", "unlicensed"
+	SearchQuery string
+}
+
+// Global map to store user pagination state
+var userPaginationStates = make(map[int64]*UserPagination)
+var paginationMutex = sync.RWMutex{}
 
 var (
 	telegramService     *TelegramService
@@ -132,7 +161,27 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	switch message.Text {
 	case MENU_USERS:
-		s.showUsersList(message.Chat.ID, 1)
+		s.showUserManagementMenu(message.Chat.ID)
+	case MENU_ALL_USERS:
+		s.showUsersList(message.Chat.ID, "all", 1)
+	case MENU_ACTIVE_USERS:
+		s.showUsersList(message.Chat.ID, "active", 1)
+	case MENU_INACTIVE_USERS:
+		s.showUsersList(message.Chat.ID, "inactive", 1)
+	case MENU_LICENSED_USERS:
+		s.showUsersList(message.Chat.ID, "licensed", 1)
+	case MENU_UNLICENSED_USERS:
+		s.showUsersList(message.Chat.ID, "unlicensed", 1)
+	case MENU_SEARCH_USER:
+		s.showSearchPrompt(message.Chat.ID)
+	case MENU_USER_STATS:
+		s.showUserStats(message.Chat.ID)
+	case MENU_PREV_PAGE:
+		s.handlePagination(message.Chat.ID, -1)
+	case MENU_NEXT_PAGE:
+		s.handlePagination(message.Chat.ID, 1)
+	case MENU_BACK:
+		s.showMainMenu(message.Chat.ID)
 	case MENU_STATS:
 		s.showStats(message.Chat.ID)
 	case MENU_SEARCH:
@@ -250,25 +299,257 @@ func (s *TelegramService) showSettings(chatID int64) {
 	s.bot.Send(msg)
 }
 
-func (s *TelegramService) showUsersList(chatID int64, page int) {
-	// First show user categories
-	message := "👥 لطفا نوع کاربران مورد نظر را انتخاب کنید:"
+// Show user management menu with options
+func (s *TelegramService) showUserManagementMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ALL_USERS),
+			tgbotapi.NewKeyboardButton(MENU_USER_STATS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ACTIVE_USERS),
+			tgbotapi.NewKeyboardButton(MENU_INACTIVE_USERS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_LICENSED_USERS),
+			tgbotapi.NewKeyboardButton(MENU_UNLICENSED_USERS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SEARCH_USER),
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ کاربران تأیید شده", "userlist_approved"),
-			tgbotapi.NewInlineKeyboardButtonData("⏳ در انتظار تأیید", "userlist_pending"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("❌ کاربران رد شده", "userlist_rejected"),
-			tgbotapi.NewInlineKeyboardButtonData("👥 همه کاربران", "userlist_all"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔍 جستجوی پیشرفته", "userlist_search"),
+	msg := tgbotapi.NewMessage(chatID,
+		"👥 **مدیریت کاربران**\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:\n\n"+
+			"📄 **همه کاربران**: نمایش تمام کاربران سیستم\n"+
+			"✅ **کاربران فعال**: کاربرانی که فعال هستند\n"+
+			"❌ **کاربران غیرفعال**: کاربرانی که غیرفعال شده‌اند\n"+
+			"🔑 **کاربران با لایسنس**: کاربرانی که لایسنس فعال دارند\n"+
+			"🚫 **کاربران بدون لایسنس**: کاربرانی که لایسنس ندارند\n"+
+			"🔍 **جستجو کاربر**: جستجو بر اساس ایمیل یا نام\n"+
+			"📊 **آمار کاربران**: نمایش آمار کلی کاربران")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showUsersList(chatID int64, filterType string, page int) {
+	// Store pagination state
+	paginationMutex.Lock()
+	userPaginationStates[chatID] = &UserPagination{
+		ChatID:     chatID,
+		Page:       page,
+		PerPage:    5,
+		FilterType: filterType,
+	}
+	paginationMutex.Unlock()
+
+	const perPage = 5
+	offset := (page - 1) * perPage
+
+	var users []models.User
+	var total int64
+	query := s.db.Model(&models.User{})
+
+	// Apply filter
+	switch filterType {
+	case "active":
+		query = query.Where("is_active = ?", true)
+	case "inactive":
+		query = query.Where("is_active = ?", false)
+	case "licensed":
+		// Users who have an active license
+		query = query.Where("id IN (SELECT used_by FROM licenses WHERE is_used = ? AND used_by IS NOT NULL)", true)
+	case "unlicensed":
+		// Users who don't have an active license
+		query = query.Where("id NOT IN (SELECT used_by FROM licenses WHERE is_used = ? AND used_by IS NOT NULL)", true)
+	}
+
+	// Get total count
+	query.Count(&total)
+
+	// Get paginated results
+	if err := query.Offset(offset).Limit(perPage).Find(&users).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست کاربران")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build header with filter info
+	var filterName string
+	switch filterType {
+	case "all":
+		filterName = "📄 همه کاربران"
+	case "active":
+		filterName = "✅ کاربران فعال"
+	case "inactive":
+		filterName = "❌ کاربران غیرفعال"
+	case "licensed":
+		filterName = "🔑 کاربران با لایسنس"
+	case "unlicensed":
+		filterName = "🚫 کاربران بدون لایسنس"
+	}
+
+	// Calculate pagination info
+	totalPages := (int(total) + perPage - 1) / perPage
+	startItem := offset + 1
+	endItem := offset + len(users)
+
+	// Build message
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("**%s**\n\n", filterName))
+	message.WriteString(fmt.Sprintf("📊 **آمار**: %d کاربر | صفحه %d از %d\n", total, page, totalPages))
+	message.WriteString(fmt.Sprintf("👀 **نمایش**: %d تا %d\n\n", startItem, endItem))
+
+	if len(users) == 0 {
+		message.WriteString("❌ کاربری با این فیلتر یافت نشد.")
+	} else {
+		message.WriteString("👥 **لیست کاربران:**\n\n")
+
+		for i, user := range users {
+			// Check license status
+			hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
+			licenseIcon := "🚫"
+			if hasLicense {
+				licenseIcon = "🔑"
+			}
+
+			activeIcon := "❌"
+			if user.IsActive {
+				activeIcon = "✅"
+			}
+
+			message.WriteString(fmt.Sprintf(
+				"**%d. %s %s**\n"+
+					"📧 ایمیل: `%s`\n"+
+					"📱 تلفن: %s\n"+
+					"🗓️ تاریخ عضویت: %s\n"+
+					"%s فعال | %s لایسنس\n"+
+					"➖➖➖➖➖➖➖➖\n",
+				startItem+i,
+				user.FirstName,
+				user.LastName,
+				user.Email,
+				user.Phone,
+				user.CreatedAt.Format("2006/01/02"),
+				activeIcon,
+				licenseIcon,
+			))
+		}
+	}
+
+	// Create navigation keyboard
+	var keyboardRows [][]tgbotapi.KeyboardButton
+
+	// Navigation row
+	var navRow []tgbotapi.KeyboardButton
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_PREV_PAGE))
+	}
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_NEXT_PAGE))
+	}
+	if len(navRow) > 0 {
+		keyboardRows = append(keyboardRows, navRow)
+	}
+
+	// Back button
+	keyboardRows = append(keyboardRows, []tgbotapi.KeyboardButton{
+		tgbotapi.NewKeyboardButton(MENU_BACK),
+	})
+
+	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// Handle pagination for user list
+func (s *TelegramService) handlePagination(chatID int64, direction int) {
+	paginationMutex.RLock()
+	state, exists := userPaginationStates[chatID]
+	paginationMutex.RUnlock()
+
+	if !exists {
+		msg := tgbotapi.NewMessage(chatID, "❌ وضعیت صفحه‌بندی یافت نشد. لطفا مجدد تلاش کنید.")
+		s.bot.Send(msg)
+		return
+	}
+
+	newPage := state.Page + direction
+	if newPage < 1 {
+		newPage = 1
+	}
+
+	s.showUsersList(chatID, state.FilterType, newPage)
+}
+
+// Show comprehensive user statistics
+func (s *TelegramService) showUserStats(chatID int64) {
+	var totalUsers, activeUsers, inactiveUsers int64
+	var licensedUsers, unlicensedUsers int64
+
+	// Get total users
+	s.db.Model(&models.User{}).Count(&totalUsers)
+
+	// Get active/inactive users
+	s.db.Model(&models.User{}).Where("is_active = ?", true).Count(&activeUsers)
+	s.db.Model(&models.User{}).Where("is_active = ?", false).Count(&inactiveUsers)
+
+	// Get licensed/unlicensed users
+	s.db.Model(&models.User{}).Where("id IN (SELECT used_by FROM licenses WHERE is_used = ? AND used_by IS NOT NULL)", true).Count(&licensedUsers)
+	unlicensedUsers = totalUsers - licensedUsers
+
+	// Get recent registrations (last 7 days)
+	var recentUsers int64
+	weekAgo := time.Now().AddDate(0, 0, -7)
+	s.db.Model(&models.User{}).Where("created_at > ?", weekAgo).Count(&recentUsers)
+
+	// Get most recent user
+	var lastUser models.User
+	s.db.Model(&models.User{}).Order("created_at DESC").First(&lastUser)
+
+	message := fmt.Sprintf(
+		"📊 **آمار کامل کاربران سیستم**\n\n"+
+			"👥 **آمار کلی:**\n"+
+			"• کل کاربران: `%d` نفر\n"+
+			"• کاربران فعال: `%d` نفر (%.1f%%)\n"+
+			"• کاربران غیرفعال: `%d` نفر (%.1f%%)\n\n"+
+			"🔑 **آمار لایسنس:**\n"+
+			"• کاربران با لایسنس: `%d` نفر (%.1f%%)\n"+
+			"• کاربران بدون لایسنس: `%d` نفر (%.1f%%)\n\n"+
+			"📈 **آمار فعالیت:**\n"+
+			"• ثبت‌نام های هفته اخیر: `%d` نفر\n"+
+			"• آخرین کاربر: **%s %s**\n"+
+			"• تاریخ آخرین ثبت‌نام: `%s`\n\n"+
+			"📋 **عملیات قابل انجام:**\n"+
+			"• مشاهده لیست کاربران بر اساس فیلترهای مختلف\n"+
+			"• جستجو و یافتن کاربران خاص\n"+
+			"• مدیریت وضعیت فعال/غیرفعال کاربران",
+		totalUsers,
+		activeUsers, float64(activeUsers)/float64(totalUsers)*100,
+		inactiveUsers, float64(inactiveUsers)/float64(totalUsers)*100,
+		licensedUsers, float64(licensedUsers)/float64(totalUsers)*100,
+		unlicensedUsers, float64(unlicensedUsers)/float64(totalUsers)*100,
+		recentUsers,
+		lastUser.FirstName, lastUser.LastName,
+		lastUser.CreatedAt.Format("2006/01/02 15:04"),
+	)
+
+	// Create back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
 
 	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
@@ -441,9 +722,9 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		case "search":
 			s.showAdvancedSearch(chatID)
 		case "filter":
-			s.showUsersList(chatID, 1) // Show filter options again
+			s.showUserManagementMenu(chatID) // Show filter options again
 		case "back":
-			s.showUsersList(chatID, 1)
+			s.showUserManagementMenu(chatID)
 		}
 		return
 	}
@@ -595,7 +876,7 @@ func (s *TelegramService) showUserDetails(chatID int64, user models.User) {
 	s.bot.Send(msg)
 }
 
-func (s *TelegramService) showUserStats(chatID int64, user models.User) {
+func (s *TelegramService) showIndividualUserStats(chatID int64, user models.User) {
 	// TODO: Implement user statistics
 	hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
 	licenseStatus := "❌ بدون لایسنس"
@@ -659,10 +940,52 @@ func (s *TelegramService) showGeneratePrompt(chatID int64) {
 	s.bot.Send(msg)
 }
 
+// Helper function to find or create admin user for telegram bot operations
+func (s *TelegramService) findOrCreateAdminUser(telegramID int64) (uint, error) {
+	// First try to find existing admin user
+	var adminUser models.User
+
+	// Try to find by a predictable email pattern
+	adminEmail := fmt.Sprintf("admin_%d@aslmarket.local", telegramID)
+
+	err := s.db.Where("email = ?", adminEmail).First(&adminUser).Error
+	if err == nil {
+		return adminUser.ID, nil
+	}
+
+	// If not found, create a new admin user
+	adminUser = models.User{
+		FirstName: "Admin",
+		LastName:  fmt.Sprintf("Bot_%d", telegramID),
+		Email:     adminEmail,
+		Password:  "telegram_bot_admin", // This will be hashed
+		Phone:     fmt.Sprintf("bot_%d", telegramID),
+		IsActive:  true,
+	}
+
+	// Hash the password
+	if hashedPassword, err := utils.HashPassword(adminUser.Password); err != nil {
+		return 0, fmt.Errorf("خطا در هش کردن رمز عبور: %w", err)
+	} else {
+		adminUser.Password = hashedPassword
+	}
+
+	// Create the user
+	if err := s.db.Create(&adminUser).Error; err != nil {
+		return 0, fmt.Errorf("خطا در ایجاد کاربر ادمین: %w", err)
+	}
+
+	return adminUser.ID, nil
+}
+
 func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, adminTelegramID int64) {
-	// Find admin user by telegram ID (this is a simplified approach)
-	// In a real scenario, you'd have a mapping between telegram IDs and user IDs
-	adminID := uint(adminTelegramID) // Simplified for now
+	// Find or create admin user for telegram bot
+	adminID, err := s.findOrCreateAdminUser(adminTelegramID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در یافتن ادمین: %v", err))
+		s.bot.Send(msg)
+		return
+	}
 
 	licenses, err := models.GenerateLicenses(s.db, count, adminID)
 	if err != nil {
