@@ -149,41 +149,6 @@ const AslLearn = () => {
           </CardContent>
         </Card>
 
-      {/* Search and Filter */}
-      <Card className="bg-card/70 border-border rounded-3xl">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                placeholder="جستجو در محصولات..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 bg-background border-border text-foreground rounded-2xl"
-              />
-            </div>
-            <div className="flex gap-2 overflow-x-auto">
-              {productCategories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`rounded-2xl whitespace-nowrap ${
-                    selectedCategory === category.id
-                      ? "bg-blue-500 hover:bg-blue-600 text-white"
-                      : "border-border text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {category.name} ({category.count})
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-
       {/* Training Modules */}
       <div>
         <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
