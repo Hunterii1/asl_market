@@ -139,7 +139,8 @@ const AslVisit = () => {
               <h3 className="text-xl font-bold text-foreground mb-2">ویزیتور در کشورهای عربی هستید؟</h3>
               <p className="text-blue-300">در شبکه ویزیتورهای اصل مارکت عضو شوید</p>
             </div>
-            <Button className="bg-blue-500 hover:bg-blue-600 rounded-2xl">
+            <Button className="bg-blue-500 hover:bg-blue-600 rounded-2xl"
+            onClick={() => navigate("/visitor-registration")}>
               <Plus className="w-4 h-4 ml-2" />
               ثبت‌نام ویزیتور
             </Button>
