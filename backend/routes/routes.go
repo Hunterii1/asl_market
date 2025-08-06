@@ -55,6 +55,16 @@ func SetupRoutes(router *gin.Engine) {
 		protected.GET("/license/status", controllers.CheckLicenseStatus)
 		protected.GET("/license/info", controllers.GetUserLicenseInfo)
 
+		// Supplier routes
+		protected.POST("/supplier/register", controllers.RegisterSupplier)
+		protected.GET("/supplier/status", controllers.GetMySupplierStatus)
+		protected.GET("/suppliers", controllers.GetApprovedSuppliers)
+
+		// Admin supplier management routes
+		protected.GET("/admin/suppliers", controllers.GetSuppliersForAdmin)
+		protected.POST("/admin/suppliers/:id/approve", controllers.ApproveSupplier)
+		protected.POST("/admin/suppliers/:id/reject", controllers.RejectSupplier)
+
 		// License-protected routes
 		licensed := protected.Group("/")
 		licensed.Use(middleware.LicenseMiddleware())

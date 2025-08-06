@@ -343,6 +343,35 @@ class ApiService {
     });
   }
 
+  // Supplier APIs
+  async registerSupplier(supplierData: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/supplier/register`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(supplierData),
+    });
+  }
+
+  async getSupplierStatus(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/supplier/status`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getApprovedSuppliers(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/suppliers`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
   // Auth helpers
   logout() {
     localStorage.removeItem('auth_token');

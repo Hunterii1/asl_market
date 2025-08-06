@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from '@/hooks/useAuth';
+import { apiService } from '@/services/api';
 import { 
   Users, 
   Star, 
@@ -22,10 +27,15 @@ import {
 } from "lucide-react";
 
 const AslSupplier = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [dailyContactsUsed, setDailyContactsUsed] = useState(1);
   const maxDailyContacts = 3;
+  const [approvedSuppliers, setApprovedSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true);
+  const [userSupplierStatus, setUserSupplierStatus] = useState(null);
 
   const productCategories = [
     { id: "all", name: "همه محصولات" },
@@ -157,7 +167,33 @@ const AslSupplier = () => {
     // This would typically be handled by a state management solution
   };
 
+  useEffect(() => {
+    if (user) {
+      loadApprovedSuppliers();
+      checkUserSupplierStatus();
+    }
+  }, [user]);
 
+  const loadApprovedSuppliers = async () => {
+    try {
+      const response = await apiService.getApprovedSuppliers();
+      setApprovedSuppliers(response.suppliers || []);
+    } catch (error) {
+      console.error('Error loading suppliers:', error);
+      // اگر خطا لایسنس باشد، نیازی نیست کاری انجام دهیم زیرا LicenseGate خودکار هندل می‌کند
+    } finally {
+      setLoadingSuppliers(false);
+    }
+  };
+
+  const checkUserSupplierStatus = async () => {
+    try {
+      const response = await apiService.getSupplierStatus();
+      setUserSupplierStatus(response);
+    } catch (error) {
+      console.error('Error checking supplier status:', error);
+    }
+  };
 
   const SupplierBrowser = () => (
     <div className="space-y-6">
@@ -169,13 +205,41 @@ const AslSupplier = () => {
               <h3 className="text-xl font-bold text-foreground mb-2">تأمین‌کننده هستید؟</h3>
               <p className="text-green-600 dark:text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
             </div>
-            <Button className="bg-green-500 hover:bg-green-600 rounded-2xl">
+            <Button 
+              className="bg-green-500 hover:bg-green-600 rounded-2xl"
+              onClick={() => navigate('/supplier-registration')}
+            >
               <Plus className="w-4 h-4 ml-2" />
               ثبت‌نام تأمین‌کننده
             </Button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Links */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/approved-suppliers')}>
+          <CardContent className="p-4 text-center">
+            <div className="mb-2">
+              <Users className="w-8 h-8 mx-auto text-primary" />
+            </div>
+            <h3 className="font-semibold">مشاهده تأمین‌کنندگان</h3>
+            <p className="text-sm text-muted-foreground">فهرست کامل تأمین‌کنندگان تأیید شده</p>
+          </CardContent>
+        </Card>
+        
+        {userSupplierStatus?.has_supplier && (
+          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/supplier-status')}>
+            <CardContent className="p-4 text-center">
+              <div className="mb-2">
+                <CheckCircle className="w-8 h-8 mx-auto text-green-500" />
+              </div>
+              <h3 className="font-semibold">وضعیت تأمین‌کننده من</h3>
+              <p className="text-sm text-muted-foreground">مشاهده وضعیت درخواست شما</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">

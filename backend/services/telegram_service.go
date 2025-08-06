@@ -49,6 +49,14 @@ const (
 	MENU_SEARCH_USER      = "🔍 جستجو کاربر"
 	MENU_USER_STATS       = "📊 آمار کاربران"
 
+	// Supplier management sub-menus
+	MENU_SUPPLIERS          = "🏪 مدیریت تأمین‌کنندگان"
+	MENU_PENDING_SUPPLIERS  = "⏳ تأمین‌کنندگان در انتظار"
+	MENU_APPROVED_SUPPLIERS = "✅ تأمین‌کنندگان تأیید شده"
+	MENU_REJECTED_SUPPLIERS = "❌ تأمین‌کنندگان رد شده"
+	MENU_ALL_SUPPLIERS      = "📋 همه تأمین‌کنندگان"
+	MENU_SUPPLIER_STATS     = "📊 آمار تأمین‌کنندگان"
+
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
 	MENU_NEXT_PAGE = "➡️ صفحه بعد"
@@ -153,9 +161,10 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_LICENSES),
-			tgbotapi.NewKeyboardButton(MENU_SEARCH),
+			tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SEARCH),
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 		),
 	)
@@ -204,6 +213,18 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSearchPrompt(message.Chat.ID)
 	case MENU_LICENSES:
 		s.showLicenseMenu(message.Chat.ID)
+	case MENU_SUPPLIERS:
+		s.showSupplierMenu(message.Chat.ID)
+	case MENU_PENDING_SUPPLIERS:
+		s.showSuppliersList(message.Chat.ID, "pending", 1)
+	case MENU_APPROVED_SUPPLIERS:
+		s.showSuppliersList(message.Chat.ID, "approved", 1)
+	case MENU_REJECTED_SUPPLIERS:
+		s.showSuppliersList(message.Chat.ID, "rejected", 1)
+	case MENU_ALL_SUPPLIERS:
+		s.showSuppliersList(message.Chat.ID, "all", 1)
+	case MENU_SUPPLIER_STATS:
+		s.showSupplierStats(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count
@@ -262,6 +283,9 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_LICENSES),
+					tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 				),
 			)
@@ -966,6 +990,226 @@ func (s *TelegramService) SendLicenseRequest(user *models.User) error {
 	// در سیستم جدید لایسنس‌ها خودکار تأیید می‌شوند
 	// این متد فقط برای سازگاری با کد قدیمی نگه داشته شده است
 	return nil
+}
+
+// Supplier Management Methods
+
+func (s *TelegramService) showSupplierMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_PENDING_SUPPLIERS),
+			tgbotapi.NewKeyboardButton(MENU_SUPPLIER_STATS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_APPROVED_SUPPLIERS),
+			tgbotapi.NewKeyboardButton(MENU_REJECTED_SUPPLIERS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ALL_SUPPLIERS),
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID,
+		"🏪 **مدیریت تأمین‌کنندگان**\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:\n\n"+
+			"⏳ **در انتظار**: تأمین‌کنندگان منتظر بررسی\n"+
+			"✅ **تأیید شده**: تأمین‌کنندگان فعال\n"+
+			"❌ **رد شده**: تأمین‌کنندگان رد شده\n"+
+			"📋 **همه**: تمام تأمین‌کنندگان\n"+
+			"📊 **آمار**: آمار کلی تأمین‌کنندگان")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showSuppliersList(chatID int64, status string, page int) {
+	const perPage = 5
+
+	suppliers, total, err := models.GetSuppliersForAdmin(s.db, status, page, perPage)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست تأمین‌کنندگان")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build header with filter info
+	var filterName string
+	switch status {
+	case "pending":
+		filterName = "⏳ تأمین‌کنندگان در انتظار"
+	case "approved":
+		filterName = "✅ تأمین‌کنندگان تأیید شده"
+	case "rejected":
+		filterName = "❌ تأمین‌کنندگان رد شده"
+	default:
+		filterName = "📋 همه تأمین‌کنندگان"
+	}
+
+	// Calculate pagination info
+	totalPages := (int(total) + perPage - 1) / perPage
+	startItem := (page-1)*perPage + 1
+	endItem := startItem + len(suppliers) - 1
+
+	// Build message
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("**%s**\n\n", filterName))
+	message.WriteString(fmt.Sprintf("📊 **آمار**: %d تأمین‌کننده | صفحه %d از %d\n", total, page, totalPages))
+	message.WriteString(fmt.Sprintf("👀 **نمایش**: %d تا %d\n\n", startItem, endItem))
+
+	if len(suppliers) == 0 {
+		message.WriteString("❌ تأمین‌کننده‌ای با این فیلتر یافت نشد.")
+	} else {
+		message.WriteString("🏪 **لیست تأمین‌کنندگان:**\n\n")
+
+		for i, supplier := range suppliers {
+			statusIcon := "⏳"
+			switch supplier.Status {
+			case "approved":
+				statusIcon = "✅"
+			case "rejected":
+				statusIcon = "❌"
+			}
+
+			businessIcon := "👤"
+			if supplier.HasRegisteredBusiness {
+				businessIcon = "🏢"
+			}
+
+			// Load products count
+			var productCount int64
+			s.db.Model(&models.SupplierProduct{}).Where("supplier_id = ?", supplier.ID).Count(&productCount)
+
+			message.WriteString(fmt.Sprintf(
+				"**%d. %s %s**\n"+
+					"📧 نام: %s\n"+
+					"📱 موبایل: %s\n"+
+					"🏘️ شهر: %s\n"+
+					"📦 تعداد محصولات: %d\n"+
+					"🗓️ تاریخ ثبت‌نام: %s\n"+
+					"%s وضعیت: %s | %s نوع کسب‌وکار\n"+
+					"➖➖➖➖➖➖➖➖\n",
+				startItem+i,
+				statusIcon,
+				supplier.FullName,
+				supplier.FullName,
+				supplier.Mobile,
+				supplier.City,
+				productCount,
+				supplier.CreatedAt.Format("2006/01/02"),
+				statusIcon,
+				supplier.Status,
+				businessIcon,
+			))
+		}
+	}
+
+	// Create navigation keyboard
+	var keyboardRows [][]tgbotapi.KeyboardButton
+
+	// Navigation row
+	var navRow []tgbotapi.KeyboardButton
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_PREV_PAGE))
+	}
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_NEXT_PAGE))
+	}
+	if len(navRow) > 0 {
+		keyboardRows = append(keyboardRows, navRow)
+	}
+
+	// Back button
+	keyboardRows = append(keyboardRows, []tgbotapi.KeyboardButton{
+		tgbotapi.NewKeyboardButton(MENU_BACK),
+	})
+
+	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showSupplierStats(chatID int64) {
+	var totalSuppliers, pendingSuppliers, approvedSuppliers, rejectedSuppliers int64
+
+	// Get supplier counts
+	s.db.Model(&models.Supplier{}).Count(&totalSuppliers)
+	s.db.Model(&models.Supplier{}).Where("status = ?", "pending").Count(&pendingSuppliers)
+	s.db.Model(&models.Supplier{}).Where("status = ?", "approved").Count(&approvedSuppliers)
+	s.db.Model(&models.Supplier{}).Where("status = ?", "rejected").Count(&rejectedSuppliers)
+
+	// Get total products
+	var totalProducts int64
+	s.db.Model(&models.SupplierProduct{}).Count(&totalProducts)
+
+	// Get recent registrations (last 7 days)
+	var recentSuppliers int64
+	weekAgo := time.Now().AddDate(0, 0, -7)
+	s.db.Model(&models.Supplier{}).Where("created_at > ?", weekAgo).Count(&recentSuppliers)
+
+	// Get most recent supplier
+	var lastSupplier models.Supplier
+	s.db.Model(&models.Supplier{}).Order("created_at DESC").First(&lastSupplier)
+
+	message := fmt.Sprintf(
+		"🏪 **آمار کامل تأمین‌کنندگان**\n\n"+
+			"📊 **آمار کلی:**\n"+
+			"• کل تأمین‌کنندگان: `%d` تأمین‌کننده\n"+
+			"• در انتظار بررسی: `%d` تأمین‌کننده (%.1f%%)\n"+
+			"• تأیید شده: `%d` تأمین‌کننده (%.1f%%)\n"+
+			"• رد شده: `%d` تأمین‌کننده (%.1f%%)\n\n"+
+			"📦 **آمار محصولات:**\n"+
+			"• کل محصولات: `%d` محصول\n"+
+			"• متوسط محصول هر تأمین‌کننده: `%.1f`\n\n"+
+			"📈 **آمار فعالیت:**\n"+
+			"• ثبت‌نام های هفته اخیر: `%d` تأمین‌کننده\n"+
+			"• آخرین ثبت‌نام: **%s**\n"+
+			"• تاریخ آخرین ثبت‌نام: `%s`\n\n"+
+			"⚡ **عملیات سریع:**\n"+
+			"• بررسی درخواست‌های جدید\n"+
+			"• تأیید/رد تأمین‌کنندگان\n"+
+			"• مشاهده جزئیات هر تأمین‌کننده",
+		totalSuppliers,
+		pendingSuppliers, getSafePercentage(pendingSuppliers, totalSuppliers),
+		approvedSuppliers, getSafePercentage(approvedSuppliers, totalSuppliers),
+		rejectedSuppliers, getSafePercentage(rejectedSuppliers, totalSuppliers),
+		totalProducts,
+		getSafeAverage(totalProducts, totalSuppliers),
+		recentSuppliers,
+		lastSupplier.FullName,
+		lastSupplier.CreatedAt.Format("2006/01/02 15:04"),
+	)
+
+	// Create back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// Helper functions
+func getSafePercentage(part, total int64) float64 {
+	if total == 0 {
+		return 0
+	}
+	return float64(part) / float64(total) * 100
+}
+
+func getSafeAverage(total, count int64) float64 {
+	if count == 0 {
+		return 0
+	}
+	return float64(total) / float64(count)
 }
 
 // New License Management Methods

@@ -22,6 +22,9 @@ import AslPay from "./pages/AslPay";
 import AslAI from "./pages/AslAI";
 import AslAvailable from "./pages/AslAvailable";
 import ProductsResearch from "./pages/ProductsResearch";
+import SupplierRegistration from "./pages/SupplierRegistration";
+import SupplierStatus from "./pages/SupplierStatus";
+import ApprovedSuppliers from "./pages/ApprovedSuppliers";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +44,23 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/" element={<Index />} />
+
+              {/* Supplier routes */}
+              <Route path="/supplier-registration" element={
+                <ProtectedRoute>
+                  <SupplierRegistration />
+                </ProtectedRoute>
+              } />
+              <Route path="/supplier-status" element={
+                <ProtectedRoute>
+                  <SupplierStatus />
+                </ProtectedRoute>
+              } />
+              <Route path="/approved-suppliers" element={
+                <ProtectedRoute>
+                  <ApprovedSuppliers />
+                </ProtectedRoute>
+              } />
               
               {/* Protected routes - require authentication and license */}
               <Route path="/asllearn" element={
