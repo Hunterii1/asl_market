@@ -16,7 +16,8 @@ import {
   CheckCircle,
   XCircle,
   AlertTriangle,
-  Plus
+  Plus,
+  Info
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 

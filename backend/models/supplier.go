@@ -37,6 +37,9 @@ type Supplier struct {
 	ApprovedAt *time.Time `json:"approved_at"`
 	ApprovedBy *uint      `json:"approved_by"`
 
+	// Relations
+	Products []SupplierProduct `json:"products" gorm:"foreignKey:SupplierID"`
+
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
