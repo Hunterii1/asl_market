@@ -1691,3 +1691,237 @@ func (s *TelegramService) showLicensesList(chatID int64, page int) {
 		s.bot.Send(paginationMsg)
 	}
 }
+
+// Visitor Management Methods
+
+func (s *TelegramService) showVisitorMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_PENDING_VISITORS),
+			tgbotapi.NewKeyboardButton(MENU_VISITOR_STATS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_APPROVED_VISITORS),
+			tgbotapi.NewKeyboardButton(MENU_REJECTED_VISITORS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ALL_VISITORS),
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID,
+		"🚶‍♂️ **مدیریت ویزیتورها**\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:\n\n"+
+			"⏳ **در انتظار**: ویزیتورهای منتظر بررسی\n"+
+			"✅ **تأیید شده**: ویزیتورهای فعال\n"+
+			"❌ **رد شده**: ویزیتورهای رد شده\n"+
+			"📋 **همه**: تمام ویزیتورها\n"+
+			"📊 **آمار**: آمار کلی ویزیتورها")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showVisitorsList(chatID int64, status string, page int) {
+	const perPage = 5
+
+	visitors, total, err := models.GetVisitorsForAdmin(s.db, status, page, perPage)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست ویزیتورها")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build header with filter info
+	var filterName string
+	switch status {
+	case "pending":
+		filterName = "⏳ ویزیتورهای در انتظار"
+	case "approved":
+		filterName = "✅ ویزیتورهای تأیید شده"
+	case "rejected":
+		filterName = "❌ ویزیتورهای رد شده"
+	default:
+		filterName = "📋 همه ویزیتورها"
+	}
+
+	// Calculate pagination info
+	totalPages := (int(total) + perPage - 1) / perPage
+	startItem := (page-1)*perPage + 1
+	endItem := startItem + len(visitors) - 1
+
+	// Build message
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("**%s**\n\n", filterName))
+	message.WriteString(fmt.Sprintf("📊 **آمار**: %d ویزیتور | صفحه %d از %d\n", total, page, totalPages))
+	message.WriteString(fmt.Sprintf("👀 **نمایش**: %d تا %d\n\n", startItem, endItem))
+
+	if len(visitors) == 0 {
+		message.WriteString("❌ ویزیتوری با این فیلتر یافت نشد.")
+	} else {
+		message.WriteString("🚶‍♂️ **لیست ویزیتورها:**\n\n")
+
+		for i, visitor := range visitors {
+			statusIcon := "⏳"
+			switch visitor.Status {
+			case "approved":
+				statusIcon = "✅"
+			case "rejected":
+				statusIcon = "❌"
+			}
+
+			languageIcon := "🌐"
+			switch visitor.LanguageLevel {
+			case "excellent":
+				languageIcon = "🌟"
+			case "good":
+				languageIcon = "👍"
+			case "weak":
+				languageIcon = "👎"
+			case "none":
+				languageIcon = "❌"
+			}
+
+			visitorInfo := fmt.Sprintf(
+				"**%d. %s %s**\n"+
+					"📧 نام: %s\n"+
+					"📱 موبایل: %s\n"+
+					"🏘️ شهر/استان: %s\n"+
+					"✈️ مقصد: %s\n"+
+					"🌐 زبان: %s %s\n"+
+					"🗓️ تاریخ ثبت‌نام: %s\n"+
+					"%s وضعیت: %s\n",
+				startItem+i,
+				statusIcon,
+				visitor.FullName,
+				visitor.FullName,
+				visitor.Mobile,
+				visitor.CityProvince,
+				visitor.DestinationCities,
+				languageIcon,
+				visitor.LanguageLevel,
+				visitor.CreatedAt.Format("2006/01/02"),
+				statusIcon,
+				visitor.Status,
+			)
+
+			// Add action buttons for pending visitors
+			if visitor.Status == "pending" {
+				visitorInfo += fmt.Sprintf(
+					"🔘 عملیات: /vview%d | /vapprove%d | /vreject%d\n",
+					visitor.ID, visitor.ID, visitor.ID,
+				)
+			}
+
+			visitorInfo += "➖➖➖➖➖➖➖➖\n"
+			message.WriteString(visitorInfo)
+		}
+	}
+
+	// Create navigation keyboard
+	var keyboardRows [][]tgbotapi.KeyboardButton
+
+	// Navigation row
+	var navRow []tgbotapi.KeyboardButton
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_PREV_PAGE))
+	}
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_NEXT_PAGE))
+	}
+	if len(navRow) > 0 {
+		keyboardRows = append(keyboardRows, navRow)
+	}
+
+	// Back button
+	keyboardRows = append(keyboardRows, []tgbotapi.KeyboardButton{
+		tgbotapi.NewKeyboardButton(MENU_BACK),
+	})
+
+	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showVisitorStats(chatID int64) {
+	var totalVisitors, pendingVisitors, approvedVisitors, rejectedVisitors int64
+
+	// Get visitor counts
+	s.db.Model(&models.Visitor{}).Count(&totalVisitors)
+	s.db.Model(&models.Visitor{}).Where("status = ?", "pending").Count(&pendingVisitors)
+	s.db.Model(&models.Visitor{}).Where("status = ?", "approved").Count(&approvedVisitors)
+	s.db.Model(&models.Visitor{}).Where("status = ?", "rejected").Count(&rejectedVisitors)
+
+	// Get language level statistics
+	var excellentLang, goodLang, weakLang, noneLang int64
+	s.db.Model(&models.Visitor{}).Where("language_level = ?", "excellent").Count(&excellentLang)
+	s.db.Model(&models.Visitor{}).Where("language_level = ?", "good").Count(&goodLang)
+	s.db.Model(&models.Visitor{}).Where("language_level = ?", "weak").Count(&weakLang)
+	s.db.Model(&models.Visitor{}).Where("language_level = ?", "none").Count(&noneLang)
+
+	// Get recent registrations (last 7 days)
+	var recentVisitors int64
+	weekAgo := time.Now().AddDate(0, 0, -7)
+	s.db.Model(&models.Visitor{}).Where("created_at > ?", weekAgo).Count(&recentVisitors)
+
+	// Get visitors with marketing experience
+	var marketingExp int64
+	s.db.Model(&models.Visitor{}).Where("has_marketing_experience = ?", true).Count(&marketingExp)
+
+	// Get most recent visitor
+	var lastVisitor models.Visitor
+	s.db.Model(&models.Visitor{}).Order("created_at DESC").First(&lastVisitor)
+
+	message := fmt.Sprintf(
+		"🚶‍♂️ **آمار کامل ویزیتورها**\n\n"+
+			"📊 **آمار کلی:**\n"+
+			"• کل ویزیتورها: `%d` ویزیتور\n"+
+			"• در انتظار بررسی: `%d` ویزیتور (%.1f%%)\n"+
+			"• تأیید شده: `%d` ویزیتور (%.1f%%)\n"+
+			"• رد شده: `%d` ویزیتور (%.1f%%)\n\n"+
+			"🌐 **آمار زبان:**\n"+
+			"• عالی: `%d` ویزیتور (%.1f%%)\n"+
+			"• متوسط: `%d` ویزیتور (%.1f%%)\n"+
+			"• ضعیف: `%d` ویزیتور (%.1f%%)\n"+
+			"• بلد نیستم: `%d` ویزیتور (%.1f%%)\n\n"+
+			"💼 **آمار تجربه:**\n"+
+			"• تجربه بازاریابی: `%d` ویزیتور (%.1f%%)\n\n"+
+			"📈 **آمار فعالیت:**\n"+
+			"• ثبت‌نام های هفته اخیر: `%d` ویزیتور\n"+
+			"• آخرین ثبت‌نام: **%s**\n"+
+			"• تاریخ آخرین ثبت‌نام: `%s`\n\n"+
+			"⚡ **عملیات سریع:**\n"+
+			"• بررسی درخواست‌های جدید\n"+
+			"• تأیید/رد ویزیتورها\n"+
+			"• مشاهده جزئیات هر ویزیتور",
+		totalVisitors,
+		pendingVisitors, getSafePercentage(pendingVisitors, totalVisitors),
+		approvedVisitors, getSafePercentage(approvedVisitors, totalVisitors),
+		rejectedVisitors, getSafePercentage(rejectedVisitors, totalVisitors),
+		excellentLang, getSafePercentage(excellentLang, totalVisitors),
+		goodLang, getSafePercentage(goodLang, totalVisitors),
+		weakLang, getSafePercentage(weakLang, totalVisitors),
+		noneLang, getSafePercentage(noneLang, totalVisitors),
+		marketingExp, getSafePercentage(marketingExp, totalVisitors),
+		recentVisitors,
+		lastVisitor.FullName,
+		lastVisitor.CreatedAt.Format("2006/01/02 15:04"),
+	)
+
+	// Create back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
