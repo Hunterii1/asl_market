@@ -315,10 +315,31 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
+			case "visitor_reject_reason":
+				// Process visitor rejection reason
+				sessionMutex.RLock()
+				state := sessionStates[message.Chat.ID]
+				sessionMutex.RUnlock()
+
+				if state != nil && state.Data != nil {
+					if visitorID, ok := state.Data["visitor_id"].(uint); ok {
+						s.handleVisitorReject(message.Chat.ID, visitorID, message.Text)
+					}
+				}
+
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
 			}
 		} else {
 			// Check for supplier command patterns
 			if s.handleSupplierCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
+			// Check for visitor command patterns
+			if s.handleVisitorCommands(message.Chat.ID, message.Text) {
 				return
 			}
 
@@ -1286,6 +1307,215 @@ func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool
 		}
 	}
 	return false
+}
+
+// Visitor Command Handlers
+
+func (s *TelegramService) handleVisitorCommands(chatID int64, text string) bool {
+	// Check for visitor action commands: /vview3, /vapprove3, /vreject3
+	if strings.HasPrefix(text, "/vview") && len(text) > 6 {
+		visitorIDStr := strings.TrimPrefix(text, "/vview")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.showVisitorDetails(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vapprove") && len(text) > 9 {
+		visitorIDStr := strings.TrimPrefix(text, "/vapprove")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.handleVisitorApprove(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vreject") && len(text) > 8 {
+		visitorIDStr := strings.TrimPrefix(text, "/vreject")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.promptVisitorReject(chatID, uint(visitorID))
+			return true
+		}
+	}
+	return false
+}
+
+func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build detailed message
+	details := fmt.Sprintf("👤 **جزئیات ویزیتور #%d**\n\n", visitor.ID)
+	details += fmt.Sprintf("📧 **نام کامل:** %s\n", visitor.FullName)
+	details += fmt.Sprintf("📱 **موبایل:** %s\n", visitor.Mobile)
+	details += fmt.Sprintf("🆔 **کد ملی:** %s\n", visitor.NationalID)
+
+	if visitor.PassportNumber != "" {
+		details += fmt.Sprintf("🛂 **پاسپورت:** %s\n", visitor.PassportNumber)
+	}
+
+	details += fmt.Sprintf("🎂 **تاریخ تولد:** %s\n", visitor.BirthDate)
+	details += fmt.Sprintf("📧 **ایمیل:** %s\n", visitor.User.Email)
+	details += fmt.Sprintf("📞 **واتساپ:** %s\n", visitor.WhatsappNumber)
+	details += fmt.Sprintf("🏠 **آدرس:** %s\n", visitor.ResidenceAddress)
+	details += fmt.Sprintf("🏘️ **شهر/استان:** %s\n", visitor.CityProvince)
+	details += fmt.Sprintf("✈️ **مقصد:** %s\n", visitor.DestinationCities)
+
+	if visitor.LocalContactDetails != "" {
+		details += fmt.Sprintf("🤝 **آشنای محلی:** %s\n", visitor.LocalContactDetails)
+	}
+
+	details += fmt.Sprintf("🏦 **حساب بانکی:** %s\n", visitor.BankAccountIBAN)
+	details += fmt.Sprintf("🏛️ **نام بانک:** %s\n", visitor.BankName)
+
+	if visitor.AccountHolderName != "" {
+		details += fmt.Sprintf("👤 **نام صاحب حساب:** %s\n", visitor.AccountHolderName)
+	}
+
+	// Experience and skills
+	if visitor.HasMarketingExperience {
+		details += fmt.Sprintf("💼 **تجربه بازاریابی:** بله - %s\n", visitor.MarketingExperienceDesc)
+	} else {
+		details += "💼 **تجربه بازاریابی:** خیر\n"
+	}
+
+	details += fmt.Sprintf("🌐 **سطح زبان:** %s\n", visitor.LanguageLevel)
+
+	if visitor.SpecialSkills != "" {
+		details += fmt.Sprintf("🎯 **مهارت‌های خاص:** %s\n", visitor.SpecialSkills)
+	}
+
+	// Commitments
+	details += fmt.Sprintf("✅ **تعهد محصولات تایید شده:** %t\n", visitor.AgreesToUseApprovedProducts)
+	details += fmt.Sprintf("⚖️ **تعهد عدم تخلف:** %t\n", visitor.AgreesToViolationConsequences)
+	details += fmt.Sprintf("📊 **تعهد گزارش‌دهی:** %t\n", visitor.AgreesToSubmitReports)
+	details += fmt.Sprintf("✍️ **امضا و تایید:** %s\n", visitor.DigitalSignature)
+	details += fmt.Sprintf("📅 **تاریخ ثبت‌نام:** %s\n", visitor.CreatedAt.Format("2006/01/02"))
+
+	// Status
+	statusEmoji := "⏳"
+	statusText := "در انتظار"
+	switch visitor.Status {
+	case "approved":
+		statusEmoji = "✅"
+		statusText = "تأیید شده"
+	case "rejected":
+		statusEmoji = "❌"
+		statusText = "رد شده"
+	}
+	details += fmt.Sprintf("📊 **وضعیت:** %s %s\n", statusEmoji, statusText)
+
+	// Create action buttons
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("vapprove_%d", visitor.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("vreject_%d", visitor.ID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت", "vback"),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, details)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleVisitorApprove(chatID int64, visitorID uint) {
+	// Get visitor
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update status to approved
+	err = s.db.Model(&visitor).Update("status", "approved").Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تأیید ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Send success message
+	successMsg := fmt.Sprintf("✅ **ویزیتور تأیید شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"📧 **ایمیل:** %s\n\n"+
+		"ویزیتور مطلع شده است.", visitor.FullName, visitor.Mobile, visitor.User.Email)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show updated visitors list
+	s.showVisitorsList(chatID, "pending", 1)
+}
+
+func (s *TelegramService) promptVisitorReject(chatID int64, visitorID uint) {
+	// Get visitor
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Set session state to wait for rejection reason
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "visitor_reject_reason",
+		Data: map[string]interface{}{
+			"visitor_id": visitorID,
+		},
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ **رد ویزیتور %s**\n\nلطفا دلیل رد را وارد کنید:", visitor.FullName))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleVisitorReject(chatID int64, visitorID uint, reason string) {
+	// Get visitor
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update status to rejected with reason
+	err = s.db.Model(&visitor).Updates(map[string]interface{}{
+		"status":        "rejected",
+		"reject_reason": reason,
+	}).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Send success message
+	successMsg := fmt.Sprintf("❌ **ویزیتور رد شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"📧 **ایمیل:** %s\n"+
+		"📝 **دلیل رد:** %s\n\n"+
+		"ویزیتور مطلع شده است.", visitor.FullName, visitor.Mobile, visitor.User.Email, reason)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show updated visitors list
+	s.showVisitorsList(chatID, "pending", 1)
 }
 
 func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
