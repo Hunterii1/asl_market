@@ -469,6 +469,94 @@ class ApiService {
     return !!localStorage.getItem('auth_token');
   }
 
+  // Research Products API methods
+  async getResearchProducts(params: {
+    page?: number;
+    per_page?: number;
+    category?: string;
+    status?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.category) queryParams.append('category', params.category);
+    if (params.status) queryParams.append('status', params.status);
+
+    return this.makeRequest(`${API_BASE_URL}/research-products?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getActiveResearchProducts(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/research-products/active`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getResearchProductCategories(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/research-products/categories`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getResearchProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/research-products/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Admin methods for research products
+  async createResearchProduct(data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateResearchProduct(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteResearchProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateResearchProductStatus(id: number, status: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ status }),
+    });
+  }
+
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }

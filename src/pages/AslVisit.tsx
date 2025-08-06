@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiService } from "@/services/api";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ const AslVisit = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("browse");
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [visitors, setVisitors] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const countries = [
     { 
@@ -74,59 +77,36 @@ const AslVisit = () => {
     }
   ];
 
-  const visitors = [
-    {
-      id: 1,
-      name: "احمد محمدی",
-      country: "AE",
-      city: "دبی",
-      phone: "+971501234567",
-      email: "ahmad@example.com",
-      languages: ["فارسی", "عربی", "انگلیسی"],
-      experience: "۵ سال",
-      rating: 4.9,
-      reviewCount: 23,
-      specialties: ["زعفران", "خرما", "صنایع دستی"],
-      isVerified: true,
-      passportVerified: true,
-      description: "متخصص در بازاریابی محصولات ایرانی در بازار امارات"
-    },
-    {
-      id: 2,
-      name: "فاطمه احمدی",
-      country: "SA",
-      city: "ریاض",
-      phone: "+966501234567",
-      email: "fateme@example.com",
-      languages: ["فارسی", "عربی"],
-      experience: "۳ سال",
-      rating: 4.7,
-      reviewCount: 18,
-      specialties: ["پسته", "فرش", "زعفران"],
-      isVerified: true,
-      passportVerified: true,
-      description: "نماینده فروش با تجربه در بازار عربستان"
-    },
-    {
-      id: 3,
-      name: "علی رضایی",
-      country: "KW",
-      city: "کویت سیتی",
-      phone: "+965501234567",
-      email: "ali@example.com",
-      languages: ["فارسی", "عربی", "انگلیسی"],
-      experience: "۷ سال",
-      rating: 4.8,
-      reviewCount: 31,
-      specialties: ["خرما", "زعفران", "چای"],
-      isVerified: true,
-      passportVerified: true,
-      description: "ویزیتور باتجربه با شبکه گسترده در کویت"
+  // Load visitors data from API
+  useEffect(() => {
+    const loadVisitorsData = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getApprovedVisitors();
+        setVisitors(response.visitors || []);
+      } catch (error) {
+        console.error('Error loading visitors:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVisitorsData();
+  }, []);
+
+  // Helper function for language level display
+  const getLanguageText = (level: string) => {
+    switch (level) {
+      case 'excellent': return '🌟 عالی';
+      case 'good': return '👍 خوب';
+      case 'weak': return '👎 ضعیف';
+      case 'none': return '❌ بلد نیستم';
+      default: return level;
     }
-  ];
+  };
 
   const filteredVisitors = selectedCountry 
-    ? visitors.filter(visitor => visitor.country === selectedCountry)
+    ? visitors.filter(visitor => visitor.city_province?.includes(countries.find(c => c.code === selectedCountry)?.name || ''))
     : visitors;
 
   const VisitorBrowser = () => (
@@ -183,27 +163,30 @@ const AslVisit = () => {
       </Card>
 
       {/* Visitors List */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVisitors.map((visitor) => {
-          const country = countries.find(c => c.code === visitor.country);
-          return (
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">در حال بارگذاری ویزیتورها...</p>
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVisitors.map((visitor) => (
             <Card key={visitor.id} className="bg-card border-border hover:border-border transition-all rounded-3xl transition-colors duration-300">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-foreground">{visitor.name}</h4>
-                      {visitor.isVerified && (
+                      <h4 className="font-bold text-foreground">{visitor.full_name}</h4>
+                      {visitor.status === 'approved' && (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       )}
-                      {visitor.passportVerified && (
+                      {visitor.passport_number && (
                         <User className="w-5 h-5 text-blue-400" />
                       )}
                     </div>
                     <div className="flex items-center gap-1 mb-2">
                       <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="text-yellow-400 font-medium">{visitor.rating}</span>
-                      <span className="text-muted-foreground text-sm">({visitor.reviewCount} نظر)</span>
+                      <span className="text-yellow-400 font-medium">4.5</span>
+                      <span className="text-muted-foreground text-sm">(تازه عضو)</span>
                     </div>
                   </div>
                 </div>
@@ -211,42 +194,50 @@ const AslVisit = () => {
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <MapPin className="w-4 h-4" />
-                    {country?.flag} {visitor.city}، {country?.name}
+                    {visitor.city_province}
                   </div>
                   
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Briefcase className="w-4 h-4" />
-                    {visitor.experience} تجربه
-                  </div>
+                  {visitor.has_marketing_experience && (
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                      <Briefcase className="w-4 h-4" />
+                      دارای تجربه بازاریابی
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Languages className="w-4 h-4" />
-                    {visitor.languages.join("، ")}
+                    {getLanguageText(visitor.language_level)}
                   </div>
                 </div>
 
-                <p className="text-muted-foreground text-sm mb-4">{visitor.description}</p>
+                {visitor.marketing_experience_desc && (
+                  <p className="text-muted-foreground text-sm mb-4">{visitor.marketing_experience_desc}</p>
+                )}
 
-                <div className="mb-4">
-                  <span className="text-muted-foreground text-sm block mb-2">تخصص‌ها:</span>
-                  <div className="flex flex-wrap gap-1">
-                    {visitor.specialties.map((specialty, index) => (
-                      <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
-                        {specialty}
-                      </Badge>
-                    ))}
+                {visitor.special_skills && (
+                  <div className="mb-4">
+                    <span className="text-muted-foreground text-sm block mb-2">مهارت‌ها:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {visitor.special_skills.split('، ').map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
+                          {skill.trim()}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground text-sm">{visitor.phone}</span>
+                    <span className="text-foreground text-sm">{visitor.mobile}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground text-sm">{visitor.email}</span>
-                  </div>
+                  {visitor.user && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-foreground text-sm">{visitor.user.email}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -267,9 +258,9 @@ const AslVisit = () => {
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 

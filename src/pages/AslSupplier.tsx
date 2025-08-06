@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/hooks/useAuth';
-import { apiService } from '@/services/api';
+import { apiService } from "@/services/api";
 import { 
   Users, 
   Star, 
@@ -46,114 +46,28 @@ const AslSupplier = () => {
     { id: "handicrafts", name: "صنایع دستی" }
   ];
 
-  const suppliers = [
-    {
-      id: 1,
-      name: "شرکت زعفران طلایی",
-      contact: "احمد محمدی",
-      phone: "09123456789",
-      email: "info@goldensaffron.ir",
-      city: "مشهد",
-      province: "خراسان رضوی",
-      products: ["زعفران سرگل", "زعفران پوشال"],
-      rating: 4.8,
-      reviewCount: 24,
-      isVerified: true,
-      joinDate: "۱۴۰۲/۰۳/۱۵",
-      description: "تولیدکننده زعفران درجه یک با بیش از ۱۰ سال سابقه",
-      category: "saffron",
-      contactRevealed: false,
-      companySize: "متوسط",
-      capacity: "۱۰۰ کیلوگرم/ماه",
-      certifications: ["ISO 9001", "HACCP"]
-    },
-    {
-      id: 2,
-      name: "باغات خرمای جنوب",
-      contact: "فاطمه احمدی",
-      phone: "09187654321",
-      email: "dates@south.ir",
-      city: "اهواز",
-      province: "خوزستان",
-      products: ["خرما مجول", "خرما زاهدی", "خرما کبکاب"],
-      rating: 4.6,
-      reviewCount: 18,
-      isVerified: true,
-      joinDate: "۱۴۰۲/۰۵/۰۸",
-      description: "تولید و بسته‌بندی انواع خرما با کیفیت صادراتی",
-      category: "dates",
-      contactRevealed: false,
-      companySize: "بزرگ",
-      capacity: "۵۰۰ کیلوگرم/ماه",
-      certifications: ["ارگانیک", "صادراتی"]
-    },
-    {
-      id: 3,
-      name: "پسته کرمان",
-      contact: "علی رضایی",
-      phone: "09131234567",
-      email: "pistachio@kerman.ir",
-      city: "کرمان",
-      province: "کرمان",
-      products: ["پسته اکبری", "پسته فندقی", "پسته کله قوچی"],
-      rating: 4.9,
-      reviewCount: 31,
-      isVerified: true,
-      joinDate: "۱۴۰۱/۱۲/۲۰",
-      description: "بزرگترین تولیدکننده پسته در استان کرمان",
-      category: "pistachios",
-      contactRevealed: true,
-      companySize: "بزرگ",
-      capacity: "۲۰۰ کیلوگرم/ماه",
-      certifications: ["ISO 22000", "BRC"]
-    },
-    {
-      id: 4,
-      name: "صنایع دستی اصفهان",
-      contact: "مریم صادقی",
-      phone: "09133456789",
-      email: "handicrafts@isfahan.ir",
-      city: "اصفهان",
-      province: "اصفهان",
-      products: ["فرش دستباف", "مینیاتور", "خاتم"],
-      rating: 4.7,
-      reviewCount: 15,
-      isVerified: true,
-      joinDate: "۱۴۰۲/۰۷/۱۲",
-      description: "تولیدکننده صنایع دستی اصیل ایرانی",
-      category: "handicrafts",
-      contactRevealed: false,
-      companySize: "کوچک",
-      capacity: "۲۰ قطعه/ماه",
-      certifications: ["اصالت", "دست‌ساز"]
-    },
-    {
-      id: 5,
-      name: "عسل طبیعی البرز",
-      contact: "حسن کریمی",
-      phone: "09121234567",
-      email: "honey@alborz.ir",
-      city: "کرج",
-      province: "البرز",
-      products: ["عسل چهل گیاه", "عسل آویشن", "عسل کنار"],
-      rating: 4.5,
-      reviewCount: 22,
-      isVerified: true,
-      joinDate: "۱۴۰۲/۰۴/۲۵",
-      description: "تولیدکننده عسل طبیعی و ارگانیک",
-      category: "food",
-      contactRevealed: false,
-      companySize: "کوچک",
-      capacity: "۵۰ کیلوگرم/ماه",
-      certifications: ["ارگانیک", "طبیعی"]
-    }
-  ];
+  // Load suppliers data from API
+  useEffect(() => {
+    const loadSuppliersData = async () => {
+      try {
+        setLoadingSuppliers(true);
+        const response = await apiService.getApprovedSuppliers();
+        setApprovedSuppliers(response.suppliers || []);
+      } catch (error) {
+        console.error('Error loading suppliers:', error);
+      } finally {
+        setLoadingSuppliers(false);
+      }
+    };
 
-  const filteredSuppliers = suppliers.filter(supplier => {
-    const matchesProduct = selectedProduct === "all" || supplier.category === selectedProduct;
-    const matchesSearch = supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         supplier.products.some(product => product.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesProduct && matchesSearch;
+    loadSuppliersData();
+  }, []);
+
+  const filteredSuppliers = approvedSuppliers.filter(supplier => {
+    const matchesSearch = supplier.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         supplier.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         supplier.main_products?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
 
   const handleRevealContact = (supplierId: number) => {
