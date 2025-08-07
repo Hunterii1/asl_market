@@ -180,6 +180,12 @@ func (s *TelegramService) startBot() {
 			continue
 		}
 
+		// Handle file uploads
+		if update.Message.Document != nil {
+			go s.handleFileUpload(&update)
+			continue
+		}
+
 		// Handle menu selections
 		go s.handleMessage(update.Message)
 	}
@@ -201,6 +207,10 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_MARKETING_POPUPS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT),
+			tgbotapi.NewKeyboardButton(MENU_SINGLE_ADD),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
@@ -296,6 +306,24 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showActiveMarketingPopups(message.Chat.ID)
 	case MENU_MARKETING_POPUP_STATS:
 		s.showMarketingPopupsStats(message.Chat.ID)
+	case MENU_BULK_IMPORT:
+		s.showBulkImportMenu(message.Chat.ID)
+	case MENU_BULK_IMPORT_SUPPLIERS:
+		s.promptBulkImportSuppliers(message.Chat.ID)
+	case MENU_BULK_IMPORT_VISITORS:
+		s.promptBulkImportVisitors(message.Chat.ID)
+	case MENU_DOWNLOAD_TEMPLATES:
+		s.showTemplateDownloadMenu(message.Chat.ID)
+	case MENU_SUPPLIER_TEMPLATE:
+		s.generateAndSendSupplierTemplate(message.Chat.ID)
+	case MENU_VISITOR_TEMPLATE:
+		s.generateAndSendVisitorTemplate(message.Chat.ID)
+	case MENU_SINGLE_ADD:
+		s.showSingleAddMenu(message.Chat.ID)
+	case MENU_ADD_SINGLE_SUPPLIER:
+		s.promptAddSingleSupplier(message.Chat.ID)
+	case MENU_ADD_SINGLE_VISITOR:
+		s.promptAddSingleVisitor(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count
@@ -376,6 +404,10 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "description")
 			case "marketing_popup_data":
 				s.handleMarketingPopupInput(message.Chat.ID, message.Text)
+			case "single_supplier_data":
+				s.handleSingleSupplierInput(message.Chat.ID, message.Text)
+			case "single_visitor_data":
+				s.handleSingleVisitorInput(message.Chat.ID, message.Text)
 			}
 		} else {
 			// Check for supplier command patterns
