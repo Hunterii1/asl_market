@@ -41,6 +41,7 @@ interface SupplierFormData {
   brand_name: string;
   city: string;
   address: string;
+  image_url: string;
   has_registered_business: boolean;
   business_registration_num: string;
   has_export_experience: boolean;
@@ -74,6 +75,7 @@ export default function SupplierRegistration() {
     brand_name: '',
     city: '',
     address: '',
+    image_url: '',
     has_registered_business: false,
     business_registration_num: '',
     has_export_experience: false,
@@ -243,6 +245,20 @@ export default function SupplierRegistration() {
             placeholder="نام برند شما"
             dir="rtl"
           />
+        </div>
+
+        <div>
+          <Label htmlFor="image_url">لینک تصویر شخصی یا لوگو</Label>
+          <Input
+            id="image_url"
+            value={formData.image_url}
+            onChange={(e) => updateFormData('image_url', e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            dir="ltr"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            لینک تصویر شخصی یا لوگو برند خود را وارد کنید
+          </p>
         </div>
 
         <div>

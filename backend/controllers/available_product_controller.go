@@ -87,6 +87,7 @@ func GetAvailableProducts(c *gin.Context) {
 				FullName:  product.Supplier.FullName,
 				Mobile:    product.Supplier.Mobile,
 				BrandName: product.Supplier.BrandName,
+				ImageURL:  product.Supplier.ImageURL,
 				City:      product.Supplier.City,
 				Status:    product.Supplier.Status,
 			}
@@ -388,6 +389,7 @@ func GetFeaturedAvailableProducts(c *gin.Context) {
 				FullName:  product.Supplier.FullName,
 				Mobile:    product.Supplier.Mobile,
 				BrandName: product.Supplier.BrandName,
+				ImageURL:  product.Supplier.ImageURL,
 				City:      product.Supplier.City,
 				Status:    product.Supplier.Status,
 			}
@@ -471,6 +473,7 @@ func GetHotDealsAvailableProducts(c *gin.Context) {
 				FullName:  product.Supplier.FullName,
 				Mobile:    product.Supplier.Mobile,
 				BrandName: product.Supplier.BrandName,
+				ImageURL:  product.Supplier.ImageURL,
 				City:      product.Supplier.City,
 				Status:    product.Supplier.Status,
 			}

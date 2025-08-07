@@ -16,6 +16,7 @@ type Supplier struct {
 	FullName                string `json:"full_name" gorm:"size:255;not null"`
 	Mobile                  string `json:"mobile" gorm:"size:20;not null"`
 	BrandName               string `json:"brand_name" gorm:"size:255"`
+	ImageURL                string `json:"image_url" gorm:"size:500"`
 	City                    string `json:"city" gorm:"size:100;not null"`
 	Address                 string `json:"address" gorm:"type:text;not null"`
 	HasRegisteredBusiness   bool   `json:"has_registered_business" gorm:"default:false"`
@@ -75,6 +76,7 @@ type SupplierRegistrationRequest struct {
 	FullName                string `json:"full_name" binding:"required"`
 	Mobile                  string `json:"mobile" binding:"required"`
 	BrandName               string `json:"brand_name"`
+	ImageURL                string `json:"image_url"`
 	City                    string `json:"city" binding:"required"`
 	Address                 string `json:"address" binding:"required"`
 	HasRegisteredBusiness   bool   `json:"has_registered_business"`
@@ -108,6 +110,7 @@ type SupplierResponse struct {
 	FullName                 string                    `json:"full_name"`
 	Mobile                   string                    `json:"mobile"`
 	BrandName                string                    `json:"brand_name"`
+	ImageURL                 string                    `json:"image_url"`
 	City                     string                    `json:"city"`
 	Address                  string                    `json:"address"`
 	HasRegisteredBusiness    bool                      `json:"has_registered_business"`
@@ -145,6 +148,7 @@ func CreateSupplier(db *gorm.DB, userID uint, req SupplierRegistrationRequest) (
 		FullName:                 req.FullName,
 		Mobile:                   req.Mobile,
 		BrandName:                req.BrandName,
+		ImageURL:                 req.ImageURL,
 		City:                     req.City,
 		Address:                  req.Address,
 		HasRegisteredBusiness:    req.HasRegisteredBusiness,

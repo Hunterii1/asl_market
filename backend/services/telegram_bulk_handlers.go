@@ -222,24 +222,24 @@ func (s *TelegramService) generateAndSendVisitorTemplate(chatID int64) {
 // generateAndSendProductTemplate generates and sends available product Excel template
 func (s *TelegramService) generateAndSendProductTemplate(chatID int64) {
 	excelService := NewExcelImportService(s.db)
-	
+
 	// Generate template
 	f, err := excelService.GenerateAvailableProductTemplate()
 	if err != nil {
 		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در تولید فایل نمونه: %v", err)))
 		return
 	}
-	
+
 	// Create temp file
 	tempDir := os.TempDir()
 	fileName := fmt.Sprintf("product_template_%d.xlsx", time.Now().Unix())
 	filePath := filepath.Join(tempDir, fileName)
-	
+
 	if err := f.SaveAs(filePath); err != nil {
 		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ذخیره فایل: %v", err)))
 		return
 	}
-	
+
 	// Send file
 	document := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(filePath))
 	document.Caption = "📋 **فایل نمونه کالاهای موجود**\n\n" +
@@ -253,9 +253,9 @@ func (s *TelegramService) generateAndSendProductTemplate(chatID int64) {
 		"• صادرات و مجوزها\n\n" +
 		"✅ **پس از پر کردن فایل، آن را ارسال کنید**"
 	document.ParseMode = "Markdown"
-	
+
 	s.bot.Send(document)
-	
+
 	// Clean up temp file after a delay
 	go func() {
 		time.Sleep(1 * time.Minute)
@@ -522,6 +522,7 @@ func (s *TelegramService) promptAddSingleSupplier(chatID int64) {
 		"نام: [نام و نام خانوادگی]\n" +
 		"موبایل: [شماره موبایل]\n" +
 		"برند: [نام برند]\n" +
+		"عکس: [لینک عکس]\n" +
 		"شهر: [شهر]\n" +
 		"آدرس: [آدرس کامل]\n" +
 		"کسب و کار: [بله/خیر]\n" +
@@ -543,6 +544,7 @@ func (s *TelegramService) promptAddSingleSupplier(chatID int64) {
 		"نام: احمد محمدی\n" +
 		"موبایل: 09123456789\n" +
 		"برند: برند نمونه\n" +
+		"عکس: https://example.com/photo.jpg\n" +
 		"شهر: تهران\n" +
 		"آدرس: خیابان ولیعصر\n" +
 		"کسب و کار: بله\n" +
@@ -665,6 +667,7 @@ func (s *TelegramService) handleSingleSupplierInput(chatID int64, text string) {
 		FullName:                 data["نام"],
 		Mobile:                   data["موبایل"],
 		BrandName:                data["برند"],
+		ImageURL:                 data["عکس"],
 		City:                     data["شهر"],
 		Address:                  data["آدرس"],
 		HasRegisteredBusiness:    parseBool(data["کسب و کار"]),

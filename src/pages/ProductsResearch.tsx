@@ -228,92 +228,81 @@ const ProductsResearch = () => {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProducts.map((product) => (
           <Card key={product.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
-            <CardContent className="p-0">
-              <div className="relative">
-                <img
-                  src="https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg?auto=compress&cs=tinysrgb&w=300"
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-3xl"
-                />
-                <div className="absolute top-4 right-4">
-                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
-                    #{product.id}
-                  </Badge>
-                </div>
-                <div className="absolute top-4 left-4">
-                  <Badge className={`${getMarketDemandColor(product.market_demand)} rounded-full`}>
-                    {getMarketDemandText(product.market_demand)}
-                  </Badge>
-                </div>
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                  #{product.id}
+                </Badge>
+                <Badge className={`${getMarketDemandColor(product.market_demand)} rounded-full`}>
+                  {getMarketDemandText(product.market_demand)}
+                </Badge>
               </div>
+              
+              <h4 className="font-bold text-foreground mb-2 group-hover:text-blue-300 transition-colors">
+                {product.name}
+              </h4>
+              <p className="text-muted-foreground text-sm mb-4">{product.description}</p>
 
-              <div className="p-6">
-                <h4 className="font-bold text-foreground mb-2 group-hover:text-blue-300 transition-colors">
-                  {product.name}
-                </h4>
-                <p className="text-muted-foreground text-sm mb-4">{product.description}</p>
-
-                <div className="space-y-3 mb-4">
-                  {product.export_value && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">ارزش صادرات:</span>
-                      <span className="text-foreground font-bold">{product.export_value}</span>
-                    </div>
-                  )}
-                  
-                  {product.profit_potential && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">پتانسیل سود:</span>
-                      <Badge className={`${getProfitPotentialColor(product.profit_potential)} rounded-full`}>
-                        {getProfitPotentialText(product.profit_potential)}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {product.competition_level && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">رقابت:</span>
-                      <Badge className={`${getCompetitionColor(product.competition_level)} rounded-full`}>
-                        {getCompetitionText(product.competition_level)}
-                      </Badge>
-                    </div>
-                  )}
-
-                  {product.seasonal_factors && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground text-sm">فصلی بودن:</span>
-                      <span className="text-foreground text-sm">{product.seasonal_factors}</span>
-                    </div>
-                  )}
-                </div>
-
-                {product.target_countries && (
-                  <div className="mb-4">
-                    <span className="text-muted-foreground text-sm block mb-2">بازارهای هدف:</span>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
-                        {product.target_countries}
-                      </Badge>
-                    </div>
+              <div className="space-y-3 mb-4">
+                {product.export_value && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">ارزش صادرات:</span>
+                    <span className="text-foreground font-bold">{product.export_value}</span>
+                  </div>
+                )}
+                
+                {product.profit_potential && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">پتانسیل سود:</span>
+                    <Badge className={`${getProfitPotentialColor(product.profit_potential)} rounded-full`}>
+                      {getProfitPotentialText(product.profit_potential)}
+                    </Badge>
                   </div>
                 )}
 
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-2xl"
-                  >
-                    <Eye className="w-4 h-4 ml-2" />
-                    مطالعه کامل
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
-                  >
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Button>
+                {product.competition_level && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">رقابت:</span>
+                    <Badge className={`${getCompetitionColor(product.competition_level)} rounded-full`}>
+                      {getCompetitionText(product.competition_level)}
+                    </Badge>
+                  </div>
+                )}
+
+                {product.seasonal_factors && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">فصلی بودن:</span>
+                    <span className="text-foreground text-sm">{product.seasonal_factors}</span>
+                  </div>
+                )}
+              </div>
+
+              {product.target_countries && (
+                <div className="mb-4">
+                  <span className="text-muted-foreground text-sm block mb-2">بازارهای هدف:</span>
+                  <div className="flex flex-wrap gap-1">
+                    <Badge variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
+                      {product.target_countries}
+                    </Badge>
+                  </div>
                 </div>
+              )}
+
+              <div className="flex gap-2">
+                <Button 
+                  size="sm" 
+                  className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-2xl"
+                >
+                  <Eye className="w-4 h-4 ml-2" />
+                  مطالعه کامل
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
+                >
+                  <ArrowUpRight className="w-4 h-4" />
+                </Button>
               </div>
             </CardContent>
           </Card>

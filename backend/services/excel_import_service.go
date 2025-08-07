@@ -42,6 +42,7 @@ func (s *ExcelImportService) GenerateSupplierTemplate() (*excelize.File, error) 
 		"نام و نام خانوادگی",
 		"شماره موبایل",
 		"نام برند",
+		"لینک عکس",
 		"شهر",
 		"آدرس",
 		"دارای کسب و کار ثبت شده؟ (بله/خیر)",
@@ -366,7 +367,7 @@ func (s *ExcelImportService) ImportSuppliersFromExcel(filePath string) (*ImportR
 	for i, row := range rows[1:] {
 		rowNum := i + 2 // Row number in Excel (1-indexed + header)
 
-		if len(row) < 12 { // Minimum required columns
+		if len(row) < 13 { // Minimum required columns
 			result.Errors = append(result.Errors, fmt.Sprintf("ردیف %d: تعداد ستون‌های کافی نیست", rowNum))
 			result.ErrorCount++
 			continue
@@ -618,15 +619,16 @@ func (s *ExcelImportService) parseSupplierRow(row []string, rowNum int) (*models
 		FullName:                 getCol(0),
 		Mobile:                   getCol(1),
 		BrandName:                getCol(2),
-		City:                     getCol(3),
-		Address:                  getCol(4),
-		HasRegisteredBusiness:    parseBool(getCol(5)),
-		BusinessRegistrationNum:  getCol(6),
-		HasExportExperience:      parseBool(getCol(7)),
-		ExportPrice:              getCol(8),
-		WholesaleMinPrice:        getCol(9),
-		WholesaleHighVolumePrice: getCol(10),
-		CanProducePrivateLabel:   parseBool(getCol(11)),
+		ImageURL:                 getCol(3),
+		City:                     getCol(4),
+		Address:                  getCol(5),
+		HasRegisteredBusiness:    parseBool(getCol(6)),
+		BusinessRegistrationNum:  getCol(7),
+		HasExportExperience:      parseBool(getCol(8)),
+		ExportPrice:              getCol(9),
+		WholesaleMinPrice:        getCol(10),
+		WholesaleHighVolumePrice: getCol(11),
+		CanProducePrivateLabel:   parseBool(getCol(12)),
 	}
 
 	// Validation
@@ -645,7 +647,7 @@ func (s *ExcelImportService) parseSupplierRow(row []string, rowNum int) (*models
 
 	// Parse products (up to 2 products in template)
 	for i := 0; i < 2; i++ {
-		nameIndex := 12 + (i * 6)
+		nameIndex := 13 + (i * 6)
 		if nameIndex < len(row) && getCol(nameIndex) != "" {
 			product := models.SupplierProductRequest{
 				ProductName:          getCol(nameIndex),
