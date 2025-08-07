@@ -1018,6 +1018,37 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle country button callbacks
+	if strings.HasPrefix(data, "country_") {
+		country := strings.TrimPrefix(data, "country_")
+		var countryName string
+		switch country {
+		case "UAE":
+			countryName = "امارات متحده عربی"
+		case "Saudi":
+			countryName = "عربستان سعودی"
+		case "Kuwait":
+			countryName = "کویت"
+		case "Qatar":
+			countryName = "قطر"
+		case "Bahrain":
+			countryName = "بحرین"
+		case "Oman":
+			countryName = "عمان"
+		default:
+			countryName = country
+		}
+		s.handleResearchProductCreation(chatID, countryName, "target_country")
+		return
+	}
+
+	// Handle currency button callbacks
+	if strings.HasPrefix(data, "currency_") {
+		currency := strings.TrimPrefix(data, "currency_")
+		s.handleResearchProductCreation(chatID, currency, "currency")
+		return
+	}
+
 	// Handle demand button callbacks
 	if strings.HasPrefix(data, "demand_") {
 		demand := strings.TrimPrefix(data, "demand_")
@@ -1989,9 +2020,94 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 		s.bot.Send(msg)
 
 	case "description":
-		// Store description and ask for market demand
+		// Store description and ask for target country
 		sessionMutex.Lock()
 		state.Data["description"] = text
+		state.Data["step"] = "target_country"
+		state.WaitingForInput = "research_product_target_country"
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🇦🇪 امارات", "country_UAE"),
+				tgbotapi.NewInlineKeyboardButtonData("🇸🇦 عربستان", "country_Saudi"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🇰🇼 کویت", "country_Kuwait"),
+				tgbotapi.NewInlineKeyboardButtonData("🇶🇦 قطر", "country_Qatar"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🇧🇭 بحرین", "country_Bahrain"),
+				tgbotapi.NewInlineKeyboardButtonData("🇴🇲 عمان", "country_Oman"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ توضیحات ثبت شد\n\n"+
+				"کشور هدف اصلی برای صادرات این محصول کدام است؟")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "target_country":
+		// Store target country and ask for Iran purchase price
+		sessionMutex.Lock()
+		state.Data["target_country"] = text
+		state.Data["step"] = "iran_price"
+		state.WaitingForInput = "research_product_iran_price"
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ کشور هدف ثبت شد: **"+text+"**\n\n"+
+				"قیمت خرید از ایران را وارد کنید (بدون واحد پول):\n\n"+
+				"*مثال:* 1500")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+
+	case "iran_price":
+		// Store Iran price and ask for target country price
+		sessionMutex.Lock()
+		state.Data["iran_price"] = text
+		state.Data["step"] = "target_price"
+		state.WaitingForInput = "research_product_target_price"
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ قیمت خرید از ایران ثبت شد: **"+text+"**\n\n"+
+				"قیمت فروش در کشور هدف را وارد کنید (بدون واحد پول):\n\n"+
+				"*مثال:* 2200")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+
+	case "target_price":
+		// Store target price and ask for currency
+		sessionMutex.Lock()
+		state.Data["target_price"] = text
+		state.Data["step"] = "currency"
+		state.WaitingForInput = "research_product_currency"
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("💵 USD", "currency_USD"),
+				tgbotapi.NewInlineKeyboardButtonData("💶 EUR", "currency_EUR"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("💴 AED", "currency_AED"),
+				tgbotapi.NewInlineKeyboardButtonData("💷 SAR", "currency_SAR"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID,
+			"✅ قیمت فروش در کشور هدف ثبت شد: **"+text+"**\n\n"+
+				"واحد پول قیمت‌ها را انتخاب کنید:")
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "currency":
+		// Store currency and ask for market demand
+		sessionMutex.Lock()
+		state.Data["currency"] = text
 		state.Data["step"] = "market_demand"
 		state.WaitingForInput = "research_product_market_demand"
 		sessionMutex.Unlock()
@@ -2005,8 +2121,9 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 		)
 
 		msg := tgbotapi.NewMessage(chatID,
-			"✅ توضیحات ثبت شد\n\n"+
+			"✅ واحد پول ثبت شد: **"+text+"**\n\n"+
 				"تقاضای بازار برای این محصول چگونه است؟")
+		msg.ParseMode = "Markdown"
 		msg.ReplyMarkup = keyboard
 		s.bot.Send(msg)
 
@@ -2015,16 +2132,24 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 		name := state.Data["name"].(string)
 		category := state.Data["category"].(string)
 		description := state.Data["description"].(string)
+		targetCountry := state.Data["target_country"].(string)
+		iranPrice := state.Data["iran_price"].(string)
+		targetPrice := state.Data["target_price"].(string)
+		currency := state.Data["currency"].(string)
 
 		// Get admin ID (assuming first admin for simplicity)
 		var adminID uint = 1 // This should be the actual admin ID
 
 		productReq := models.ResearchProductRequest{
-			Name:         name,
-			Category:     category,
-			Description:  description,
-			MarketDemand: text,
-			Priority:     0,
+			Name:               name,
+			Category:           category,
+			Description:        description,
+			TargetCountry:      targetCountry,
+			IranPurchasePrice:  iranPrice,
+			TargetCountryPrice: targetPrice,
+			PriceCurrency:      currency,
+			MarketDemand:       text,
+			Priority:           0,
 		}
 
 		product, err := models.CreateResearchProduct(productReq, adminID)
@@ -2037,11 +2162,21 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 					"📦 **نام:** %s\n"+
 					"🏷️ **دسته:** %s\n"+
 					"📝 **توضیحات:** %s\n"+
+					"🌍 **کشور هدف:** %s\n"+
+					"💰 **قیمت خرید ایران:** %s %s\n"+
+					"💰 **قیمت فروش هدف:** %s %s\n"+
+					"📈 **حاشیه سود:** %s\n"+
 					"🔥 **تقاضای بازار:** %s\n"+
 					"🆔 **شناسه:** #%d",
 				product.Name,
 				product.Category,
 				product.Description,
+				product.TargetCountry,
+				product.IranPurchasePrice,
+				product.PriceCurrency,
+				product.TargetCountryPrice,
+				product.PriceCurrency,
+				product.ProfitMargin,
 				product.MarketDemand,
 				product.ID,
 			)

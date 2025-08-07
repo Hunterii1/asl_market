@@ -132,6 +132,7 @@ const ProductsResearch = () => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesMarket = selectedMarket === "all" || 
+      product.target_country?.toLowerCase().includes(targetMarkets.find(m => m.id === selectedMarket)?.name.toLowerCase() || '') ||
       product.target_countries?.toLowerCase().includes(targetMarkets.find(m => m.id === selectedMarket)?.name.toLowerCase() || '');
     return matchesSearch && matchesCategory && matchesMarket;
   });
@@ -248,6 +249,42 @@ const ProductsResearch = () => {
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground text-sm">ارزش صادرات:</span>
                     <span className="text-foreground font-bold">{product.export_value}</span>
+                  </div>
+                )}
+
+                {product.target_country && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">کشور هدف:</span>
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                      {product.target_country}
+                    </Badge>
+                  </div>
+                )}
+
+                {product.iran_purchase_price && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">قیمت خرید (ایران):</span>
+                    <span className="text-foreground font-bold">
+                      {product.iran_purchase_price} {product.price_currency || 'USD'}
+                    </span>
+                  </div>
+                )}
+
+                {product.target_country_price && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">قیمت فروش (هدف):</span>
+                    <span className="text-foreground font-bold">
+                      {product.target_country_price} {product.price_currency || 'USD'}
+                    </span>
+                  </div>
+                )}
+
+                {product.profit_margin && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">حاشیه سود:</span>
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
+                      {product.profit_margin}
+                    </Badge>
                   </div>
                 )}
                 

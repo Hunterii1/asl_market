@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,8 +22,15 @@ type ResearchProduct struct {
 	ProfitPotential  string `json:"profit_potential" gorm:"size:50"`  // پتانسیل سود: high, medium, low
 	CompetitionLevel string `json:"competition_level" gorm:"size:50"` // سطح رقابت: high, medium, low
 
+	// Target Country & Pricing
+	TargetCountry      string `json:"target_country" gorm:"size:100;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // کشور هدف اصلی
+	IranPurchasePrice  string `json:"iran_purchase_price" gorm:"size:50"`                                          // قیمت خرید از ایران
+	TargetCountryPrice string `json:"target_country_price" gorm:"size:50"`                                         // قیمت فروش در کشور هدف
+	PriceCurrency      string `json:"price_currency" gorm:"size:10;default:'USD'"`                                 // واحد پول قیمت‌ها
+	ProfitMargin       string `json:"profit_margin" gorm:"size:20"`                                                // حاشیه سود محاسبه شده
+
 	// Additional Details
-	TargetCountries  string `json:"target_countries" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // کشورهای هدف
+	TargetCountries  string `json:"target_countries" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // کشورهای هدف (چندتایی)
 	SeasonalFactors  string `json:"seasonal_factors" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // عوامل فصلی
 	RequiredLicenses string `json:"required_licenses" gorm:"type:text"`                                             // مجوزهای مورد نیاز
 	QualityStandards string `json:"quality_standards" gorm:"type:text"`                                             // استانداردهای کیفی
@@ -39,42 +48,51 @@ type ResearchProduct struct {
 
 // ResearchProductRequest represents the request structure for creating research products
 type ResearchProductRequest struct {
-	Name             string `json:"name" validate:"required,min=2,max=255"`
-	Category         string `json:"category" validate:"required,min=2,max=100"`
-	Description      string `json:"description"`
-	ExportValue      string `json:"export_value"`
-	ImportValue      string `json:"import_value"`
-	MarketDemand     string `json:"market_demand" validate:"omitempty,oneof=high medium low"`
-	ProfitPotential  string `json:"profit_potential" validate:"omitempty,oneof=high medium low"`
-	CompetitionLevel string `json:"competition_level" validate:"omitempty,oneof=high medium low"`
-	TargetCountries  string `json:"target_countries"`
-	SeasonalFactors  string `json:"seasonal_factors"`
-	RequiredLicenses string `json:"required_licenses"`
-	QualityStandards string `json:"quality_standards"`
-	Priority         int    `json:"priority"`
+	Name               string `json:"name" validate:"required,min=2,max=255"`
+	Category           string `json:"category" validate:"required,min=2,max=100"`
+	Description        string `json:"description"`
+	ExportValue        string `json:"export_value"`
+	ImportValue        string `json:"import_value"`
+	MarketDemand       string `json:"market_demand" validate:"omitempty,oneof=high medium low"`
+	ProfitPotential    string `json:"profit_potential" validate:"omitempty,oneof=high medium low"`
+	CompetitionLevel   string `json:"competition_level" validate:"omitempty,oneof=high medium low"`
+	TargetCountry      string `json:"target_country"`
+	IranPurchasePrice  string `json:"iran_purchase_price"`
+	TargetCountryPrice string `json:"target_country_price"`
+	PriceCurrency      string `json:"price_currency"`
+	TargetCountries    string `json:"target_countries"`
+	SeasonalFactors    string `json:"seasonal_factors"`
+	RequiredLicenses   string `json:"required_licenses"`
+	QualityStandards   string `json:"quality_standards"`
+	Priority           int    `json:"priority"`
 }
 
 // ResearchProductResponse represents the response structure for research products
 type ResearchProductResponse struct {
-	ID               uint         `json:"id"`
-	Name             string       `json:"name"`
-	Category         string       `json:"category"`
-	Description      string       `json:"description"`
-	ExportValue      string       `json:"export_value"`
-	ImportValue      string       `json:"import_value"`
-	MarketDemand     string       `json:"market_demand"`
-	ProfitPotential  string       `json:"profit_potential"`
-	CompetitionLevel string       `json:"competition_level"`
-	TargetCountries  string       `json:"target_countries"`
-	SeasonalFactors  string       `json:"seasonal_factors"`
-	RequiredLicenses string       `json:"required_licenses"`
-	QualityStandards string       `json:"quality_standards"`
-	Status           string       `json:"status"`
-	Priority         int          `json:"priority"`
-	AddedBy          uint         `json:"added_by"`
-	AddedByAdmin     UserResponse `json:"added_by_admin"`
-	CreatedAt        time.Time    `json:"created_at"`
-	UpdatedAt        time.Time    `json:"updated_at"`
+	ID                 uint         `json:"id"`
+	Name               string       `json:"name"`
+	Category           string       `json:"category"`
+	Description        string       `json:"description"`
+	ExportValue        string       `json:"export_value"`
+	ImportValue        string       `json:"import_value"`
+	MarketDemand       string       `json:"market_demand"`
+	ProfitPotential    string       `json:"profit_potential"`
+	CompetitionLevel   string       `json:"competition_level"`
+	TargetCountry      string       `json:"target_country"`
+	IranPurchasePrice  string       `json:"iran_purchase_price"`
+	TargetCountryPrice string       `json:"target_country_price"`
+	PriceCurrency      string       `json:"price_currency"`
+	ProfitMargin       string       `json:"profit_margin"`
+	TargetCountries    string       `json:"target_countries"`
+	SeasonalFactors    string       `json:"seasonal_factors"`
+	RequiredLicenses   string       `json:"required_licenses"`
+	QualityStandards   string       `json:"quality_standards"`
+	Status             string       `json:"status"`
+	Priority           int          `json:"priority"`
+	AddedBy            uint         `json:"added_by"`
+	AddedByAdmin       UserResponse `json:"added_by_admin"`
+	CreatedAt          time.Time    `json:"created_at"`
+	UpdatedAt          time.Time    `json:"updated_at"`
 }
 
 // Helper functions for ResearchProduct
@@ -84,21 +102,35 @@ func CreateResearchProduct(req ResearchProductRequest, adminID uint) (*ResearchP
 	db := GetDB()
 
 	product := ResearchProduct{
-		Name:             req.Name,
-		Category:         req.Category,
-		Description:      req.Description,
-		ExportValue:      req.ExportValue,
-		ImportValue:      req.ImportValue,
-		MarketDemand:     req.MarketDemand,
-		ProfitPotential:  req.ProfitPotential,
-		CompetitionLevel: req.CompetitionLevel,
-		TargetCountries:  req.TargetCountries,
-		SeasonalFactors:  req.SeasonalFactors,
-		RequiredLicenses: req.RequiredLicenses,
-		QualityStandards: req.QualityStandards,
-		Priority:         req.Priority,
-		AddedBy:          adminID,
-		Status:           "active",
+		Name:               req.Name,
+		Category:           req.Category,
+		Description:        req.Description,
+		ExportValue:        req.ExportValue,
+		ImportValue:        req.ImportValue,
+		MarketDemand:       req.MarketDemand,
+		ProfitPotential:    req.ProfitPotential,
+		CompetitionLevel:   req.CompetitionLevel,
+		TargetCountry:      req.TargetCountry,
+		IranPurchasePrice:  req.IranPurchasePrice,
+		TargetCountryPrice: req.TargetCountryPrice,
+		PriceCurrency:      req.PriceCurrency,
+		TargetCountries:    req.TargetCountries,
+		SeasonalFactors:    req.SeasonalFactors,
+		RequiredLicenses:   req.RequiredLicenses,
+		QualityStandards:   req.QualityStandards,
+		Priority:           req.Priority,
+		AddedBy:            adminID,
+		Status:             "active",
+	}
+
+	// Calculate profit margin if both prices are provided
+	if req.IranPurchasePrice != "" && req.TargetCountryPrice != "" {
+		if iranPrice, err1 := strconv.ParseFloat(req.IranPurchasePrice, 64); err1 == nil {
+			if targetPrice, err2 := strconv.ParseFloat(req.TargetCountryPrice, 64); err2 == nil && iranPrice > 0 {
+				margin := ((targetPrice - iranPrice) / iranPrice) * 100
+				product.ProfitMargin = fmt.Sprintf("%.2f%%", margin)
+			}
+		}
 	}
 
 	err := db.Create(&product).Error

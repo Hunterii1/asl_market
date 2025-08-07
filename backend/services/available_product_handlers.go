@@ -19,6 +19,7 @@ func (s *TelegramService) promptAddSingleProduct(chatID int64) {
 		"نام: [نام محصول]\n" +
 		"دسته: [دسته‌بندی]\n" +
 		"توضیحات: [توضیحات محصول]\n" +
+		"عکس: [لینک عکس]\n" +
 		"قیمت عمده: [قیمت عمده فروشی]\n" +
 		"مکان: [مکان]\n" +
 		"موجودی: [تعداد موجودی]\n" +
@@ -30,6 +31,7 @@ func (s *TelegramService) promptAddSingleProduct(chatID int64) {
 		"نام: خشکبار ممتاز\n" +
 		"دسته: غذایی\n" +
 		"توضیحات: خشکبار درجه یک\n" +
+		"عکس: https://example.com/nuts.jpg\n" +
 		"قیمت عمده: 50000\n" +
 		"مکان: تهران\n" +
 		"موجودی: 1000\n" +
@@ -55,7 +57,7 @@ func (s *TelegramService) promptAddSingleProduct(chatID int64) {
 func (s *TelegramService) handleSingleProductInput(chatID int64, text string) {
 	lines := strings.Split(text, "\n")
 	data := make(map[string]string)
-	
+
 	// Parse input
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -68,7 +70,7 @@ func (s *TelegramService) handleSingleProductInput(chatID int64, text string) {
 			}
 		}
 	}
-	
+
 	// Create product request
 	parseInt := func(value string, defaultVal int) int {
 		if value == "" {
@@ -79,31 +81,32 @@ func (s *TelegramService) handleSingleProductInput(chatID int64, text string) {
 		}
 		return defaultVal
 	}
-	
+
 	req := models.CreateAvailableProductRequest{
-		ProductName:           data["نام"],
-		Category:              data["دسته"],
-		Description:           data["توضیحات"],
-		WholesalePrice:        data["قیمت عمده"],
-		Currency:              "USD",
-		AvailableQuantity:     parseInt(data["موجودی"], 0),
-		MinOrderQuantity:      1,
-		Unit:                  data["واحد"],
-		Location:              data["مکان"],
-		ContactPhone:          data["تلفن"],
+		ProductName:       data["نام"],
+		Category:          data["دسته"],
+		Description:       data["توضیحات"],
+		ImageURLs:         data["عکس"],
+		WholesalePrice:    data["قیمت عمده"],
+		Currency:          "USD",
+		AvailableQuantity: parseInt(data["موجودی"], 0),
+		MinOrderQuantity:  1,
+		Unit:              data["واحد"],
+		Location:          data["مکان"],
+		ContactPhone:      data["تلفن"],
 	}
-	
+
 	// Set defaults
 	if req.Unit == "" {
 		req.Unit = "piece"
 	}
-	
+
 	// Validation
 	if req.ProductName == "" || req.Category == "" || req.Location == "" {
 		s.bot.Send(tgbotapi.NewMessage(chatID, "❌ فیلدهای الزامی (نام، دسته، مکان) باید پر شوند"))
 		return
 	}
-	
+
 	// Create available product
 	s.createProductFromInput(chatID, req)
 }
@@ -116,10 +119,10 @@ func (s *TelegramService) createProductFromInput(chatID int64, req models.Create
 		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ایجاد کالا: %v", err)))
 		return
 	}
-	
+
 	// Auto-activate
 	s.db.Model(product).Update("status", "active")
-	
+
 	message := fmt.Sprintf(
 		"✅ **کالا با موفقیت اضافه شد!**\n\n"+
 			"📦 **نام:** %s\n"+
@@ -137,12 +140,12 @@ func (s *TelegramService) createProductFromInput(chatID int64, req models.Create
 		req.AvailableQuantity,
 		req.Unit,
 	)
-	
+
 	// Clear session state
 	sessionMutex.Lock()
 	delete(sessionStates, chatID)
 	sessionMutex.Unlock()
-	
+
 	s.bot.Send(tgbotapi.NewMessage(chatID, message))
 	s.showSingleAddMenu(chatID)
 }

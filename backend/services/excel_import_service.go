@@ -139,6 +139,7 @@ func (s *ExcelImportService) GenerateAvailableProductTemplate() (*excelize.File,
 		"دسته‌بندی",
 		"زیر دسته",
 		"توضیحات",
+		"لینک عکس‌ها",
 		"قیمت عمده فروشی",
 		"قیمت خرده فروشی",
 		"قیمت صادراتی",
@@ -761,34 +762,35 @@ func (s *ExcelImportService) parseAvailableProductRow(row []string, rowNum int) 
 		Category:          getCol(1),               // دسته‌بندی
 		Subcategory:       getCol(2),               // زیر دسته
 		Description:       getCol(3),               // توضیحات
-		WholesalePrice:    getCol(4),               // قیمت عمده فروشی
-		RetailPrice:       getCol(5),               // قیمت خرده فروشی
-		ExportPrice:       getCol(6),               // قیمت صادراتی
-		Currency:          getCol(7),               // واحد پول
-		AvailableQuantity: parseInt(getCol(8), 0),  // موجودی
-		MinOrderQuantity:  parseInt(getCol(9), 1),  // حداقل سفارش
-		MaxOrderQuantity:  parseInt(getCol(10), 0), // حداکثر سفارش
-		Unit:              getCol(11),              // واحد
-		Brand:             getCol(12),              // برند
-		Model:             getCol(13),              // مدل
-		Origin:            getCol(14),              // منشاء
-		Quality:           getCol(15),              // کیفیت
-		PackagingType:     getCol(16),              // نوع بسته‌بندی
-		Weight:            getCol(17),              // وزن
-		Dimensions:        getCol(18),              // ابعاد
-		ShippingCost:      getCol(19),              // هزینه حمل
-		Location:          getCol(20),              // مکان
-		ContactPhone:      getCol(21),              // تلفن تماس
-		ContactEmail:      getCol(22),              // ایمیل
-		ContactWhatsapp:   getCol(23),              // واتساپ
-		CanExport:         parseBool(getCol(24)),   // قابل صادرات؟
-		RequiresLicense:   parseBool(getCol(25)),   // نیاز به مجوز؟
-		LicenseType:       getCol(26),              // نوع مجوز
-		ExportCountries:   getCol(27),              // کشورهای صادراتی
-		IsFeatured:        parseBool(getCol(28)),   // برجسته؟
-		IsHotDeal:         parseBool(getCol(29)),   // تخفیف ویژه؟
-		Tags:              getCol(30),              // برچسب‌ها
-		Notes:             getCol(31),              // یادداشت‌ها
+		ImageURLs:         getCol(4),               // لینک عکس‌ها
+		WholesalePrice:    getCol(5),               // قیمت عمده فروشی
+		RetailPrice:       getCol(6),               // قیمت خرده فروشی
+		ExportPrice:       getCol(7),               // قیمت صادراتی
+		Currency:          getCol(8),               // واحد پول
+		AvailableQuantity: parseInt(getCol(9), 0),  // موجودی
+		MinOrderQuantity:  parseInt(getCol(10), 1), // حداقل سفارش
+		MaxOrderQuantity:  parseInt(getCol(11), 0), // حداکثر سفارش
+		Unit:              getCol(12),              // واحد
+		Brand:             getCol(13),              // برند
+		Model:             getCol(14),              // مدل
+		Origin:            getCol(15),              // منشاء
+		Quality:           getCol(16),              // کیفیت
+		PackagingType:     getCol(17),              // نوع بسته‌بندی
+		Weight:            getCol(18),              // وزن
+		Dimensions:        getCol(19),              // ابعاد
+		ShippingCost:      getCol(20),              // هزینه حمل
+		Location:          getCol(21),              // مکان
+		ContactPhone:      getCol(22),              // تلفن تماس
+		ContactEmail:      getCol(23),              // ایمیل
+		ContactWhatsapp:   getCol(24),              // واتساپ
+		CanExport:         parseBool(getCol(25)),   // قابل صادرات؟
+		RequiresLicense:   parseBool(getCol(26)),   // نیاز به مجوز؟
+		LicenseType:       getCol(27),              // نوع مجوز
+		ExportCountries:   getCol(28),              // کشورهای صادراتی
+		IsFeatured:        parseBool(getCol(29)),   // برجسته؟
+		IsHotDeal:         parseBool(getCol(30)),   // تخفیف ویژه؟
+		Tags:              getCol(31),              // برچسب‌ها
+		Notes:             getCol(32),              // یادداشت‌ها
 	}
 
 	// Set defaults
