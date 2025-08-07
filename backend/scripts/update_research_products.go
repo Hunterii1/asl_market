@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func main() {
+func main5() {
 	fmt.Println("🔄 Updating existing research products...")
 
 	// Load configuration and connect database

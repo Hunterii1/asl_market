@@ -205,7 +205,7 @@ export function LicenseInfo() {
               <div>
                 <p className="text-sm font-medium">نوع لایسنس</p>
                 <Badge variant={licenseInfo.type === 'pro' ? 'default' : 'secondary'} className="mt-1">
-                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.duration} ماه)
+                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.duration || 12} ماه)
                 </Badge>
               </div>
             </div>
@@ -216,10 +216,10 @@ export function LicenseInfo() {
                 <p className="text-sm font-medium">زمان باقی‌مانده</p>
                 <div className="flex gap-2 mt-1">
                   <Badge variant="outline" className="text-xs">
-                    {licenseInfo.remaining_days} روز
+                    {licenseInfo.remaining_days || 0} روز
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {licenseInfo.remaining_hours} ساعت
+                    {licenseInfo.remaining_hours || 0} ساعت
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

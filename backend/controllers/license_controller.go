@@ -108,21 +108,55 @@ func GetUserLicenseInfo(c *gin.Context) {
 		return
 	}
 
-	// Calculate remaining time
-	now := time.Now()
-	remaining := license.ExpiresAt.Sub(now)
-	remainingDays := int(remaining.Hours() / 24)
-	remainingHours := int(remaining.Hours()) % 24
+	// Handle old licenses without ExpiresAt
+	var expiresAt *time.Time
+	var remainingDays, remainingHours int
+	var isActive bool
+	var licenseType string
+	var duration int
 
-	// Check if license is still active
-	isActive := now.Before(*license.ExpiresAt)
+	if license.ExpiresAt != nil {
+		// New license format with expiry date
+		expiresAt = license.ExpiresAt
+		now := time.Now()
+		remaining := license.ExpiresAt.Sub(now)
+		remainingDays = int(remaining.Hours() / 24)
+		remainingHours = int(remaining.Hours()) % 24
+		isActive = now.Before(*license.ExpiresAt)
+		licenseType = license.Type
+		duration = license.Duration
+	} else {
+		// Old license format - calculate expiry based on activation date
+		if license.UsedAt != nil {
+			// Default to Plus (12 months) for old licenses
+			licenseType = "plus"
+			duration = 12
+
+			// Calculate expiry: activation + 12 months
+			expiryDate := license.UsedAt.AddDate(0, 12, 0)
+			expiresAt = &expiryDate
+
+			now := time.Now()
+			remaining := expiryDate.Sub(now)
+			remainingDays = int(remaining.Hours() / 24)
+			remainingHours = int(remaining.Hours()) % 24
+			isActive = now.Before(expiryDate)
+		} else {
+			// No activation date - mark as expired
+			licenseType = "plus"
+			duration = 12
+			remainingDays = 0
+			remainingHours = 0
+			isActive = false
+		}
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"license_code":    license.Code,
 		"activated_at":    license.UsedAt,
-		"expires_at":      license.ExpiresAt,
-		"type":            license.Type,
-		"duration":        license.Duration,
+		"expires_at":      expiresAt,
+		"type":            licenseType,
+		"duration":        duration,
 		"remaining_days":  remainingDays,
 		"remaining_hours": remainingHours,
 		"is_active":       isActive,
