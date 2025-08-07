@@ -24,6 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import { apiService } from '@/services/api';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 
 interface SupplierProduct {
   product_name: string;
@@ -545,7 +546,9 @@ export default function SupplierRegistration() {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      <HeaderAuth />
+      <div className="container mx-auto px-4 py-8">
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-center text-2xl">
@@ -600,6 +603,7 @@ export default function SupplierRegistration() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

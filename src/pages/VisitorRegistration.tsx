@@ -32,6 +32,7 @@ import {
   Star
 } from 'lucide-react';
 import { apiService } from '@/services/api';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 
 interface VisitorFormData {
   // Personal Identification Information
@@ -553,7 +554,9 @@ export default function VisitorRegistration() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      <HeaderAuth />
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
         <CardHeader>
           <CardTitle className="text-center text-2xl">ثبت‌نام ویزیتور</CardTitle>
@@ -621,6 +624,7 @@ export default function VisitorRegistration() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
