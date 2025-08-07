@@ -270,7 +270,7 @@ export default function VisitorRegistration() {
             </div>
           </div>
         );
-
+        
       case 2:
         return (
           <div className="space-y-6">
@@ -313,7 +313,7 @@ export default function VisitorRegistration() {
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2">
                   <Checkbox
                     id="has_local_contact"
                     checked={formData.has_local_contact}
@@ -322,25 +322,25 @@ export default function VisitorRegistration() {
                   <Label htmlFor="has_local_contact">
                     آیا در کشور مقصد آشنایی/اقامت/آشنای محلی دارید؟
                   </Label>
-                </div>
-                
+              </div>
+              
                 {formData.has_local_contact && (
                   <div className="space-y-2">
                     <Label htmlFor="local_contact_details">توضیح دهید</Label>
-                    <Textarea
+                  <Textarea
                       id="local_contact_details"
                       value={formData.local_contact_details}
                       onChange={(e) => updateFormData('local_contact_details', e.target.value)}
                       placeholder="توضیح کامل درباره آشنایان/اقامت در کشور مقصد"
-                      rows={3}
-                    />
-                  </div>
-                )}
+                    rows={3}
+                  />
+                </div>
+              )}
               </div>
             </div>
           </div>
         );
-
+        
       case 3:
         return (
           <div className="space-y-6">
@@ -389,7 +389,7 @@ export default function VisitorRegistration() {
             </div>
           </div>
         );
-
+        
       case 4:
         return (
           <div className="space-y-6">
@@ -399,8 +399,8 @@ export default function VisitorRegistration() {
             </div>
             
             <div className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
+            <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
                   <Checkbox
                     id="has_marketing_experience"
                     checked={formData.has_marketing_experience}
@@ -409,20 +409,20 @@ export default function VisitorRegistration() {
                   <Label htmlFor="has_marketing_experience">
                     آیا تجربه بازاریابی یا فروش دارید؟
                   </Label>
-                </div>
-                
-                {formData.has_marketing_experience && (
+              </div>
+              
+              {formData.has_marketing_experience && (
                   <div className="space-y-2">
                     <Label htmlFor="marketing_experience_desc">توضیح دهید</Label>
-                    <Textarea
+                  <Textarea
                       id="marketing_experience_desc"
                       value={formData.marketing_experience_desc}
                       onChange={(e) => updateFormData('marketing_experience_desc', e.target.value)}
                       placeholder="توضیح کامل تجربیات بازاریابی و فروش"
                       rows={4}
-                    />
-                  </div>
-                )}
+                  />
+                </div>
+              )}
               </div>
               
               <div className="space-y-2">
@@ -457,7 +457,7 @@ export default function VisitorRegistration() {
             </div>
           </div>
         );
-
+        
       case 5:
         return (
           <div className="space-y-6">
@@ -474,41 +474,41 @@ export default function VisitorRegistration() {
             </Alert>
             
             <div className="space-y-4">
-              <div className="flex items-start space-x-2">
-                <Checkbox
+                <div className="flex items-start space-x-2">
+                  <Checkbox
                   id="agrees_to_use_approved_products"
                   checked={formData.agrees_to_use_approved_products}
                   onCheckedChange={(checked) => updateFormData('agrees_to_use_approved_products', checked)}
                 />
                 <Label htmlFor="agrees_to_use_approved_products" className="leading-relaxed">
                   آیا متعهد می‌شوید صرفاً از محصولات و اطلاعات تاییدشده توسط ASL MARKET استفاده کنید؟
-                </Label>
-              </div>
-              
-              <div className="flex items-start space-x-2">
-                <Checkbox
+                  </Label>
+                </div>
+                
+                <div className="flex items-start space-x-2">
+                  <Checkbox
                   id="agrees_to_violation_consequences"
                   checked={formData.agrees_to_violation_consequences}
                   onCheckedChange={(checked) => updateFormData('agrees_to_violation_consequences', checked)}
                 />
                 <Label htmlFor="agrees_to_violation_consequences" className="leading-relaxed">
                   آیا می‌پذیرید که هرگونه تخلف (کپی، فروش شخصی، ارتباط مستقیم با مشتری بدون اطلاع ما) موجب قطع همکاری و پیگیری قانونی و اقدام به درخواست ضرر و‌ زیان خواهد شد؟
-                </Label>
-              </div>
-              
-              <div className="flex items-start space-x-2">
-                <Checkbox
+                  </Label>
+                </div>
+                
+                <div className="flex items-start space-x-2">
+                  <Checkbox
                   id="agrees_to_submit_reports"
                   checked={formData.agrees_to_submit_reports}
                   onCheckedChange={(checked) => updateFormData('agrees_to_submit_reports', checked)}
                 />
                 <Label htmlFor="agrees_to_submit_reports" className="leading-relaxed">
                   آیا می‌پذیرید گزارش‌ روزانه یا هفتگی از اقدامات خود ارسال نمایید؟
-                </Label>
+                  </Label>
+                </div>
               </div>
-            </div>
-            
-            <Separator />
+              
+              <Separator />
             
             <div className="space-y-4">
               <h4 className="font-semibold">امضا و تایید متقاضی</h4>
@@ -526,28 +526,28 @@ export default function VisitorRegistration() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="signature_date">تاریخ *</Label>
-                  <Input
-                    id="signature_date"
-                    type="date"
-                    value={formData.signature_date}
+                    <Input
+                      id="signature_date"
+                      type="date"
+                      value={formData.signature_date}
                     onChange={(e) => updateFormData('signature_date', e.target.value)}
-                  />
+                    />
+                </div>
                 </div>
               </div>
-            </div>
-            
-            <Alert>
+              
+              <Alert>
               <Info className="h-4 w-4" />
-              <AlertDescription>
+                <AlertDescription>
                 <strong>مدارک لازم برای ثبت‌نام:</strong><br />
                 • عکس کارت ملی یا گذرنامه<br />
                 • عکس پرسنلی<br />
-                • معرفی‌نامه یا رزومه (اختیاری ولی امتیاز مثبت دارد)
-              </AlertDescription>
-            </Alert>
+                  • معرفی‌نامه یا رزومه (اختیاری ولی امتیاز مثبت دارد)
+                </AlertDescription>
+              </Alert>
           </div>
         );
-
+        
       default:
         return null;
     }
@@ -557,8 +557,8 @@ export default function VisitorRegistration() {
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
       <HeaderAuth />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <Card>
-        <CardHeader>
+        <Card>
+          <CardHeader>
           <CardTitle className="text-center text-2xl">ثبت‌نام ویزیتور</CardTitle>
           <p className="text-center text-muted-foreground">
             لطفاً تمام بخش‌ها را با دقت و صداقت پر کنید. اطلاعات شما صرفاً برای اهداف کاری و قانونی در چارچوب پلتفرم ASL MARKET استفاده می‌شود.
@@ -579,33 +579,33 @@ export default function VisitorRegistration() {
                   }`}
                 >
                   {i + 1}
-                </div>
+              </div>
               ))}
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
                 className="bg-primary h-2 rounded-full transition-all"
                 style={{ width: `${(currentStep / 5) * 100}%` }}
-              />
+                />
+              </div>
             </div>
-          </div>
-
+          
           {renderStepContent()}
-
+            
           {/* Navigation buttons */}
-          <div className="flex justify-between mt-8">
-            <Button
-              variant="outline"
-              onClick={prevStep}
-              disabled={currentStep === 1}
-            >
+            <div className="flex justify-between mt-8">
+              <Button
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+              >
               مرحله قبل
-            </Button>
-
-            {currentStep < 5 ? (
-              <Button onClick={nextStep}>
-                مرحله بعد
               </Button>
+              
+            {currentStep < 5 ? (
+                  <Button onClick={nextStep}>
+                مرحله بعد
+                  </Button>
             ) : (
               <Button onClick={handleSubmit} disabled={loading}>
                 {loading ? (
@@ -621,9 +621,9 @@ export default function VisitorRegistration() {
                 )}
               </Button>
             )}
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -557,6 +557,136 @@ class ApiService {
     });
   }
 
+  // Available Products API methods
+  async getAvailableProducts(params: { page?: number; per_page?: number; category?: string; status?: string; featured_only?: boolean } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.category) queryParams.append('category', params.category);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.featured_only) queryParams.append('featured_only', 'true');
+    
+    const url = `/available-products${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    return this.makeRequest(`${API_BASE_URL}${url}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getAvailableProductCategories(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/available-products/categories`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getFeaturedAvailableProducts(limit: number = 10): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/available-products/featured?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getHotDealsAvailableProducts(limit: number = 10): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/available-products/hot-deals?limit=${limit}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getAvailableProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/available-products/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async createAvailableProduct(data: {
+    supplier_id?: number;
+    product_name: string;
+    category: string;
+    subcategory?: string;
+    description?: string;
+    wholesale_price?: string;
+    retail_price?: string;
+    export_price?: string;
+    currency?: string;
+    available_quantity?: number;
+    min_order_quantity?: number;
+    max_order_quantity?: number;
+    unit?: string;
+    brand?: string;
+    model?: string;
+    origin?: string;
+    quality?: string;
+    packaging_type?: string;
+    weight?: string;
+    dimensions?: string;
+    shipping_cost?: string;
+    location: string;
+    contact_phone?: string;
+    contact_email?: string;
+    contact_whatsapp?: string;
+    can_export?: boolean;
+    requires_license?: boolean;
+    license_type?: string;
+    export_countries?: string;
+    image_urls?: string;
+    video_url?: string;
+    catalog_url?: string;
+    is_featured?: boolean;
+    is_hot_deal?: boolean;
+    tags?: string;
+    notes?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/available-products`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAvailableProduct(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAvailableProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateAvailableProductStatus(id: number, status: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Marketing Popup API methods
   async getActiveMarketingPopup(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/marketing-popups/active`, {

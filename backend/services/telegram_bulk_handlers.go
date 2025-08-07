@@ -29,6 +29,11 @@ const (
 	MENU_SINGLE_ADD          = "➕ اضافه کردن تکی"
 	MENU_ADD_SINGLE_SUPPLIER = "🏪 اضافه کردن تأمین‌کننده"
 	MENU_ADD_SINGLE_VISITOR  = "🚶‍♂️ اضافه کردن ویزیتور"
+	MENU_ADD_SINGLE_PRODUCT  = "📦 اضافه کردن کالا"
+
+	// Available products menus
+	MENU_BULK_IMPORT_PRODUCTS = "📦 وارد کردن کالاها"
+	MENU_PRODUCT_TEMPLATE     = "📦 نمونه کالاها"
 )
 
 // showBulkImportMenu shows the bulk import options
@@ -37,6 +42,9 @@ func (s *TelegramService) showBulkImportMenu(chatID int64) {
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT_SUPPLIERS),
 			tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT_VISITORS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT_PRODUCTS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_DOWNLOAD_TEMPLATES),
@@ -72,6 +80,9 @@ func (s *TelegramService) showSingleAddMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_ADD_SINGLE_VISITOR),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ADD_SINGLE_PRODUCT),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -99,6 +110,9 @@ func (s *TelegramService) showTemplateDownloadMenu(chatID int64) {
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SUPPLIER_TEMPLATE),
 			tgbotapi.NewKeyboardButton(MENU_VISITOR_TEMPLATE),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_PRODUCT_TEMPLATE),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
@@ -203,6 +217,77 @@ func (s *TelegramService) generateAndSendVisitorTemplate(chatID int64) {
 		time.Sleep(1 * time.Minute)
 		os.Remove(filePath)
 	}()
+}
+
+// generateAndSendProductTemplate generates and sends available product Excel template
+func (s *TelegramService) generateAndSendProductTemplate(chatID int64) {
+	excelService := NewExcelImportService(s.db)
+	
+	// Generate template
+	f, err := excelService.GenerateAvailableProductTemplate()
+	if err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در تولید فایل نمونه: %v", err)))
+		return
+	}
+	
+	// Create temp file
+	tempDir := os.TempDir()
+	fileName := fmt.Sprintf("product_template_%d.xlsx", time.Now().Unix())
+	filePath := filepath.Join(tempDir, fileName)
+	
+	if err := f.SaveAs(filePath); err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ذخیره فایل: %v", err)))
+		return
+	}
+	
+	// Send file
+	document := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(filePath))
+	document.Caption = "📋 **فایل نمونه کالاهای موجود**\n\n" +
+		"📦 این فایل شامل ستون‌های زیر است:\n" +
+		"• اطلاعات اصلی محصول (نام، دسته‌بندی، توضیحات)\n" +
+		"• قیمت‌گذاری (عمده، خرده، صادراتی)\n" +
+		"• موجودی و سفارش (تعداد، حداقل، حداکثر)\n" +
+		"• جزئیات محصول (برند، مدل، کیفیت)\n" +
+		"• بسته‌بندی و حمل (نوع، وزن، ابعاد)\n" +
+		"• اطلاعات تماس و مکان\n" +
+		"• صادرات و مجوزها\n\n" +
+		"✅ **پس از پر کردن فایل، آن را ارسال کنید**"
+	document.ParseMode = "Markdown"
+	
+	s.bot.Send(document)
+	
+	// Clean up temp file after a delay
+	go func() {
+		time.Sleep(1 * time.Minute)
+		os.Remove(filePath)
+	}()
+}
+
+// promptBulkImportProducts prompts for available product Excel file upload
+func (s *TelegramService) promptBulkImportProducts(chatID int64) {
+	message := "📦 **وارد کردن گروهی کالاهای موجود**\n\n" +
+		"📤 لطفا فایل اکسل کالاها را ارسال کنید\n\n" +
+		"📋 **الزامات فایل:**\n" +
+		"• فرمت: .xlsx یا .xls\n" +
+		"• حداکثر ۱۰۰ ردیف\n" +
+		"• شامل ستون‌های الزامی\n" +
+		"• طبق فرمت فایل نمونه\n\n" +
+		"⚠️ **نکات مهم:**\n" +
+		"• ردیف اول باید header باشد\n" +
+		"• تمام کالاها خودکار فعال می‌شوند\n" +
+		"• برای لغو /cancel تایپ کنید"
+
+	// Set session state
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "bulk_import_products_file",
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
 }
 
 // promptBulkImportSuppliers prompts for supplier Excel file upload
@@ -319,6 +404,11 @@ func (s *TelegramService) handleFileUpload(update *tgbotapi.Update) {
 		result, err = excelService.ImportSuppliersFromExcel(filePath)
 	case "bulk_import_visitors_file":
 		result, err = excelService.ImportVisitorsFromExcel(filePath)
+	case "bulk_import_products_file":
+		// For available products, we need to get the admin user ID
+		// Since this is admin-only functionality, we can use a default admin ID
+		// In production, you might want to store admin info in session
+		result, err = excelService.ImportAvailableProductsFromExcel(filePath, 1) // Assuming admin user ID is 1
 	default:
 		s.bot.Send(tgbotapi.NewMessage(chatID, "❌ نوع فایل نامشخص"))
 		return
@@ -367,6 +457,8 @@ func (s *TelegramService) sendImportResults(chatID int64, result *ImportResult, 
 		entityType = "تأمین‌کننده"
 	case "bulk_import_visitors_file":
 		entityType = "ویزیتور"
+	case "bulk_import_products_file":
+		entityType = "کالا"
 	default:
 		entityType = "آیتم"
 	}

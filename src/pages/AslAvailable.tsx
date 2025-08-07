@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +20,12 @@ import {
   Clock,
   AlertTriangle,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  ExternalLink
 } from "lucide-react";
 
 const AslAvailable = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
@@ -172,9 +175,19 @@ const AslAvailable = () => {
             <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-3xl flex items-center justify-center">
               <Package className="w-8 h-8 text-green-400" />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-2xl font-bold text-foreground">کالاهای موجود</h2>
               <p className="text-green-600 dark:text-green-300">محصولات آماده برای فروش افیلیتی</p>
+            </div>
+            <div className="mr-auto">
+              <Button
+                onClick={() => navigate("/available-products")}
+                className="bg-green-500 hover:bg-green-600 text-white rounded-2xl flex items-center gap-2"
+              >
+                <Package className="w-4 h-4" />
+                مشاهده کالاها
+                <ExternalLink className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </CardContent>

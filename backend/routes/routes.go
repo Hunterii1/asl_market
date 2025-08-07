@@ -100,6 +100,19 @@ func SetupRoutes(router *gin.Engine) {
 		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
 		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)
 
+		// Available products routes (public access for viewing)
+		protected.GET("/available-products", controllers.GetAvailableProducts)
+		protected.GET("/available-products/categories", controllers.GetAvailableProductCategories)
+		protected.GET("/available-products/featured", controllers.GetFeaturedAvailableProducts)
+		protected.GET("/available-products/hot-deals", controllers.GetHotDealsAvailableProducts)
+		protected.GET("/available-products/:id", controllers.GetAvailableProduct)
+
+		// Admin available products management routes
+		protected.POST("/admin/available-products", controllers.CreateAvailableProduct)
+		protected.PUT("/admin/available-products/:id", controllers.UpdateAvailableProduct)
+		protected.DELETE("/admin/available-products/:id", controllers.DeleteAvailableProduct)
+		protected.PUT("/admin/available-products/:id/status", controllers.UpdateAvailableProductStatus)
+
 		// License-protected routes
 		licensed := protected.Group("/")
 		licensed.Use(middleware.LicenseMiddleware())

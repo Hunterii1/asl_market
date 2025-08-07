@@ -324,6 +324,12 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.promptAddSingleSupplier(message.Chat.ID)
 	case MENU_ADD_SINGLE_VISITOR:
 		s.promptAddSingleVisitor(message.Chat.ID)
+	case MENU_BULK_IMPORT_PRODUCTS:
+		s.promptBulkImportProducts(message.Chat.ID)
+	case MENU_PRODUCT_TEMPLATE:
+		s.generateAndSendProductTemplate(message.Chat.ID)
+	case MENU_ADD_SINGLE_PRODUCT:
+		s.promptAddSingleProduct(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count
@@ -408,6 +414,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleSingleSupplierInput(message.Chat.ID, message.Text)
 			case "single_visitor_data":
 				s.handleSingleVisitorInput(message.Chat.ID, message.Text)
+			case "single_product_data":
+				s.handleSingleProductInput(message.Chat.ID, message.Text)
 			}
 		} else {
 			// Check for supplier command patterns

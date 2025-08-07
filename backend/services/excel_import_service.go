@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -118,6 +119,129 @@ func (s *ExcelImportService) GenerateSupplierTemplate() (*excelize.File, error) 
 	for i := range headers {
 		col := string(rune('A' + i))
 		f.SetColWidth(sheetName, col, col, 20)
+	}
+
+	return f, nil
+}
+
+// GenerateAvailableProductTemplate creates an Excel template for available product import
+func (s *ExcelImportService) GenerateAvailableProductTemplate() (*excelize.File, error) {
+	f := excelize.NewFile()
+
+	// Create main sheet
+	sheetName := "AvailableProducts"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Headers
+	headers := []string{
+		"نام محصول",
+		"دسته‌بندی",
+		"زیر دسته",
+		"توضیحات",
+		"قیمت عمده فروشی",
+		"قیمت خرده فروشی",
+		"قیمت صادراتی",
+		"واحد پول (USD/EUR/IRR)",
+		"موجودی",
+		"حداقل سفارش",
+		"حداکثر سفارش",
+		"واحد (piece/kg/box)",
+		"برند",
+		"مدل",
+		"منشاء",
+		"کیفیت (A+/A/B/C)",
+		"نوع بسته‌بندی",
+		"وزن",
+		"ابعاد",
+		"هزینه حمل",
+		"مکان",
+		"تلفن تماس",
+		"ایمیل",
+		"واتساپ",
+		"قابل صادرات؟ (بله/خیر)",
+		"نیاز به مجوز؟ (بله/خیر)",
+		"نوع مجوز",
+		"کشورهای صادراتی",
+		"برجسته؟ (بله/خیر)",
+		"تخفیف ویژه؟ (بله/خیر)",
+		"برچسب‌ها",
+		"یادداشت‌ها",
+	}
+
+	// Set headers
+	for i, header := range headers {
+		col := string(rune('A' + i))
+		if i >= 26 {
+			col = string(rune('A'+i/26-1)) + string(rune('A'+i%26))
+		}
+		f.SetCellValue(sheetName, col+"1", header)
+	}
+
+	// Add sample data
+	sampleData := []interface{}{
+		"خشکبار ممتاز",
+		"غذایی",
+		"خشکبار",
+		"خشکبار درجه یک برای صادرات",
+		"50000",
+		"55000",
+		"$2.5",
+		"USD",
+		"1000",
+		"100",
+		"5000",
+		"kg",
+		"برند ممتاز",
+		"Premium",
+		"ایران",
+		"A+",
+		"کیسه ۱ کیلویی",
+		"1kg",
+		"30x20x10cm",
+		"$0.5",
+		"تهران",
+		"02133445566",
+		"info@company.com",
+		"09123456789",
+		"بله",
+		"خیر",
+		"",
+		"عراق، افغانستان",
+		"بله",
+		"خیر",
+		"صادراتی,عمده",
+		"محصول با کیفیت",
+	}
+
+	for i, data := range sampleData {
+		col := string(rune('A' + i))
+		if i >= 26 {
+			col = string(rune('A'+i/26-1)) + string(rune('A'+i%26))
+		}
+		f.SetCellValue(sheetName, col+"2", data)
+	}
+
+	// Style headers
+	style, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"#E6F8FF"}, Pattern: 1},
+	})
+
+	for i := range headers {
+		col := string(rune('A' + i))
+		if i >= 26 {
+			col = string(rune('A'+i/26-1)) + string(rune('A'+i%26))
+		}
+		f.SetCellStyle(sheetName, col+"1", col+"1", style)
+	}
+
+	// Auto-fit columns
+	for i := range headers {
+		col := string(rune('A' + i))
+		if i >= 26 {
+			col = string(rune('A'+i/26-1)) + string(rune('A'+i%26))
+		}
+		f.SetColWidth(sheetName, col, col, 15)
 	}
 
 	return f, nil
@@ -410,6 +534,72 @@ func (s *ExcelImportService) ImportVisitorsFromExcel(filePath string) (*ImportRe
 	return result, nil
 }
 
+// ImportAvailableProductsFromExcel imports available products from Excel file
+func (s *ExcelImportService) ImportAvailableProductsFromExcel(filePath string, addedByID uint) (*ImportResult, error) {
+	f, err := excelize.OpenFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open Excel file: %v", err)
+	}
+	defer f.Close()
+
+	// Get the first sheet
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		return nil, fmt.Errorf("no sheets found in Excel file")
+	}
+
+	sheetName := sheets[0]
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read rows: %v", err)
+	}
+
+	if len(rows) < 2 {
+		return nil, fmt.Errorf("file must contain at least header row and one data row")
+	}
+
+	result := &ImportResult{
+		TotalRows:    len(rows) - 1, // Exclude header
+		Errors:       []string{},
+		SuccessItems: []string{},
+	}
+
+	// Process each row (skip header)
+	for i, row := range rows[1:] {
+		rowNum := i + 2 // Row number in Excel (1-indexed + header)
+
+		if len(row) < 4 { // Minimum required columns (name, category, location)
+			result.Errors = append(result.Errors, fmt.Sprintf("ردیف %d: تعداد ستون‌های کافی نیست", rowNum))
+			result.ErrorCount++
+			continue
+		}
+
+		// Parse product data
+		productReq, err := s.parseAvailableProductRow(row, rowNum)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("ردیف %d: %v", rowNum, err))
+			result.ErrorCount++
+			continue
+		}
+
+		// Create available product
+		product, err := models.CreateAvailableProduct(s.db, addedByID, *productReq)
+		if err != nil {
+			result.Errors = append(result.Errors, fmt.Sprintf("ردیف %d: خطا در ایجاد محصول: %v", rowNum, err))
+			result.ErrorCount++
+			continue
+		}
+
+		// Auto-activate imported products
+		s.db.Model(product).Update("status", "active")
+
+		result.SuccessCount++
+		result.SuccessItems = append(result.SuccessItems, productReq.ProductName)
+	}
+
+	return result, nil
+}
+
 func (s *ExcelImportService) parseSupplierRow(row []string, rowNum int) (*models.SupplierRegistrationRequest, error) {
 	// Helper function to safely get column value
 	getCol := func(index int) string {
@@ -535,6 +725,87 @@ func (s *ExcelImportService) parseVisitorRow(row []string, rowNum int) (*models.
 	}
 	if req.CityProvince == "" {
 		return nil, fmt.Errorf("شهر/استان الزامی است")
+	}
+
+	return req, nil
+}
+
+func (s *ExcelImportService) parseAvailableProductRow(row []string, rowNum int) (*models.CreateAvailableProductRequest, error) {
+	// Helper function to safely get column value
+	getCol := func(index int) string {
+		if index < len(row) {
+			return strings.TrimSpace(row[index])
+		}
+		return ""
+	}
+
+	parseInt := func(value string, defaultVal int) int {
+		if value == "" {
+			return defaultVal
+		}
+		if i, err := strconv.Atoi(value); err == nil {
+			return i
+		}
+		return defaultVal
+	}
+
+	parseBool := func(value string) bool {
+		value = strings.ToLower(strings.TrimSpace(value))
+		return value == "بله" || value == "yes" || value == "true" || value == "1"
+	}
+
+	req := &models.CreateAvailableProductRequest{
+		ProductName:       getCol(0),               // نام محصول
+		Category:          getCol(1),               // دسته‌بندی
+		Subcategory:       getCol(2),               // زیر دسته
+		Description:       getCol(3),               // توضیحات
+		WholesalePrice:    getCol(4),               // قیمت عمده فروشی
+		RetailPrice:       getCol(5),               // قیمت خرده فروشی
+		ExportPrice:       getCol(6),               // قیمت صادراتی
+		Currency:          getCol(7),               // واحد پول
+		AvailableQuantity: parseInt(getCol(8), 0),  // موجودی
+		MinOrderQuantity:  parseInt(getCol(9), 1),  // حداقل سفارش
+		MaxOrderQuantity:  parseInt(getCol(10), 0), // حداکثر سفارش
+		Unit:              getCol(11),              // واحد
+		Brand:             getCol(12),              // برند
+		Model:             getCol(13),              // مدل
+		Origin:            getCol(14),              // منشاء
+		Quality:           getCol(15),              // کیفیت
+		PackagingType:     getCol(16),              // نوع بسته‌بندی
+		Weight:            getCol(17),              // وزن
+		Dimensions:        getCol(18),              // ابعاد
+		ShippingCost:      getCol(19),              // هزینه حمل
+		Location:          getCol(20),              // مکان
+		ContactPhone:      getCol(21),              // تلفن تماس
+		ContactEmail:      getCol(22),              // ایمیل
+		ContactWhatsapp:   getCol(23),              // واتساپ
+		CanExport:         parseBool(getCol(24)),   // قابل صادرات؟
+		RequiresLicense:   parseBool(getCol(25)),   // نیاز به مجوز؟
+		LicenseType:       getCol(26),              // نوع مجوز
+		ExportCountries:   getCol(27),              // کشورهای صادراتی
+		IsFeatured:        parseBool(getCol(28)),   // برجسته؟
+		IsHotDeal:         parseBool(getCol(29)),   // تخفیف ویژه؟
+		Tags:              getCol(30),              // برچسب‌ها
+		Notes:             getCol(31),              // یادداشت‌ها
+	}
+
+	// Set defaults
+	if req.Currency == "" {
+		req.Currency = "USD"
+	}
+	if req.Unit == "" {
+		req.Unit = "piece"
+	}
+
+	// Validation
+	if req.ProductName == "" {
+		return nil, fmt.Errorf("نام محصول الزامی است")
+	}
+	if req.Category == "" {
+		return nil, fmt.Errorf("دسته‌بندی الزامی است")
+	}
+	if req.Location == "" {
+		return nil, fmt.Errorf("مکان الزامی است")
 	}
 
 	return req, nil
