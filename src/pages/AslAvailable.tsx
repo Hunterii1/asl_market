@@ -63,7 +63,7 @@ interface AvailableProduct {
   tags?: string;
   notes?: string;
   status: string;
-  created_by: {
+  added_by?: {
     first_name: string;
     last_name: string;
   };
@@ -108,8 +108,15 @@ const AslAvailable = () => {
         try {
           const categoriesResponse = await apiService.getAvailableProductCategories();
           console.log('Categories response:', categoriesResponse);
-          // Ensure categoriesResponse is an array
-          const categories = Array.isArray(categoriesResponse) ? categoriesResponse : [];
+          
+          // Handle different response formats
+          let categories = [];
+          if (Array.isArray(categoriesResponse)) {
+            categories = categoriesResponse;
+          } else if (categoriesResponse?.categories && Array.isArray(categoriesResponse.categories)) {
+            categories = categoriesResponse.categories;
+          }
+          
           if (categories.length > 0) {
             setCategoriesData(categories);
           }
@@ -355,11 +362,13 @@ const AslAvailable = () => {
                     <span className="text-foreground">{item.location}</span>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">ایجاد شده توسط:</span>
-                    <span className="text-foreground">{item.created_by.first_name} {item.created_by.last_name}</span>
-                  </div>
+                  {item.added_by && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">اضافه شده توسط:</span>
+                      <span className="text-foreground">{item.added_by.first_name} {item.added_by.last_name}</span>
+                    </div>
+                  )}
                   
                   {item.brand && (
                     <div className="flex items-center gap-2 text-sm">
