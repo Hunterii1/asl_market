@@ -408,6 +408,16 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "category")
 			case "research_product_description":
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "description")
+			case "research_product_target_country":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "target_country")
+			case "research_product_iran_price":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "iran_price")
+			case "research_product_target_price":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "target_price")
+			case "research_product_currency":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "currency")
+			case "research_product_market_demand":
+				s.handleResearchProductCreation(message.Chat.ID, message.Text, "market_demand")
 			case "marketing_popup_data":
 				s.handleMarketingPopupInput(message.Chat.ID, message.Text)
 			case "single_supplier_data":
@@ -965,6 +975,8 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	data := query.Data
 	chatID := query.Message.Chat.ID
 
+	log.Printf("Callback query received: chatID %d, data: %s", chatID, data)
+
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {
 		filter := strings.TrimPrefix(data, "userlist_")
@@ -1038,6 +1050,11 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		default:
 			countryName = country
 		}
+
+		// Send acknowledgment to callback query
+		callback := tgbotapi.NewCallback(query.ID, "")
+		s.bot.Request(callback)
+
 		s.handleResearchProductCreation(chatID, countryName, "target_country")
 		return
 	}
@@ -1045,6 +1062,11 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle currency button callbacks
 	if strings.HasPrefix(data, "currency_") {
 		currency := strings.TrimPrefix(data, "currency_")
+
+		// Send acknowledgment to callback query
+		callback := tgbotapi.NewCallback(query.ID, "")
+		s.bot.Request(callback)
+
 		s.handleResearchProductCreation(chatID, currency, "currency")
 		return
 	}
@@ -1052,6 +1074,11 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle demand button callbacks
 	if strings.HasPrefix(data, "demand_") {
 		demand := strings.TrimPrefix(data, "demand_")
+
+		// Send acknowledgment to callback query
+		callback := tgbotapi.NewCallback(query.ID, "")
+		s.bot.Request(callback)
+
 		s.handleResearchProductCreation(chatID, demand, "market_demand")
 		return
 	}
@@ -1983,10 +2010,13 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 	sessionMutex.RUnlock()
 
 	if state == nil {
-		msg := tgbotapi.NewMessage(chatID, "❌ خطا در فرآیند ایجاد محصول")
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در فرآیند ایجاد محصول - session نامعتبر")
 		s.bot.Send(msg)
+		log.Printf("Research product creation failed: no session state for chatID %d, step %s", chatID, step)
 		return
 	}
+
+	log.Printf("Research product creation: chatID %d, step %s, text %s", chatID, step, text)
 
 	switch step {
 	case "name":
@@ -2064,6 +2094,16 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 		s.bot.Send(msg)
 
 	case "iran_price":
+		// Validate price is a number
+		if _, err := strconv.ParseFloat(text, 64); err != nil {
+			msg := tgbotapi.NewMessage(chatID,
+				"❌ لطفا قیمت را به صورت عدد وارد کنید\n\n"+
+					"*مثال:* 1500")
+			msg.ParseMode = "Markdown"
+			s.bot.Send(msg)
+			return
+		}
+
 		// Store Iran price and ask for target country price
 		sessionMutex.Lock()
 		state.Data["iran_price"] = text
@@ -2079,6 +2119,16 @@ func (s *TelegramService) handleResearchProductCreation(chatID int64, text, step
 		s.bot.Send(msg)
 
 	case "target_price":
+		// Validate price is a number
+		if _, err := strconv.ParseFloat(text, 64); err != nil {
+			msg := tgbotapi.NewMessage(chatID,
+				"❌ لطفا قیمت را به صورت عدد وارد کنید\n\n"+
+					"*مثال:* 2200")
+			msg.ParseMode = "Markdown"
+			s.bot.Send(msg)
+			return
+		}
+
 		// Store target price and ask for currency
 		sessionMutex.Lock()
 		state.Data["target_price"] = text
