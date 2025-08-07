@@ -83,7 +83,7 @@ const AslAvailable = () => {
   
   // Real data states
   const [products, setProducts] = useState<AvailableProduct[]>([]);
-  const [categories, setCategoriesData] = useState<string[]>([]);
+  const [categories, setCategoriesData] = useState<string[]>(['زعفران', 'خرما', 'خشکبار', 'صنایع دستی']); // Fallback categories
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,13 +94,31 @@ const AslAvailable = () => {
         setLoading(true);
         setError(null);
         
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          apiService.getAvailableProducts({ page: 1, per_page: 50 }),
-          apiService.getAvailableProductCategories(),
-        ]);
+        // Load products first
+        try {
+          const productsResponse = await apiService.getAvailableProducts({ page: 1, per_page: 50 });
+          console.log('Products response:', productsResponse);
+          setProducts(productsResponse?.products || []);
+        } catch (productsErr) {
+          console.error('Error loading products:', productsErr);
+          setProducts([]);
+        }
         
-        setProducts(productsResponse.products || []);
-        setCategoriesData(categoriesResponse || []);
+        // Load categories separately
+        try {
+          const categoriesResponse = await apiService.getAvailableProductCategories();
+          console.log('Categories response:', categoriesResponse);
+          // Ensure categoriesResponse is an array
+          const categories = Array.isArray(categoriesResponse) ? categoriesResponse : [];
+          if (categories.length > 0) {
+            setCategoriesData(categories);
+          }
+          // Keep fallback categories if API returns empty
+        } catch (categoriesErr) {
+          console.error('Error loading categories:', categoriesErr);
+          // Keep fallback categories
+        }
+        
       } catch (err) {
         console.error('Error loading available products:', err);
         setError('خطا در بارگذاری کالاها');
