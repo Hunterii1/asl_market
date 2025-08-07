@@ -13,7 +13,7 @@ import (
 // GetDailyLimitsStatus returns remaining daily viewing limits for the user
 func GetDailyLimitsStatus(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
-	userID := c.MustGet("userID").(uint)
+	userID := c.MustGet("user_id").(uint)
 
 	// Get user's license to determine type
 	license, err := models.GetUserLicense(db, userID)
@@ -62,7 +62,7 @@ func GetDailyLimitsStatus(c *gin.Context) {
 // CheckVisitorViewPermission checks if user can view a visitor
 func CheckVisitorViewPermission(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
-	userID := c.MustGet("userID").(uint)
+	userID := c.MustGet("user_id").(uint)
 
 	// Get user's license to determine type
 	license, err := models.GetUserLicense(db, userID)
@@ -91,7 +91,7 @@ func CheckVisitorViewPermission(c *gin.Context) {
 // CheckSupplierViewPermission checks if user can view a supplier
 func CheckSupplierViewPermission(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
-	userID := c.MustGet("userID").(uint)
+	userID := c.MustGet("user_id").(uint)
 
 	// Get user's license to determine type
 	license, err := models.GetUserLicense(db, userID)

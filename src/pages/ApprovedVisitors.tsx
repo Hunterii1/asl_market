@@ -19,13 +19,13 @@ import {
   ThumbsDown,
   Search,
   Filter,
-  Users,
+  Users, 
   Phone,
   Mail,
-  MapPin,
+  MapPin, 
   CreditCard,
   Briefcase,
-  Languages,
+  Languages, 
   Calendar,
   FileText,
   AlertCircle,
@@ -224,74 +224,74 @@ export default function ApprovedVisitors() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-      {/* Header */}
-      <Card className="mb-6">
-        <CardHeader>
+        {/* Header */}
+        <Card className="mb-6">
+          <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-6 w-6" />
             مدیریت ویزیتورها
           </CardTitle>
-        </CardHeader>
-      </Card>
+          </CardHeader>
+        </Card>
 
-      {/* Filters */}
-      <Card className="mb-6">
+        {/* Filters */}
+        <Card className="mb-6">
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <Label htmlFor="search">جستجو</Label>
               <div className="flex gap-2">
-                <Input
+                  <Input
                   id="search"
                   placeholder="جستجو بر اساس نام، موبایل، کد ملی..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                />
+                  />
                 <Button onClick={handleSearch} variant="outline" size="icon">
                   <Search className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
-            
+              </div>
+              
             <div className="w-full md:w-48">
               <Label>فیلتر وضعیت</Label>
               <Select value={statusFilter} onValueChange={handleStatusFilter}>
-                <SelectTrigger>
+                  <SelectTrigger>
                   <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
+                  </SelectTrigger>
+                  <SelectContent>
                   <SelectItem value="all">همه</SelectItem>
                   <SelectItem value="pending">در انتظار</SelectItem>
                   <SelectItem value="approved">تایید شده</SelectItem>
                   <SelectItem value="rejected">رد شده</SelectItem>
-                </SelectContent>
-              </Select>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Visitors Table */}
-      <Card>
+        <Card>
         <CardContent className="pt-6">
           {loading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
           ) : visitors.length === 0 ? (
-            <div className="text-center py-8">
+              <div className="text-center py-8">
               <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">ویزیتوری یافت نشد</h3>
               <p className="text-muted-foreground">
                 با فیلترهای انتخاب شده هیچ ویزیتوری یافت نشد.
               </p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
+              </div>
+            ) : (
+              <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
                     <TableHead>نام</TableHead>
                     <TableHead>موبایل</TableHead>
                     <TableHead>شهر/استان</TableHead>
@@ -299,24 +299,24 @@ export default function ApprovedVisitors() {
                     <TableHead>وضعیت</TableHead>
                     <TableHead>تاریخ ثبت‌نام</TableHead>
                     <TableHead>عملیات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                   {visitors.map((visitor) => (
-                    <TableRow key={visitor.id}>
-                      <TableCell className="font-medium">
-                        {visitor.full_name}
-                      </TableCell>
+                        <TableRow key={visitor.id}>
+                          <TableCell className="font-medium">
+                            {visitor.full_name}
+                          </TableCell>
                       <TableCell>{visitor.mobile}</TableCell>
                       <TableCell>{visitor.city_province}</TableCell>
                       <TableCell className="max-w-32 truncate">
                         {visitor.destination_cities}
-                      </TableCell>
+                          </TableCell>
                       <TableCell>{getStatusBadge(visitor.status)}</TableCell>
-                      <TableCell>
+                          <TableCell>
                         {new Date(visitor.created_at).toLocaleDateString('fa-IR')}
-                      </TableCell>
-                      <TableCell>
+                          </TableCell>
+                          <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
@@ -366,53 +366,53 @@ export default function ApprovedVisitors() {
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
+                {/* Pagination */}
+                {totalPages > 1 && (
                 <div className="flex justify-center gap-2 mt-6">
-                  <Button
-                    variant="outline"
-                    disabled={currentPage === 1}
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === 1}
                     onClick={() => setCurrentPage(currentPage - 1)}
-                  >
-                    قبلی
-                  </Button>
-                  
+                      >
+                        قبلی
+                      </Button>
+                      
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                      return (
-                        <Button
+                            return (
+                              <Button
                           key={page}
                           variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
+                                size="sm"
                           onClick={() => setCurrentPage(page)}
-                        >
+                              >
                           {page}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  <Button
-                    variant="outline"
-                    disabled={currentPage === totalPages}
+                              </Button>
+                            );
+                        })}
+                      </div>
+                      
+                      <Button
+                        variant="outline"
+                        disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(currentPage + 1)}
-                  >
-                    بعدی
-                  </Button>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+                      >
+                        بعدی
+                      </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
@@ -586,7 +586,7 @@ export default function ApprovedVisitors() {
                 rows={4}
               />
             </div>
-          </div>
+      </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowActionDialog(false)}>

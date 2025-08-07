@@ -13,7 +13,7 @@ import (
 func VisitorViewLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		db := c.MustGet("db").(*gorm.DB)
-		userID := c.MustGet("userID").(uint)
+		userID := c.MustGet("user_id").(uint)
 
 		// Get user's license
 		license, err := models.GetUserLicense(db, userID)
@@ -55,7 +55,7 @@ func VisitorViewLimitMiddleware() gin.HandlerFunc {
 func SupplierViewLimitMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		db := c.MustGet("db").(*gorm.DB)
-		userID := c.MustGet("userID").(uint)
+		userID := c.MustGet("user_id").(uint)
 
 		// Get user's license
 		license, err := models.GetUserLicense(db, userID)

@@ -332,7 +332,6 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.promptAddSingleProduct(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showLicenseTypeSelection(message.Chat.ID)
-		sessionMutex.Unlock()
 	case MENU_LIST_LICENSES:
 		s.showLicensesList(message.Chat.ID, 1)
 	case MENU_SETTINGS:
