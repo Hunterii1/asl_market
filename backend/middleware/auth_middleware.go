@@ -10,6 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DatabaseMiddleware adds database instance to gin context
+func DatabaseMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("db", models.GetDB())
+		c.Next()
+	}
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")

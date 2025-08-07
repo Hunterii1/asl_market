@@ -24,6 +24,8 @@ func SetupRoutes(router *gin.Engine) {
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
+	// Add database middleware to all v1 routes
+	v1.Use(middleware.DatabaseMiddleware())
 
 	// Public routes (no authentication required)
 	auth := v1.Group("/auth")

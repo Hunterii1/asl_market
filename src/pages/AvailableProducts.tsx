@@ -66,7 +66,7 @@ const AvailableProducts: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [featuredOnly, setFeaturedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -80,7 +80,7 @@ const AvailableProducts: React.FC = () => {
         per_page: perPage,
       };
       
-      if (selectedCategory) {
+      if (selectedCategory && selectedCategory !== 'all') {
         params.category = selectedCategory;
       }
       if (featuredOnly) {
@@ -182,7 +182,7 @@ const AvailableProducts: React.FC = () => {
                     <SelectValue placeholder="همه دسته‌ها" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">همه دسته‌ها</SelectItem>
+                    <SelectItem value="all">همه دسته‌ها</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
