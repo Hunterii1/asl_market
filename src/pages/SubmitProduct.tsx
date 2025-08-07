@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -192,6 +193,7 @@ const SubmitProduct = () => {
   if (submitted) {
     return (
       <LicenseGate>
+        <HeaderAuth />
         <div className="min-h-screen flex items-center justify-center p-4">
           <Card className="max-w-md w-full bg-card/80 border-border rounded-3xl">
             <CardContent className="p-8 text-center">
@@ -202,10 +204,10 @@ const SubmitProduct = () => {
               </p>
               <div className="space-y-3">
                 <Button 
-                  onClick={() => navigate('/asl-available')}
+                  onClick={() => navigate('/')}
                   className="w-full bg-green-500 hover:bg-green-600 text-white rounded-2xl"
                 >
-                  مشاهده کالاهای موجود
+                  بازگشت به صفحه اصلی
                 </Button>
                 <Button 
                   variant="outline"
@@ -262,6 +264,7 @@ const SubmitProduct = () => {
 
   return (
     <LicenseGate>
+      <HeaderAuth />
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Header */}
@@ -789,7 +792,7 @@ const SubmitProduct = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate('/asl-available')}
+                onClick={() => navigate('/')}
                 className="flex-1 border-border text-muted-foreground hover:bg-muted rounded-2xl"
               >
                 انصراف
