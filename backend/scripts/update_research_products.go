@@ -1,16 +1,19 @@
 package main
 
 import (
+	"asl-market-backend/config"
 	"asl-market-backend/models"
 	"fmt"
 	"log"
+	"strconv"
 )
 
 func main() {
 	fmt.Println("🔄 Updating existing research products...")
 
-	// Initialize database
-	models.InitDatabase()
+	// Load configuration and connect database
+	config.LoadConfig()
+	models.ConnectDatabase()
 	db := models.GetDB()
 
 	// Update existing products with new fields
@@ -77,18 +80,17 @@ func main() {
 
 	for _, product := range products {
 		if product.IranPurchasePrice != "" && product.TargetCountryPrice != "" {
-			// Recalculate profit margin using the same logic as in model
-			if err := db.Model(&product).Update("profit_margin", "").Error; err == nil {
-				// Trigger the calculation by updating the record
-				var req models.ResearchProductRequest
-				req.IranPurchasePrice = product.IranPurchasePrice
-				req.TargetCountryPrice = product.TargetCountryPrice
+			// Calculate profit margin manually
+			if iranPrice, err1 := strconv.ParseFloat(product.IranPurchasePrice, 64); err1 == nil {
+				if targetPrice, err2 := strconv.ParseFloat(product.TargetCountryPrice, 64); err2 == nil && iranPrice > 0 {
+					margin := ((targetPrice - iranPrice) / iranPrice) * 100
+					marginStr := fmt.Sprintf("%.2f%%", margin)
 
-				// This will trigger the profit margin calculation
-				updatedProduct, err := models.CreateResearchProduct(req, product.AddedBy)
-				if err == nil {
-					db.Model(&product).Update("profit_margin", updatedProduct.ProfitMargin)
-					fmt.Printf("✅ Updated profit margin for: %s (%s)\n", product.Name, updatedProduct.ProfitMargin)
+					if err := db.Model(&product).Update("profit_margin", marginStr).Error; err == nil {
+						fmt.Printf("✅ Updated profit margin for: %s (%s)\n", product.Name, marginStr)
+					} else {
+						log.Printf("❌ Error updating profit margin for %s: %v", product.Name, err)
+					}
 				}
 			}
 		}
