@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
 import { apiService } from "@/services/api";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -14,12 +11,10 @@ import {
   Star, 
   Phone, 
   Mail, 
-
   User,
   CheckCircle,
   Clock,
   Plus,
-  Search,
   Languages,
   Briefcase,
   Award
@@ -27,7 +22,6 @@ import {
 
 const AslVisit = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("browse");
   const [selectedCountry, setSelectedCountry] = useState("");
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -264,113 +258,7 @@ const AslVisit = () => {
     </div>
   );
 
-  const VisitorRegistration = () => (
-    <Card className="bg-card border-border rounded-3xl max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="text-foreground text-center">ثبت‌نام ویزیتور</CardTitle>
-        <p className="text-muted-foreground text-center">برای عضویت در شبکه ویزیتورهای اصل مارکت فرم زیر را تکمیل کنید</p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-foreground font-medium mb-2 block">نام و نام خانوادگی</label>
-            <Input
-              placeholder="نام کامل خود را وارد کنید"
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-          </div>
-          <div>
-            <label className="text-foreground font-medium mb-2 block">شماره تلفن</label>
-            <Input
-              placeholder="شماره تلفن همراه"
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-          </div>
-        </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-foreground font-medium mb-2 block">کشور محل سکونت</label>
-            <Select>
-              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
-                <SelectValue placeholder="انتخاب کشور" />
-              </SelectTrigger>
-              <SelectContent className="bg-muted border-border">
-                {countries.map((country) => (
-                  <SelectItem key={country.code} value={country.code} className="text-foreground">
-                    {country.flag} {country.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-foreground font-medium mb-2 block">شهر</label>
-            <Input
-              placeholder="نام شهر محل سکونت"
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="text-foreground font-medium mb-2 block">شماره پاسپورت</label>
-          <Input
-            placeholder="شماره پاسپورت معتبر"
-            className="bg-muted border-border text-foreground rounded-2xl"
-          />
-        </div>
-
-        <div>
-          <label className="text-foreground font-medium mb-2 block">آدرس کامل</label>
-          <Textarea
-            placeholder="آدرس کامل محل سکونت خود را وارد کنید"
-            className="bg-muted border-border text-foreground rounded-2xl"
-            rows={3}
-          />
-        </div>
-
-        <div>
-          <label className="text-foreground font-medium mb-2 block">زبان‌های تسلط</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {["فارسی", "عربی", "انگلیسی", "فرانسوی", "آلمانی", "اسپانیایی"].map((lang) => (
-              <label key={lang} className="flex items-center gap-2">
-                <input type="checkbox" className="rounded" />
-                <span className="text-foreground text-sm">{lang}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <label className="text-foreground font-medium mb-2 block">تجربه کاری</label>
-          <Textarea
-            placeholder="تجربه کاری و تخصص‌های خود را شرح دهید"
-            className="bg-muted border-border text-foreground rounded-2xl"
-            rows={3}
-          />
-        </div>
-
-        <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
-          <h5 className="text-blue-300 font-medium mb-2">مدارک مورد نیاز:</h5>
-          <ul className="text-blue-200 text-sm space-y-1">
-            <li>• کپی پاسپورت معتبر</li>
-            <li>• مدرک اقامت در کشور مربوطه</li>
-            <li>• رزومه کاری</li>
-            <li>• معرفی‌نامه (در صورت وجود)</li>
-          </ul>
-        </div>
-
-        <Button 
-          onClick={() => navigate("/visitor-registration")}
-          className="w-full bg-blue-500 hover:bg-blue-600 rounded-2xl"
-        >
-          <User className="w-4 h-4 ml-2" />
-          ثبت درخواست ویزیتور
-        </Button>
-      </CardContent>
-    </Card>
-  );
 
   return (
     <LicenseGate>
@@ -390,28 +278,8 @@ const AslVisit = () => {
         </CardContent>
       </Card>
 
-      {/* Navigation Tabs */}
+      {/* Quick Actions */}
       <div className="flex gap-4">
-        <Button
-          variant={activeTab === "browse" ? "default" : "outline"}
-          onClick={() => setActiveTab("browse")}
-          className={`rounded-2xl transition-colors duration-300 ${
-            activeTab === "browse"
-              ? "bg-blue-500 hover:bg-blue-600"
-              : "border-border text-muted-foreground hover:bg-muted"
-          }`}
-        >
-          <Search className="w-4 h-4 ml-2" />
-          جستجو ویزیتورها
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/visitor-registration")}
-          className="rounded-2xl border-border text-muted-foreground hover:bg-muted transition-colors duration-300"
-        >
-          <Plus className="w-4 h-4 ml-2" />
-          ثبت‌نام ویزیتور
-        </Button>
         <Button
           variant="outline"
           onClick={() => navigate("/visitor-status")}
@@ -423,7 +291,7 @@ const AslVisit = () => {
       </div>
 
       {/* Content */}
-      {activeTab === "browse" && <VisitorBrowser />}
+      <VisitorBrowser />
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
