@@ -17,7 +17,8 @@ import {
   User, 
   LogOut, 
   Settings, 
-  Bell
+  Bell,
+  Shield
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, LicenseStatus } from "@/services/api";
@@ -143,7 +144,8 @@ const HeaderAuth = () => {
             {currentLicenseStatus && (
               <Badge 
                 variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
-                className="hidden sm:flex"
+                className={`hidden sm:flex ${currentLicenseStatus.is_approved ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                onClick={currentLicenseStatus.is_approved ? () => navigate('/license-info') : undefined}
               >
                 {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
               </Badge>
@@ -197,6 +199,15 @@ const HeaderAuth = () => {
                   <Settings className="w-4 h-4 ml-2" />
                   تنظیمات
                 </DropdownMenuItem>
+                {currentLicenseStatus?.is_approved && (
+                  <DropdownMenuItem 
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    onClick={() => navigate('/license-info')}
+                  >
+                    <Shield className="w-4 h-4 ml-2" />
+                    اطلاعات لایسنس
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 
                   onClick={handleLogout}

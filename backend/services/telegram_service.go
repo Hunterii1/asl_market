@@ -331,13 +331,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case MENU_ADD_SINGLE_PRODUCT:
 		s.promptAddSingleProduct(message.Chat.ID)
 	case MENU_GENERATE:
-		s.showGeneratePrompt(message.Chat.ID)
-		// Set session state to wait for license count
-		sessionMutex.Lock()
-		sessionStates[message.Chat.ID] = &SessionState{
-			ChatID:          message.Chat.ID,
-			WaitingForInput: "license_count",
-		}
+		s.showLicenseTypeSelection(message.Chat.ID)
 		sessionMutex.Unlock()
 	case MENU_LIST_LICENSES:
 		s.showLicensesList(message.Chat.ID, 1)
@@ -355,7 +349,15 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 			switch state.WaitingForInput {
 			case "license_count":
 				if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
-					s.handleGenerateLicenses(message.Chat.ID, count, message.From.ID)
+					// Get license type from session data
+					licenseType := "plus" // default
+					if state.Data != nil {
+						if lt, ok := state.Data["license_type"].(string); ok {
+							licenseType = lt
+						}
+					}
+
+					s.handleGenerateLicenses(message.Chat.ID, count, licenseType, message.From.ID)
 					// Clear session state
 					sessionMutex.Lock()
 					delete(sessionStates, message.Chat.ID)
@@ -1080,6 +1082,18 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		s.bot.Request(callback)
 
 		s.handleResearchProductCreation(chatID, demand, "market_demand")
+		return
+	}
+
+	// Handle license type selection callbacks
+	if strings.HasPrefix(data, "license_type_") {
+		licenseType := strings.TrimPrefix(data, "license_type_")
+
+		// Send acknowledgment to callback query
+		callback := tgbotapi.NewCallback(query.ID, "")
+		s.bot.Request(callback)
+
+		s.handleLicenseTypeSelection(chatID, licenseType)
 		return
 	}
 
@@ -2326,7 +2340,7 @@ func (s *TelegramService) findOrCreateAdminUser(telegramID int64) (uint, error) 
 	return adminUser.ID, nil
 }
 
-func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, adminTelegramID int64) {
+func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, licenseType string, adminTelegramID int64) {
 	// Find or create admin user for telegram bot
 	adminID, err := s.findOrCreateAdminUser(adminTelegramID)
 	if err != nil {
@@ -2335,7 +2349,7 @@ func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, adminT
 		return
 	}
 
-	licenses, err := models.GenerateLicenses(s.db, count, adminID)
+	licenses, err := models.GenerateLicenses(s.db, count, licenseType, adminID)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در تولید لایسنس‌ها: %v", err))
 		s.bot.Send(msg)
@@ -2343,7 +2357,14 @@ func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, adminT
 	}
 
 	// Send success message
-	successMsg := fmt.Sprintf("✅ **%d لایسنس با موفقیت تولید شد!**\n\n", count)
+	licenseTypeName := "پلاس"
+	duration := "12 ماه"
+	if licenseType == "pro" {
+		licenseTypeName = "پرو"
+		duration = "30 ماه"
+	}
+
+	successMsg := fmt.Sprintf("✅ **%d لایسنس %s (%s) با موفقیت تولید شد!**\n\n", count, licenseTypeName, duration)
 	successMsgObj := tgbotapi.NewMessage(chatID, successMsg)
 	successMsgObj.ParseMode = "Markdown"
 	s.bot.Send(successMsgObj)
@@ -2406,10 +2427,20 @@ func (s *TelegramService) showLicensesList(chatID int64, page int) {
 		return
 	}
 
+	// Get license statistics
+	var proTotal, plusTotal, proUsed, plusUsed int64
+	s.db.Model(&models.License{}).Where("type = ?", "pro").Count(&proTotal)
+	s.db.Model(&models.License{}).Where("type = ?", "plus").Count(&plusTotal)
+	s.db.Model(&models.License{}).Where("type = ? AND is_used = ?", "pro", true).Count(&proUsed)
+	s.db.Model(&models.License{}).Where("type = ? AND is_used = ?", "plus", true).Count(&plusUsed)
+
 	// Create header message
 	var headerBuilder strings.Builder
 	headerBuilder.WriteString(fmt.Sprintf("📋 **لیست لایسنس‌ها** (صفحه %d)\n\n", page))
 	headerBuilder.WriteString(fmt.Sprintf("📊 تعداد کل: %d\n\n", total))
+	headerBuilder.WriteString("📈 **آمار بر اساس نوع:**\n")
+	headerBuilder.WriteString(fmt.Sprintf("💎 پرو (30 ماه): %d کل (%d استفاده شده)\n", proTotal, proUsed))
+	headerBuilder.WriteString(fmt.Sprintf("🔑 پلاس (12 ماه): %d کل (%d استفاده شده)\n\n", plusTotal, plusUsed))
 
 	headerMsg := tgbotapi.NewMessage(chatID, headerBuilder.String())
 	headerMsg.ParseMode = "Markdown"
@@ -2432,14 +2463,21 @@ func (s *TelegramService) showLicensesList(chatID int64, page int) {
 		adminInfo := fmt.Sprintf("🛠 تولید شده توسط: %s %s",
 			license.Admin.FirstName, license.Admin.LastName)
 
+		licenseTypeText := "🔑 پلاس (12 ماه)"
+		if license.Type == "pro" {
+			licenseTypeText = "💎 پرو (30 ماه)"
+		}
+
 		message := fmt.Sprintf("🔑 **لایسنس #%d**\n\n"+
 			"`%s`\n\n"+
+			"🏷 نوع: %s\n"+
 			"📊 وضعیت: %s\n"+
 			"%s\n"+
 			"%s\n"+
 			"📅 تاریخ تولید: %s",
 			offset+i+1,
 			license.Code,
+			licenseTypeText,
 			status,
 			userInfo,
 			adminInfo,

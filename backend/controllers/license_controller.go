@@ -1,7 +1,9 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
+	"time"
 
 	"asl-market-backend/models"
 
@@ -37,14 +39,30 @@ func VerifyLicense(c *gin.Context) {
 	}
 
 	// Try to use the license
-	if err := models.UseLicense(models.GetDB(), req.License, userIDUint); err != nil {
+	license, err := models.UseLicense(models.GetDB(), req.License, userIDUint)
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Calculate remaining time
+	now := time.Now()
+	remaining := license.ExpiresAt.Sub(now)
+	remainingDays := int(remaining.Hours() / 24)
+	remainingHours := int(remaining.Hours()) % 24
+
+	licenseTypeName := "پلاس"
+	if license.Type == "pro" {
+		licenseTypeName = "پرو"
+	}
+
 	c.JSON(http.StatusOK, models.LicenseVerifyResponse{
-		Message: "لایسنس با موفقیت فعال شد! اکنون می‌توانید از تمام امکانات سایت استفاده کنید.",
-		Status:  "activated",
+		Message:        fmt.Sprintf("لایسنس %s با موفقیت فعال شد! اکنون می‌توانید از تمام امکانات سایت استفاده کنید.", licenseTypeName),
+		Status:         "activated",
+		Type:           license.Type,
+		ExpiresAt:      license.ExpiresAt.Format("2006-01-02 15:04:05"),
+		RemainingDays:  remainingDays,
+		RemainingHours: remainingHours,
 	})
 }
 
@@ -90,9 +108,23 @@ func GetUserLicenseInfo(c *gin.Context) {
 		return
 	}
 
+	// Calculate remaining time
+	now := time.Now()
+	remaining := license.ExpiresAt.Sub(now)
+	remainingDays := int(remaining.Hours() / 24)
+	remainingHours := int(remaining.Hours()) % 24
+
+	// Check if license is still active
+	isActive := now.Before(*license.ExpiresAt)
+
 	c.JSON(http.StatusOK, gin.H{
-		"license_code": license.Code,
-		"activated_at": license.UsedAt,
-		"is_active":    true,
+		"license_code":    license.Code,
+		"activated_at":    license.UsedAt,
+		"expires_at":      license.ExpiresAt,
+		"type":            license.Type,
+		"duration":        license.Duration,
+		"remaining_days":  remainingDays,
+		"remaining_hours": remainingHours,
+		"is_active":       isActive,
 	})
 }

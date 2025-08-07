@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicenseGate } from '@/components/LicenseGate';
+import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
@@ -105,6 +106,9 @@ const AslVisit = () => {
 
   const VisitorBrowser = () => (
     <div className="space-y-6">
+      {/* Daily Limits Display */}
+      <DailyLimitsDisplay />
+
       {/* Visitor Registration */}
       <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
         <CardContent className="p-6">

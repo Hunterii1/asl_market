@@ -97,6 +97,11 @@ export interface LicenseStatus {
 export interface LicenseInfo {
   license_code: string;
   activated_at: string;
+  expires_at: string;
+  type: string;
+  duration: number;
+  remaining_days: number;
+  remaining_hours: number;
   is_active: boolean;
 }
 
@@ -336,6 +341,34 @@ class ApiService {
 
   async getLicenseInfo(): Promise<LicenseInfo> {
     return this.makeRequest(`${API_BASE_URL}/license/info`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Daily limits management
+  async getDailyLimitsStatus(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/daily-limits`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async checkVisitorViewPermission(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/daily-limits/visitor-permission`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async checkSupplierViewPermission(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/daily-limits/supplier-permission`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),

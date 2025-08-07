@@ -28,6 +28,7 @@ import SupplierStatus from "./pages/SupplierStatus";
 import VisitorRegistration from "./pages/VisitorRegistration";
 import VisitorStatus from "./pages/VisitorStatus";
 import ApprovedVisitors from "./pages/ApprovedVisitors";
+import LicenseInfoPage from "./pages/LicenseInfoPage";
 
 import SubmitProduct from "./pages/SubmitProduct";
 
@@ -143,6 +144,11 @@ const App = () => (
                   <LicenseRequiredRoute>
                     <ProductsResearch />
                   </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/license-info" element={
+                <ProtectedRoute>
+                  <LicenseInfoPage />
                 </ProtectedRoute>
               } />
               

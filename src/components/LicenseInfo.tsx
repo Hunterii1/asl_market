@@ -47,13 +47,18 @@ export function LicenseInfo() {
           
           // در صورت خطا، از storage محلی استفاده کن
           const storedInfo = licenseStorage.getStoredLicenseInfo();
-          if (storedInfo) {
-            setLicenseInfo({
-              license_code: storedInfo.license_code,
-              activated_at: storedInfo.activated_at,
-              is_active: true
-            });
-          }
+                  if (storedInfo) {
+          setLicenseInfo({
+            license_code: storedInfo.license_code,
+            activated_at: storedInfo.activated_at,
+            expires_at: '',
+            type: 'plus',
+            duration: 12,
+            remaining_days: 0,
+            remaining_hours: 0,
+            is_active: true
+          });
+        }
         }
       }
     } catch (error) {
@@ -66,6 +71,11 @@ export function LicenseInfo() {
           setLicenseInfo({
             license_code: storedInfo.license_code,
             activated_at: storedInfo.activated_at,
+            expires_at: '',
+            type: 'plus',
+            duration: 12,
+            remaining_days: 0,
+            remaining_hours: 0,
             is_active: true
           });
           setLicenseStatus({
@@ -189,6 +199,34 @@ export function LicenseInfo() {
                 </p>
               </div>
             </div>
+
+            <div className="flex items-center gap-3">
+              <Shield className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-sm font-medium">نوع لایسنس</p>
+                <Badge variant={licenseInfo.type === 'pro' ? 'default' : 'secondary'} className="mt-1">
+                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.duration} ماه)
+                </Badge>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-orange-500" />
+              <div>
+                <p className="text-sm font-medium">زمان باقی‌مانده</p>
+                <div className="flex gap-2 mt-1">
+                  <Badge variant="outline" className="text-xs">
+                    {licenseInfo.remaining_days} روز
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {licenseInfo.remaining_hours} ساعت
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  انقضا: {formatDate(licenseInfo.expires_at)}
+                </p>
+              </div>
+            </div>
           </>
         )}
 
@@ -196,7 +234,9 @@ export function LicenseInfo() {
           <CheckCircle className="h-4 w-4 text-green-500" />
           <div>
             <p className="text-sm font-medium">وضعیت</p>
-            <p className="text-xs text-green-600">فعال و قابل استفاده</p>
+            <p className="text-xs text-green-600">
+              {licenseInfo?.is_active ? 'فعال و قابل استفاده' : 'منقضی شده'}
+            </p>
           </div>
         </div>
 
