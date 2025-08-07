@@ -39,6 +39,7 @@ func main() {
 	// Available products fake data from AslAvailable.tsx
 	availableProducts := []models.CreateAvailableProductRequest{
 		{
+			SaleType:          "wholesale",
 			ProductName:       "زعفران سرگل ممتاز",
 			Category:          "زعفران",
 			Subcategory:       "سرگل",
@@ -76,6 +77,7 @@ func main() {
 			Notes:             "محصول با کیفیت بالا و آماده صادرات",
 		},
 		{
+			SaleType:          "retail",
 			ProductName:       "خرما مجول درجه یک",
 			Category:          "خرما",
 			Subcategory:       "مجول",
@@ -113,6 +115,7 @@ func main() {
 			Notes:             "نمونه محصول برای بررسی کیفیت",
 		},
 		{
+			SaleType:          "wholesale",
 			ProductName:       "پسته اکبری",
 			Category:          "خشکبار",
 			Subcategory:       "پسته",
@@ -150,6 +153,7 @@ func main() {
 			Notes:             "پسته تازه و با کیفیت",
 		},
 		{
+			SaleType:          "retail",
 			ProductName:       "فرش دستباف اصفهان",
 			Category:          "صنایع دستی",
 			Subcategory:       "فرش",

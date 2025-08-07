@@ -29,6 +29,8 @@ import VisitorRegistration from "./pages/VisitorRegistration";
 import VisitorStatus from "./pages/VisitorStatus";
 import ApprovedVisitors from "./pages/ApprovedVisitors";
 
+import SubmitProduct from "./pages/SubmitProduct";
+
 
 const queryClient = new QueryClient();
 
@@ -76,6 +78,12 @@ const App = () => (
                 <Route path="/approved-visitors" element={
                   <ProtectedRoute>
                     <ApprovedVisitors />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/submit-product" element={
+                  <ProtectedRoute>
+                    <SubmitProduct />
                   </ProtectedRoute>
                 } />
                 

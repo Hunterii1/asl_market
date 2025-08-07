@@ -687,6 +687,16 @@ class ApiService {
     });
   }
 
+  async submitAvailableProduct(data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/submit-product`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
   // Marketing Popup API methods
   async getActiveMarketingPopup(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/marketing-popups/active`, {

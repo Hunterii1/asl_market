@@ -14,6 +14,7 @@ type AvailableProduct struct {
 	Supplier   *Supplier `json:"supplier,omitempty" gorm:"foreignKey:SupplierID"`
 
 	// Product Basic Info
+	SaleType    string `json:"sale_type" gorm:"size:20;not null;default:'wholesale'"` // wholesale, retail
 	ProductName string `json:"product_name" gorm:"size:255;not null;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 	Category    string `json:"category" gorm:"size:100;not null;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 	Subcategory string `json:"subcategory" gorm:"size:100;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
@@ -76,6 +77,7 @@ type AvailableProduct struct {
 // DTO for creating a new available product
 type CreateAvailableProductRequest struct {
 	SupplierID        *uint  `json:"supplier_id"`
+	SaleType          string `json:"sale_type" binding:"required"`
 	ProductName       string `json:"product_name" binding:"required"`
 	Category          string `json:"category" binding:"required"`
 	Subcategory       string `json:"subcategory"`
@@ -116,6 +118,7 @@ type CreateAvailableProductRequest struct {
 // DTO for updating an available product
 type UpdateAvailableProductRequest struct {
 	SupplierID        *uint  `json:"supplier_id"`
+	SaleType          string `json:"sale_type"`
 	ProductName       string `json:"product_name"`
 	Category          string `json:"category"`
 	Subcategory       string `json:"subcategory"`
@@ -161,6 +164,7 @@ type AvailableProductResponse struct {
 	AddedBy           UserResponse      `json:"added_by"`
 	SupplierID        *uint             `json:"supplier_id"`
 	Supplier          *SupplierResponse `json:"supplier,omitempty"`
+	SaleType          string            `json:"sale_type"`
 	ProductName       string            `json:"product_name"`
 	Category          string            `json:"category"`
 	Subcategory       string            `json:"subcategory"`
@@ -206,6 +210,7 @@ func CreateAvailableProduct(db *gorm.DB, addedByID uint, req CreateAvailableProd
 	product := AvailableProduct{
 		AddedByID:         addedByID,
 		SupplierID:        req.SupplierID,
+		SaleType:          req.SaleType,
 		ProductName:       req.ProductName,
 		Category:          req.Category,
 		Subcategory:       req.Subcategory,

@@ -72,6 +72,9 @@ func SetupRoutes(router *gin.Engine) {
 		protected.GET("/visitors", controllers.GetApprovedVisitors)
 		protected.GET("/debug/visitor/:id", controllers.GetVisitorByID)
 
+		// Product submission
+		protected.POST("/submit-product", controllers.SubmitProduct)
+
 		// Admin visitor management routes
 		protected.GET("/admin/visitors", controllers.GetVisitorsForAdmin)
 		protected.GET("/admin/visitors/:id", controllers.GetVisitorDetails)

@@ -27,6 +27,7 @@ import {
 
 interface AvailableProduct {
   id: number;
+  sale_type: 'wholesale' | 'retail';
   product_name: string;
   category: string;
   subcategory?: string;
@@ -197,10 +198,17 @@ const AslAvailable = () => {
               <h2 className="text-2xl font-bold text-foreground">کالاهای موجود</h2>
               <p className="text-green-600 dark:text-green-300">محصولات آماده برای فروش افیلیتی</p>
             </div>
-            <div className="mr-auto">
+            <div className="mr-auto flex items-center gap-3">
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-2xl">
                 {products.length} کالا موجود
               </Badge>
+              <Button
+                onClick={() => navigate("/submit-product")}
+                className="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl flex items-center gap-2"
+              >
+                <Package className="w-4 h-4" />
+                ثبت کالا
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -315,14 +323,19 @@ const AslAvailable = () => {
                     </Badge>
                   )}
                 </div>
-                <div className="absolute top-4 left-4">
-                  {item.is_hot_deal ? (
-                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
-                      تخفیف ویژه
+                <div className="absolute top-4 left-4 flex flex-col gap-2">
+                  {item.sale_type === 'wholesale' ? (
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                      فروش عمده
                     </Badge>
                   ) : (
                     <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
-                      موجود
+                      فروش تکی
+                    </Badge>
+                  )}
+                  {item.is_hot_deal && (
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
+                      تخفیف ویژه
                     </Badge>
                   )}
                 </div>
@@ -340,10 +353,19 @@ const AslAvailable = () => {
                     <span className="text-foreground">{item.available_quantity} {item.unit}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">قیمت عمده:</span>
-                    <span className="text-foreground font-bold">{item.wholesale_price} {item.currency}</span>
-                  </div>
+                  {item.sale_type === 'wholesale' && item.wholesale_price && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">قیمت عمده:</span>
+                      <span className="text-foreground font-bold">{item.wholesale_price} {item.currency}</span>
+                    </div>
+                  )}
+                  
+                  {item.sale_type === 'retail' && item.retail_price && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">قیمت خرده:</span>
+                      <span className="text-foreground font-bold">{item.retail_price} {item.currency}</span>
+                    </div>
+                  )}
                   
                   {item.quality && (
                     <div className="flex items-center justify-between">

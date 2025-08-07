@@ -433,6 +433,11 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				return
 			}
 
+			// Check for product approval command patterns
+			if s.HandleProductApprovalCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
 			// No active session - show help message
 			msg := tgbotapi.NewMessage(message.Chat.ID,
 				"❓ **راهنمای استفاده:**\n\n"+
@@ -495,7 +500,7 @@ func (s *TelegramService) handleSearch(chatID int64, query string) {
 	var err error
 
 	// Try to find by ID first
-	if id, err := strconv.ParseUint(query, 10, 32); err == nil {
+	if id, parseErr := strconv.ParseUint(query, 10, 32); parseErr == nil {
 		err = s.db.First(&user, id).Error
 	} else {
 		// Try to find by email
