@@ -28,7 +28,7 @@ import SupplierStatus from "./pages/SupplierStatus";
 import VisitorRegistration from "./pages/VisitorRegistration";
 import VisitorStatus from "./pages/VisitorStatus";
 import ApprovedVisitors from "./pages/ApprovedVisitors";
-import AvailableProducts from "./pages/AvailableProducts";
+
 
 const queryClient = new QueryClient();
 
@@ -78,11 +78,7 @@ const App = () => (
                     <ApprovedVisitors />
                   </ProtectedRoute>
                 } />
-                <Route path="/available-products" element={
-                  <ProtectedRoute>
-                    <AvailableProducts />
-                  </ProtectedRoute>
-                } />
+                
               
               {/* Protected routes - require authentication and license */}
               <Route path="/asllearn" element={

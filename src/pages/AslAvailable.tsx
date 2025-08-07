@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
+import { apiService } from "@/services/api";
 import { 
   Package, 
   Search, 
@@ -24,22 +25,96 @@ import {
   ExternalLink
 } from "lucide-react";
 
+interface AvailableProduct {
+  id: number;
+  product_name: string;
+  category: string;
+  subcategory?: string;
+  description?: string;
+  wholesale_price?: string;
+  retail_price?: string;
+  export_price?: string;
+  currency?: string;
+  available_quantity?: number;
+  min_order_quantity?: number;
+  max_order_quantity?: number;
+  unit?: string;
+  brand?: string;
+  model?: string;
+  origin?: string;
+  quality?: string;
+  packaging_type?: string;
+  weight?: string;
+  dimensions?: string;
+  shipping_cost?: string;
+  location: string;
+  contact_phone?: string;
+  contact_email?: string;
+  contact_whatsapp?: string;
+  can_export?: boolean;
+  requires_license?: boolean;
+  license_type?: string;
+  export_countries?: string;
+  image_urls?: string;
+  video_url?: string;
+  catalog_url?: string;
+  is_featured?: boolean;
+  is_hot_deal?: boolean;
+  tags?: string;
+  notes?: string;
+  status: string;
+  created_by: {
+    first_name: string;
+    last_name: string;
+  };
+  supplier?: {
+    brand_name?: string;
+    full_name: string;
+  };
+  created_at: string;
+}
+
 const AslAvailable = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  
+  // Real data states
+  const [products, setProducts] = useState<AvailableProduct[]>([]);
+  const [categories, setCategoriesData] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const categories = [
-    { id: "all", name: "همه محصولات", count: 45 },
-    { id: "saffron", name: "زعفران", count: 12 },
-    { id: "dates", name: "خرما", count: 8 },
-    { id: "pistachios", name: "پسته", count: 6 },
-    { id: "carpets", name: "فرش", count: 4 },
-    { id: "handicrafts", name: "صنایع دستی", count: 15 }
-  ];
+  // Load data from API
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          apiService.getAvailableProducts({ page: 1, per_page: 50 }),
+          apiService.getAvailableProductCategories(),
+        ]);
+        
+        setProducts(productsResponse.products || []);
+        setCategoriesData(categoriesResponse || []);
+      } catch (err) {
+        console.error('Error loading available products:', err);
+        setError('خطا در بارگذاری کالاها');
+        setProducts([]);
+        setCategoriesData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    loadData();
+  }, []);
+
+  // Static filter options
   const conditions = [
     { id: "all", name: "همه وضعیت‌ها" },
     { id: "new", name: "جدید" },
@@ -55,96 +130,14 @@ const AslAvailable = () => {
     { id: "shiraz", name: "شیراز" }
   ];
 
-  const availableItems = [
-    {
-      id: 1,
-      name: "زعفران سرگل ممتاز",
-      category: "saffron",
-      condition: "new",
-      quantity: 5,
-      unit: "کیلوگرم",
-      location: "مشهد",
-      owner: "احمد محمدی",
-      ownerRating: 4.8,
-      price: 850,
-      currency: "USD",
-      isForSale: true,
-      affiliateCommission: 15,
-      description: "زعفران درجه یک با کیفیت صادراتی",
-      images: ["https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg?auto=compress&cs=tinysrgb&w=300"],
-      addedDate: "۱۴۰۳/۰۸/۲۰",
-      views: 45,
-      interested: 8
-    },
-    {
-      id: 2,
-      name: "خرما مجول درجه یک",
-      category: "dates",
-      condition: "sample",
-      quantity: 2,
-      unit: "کیلوگرم",
-      location: "اهواز",
-      owner: "فاطمه احمدی",
-      ownerRating: 4.6,
-      price: 120,
-      currency: "USD",
-      isForSale: true,
-      affiliateCommission: 20,
-      description: "نمونه خرما برای تست کیفیت",
-      images: ["https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg?auto=compress&cs=tinysrgb&w=300"],
-      addedDate: "۱۴۰۳/۰۸/۱۸",
-      views: 32,
-      interested: 5
-    },
-    {
-      id: 3,
-      name: "پسته اکبری",
-      category: "pistachios",
-      condition: "new",
-      quantity: 10,
-      unit: "کیلوگرم",
-      location: "کرمان",
-      owner: "علی رضایی",
-      ownerRating: 4.9,
-      price: 450,
-      currency: "USD",
-      isForSale: true,
-      affiliateCommission: 12,
-      description: "پسته تازه برداشت شده",
-      images: ["https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg?auto=compress&cs=tinysrgb&w=300"],
-      addedDate: "۱۴۰۳/۰۸/۲۲",
-      views: 28,
-      interested: 3
-    },
-    {
-      id: 4,
-      name: "فرش دستباف اصفهان",
-      category: "carpets",
-      condition: "new",
-      quantity: 1,
-      unit: "عدد",
-      location: "اصفهان",
-      owner: "مریم صادقی",
-      ownerRating: 4.7,
-      price: 2500,
-      currency: "USD",
-      isForSale: false,
-      affiliateCommission: 25,
-      description: "فرش دستباف با طرح سنتی",
-      images: ["https://images.pexels.com/photos/4198015/pexels-photo-4198015.jpeg?auto=compress&cs=tinysrgb&w=300"],
-      addedDate: "۱۴۰۳/۰۸/۱۵",
-      views: 67,
-      interested: 12
-    }
-  ];
-
-  const filteredItems = availableItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredItems = products.filter(item => {
+    const matchesSearch = item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.brand?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-    const matchesCondition = selectedCondition === "all" || item.condition === selectedCondition;
     const matchesLocation = selectedLocation === "all" || item.location.includes(selectedLocation);
     
-    return matchesSearch && matchesCategory && matchesCondition && matchesLocation;
+    return matchesSearch && matchesCategory && matchesLocation;
   });
 
   const getConditionColor = (condition: string) => {
@@ -180,14 +173,9 @@ const AslAvailable = () => {
               <p className="text-green-600 dark:text-green-300">محصولات آماده برای فروش افیلیتی</p>
             </div>
             <div className="mr-auto">
-              <Button
-                onClick={() => navigate("/available-products")}
-                className="bg-green-500 hover:bg-green-600 text-white rounded-2xl flex items-center gap-2"
-              >
-                <Package className="w-4 h-4" />
-                مشاهده کالاها
-                <ExternalLink className="w-4 h-4" />
-              </Button>
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-2xl">
+                {products.length} کالا موجود
+              </Badge>
             </div>
           </div>
         </CardContent>
@@ -215,9 +203,12 @@ const AslAvailable = () => {
                   <SelectValue placeholder="دسته‌بندی" />
                 </SelectTrigger>
                 <SelectContent className="bg-muted border-border">
+                  <SelectItem value="all" className="text-foreground">
+                    همه محصولات
+                  </SelectItem>
                   {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id} className="text-foreground">
-                      {category.name} ({category.count})
+                    <SelectItem key={category} value={category} className="text-foreground">
+                      {category}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -259,29 +250,54 @@ const AslAvailable = () => {
       </Card>
 
       {/* Items Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {loading ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">در حال بارگذاری کالاها...</p>
+        </div>
+      ) : error ? (
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardContent className="p-8 text-center">
+            <AlertTriangle className="w-16 h-16 mx-auto text-red-500 mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">خطا در بارگذاری</h3>
+            <p className="text-muted-foreground">{error}</p>
+          </CardContent>
+        </Card>
+      ) : filteredItems.length === 0 ? (
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardContent className="p-8 text-center">
+            <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">هیچ کالایی یافت نشد</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || selectedCategory !== "all" ? 'برای جستجوی مورد نظر نتیجه‌ای یافت نشد' : 'هنوز کالایی برای نمایش وجود ندارد'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
           <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
             <CardContent className="p-0">
               <div className="relative">
                 <img
-                  src={item.images[0]}
-                  alt={item.name}
+                  src={item.image_urls?.split(',')[0] || "/placeholder-product.jpg"}
+                  alt={item.product_name}
                   className="w-full h-48 object-cover rounded-t-3xl"
                 />
                 <div className="absolute top-4 right-4">
-                  <Badge className={`${getConditionColor(item.condition)} rounded-full`}>
-                    {getConditionText(item.condition)}
-                  </Badge>
+                  {item.is_featured && (
+                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                      برجسته
+                    </Badge>
+                  )}
                 </div>
                 <div className="absolute top-4 left-4">
-                  {item.isForSale ? (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
-                      فروش
+                  {item.is_hot_deal ? (
+                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
+                      تخفیف ویژه
                     </Badge>
                   ) : (
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
-                      افیلیت
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
+                      موجود
                     </Badge>
                   )}
                 </div>
@@ -289,27 +305,29 @@ const AslAvailable = () => {
 
               <div className="p-6">
                 <h4 className="font-bold text-foreground mb-2 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors">
-                  {item.name}
+                  {item.product_name}
                 </h4>
                 <p className="text-muted-foreground text-sm mb-4">{item.description}</p>
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">مقدار:</span>
-                    <span className="text-foreground">{item.quantity} {item.unit}</span>
+                    <span className="text-muted-foreground text-sm">موجودی:</span>
+                    <span className="text-foreground">{item.available_quantity} {item.unit}</span>
                   </div>
                   
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">قیمت:</span>
-                    <span className="text-foreground font-bold">${item.price}</span>
+                    <span className="text-muted-foreground text-sm">قیمت عمده:</span>
+                    <span className="text-foreground font-bold">{item.wholesale_price} {item.currency}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">کمیسیون:</span>
-                    <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-full">
-                      {item.affiliateCommission}%
-                    </Badge>
-                  </div>
+                  {item.quality && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground text-sm">کیفیت:</span>
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                        {item.quality}
+                      </Badge>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2 mb-4">
@@ -321,24 +339,17 @@ const AslAvailable = () => {
                   
                   <div className="flex items-center gap-2 text-sm">
                     <User className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">فروشنده:</span>
-                    <span className="text-foreground">{item.owner}</span>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                      <span className="text-yellow-400 text-xs">{item.ownerRating}</span>
-                    </div>
+                    <span className="text-muted-foreground">ایجاد شده توسط:</span>
+                    <span className="text-foreground">{item.created_by.first_name} {item.created_by.last_name}</span>
                   </div>
                   
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Eye className="w-4 h-4" />
-                      {item.views} بازدید
+                  {item.brand && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">برند:</span>
+                      <span className="text-foreground">{item.brand}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-4 h-4" />
-                      {item.interested} علاقه‌مند
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -362,7 +373,8 @@ const AslAvailable = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
