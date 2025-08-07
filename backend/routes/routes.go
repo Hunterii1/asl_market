@@ -89,6 +89,17 @@ func SetupRoutes(router *gin.Engine) {
 		protected.DELETE("/admin/research-products/:id", controllers.DeleteResearchProduct)
 		protected.PATCH("/admin/research-products/:id/status", controllers.UpdateResearchProductStatus)
 
+		// Marketing popup routes (public access for active popup)
+		protected.GET("/marketing-popups/active", controllers.GetActiveMarketingPopup)
+		protected.POST("/marketing-popups/:id/click", controllers.TrackPopupClick)
+		protected.GET("/marketing-popups", controllers.GetMarketingPopups)
+		protected.GET("/marketing-popups/:id", controllers.GetMarketingPopup)
+
+		// Admin marketing popup management routes
+		protected.POST("/admin/marketing-popups", controllers.CreateMarketingPopup)
+		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
+		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)
+
 		// License-protected routes
 		licensed := protected.Group("/")
 		licensed.Use(middleware.LicenseMiddleware())

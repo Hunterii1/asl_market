@@ -14,6 +14,7 @@ type User struct {
 	Password  string         `json:"-" gorm:"size:255;not null"`
 	Phone     string         `json:"phone" gorm:"size:255"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	IsAdmin   bool           `json:"is_admin" gorm:"default:false"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`

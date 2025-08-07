@@ -40,6 +40,7 @@ import AslPay from "./AslPay";
 import AslAI from "./AslAI";
 import AslAvailable from "./AslAvailable";
 import ProductsResearch from "./ProductsResearch";
+import MarketingPopup from "@/components/MarketingPopup";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -150,6 +151,9 @@ const Index = () => {
           onClose={() => setAuthModalOpen(false)}
           featureName={selectedFeature}
         />
+
+        {/* Marketing Popup */}
+        <MarketingPopup isAuthenticated={isAuthenticated} />
       </div>
     </div>
   );

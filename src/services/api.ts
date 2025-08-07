@@ -557,6 +557,99 @@ class ApiService {
     });
   }
 
+  // Marketing Popup API methods
+  async getActiveMarketingPopup(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/marketing-popups/active`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async trackPopupClick(popupId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/marketing-popups/${popupId}/click`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getMarketingPopups(params: {
+    page?: number;
+    per_page?: number;
+    active_only?: boolean;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.active_only) queryParams.append('active_only', params.active_only.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/marketing-popups?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getMarketingPopup(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/marketing-popups/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async createMarketingPopup(data: {
+    title: string;
+    message: string;
+    discount_url?: string;
+    button_text?: string;
+    is_active?: boolean;
+    start_date?: string;
+    end_date?: string;
+    priority?: number;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/marketing-popups`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateMarketingPopup(id: number, data: {
+    title: string;
+    message: string;
+    discount_url?: string;
+    button_text?: string;
+    is_active?: boolean;
+    start_date?: string;
+    end_date?: string;
+    priority?: number;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/marketing-popups/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteMarketingPopup(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/marketing-popups/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }

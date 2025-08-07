@@ -76,6 +76,13 @@ const (
 	MENU_LIST_RESEARCH_PRODUCTS = "📋 لیست محصولات"
 	MENU_RESEARCH_PRODUCT_STATS = "📊 آمار محصولات"
 
+	// Marketing popup management sub-menus
+	MENU_MARKETING_POPUPS        = "📢 مدیریت پاپ‌اپ تبلیغاتی"
+	MENU_ADD_MARKETING_POPUP     = "➕ اضافه کردن پاپ‌اپ"
+	MENU_LIST_MARKETING_POPUPS   = "📋 لیست پاپ‌اپ‌ها"
+	MENU_ACTIVE_MARKETING_POPUPS = "✅ پاپ‌اپ‌های فعال"
+	MENU_MARKETING_POPUP_STATS   = "📊 آمار پاپ‌اپ‌ها"
+
 	// Visitor action buttons
 	MENU_APPROVE_VISITOR = "✅ تأیید"
 	MENU_REJECT_VISITOR  = "❌ رد"
@@ -193,6 +200,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_RESEARCH_PRODUCTS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_MARKETING_POPUPS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -276,6 +286,16 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showResearchProductsList(message.Chat.ID)
 	case MENU_RESEARCH_PRODUCT_STATS:
 		s.showResearchProductsStats(message.Chat.ID)
+	case MENU_MARKETING_POPUPS:
+		s.showMarketingPopupsMenu(message.Chat.ID)
+	case MENU_ADD_MARKETING_POPUP:
+		s.promptAddMarketingPopup(message.Chat.ID)
+	case MENU_LIST_MARKETING_POPUPS:
+		s.showMarketingPopupsList(message.Chat.ID)
+	case MENU_ACTIVE_MARKETING_POPUPS:
+		s.showActiveMarketingPopups(message.Chat.ID)
+	case MENU_MARKETING_POPUP_STATS:
+		s.showMarketingPopupsStats(message.Chat.ID)
 	case MENU_GENERATE:
 		s.showGeneratePrompt(message.Chat.ID)
 		// Set session state to wait for license count
@@ -354,6 +374,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "category")
 			case "research_product_description":
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "description")
+			case "marketing_popup_data":
+				s.handleMarketingPopupInput(message.Chat.ID, message.Text)
 			}
 		} else {
 			// Check for supplier command patterns
@@ -363,6 +385,11 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 
 			// Check for visitor command patterns
 			if s.handleVisitorCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
+			// Check for popup command patterns
+			if s.handlePopupCommands(message) {
 				return
 			}
 
