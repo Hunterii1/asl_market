@@ -132,30 +132,18 @@ const AslSupplier = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/approved-suppliers')}>
+      {/* Supplier Status Link */}
+      {userSupplierStatus?.has_supplier && (
+        <Card className="hover:shadow-lg transition-shadow cursor-pointer mb-6" onClick={() => navigate('/supplier-status')}>
           <CardContent className="p-4 text-center">
             <div className="mb-2">
-              <Users className="w-8 h-8 mx-auto text-primary" />
+              <CheckCircle className="w-8 h-8 mx-auto text-green-500" />
             </div>
-            <h3 className="font-semibold">مشاهده تأمین‌کنندگان</h3>
-            <p className="text-sm text-muted-foreground">فهرست کامل تأمین‌کنندگان تأیید شده</p>
+            <h3 className="font-semibold">وضعیت تأمین‌کننده من</h3>
+            <p className="text-sm text-muted-foreground">مشاهده وضعیت درخواست شما</p>
           </CardContent>
         </Card>
-        
-        {userSupplierStatus?.has_supplier && (
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate('/supplier-status')}>
-            <CardContent className="p-4 text-center">
-              <div className="mb-2">
-                <CheckCircle className="w-8 h-8 mx-auto text-green-500" />
-              </div>
-              <h3 className="font-semibold">وضعیت تأمین‌کننده من</h3>
-              <p className="text-sm text-muted-foreground">مشاهده وضعیت درخواست شما</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
 
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">
@@ -214,8 +202,43 @@ const AslSupplier = () => {
         </CardContent>
       </Card>
 
+      {/* Approved Suppliers Section */}
+      <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl mb-6">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-500/20 to-orange-600/20 rounded-3xl flex items-center justify-center">
+              <Users className="w-8 h-8 text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">تأمین‌کنندگان تأیید شده</h2>
+              <p className="text-orange-300">فهرست کامل تأمین‌کنندگان با مجوز فعالیت</p>
+            </div>
+            <div className="mr-auto">
+              <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-2xl">
+                {filteredSuppliers.length} تأمین‌کننده
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Suppliers List */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {loadingSuppliers ? (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">در حال بارگذاری تأمین‌کنندگان...</p>
+        </div>
+      ) : filteredSuppliers.length === 0 ? (
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardContent className="p-8 text-center">
+            <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">هیچ تأمین‌کننده‌ای یافت نشد</h3>
+            <p className="text-muted-foreground">
+              {searchTerm ? 'برای جستجوی مورد نظر نتیجه‌ای یافت نشد' : 'هنوز تأمین‌کننده تأیید شده‌ای وجود ندارد'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSuppliers.map((supplier) => (
           <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group">
             <CardContent className="p-6">
@@ -327,7 +350,8 @@ const AslSupplier = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 

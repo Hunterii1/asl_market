@@ -24,7 +24,7 @@ import AslAvailable from "./pages/AslAvailable";
 import ProductsResearch from "./pages/ProductsResearch";
 import SupplierRegistration from "./pages/SupplierRegistration";
 import SupplierStatus from "./pages/SupplierStatus";
-import ApprovedSuppliers from "./pages/ApprovedSuppliers";
+
 import VisitorRegistration from "./pages/VisitorRegistration";
 import VisitorStatus from "./pages/VisitorStatus";
 import ApprovedVisitors from "./pages/ApprovedVisitors";
@@ -59,11 +59,7 @@ const App = () => (
                   <SupplierStatus />
                 </ProtectedRoute>
               } />
-              <Route path="/approved-suppliers" element={
-                <ProtectedRoute>
-                  <ApprovedSuppliers />
-                </ProtectedRoute>
-              } />
+
 
               {/* Visitor routes */}
               <Route path="/visitor-registration" element={
