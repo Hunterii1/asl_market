@@ -54,7 +54,7 @@ func (cc *ContactController) ViewContactInfo(c *gin.Context) {
 	}
 
 	// Check if user can view contact
-	canView, err := user.CanViewContact(cc.db)
+	canView, err := user.CanViewContact(cc.db, req.TargetType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بررسی محدودیت‌ها"})
 		return
@@ -161,7 +161,7 @@ func (cc *ContactController) CheckCanViewContact(c *gin.Context) {
 		return
 	}
 
-	canView, err := user.CanViewContact(cc.db)
+	canView, err := user.CanViewContact(cc.db, targetType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بررسی محدودیت‌ها"})
 		return

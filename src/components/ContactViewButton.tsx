@@ -58,6 +58,7 @@ export const ContactViewButton: React.FC<ContactViewButtonProps> = ({
   // Check if user can view this contact when component mounts
   useEffect(() => {
     checkViewPermission();
+    loadContactLimits();
   }, [targetType, targetId]);
 
   const checkViewPermission = async () => {
@@ -65,14 +66,26 @@ export const ContactViewButton: React.FC<ContactViewButtonProps> = ({
       const response = await apiService.checkCanViewContact(targetType, targetId);
       setCanView(response.can_view);
       setHasViewed(response.has_viewed);
-      setLimits({
-        remaining_views: response.remaining_views,
-        total_views: response.total_views,
-        max_views: response.max_views,
+      setLimits(prev => ({
+        ...prev,
         view_count: response.view_count
-      });
+      }));
     } catch (error) {
       console.error('خطا در بررسی مجوز دیدن اطلاعات تماس:', error);
+    }
+  };
+
+  const loadContactLimits = async () => {
+    try {
+      const response = await apiService.getContactLimits();
+      setLimits(prev => ({
+        ...prev,
+        remaining_views: response.remaining_views,
+        total_views: response.total_views_today,
+        max_views: response.max_daily_views
+      }));
+    } catch (error) {
+      console.error('خطا در دریافت محدودیت‌های تماس:', error);
     }
   };
 
@@ -92,12 +105,12 @@ export const ContactViewButton: React.FC<ContactViewButtonProps> = ({
       
       if (response.response.success) {
         setContactInfo(response.contact_info);
-        setLimits({
+        setLimits(prev => ({
           remaining_views: response.response.remaining_views,
           total_views: response.response.total_views,
           max_views: response.response.max_views,
-          view_count: limits.view_count + 1
-        });
+          view_count: prev.view_count + 1
+        }));
         setHasViewed(true);
         
         // Update canView status

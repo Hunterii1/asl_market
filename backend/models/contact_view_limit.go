@@ -60,43 +60,71 @@ type ContactLimitsResponse struct {
 
 // GetContactLimits returns the current contact view limits for a user
 func (u *User) GetContactLimits(db *gorm.DB) (*ContactLimitsResponse, error) {
-	today := time.Now().Format("2006-01-02")
+	// Get user's license info first
+	license, err := GetUserLicense(db, u.ID)
+	if err != nil {
+		// No license - use default limits (same as plus)
+		license = &License{Type: "plus"}
+	}
 
-	var dailyLimit DailyContactViewLimit
-	err := db.Where("user_id = ? AND DATE(date) = ?", u.ID, today).First(&dailyLimit).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
+	// Get current usage
+	limits, err := GetDailyLimits(db, u.ID, time.Now())
+	if err != nil {
 		return nil, err
 	}
 
-	maxDailyViews := 5 // Default limit per day
-	remainingViews := maxDailyViews - dailyLimit.TotalViews
-	if remainingViews < 0 {
-		remainingViews = 0
+	totalUsed := limits.VisitorViews + limits.SupplierViews
+
+	// Calculate max based on license type
+	visitorMax := 3
+	supplierMax := 3
+	if license.Type == "pro" {
+		supplierMax = 6
+	}
+	totalMax := visitorMax + supplierMax
+	totalRemaining := totalMax - totalUsed
+
+	if totalRemaining < 0 {
+		totalRemaining = 0
 	}
 
 	return &ContactLimitsResponse{
-		SupplierViewsToday: dailyLimit.SupplierViews,
-		VisitorViewsToday:  dailyLimit.VisitorViews,
-		TotalViewsToday:    dailyLimit.TotalViews,
-		MaxDailyViews:      maxDailyViews,
-		RemainingViews:     remainingViews,
+		SupplierViewsToday: limits.SupplierViews,
+		VisitorViewsToday:  limits.VisitorViews,
+		TotalViewsToday:    totalUsed,
+		MaxDailyViews:      totalMax,
+		RemainingViews:     totalRemaining,
 	}, nil
 }
 
-// CanViewContact checks if user can view contact information
-func (u *User) CanViewContact(db *gorm.DB) (bool, error) {
-	limits, err := u.GetContactLimits(db)
+// CanViewContact checks if user can view contact information based on target type
+func (u *User) CanViewContact(db *gorm.DB, targetType string) (bool, error) {
+	// Get user's license info
+	license, err := GetUserLicense(db, u.ID)
 	if err != nil {
-		return false, err
+		// No license - use default limits (same as plus)
+		license = &License{Type: "plus"}
 	}
 
-	return limits.RemainingViews > 0, nil
+	if targetType == "visitor" {
+		return CanViewVisitor(db, u.ID, license.Type)
+	} else if targetType == "supplier" {
+		return CanViewSupplier(db, u.ID, license.Type)
+	}
+
+	return false, nil
 }
 
-// RecordContactView records a contact view and updates limits
+// RecordContactView records a contact view and updates limits using existing system
 func (u *User) RecordContactView(db *gorm.DB, targetType string, targetID uint) error {
-	today := time.Now()
-	todayDate := today.Format("2006-01-02")
+	// Check if user can view this type of contact
+	canView, err := u.CanViewContact(db, targetType)
+	if err != nil {
+		return err
+	}
+	if !canView {
+		return gorm.ErrRecordNotFound // Will be handled as "limit exceeded"
+	}
 
 	// Start transaction
 	tx := db.Begin()
@@ -106,48 +134,21 @@ func (u *User) RecordContactView(db *gorm.DB, targetType string, targetID uint) 
 		}
 	}()
 
-	// Find or create daily limit record
-	var dailyLimit DailyContactViewLimit
-	err := tx.Where("user_id = ? AND DATE(date) = ?", u.ID, todayDate).First(&dailyLimit).Error
-	if err == gorm.ErrRecordNotFound {
-		// Create new daily limit record
-		dailyLimit = DailyContactViewLimit{
-			UserID: u.ID,
-			Date:   today,
-		}
-		if err := tx.Create(&dailyLimit).Error; err != nil {
+	// Use existing daily limits system
+	if targetType == "visitor" {
+		if err := IncrementVisitorView(tx, u.ID); err != nil {
 			tx.Rollback()
 			return err
 		}
-	} else if err != nil {
-		tx.Rollback()
-		return err
+	} else if targetType == "supplier" {
+		if err := IncrementSupplierView(tx, u.ID); err != nil {
+			tx.Rollback()
+			return err
+		}
 	}
 
-	// Check if already at limit
-	maxDailyViews := 5
-	if dailyLimit.TotalViews >= maxDailyViews {
-		tx.Rollback()
-		return gorm.ErrRecordNotFound // Will be handled as "limit exceeded"
-	}
-
-	// Update daily limit
-	updates := map[string]interface{}{
-		"total_views": dailyLimit.TotalViews + 1,
-	}
-
-	if targetType == "supplier" {
-		updates["supplier_views"] = dailyLimit.SupplierViews + 1
-	} else if targetType == "visitor" {
-		updates["visitor_views"] = dailyLimit.VisitorViews + 1
-	}
-
-	if err := tx.Model(&dailyLimit).Updates(updates).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	// Find or create contact view limit record
+	// Find or create contact view limit record for history tracking
+	today := time.Now()
 	var contactLimit ContactViewLimit
 	err = tx.Where("user_id = ? AND target_type = ? AND target_id = ?", u.ID, targetType, targetID).First(&contactLimit).Error
 	if err == gorm.ErrRecordNotFound {

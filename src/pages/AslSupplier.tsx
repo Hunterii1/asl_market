@@ -33,8 +33,13 @@ const AslSupplier = () => {
   const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [dailyContactsUsed, setDailyContactsUsed] = useState(1);
-  const maxDailyContacts = 3;
+  const [contactLimits, setContactLimits] = useState({
+    supplier_views_today: 0,
+    visitor_views_today: 0,
+    total_views_today: 0,
+    max_daily_views: 6,
+    remaining_views: 6
+  });
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [userSupplierStatus, setUserSupplierStatus] = useState(null);
@@ -74,23 +79,24 @@ const AslSupplier = () => {
     return matchesSearch;
   });
 
-  const handleRevealContact = (supplierId: number) => {
-    if (dailyContactsUsed >= maxDailyContacts) {
-      alert("شما امروز حداکثر تعداد مجاز برای مشاهده اطلاعات تماس را استفاده کرده‌اید.");
-      return;
-    }
-    
-    setDailyContactsUsed(prev => prev + 1);
-    // Update supplier contact revealed status
-    // This would typically be handled by a state management solution
-  };
+
 
   useEffect(() => {
     if (user) {
       loadApprovedSuppliers();
       checkUserSupplierStatus();
+      loadContactLimits();
     }
   }, [user]);
+
+  const loadContactLimits = async () => {
+    try {
+      const response = await apiService.getContactLimits();
+      setContactLimits(response);
+    } catch (error) {
+      console.error('Error loading contact limits:', error);
+    }
+  };
 
   const loadApprovedSuppliers = async () => {
     try {
@@ -190,18 +196,21 @@ const AslSupplier = () => {
                 <span className="text-foreground font-medium">مشاهده اطلاعات تماس روزانه</span>
               </div>
               <Badge className={`rounded-full ${
-                dailyContactsUsed >= maxDailyContacts 
+                contactLimits.remaining_views <= 0
                   ? "bg-red-500/20 text-red-400 border-red-500/30"
                   : "bg-green-500/20 text-green-400 border-green-500/30"
               }`}>
-                {dailyContactsUsed} از {maxDailyContacts}
+                {contactLimits.total_views_today} از {contactLimits.max_daily_views}
               </Badge>
             </div>
             <div className="mt-2 w-full bg-muted rounded-full h-2">
               <div 
                 className="bg-blue-500 h-2 rounded-full transition-all"
-                style={{ width: `${(dailyContactsUsed / maxDailyContacts) * 100}%` }}
+                style={{ width: `${(contactLimits.total_views_today / contactLimits.max_daily_views) * 100}%` }}
               ></div>
+            </div>
+            <div className="mt-2 text-xs text-muted-foreground">
+              تامین‌کنندگان: {contactLimits.supplier_views_today} • ویزیتورها: {contactLimits.visitor_views_today}
             </div>
           </div>
         </CardContent>
