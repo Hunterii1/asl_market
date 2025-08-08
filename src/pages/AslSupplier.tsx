@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
 import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
+import { ContactViewButton } from '@/components/ContactViewButton';
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -315,41 +316,30 @@ const AslSupplier = () => {
                 </div>
               )}
 
-              {/* Contact Information */}
+              {/* Contact Information (Hidden) */}
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-foreground">{supplier.mobile}</span>
-                  {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  <span className="text-foreground">+98xxxxxxxxxx</span>
+                  <Lock className="w-4 h-4 text-muted-foreground" />
                 </div>
                 
                 <div className="flex items-center gap-2">
                   <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-foreground">{supplier.user?.email || 'نامشخص'}</span>
-                  {!supplier.contactRevealed && dailyContactsUsed >= maxDailyContacts && (
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  <span className="text-foreground">xxx@xxxx.xxx</span>
+                  <Lock className="w-4 h-4 text-muted-foreground" />
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 rounded-2xl"
-                >
-                  <Phone className="w-4 h-4 ml-2" />
-                  تماس
-                </Button>
-                
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
-                >
-                  جزئیات
-                </Button>
+              <div className="flex justify-center">
+                <ContactViewButton
+                  targetType="supplier"
+                  targetId={supplier.id}
+                  targetName={supplier.business_name || supplier.full_name}
+                  className="rounded-2xl"
+                  variant="outline"
+                  size="sm"
+                />
               </div>
             </CardContent>
           </Card>

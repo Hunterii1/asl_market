@@ -826,6 +826,47 @@ class ApiService {
   getToken(): string | null {
     return localStorage.getItem('auth_token');
   }
+
+  // Contact View Limits API methods
+  async getContactLimits(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/contact-limits`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async viewContactInfo(targetType: 'supplier' | 'visitor', targetId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/contact/view`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        target_type: targetType,
+        target_id: targetId,
+      }),
+    });
+  }
+
+  async getContactHistory(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/contact/history`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async checkCanViewContact(targetType: 'supplier' | 'visitor', targetId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/contact/check/${targetType}/${targetId}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService(); 

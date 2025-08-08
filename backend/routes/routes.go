@@ -13,6 +13,7 @@ import (
 func SetupRoutes(router *gin.Engine) {
 	// Initialize controllers
 	authController := controllers.NewAuthController(models.GetDB())
+	contactController := controllers.NewContactController(models.GetDB())
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -60,6 +61,12 @@ func SetupRoutes(router *gin.Engine) {
 		protected.GET("/daily-limits", controllers.GetDailyLimitsStatus)
 		protected.GET("/daily-limits/visitor-permission", controllers.CheckVisitorViewPermission)
 		protected.GET("/daily-limits/supplier-permission", controllers.CheckSupplierViewPermission)
+
+		// Contact view limits routes
+		protected.GET("/contact-limits", contactController.GetContactLimits)
+		protected.POST("/contact/view", contactController.ViewContactInfo)
+		protected.GET("/contact/history", contactController.GetContactHistory)
+		protected.GET("/contact/check/:type/:id", contactController.CheckCanViewContact)
 
 		// Supplier routes
 		protected.POST("/supplier/register", controllers.RegisterSupplier)

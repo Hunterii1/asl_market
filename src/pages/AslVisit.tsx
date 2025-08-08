@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicenseGate } from '@/components/LicenseGate';
 import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
+import { ContactViewButton } from '@/components/ContactViewButton';
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
@@ -18,7 +19,8 @@ import {
   Plus,
   Languages,
   Briefcase,
-  Award
+  Award,
+  Lock
 } from "lucide-react";
 
 const AslVisit = () => {
@@ -225,34 +227,29 @@ const AslVisit = () => {
                   </div>
                 )}
 
+                {/* Contact Information (Hidden) */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-foreground text-sm">{visitor.mobile}</span>
+                    <span className="text-foreground text-sm">+98xxxxxxxxxx</span>
+                    <Lock className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  {visitor.user && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-foreground text-sm">{visitor.user.email}</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-foreground text-sm">xxx@xxxx.xxx</span>
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                  </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-2xl transition-colors duration-300"
-                  >
-                    <Phone className="w-4 h-4 ml-2" />
-                    تماس
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-border text-muted-foreground hover:bg-muted rounded-2xl transition-colors duration-300"
-                  >
-                    جزئیات
-                  </Button>
+                <div className="flex justify-center">
+                  <ContactViewButton
+                    targetType="visitor"
+                    targetId={visitor.id}
+                    targetName={visitor.full_name}
+                    className="rounded-2xl"
+                    variant="outline"
+                    size="sm"
+                  />
                 </div>
               </CardContent>
             </Card>
