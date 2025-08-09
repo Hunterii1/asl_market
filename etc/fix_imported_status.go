@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func main1() {
+func main() {
 	log.Println("🔧 Fix Imported Records Status")
 	log.Println("==============================")
 
