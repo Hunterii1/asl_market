@@ -377,6 +377,85 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 
 		if exists {
 			switch state.WaitingForInput {
+			case "withdrawal_account":
+				withdrawalID := state.Data["withdrawal_id"].(string)
+				accountNumber := strings.TrimSpace(message.Text)
+
+				if len(accountNumber) < 10 {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ شماره حساب نامعتبر است. لطفاً شماره حساب صحیح وارد کنید.")
+					s.bot.Send(msg)
+					return
+				}
+
+				// Parse withdrawal ID and approve with the account number
+				id, err := strconv.ParseUint(withdrawalID, 10, 32)
+				if err != nil {
+					id = 0
+				}
+				if id == 0 {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ خطا در پردازش درخواست")
+					s.bot.Send(msg)
+					return
+				}
+
+				err = models.UpdateWithdrawalStatus(s.db, uint(id), models.WithdrawalStatusApproved, nil, "تایید شده توسط ادمین", accountNumber)
+				if err != nil {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ خطا در تایید درخواست")
+					s.bot.Send(msg)
+					return
+				}
+
+				text := fmt.Sprintf("✅ درخواست برداشت %s تایید شد\n\n", withdrawalID)
+				text += fmt.Sprintf("شماره حساب مقصد: %s\n\n", accountNumber)
+				text += "کاربر می‌تواند واریز کند و فیش را بارگذاری کند."
+
+				msg := tgbotapi.NewMessage(message.Chat.ID, text)
+				s.bot.Send(msg)
+
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+				return
+			case "withdrawal_reject_reason":
+				withdrawalID := state.Data["withdrawal_id"].(string)
+				rejectReason := strings.TrimSpace(message.Text)
+
+				if len(rejectReason) < 5 {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ دلیل رد خیلی کوتاه است. لطفاً دلیل واضح‌تری وارد کنید.")
+					s.bot.Send(msg)
+					return
+				}
+
+				// Parse withdrawal ID and reject with the reason
+				id, err := strconv.ParseUint(withdrawalID, 10, 32)
+				if err != nil {
+					id = 0
+				}
+				if id == 0 {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ خطا در پردازش درخواست")
+					s.bot.Send(msg)
+					return
+				}
+
+				err = models.UpdateWithdrawalStatus(s.db, uint(id), models.WithdrawalStatusRejected, nil, rejectReason, "")
+				if err != nil {
+					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ خطا در رد درخواست")
+					s.bot.Send(msg)
+					return
+				}
+
+				text := fmt.Sprintf("❌ درخواست برداشت %s رد شد\n\n", withdrawalID)
+				text += fmt.Sprintf("دلیل رد: %s", rejectReason)
+
+				msg := tgbotapi.NewMessage(message.Chat.ID, text)
+				s.bot.Send(msg)
+
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+				return
 			case "license_count":
 				if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
 					// Get license type from session data

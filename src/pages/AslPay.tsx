@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { WithdrawalForm } from "@/components/WithdrawalForm";
+import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 import { 
   CreditCard, 
@@ -44,6 +45,7 @@ const AslPay = () => {
     switch (status) {
       case "completed": return "bg-green-500/20 text-green-400 border-green-500/30";
       case "processing": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "approved": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
       case "pending": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       case "rejected": return "bg-red-500/20 text-red-400 border-red-500/30";
       default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
@@ -54,6 +56,7 @@ const AslPay = () => {
     switch (status) {
       case "completed": return "تکمیل شده";
       case "processing": return "در حال پردازش";
+      case "approved": return "تایید شده";
       case "pending": return "در انتظار بررسی";
       case "rejected": return "رد شده";
       default: return "نامشخص";
@@ -64,6 +67,7 @@ const AslPay = () => {
     switch (status) {
       case "completed": return CheckCircle;
       case "processing": return Clock;
+      case "approved": return CheckCircle;
       case "pending": return AlertTriangle;
       case "rejected": return AlertTriangle;
       default: return Clock;
@@ -96,6 +100,36 @@ const AslPay = () => {
   const handleFormSuccess = () => {
     loadWithdrawalRequests();
     loadStats();
+  };
+
+  const handleUploadReceipt = (requestId: number) => {
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*,.pdf';
+    fileInput.onchange = async (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('receipt', file);
+
+      try {
+        await apiService.uploadWithdrawalReceipt(requestId, file);
+        toast({
+          title: "موفقیت",
+          description: "فیش با موفقیت بارگذاری شد",
+        });
+        loadWithdrawalRequests(); // Reload to show updated status
+      } catch (error) {
+        console.error('Upload error:', error);
+        toast({
+          title: "خطا",
+          description: "خطا در بارگذاری فیش",
+          variant: "destructive",
+        });
+      }
+    };
+    fileInput.click();
   };
 
 
@@ -170,8 +204,12 @@ const AslPay = () => {
                   <h5 className="text-foreground font-medium">عملیات</h5>
                   
                   <div className="flex flex-wrap gap-2">
-                    {request.status === "processing" && request.destination_account && (
-                      <Button size="sm" className="bg-blue-500 hover:bg-blue-600 rounded-2xl">
+                    {(request.status === "approved" || request.status === "processing") && request.destination_account && (
+                      <Button 
+                        size="sm" 
+                        className="bg-blue-500 hover:bg-blue-600 rounded-2xl"
+                        onClick={() => handleUploadReceipt(request.id)}
+                      >
                         <Upload className="w-4 h-4 ml-2" />
                         بارگذاری فیش
                       </Button>
@@ -205,7 +243,7 @@ const AslPay = () => {
                   </div>
                   
                   <div className={`flex items-center gap-2 ${
-                    ["processing", "completed"].includes(request.status) 
+                    ["approved", "processing", "completed"].includes(request.status) 
                       ? "text-green-600 dark:text-green-400" 
                       : "text-muted-foreground"
                   }`}>

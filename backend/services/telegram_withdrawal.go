@@ -271,27 +271,28 @@ func (s *TelegramService) sendWithdrawalApprovalPrompt(chatID int64, withdrawalI
 	}
 
 	// Get withdrawal details first
-	_, err := models.GetWithdrawalRequestByID(s.db, id)
+	withdrawal, err := models.GetWithdrawalRequestByID(s.db, id)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ درخواست یافت نشد")
 		s.bot.Send(msg)
 		return
 	}
 
-	// For now, approve with a default account - in real scenario you'd want admin to enter account
-	defaultAccount := "IR123456789012345678901234" // This should be configurable
+	text := fmt.Sprintf("✅ تایید درخواست برداشت %s\n\n", withdrawalID)
+	text += fmt.Sprintf("💰 مبلغ: %.2f %s\n", withdrawal.Amount, withdrawal.Currency)
+	text += fmt.Sprintf("🏦 کارت کاربر: %s\n", withdrawal.BankCardNumber)
+	text += fmt.Sprintf("👤 نام صاحب کارت: %s\n\n", withdrawal.CardHolderName)
+	text += "لطفاً شماره حساب مقصد برای واریز را وارد کنید:\n"
+	text += "(مثال: IR123456789012345678901234)"
 
-	// Use nil for adminID since Telegram ID doesn't match our users table
-	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusApproved, nil, "تایید شده توسط ادمین", defaultAccount)
-	if err != nil {
-		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تایید درخواست")
-		s.bot.Send(msg)
-		return
+	// Store the withdrawal ID for the next message
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "withdrawal_account",
+		Data:            map[string]interface{}{"withdrawal_id": withdrawalID},
 	}
-
-	text := fmt.Sprintf("✅ درخواست برداشت %s تایید شد\n\n", withdrawalID)
-	text += fmt.Sprintf("شماره حساب مقصد: %s\n\n", defaultAccount)
-	text += "کاربر می‌تواند واریز کند و فیش را بارگذاری کند."
+	sessionMutex.Unlock()
 
 	msg := tgbotapi.NewMessage(chatID, text)
 	s.bot.Send(msg)
@@ -307,21 +308,26 @@ func (s *TelegramService) sendWithdrawalRejectionPrompt(chatID int64, withdrawal
 	}
 
 	// Get withdrawal details first
-	_, err := models.GetWithdrawalRequestByID(s.db, id)
+	withdrawal, err := models.GetWithdrawalRequestByID(s.db, id)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ درخواست یافت نشد")
 		s.bot.Send(msg)
 		return
 	}
 
-	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusRejected, nil, "رد شده توسط ادمین", "")
-	if err != nil {
-		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد درخواست")
-		s.bot.Send(msg)
-		return
-	}
+	text := fmt.Sprintf("❌ رد درخواست برداشت %s\n\n", withdrawalID)
+	text += fmt.Sprintf("💰 مبلغ: %.2f %s\n", withdrawal.Amount, withdrawal.Currency)
+	text += fmt.Sprintf("👤 نام صاحب کارت: %s\n\n", withdrawal.CardHolderName)
+	text += "لطفاً دلیل رد درخواست را وارد کنید:"
 
-	text := fmt.Sprintf("❌ درخواست برداشت %s رد شد", withdrawalID)
+	// Store the withdrawal ID for the next message
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "withdrawal_reject_reason",
+		Data:            map[string]interface{}{"withdrawal_id": withdrawalID},
+	}
+	sessionMutex.Unlock()
 
 	msg := tgbotapi.NewMessage(chatID, text)
 	s.bot.Send(msg)
