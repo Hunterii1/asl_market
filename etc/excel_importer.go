@@ -249,7 +249,7 @@ func importSuppliersFromExcel(db *gorm.DB, filePath string) (int, error) {
 			WholesaleMinPrice:        wholesaleMinPrice,
 			WholesaleHighVolumePrice: wholesaleHighPrice,
 			CanProducePrivateLabel:   false,
-			Status:                   "pending",
+			Status:                   "approved", // تغییر از pending به approved
 		}
 
 		if err := db.Create(&supplier).Error; err != nil {
@@ -411,7 +411,7 @@ func importVisitorsFromExcel(db *gorm.DB, filePath string) (int, error) {
 			AgreesToSubmitReports:         true,
 			DigitalSignature:              fullName,
 			SignatureDate:                 time.Now().Format("2006-01-02"),
-			Status:                        "pending",
+			Status:                        "approved", // تغییر از pending به approved
 		}
 
 		if err := db.Create(&visitor).Error; err != nil {
