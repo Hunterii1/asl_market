@@ -143,10 +143,17 @@ class ApiService {
   private async makeRequest(url: string, options: RequestInit = {}) {
     try {
       console.log(`🌐 Making request to: ${url}`);
+      
+      // Only add Content-Type for JSON requests (when body is not FormData)
+      const defaultHeaders: Record<string, string> = {};
+      if (!(options.body instanceof FormData)) {
+        defaultHeaders['Content-Type'] = 'application/json';
+      }
+      
       const response = await fetch(url, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
+          ...defaultHeaders,
           ...options.headers,
         },
       });
