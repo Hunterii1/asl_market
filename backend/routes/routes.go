@@ -202,15 +202,39 @@ func getProducts(c *gin.Context) {
 
 func getDashboard(c *gin.Context) {
 	userID := c.GetUint("user_id")
+
+	// Get withdrawal statistics
+	withdrawalStats, err := models.GetWithdrawalStats(models.GetDB(), &userID)
+	if err != nil {
+		withdrawalStats = map[string]interface{}{
+			"total":        0,
+			"completed":    0,
+			"pending":      0,
+			"processing":   0,
+			"rejected":     0,
+			"total_amount": 0,
+		}
+	}
+
+	// Get recent withdrawal requests
+	recentWithdrawals, err := models.GetUserWithdrawalRequests(models.GetDB(), userID)
+	if err != nil {
+		recentWithdrawals = []models.WithdrawalRequest{}
+	}
+
+	// Get withdrawal history for chart data
+	chartData, err := models.GetWithdrawalChartData(models.GetDB(), userID)
+	if err != nil {
+		chartData = []map[string]interface{}{}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User dashboard",
 		"user_id": userID,
 		"data": gin.H{
-			"recent_orders": []gin.H{},
-			"analytics": gin.H{
-				"total_sales":  15600,
-				"total_orders": 24,
-			},
+			"withdrawal_stats":   withdrawalStats,
+			"recent_withdrawals": recentWithdrawals,
+			"chart_data":         chartData,
 		},
 	})
 }

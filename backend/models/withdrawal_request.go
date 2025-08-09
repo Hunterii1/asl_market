@@ -182,3 +182,42 @@ func GetWithdrawalStats(db *gorm.DB, userID *uint) (map[string]interface{}, erro
 
 	return stats, nil
 }
+
+// GetWithdrawalChartData returns chart data for user withdrawal history
+func GetWithdrawalChartData(db *gorm.DB, userID uint) ([]map[string]interface{}, error) {
+	var results []struct {
+		Date   string  `json:"date"`
+		Amount float64 `json:"amount"`
+		Count  int     `json:"count"`
+	}
+
+	// Get withdrawal data grouped by date (last 30 days)
+	err := db.Raw(`
+		SELECT 
+			DATE(requested_at) as date,
+			COALESCE(SUM(amount), 0) as amount,
+			COUNT(*) as count
+		FROM withdrawal_requests 
+		WHERE user_id = ? 
+		AND requested_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+		AND status IN ('completed', 'approved', 'processing')
+		GROUP BY DATE(requested_at)
+		ORDER BY date ASC
+	`, userID).Scan(&results).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to map format for frontend
+	var chartData []map[string]interface{}
+	for _, result := range results {
+		chartData = append(chartData, map[string]interface{}{
+			"name":  result.Date,
+			"sales": result.Amount,
+			"count": result.Count,
+		})
+	}
+
+	return chartData, nil
+}

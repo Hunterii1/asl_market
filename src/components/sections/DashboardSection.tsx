@@ -19,10 +19,13 @@ import {
   CreditCard
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiService } from '@/services/api';
 
 const DashboardSection = () => {
   const [activeModal, setActiveModal] = useState<string | null>(null);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   // Convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -30,15 +33,51 @@ const DashboardSection = () => {
     return num.toString().replace(/\d/g, (digit) => farsiDigits[parseInt(digit)]);
   };
 
-  // Sample sales data connected to payment confirmations
-  const salesData = [
-    { name: '۱۴۰۳/۰۸/۱۰', sales: 850 },
-    { name: '۱۴۰۳/۰۸/۱۲', sales: 1250 },
-    { name: '۱۴۰۳/۰۸/۱۵', sales: 675 },
-    { name: '۱۴۰۳/۰۸/۱۸', sales: 420 },
-    { name: '۱۴۰۳/۰۸/۲۰', sales: 890 },
-    { name: '۱۴۰۳/۰۸/۲۲', sales: 1100 },
-  ];
+  // Convert date to Persian format
+  const toPersianDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const options: Intl.DateTimeFormatOptions = { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    };
+    return new Intl.DateTimeFormat('fa-IR', options).format(date);
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getDashboardData();
+      setDashboardData(response.data);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Use fallback data
+      setDashboardData({
+        withdrawal_stats: { total: 0, completed: 0, pending: 0, processing: 0, total_amount: 0 },
+        recent_withdrawals: [],
+        chart_data: []
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use real data or fallback
+  const salesData = dashboardData?.chart_data?.length > 0 
+    ? dashboardData.chart_data.map((item: any) => ({
+        name: toPersianDate(item.name),
+        sales: item.sales,
+        count: item.count
+      }))
+    : [
+        { name: '۱۴۰۳/۰۸/۱۰', sales: 0 },
+        { name: '۱۴۰۳/۰۸/۱۲', sales: 0 },
+        { name: '۱۴۰۳/۰۸/۱۵', sales: 0 },
+      ];
 
   // Learning path steps
   const learningSteps = [
@@ -50,12 +89,44 @@ const DashboardSection = () => {
     { id: 6, title: "دریافت پول و رشد", completed: false, current: false },
   ];
 
-  const recentPayments = [
-    { id: '#PAY-۱۲۴۵۳', customer: 'احمد المصری', amount: '$۸۹۰', status: 'تکمیل شده', country: 'امارات', date: '۱۴۰۳/۰۸/۱۵' },
-    { id: '#PAY-۱۲۴۵۲', customer: 'فاطمه الزهرانی', amount: '$۱،۲۵۰', status: 'در حال پردازش', country: 'عربستان', date: '۱۴۰۳/۰۸/۲۰' },
-    { id: '#PAY-۱۲۴۵۱', customer: 'عبدالله الکویتی', amount: '$۶۷۵', status: 'تایید شده', country: 'کویت', date: '۱۴۰۳/۰۸/۱۸' },
-    { id: '#PAY-۱۲۴۵۰', customer: 'مریم القطری', amount: '$۴۲۰', status: 'تکمیل شده', country: 'قطر', date: '۱۴۰۳/۰۸/۱۲' },
-  ];
+  // Map withdrawal status to Persian
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'completed': return 'تکمیل شده';
+      case 'processing': return 'در حال پردازش';
+      case 'approved': return 'تایید شده';
+      case 'pending': return 'در انتظار';
+      case 'rejected': return 'رد شده';
+      default: return 'نامشخص';
+    }
+  };
+
+  // Get country name from code
+  const getCountryName = (code: string) => {
+    const countries: Record<string, string> = {
+      'AE': 'امارات',
+      'SA': 'عربستان',
+      'KW': 'کویت',
+      'QA': 'قطر',
+      'OM': 'عمان',
+      'BH': 'بحرین'
+    };
+    return countries[code] || code;
+  };
+
+  // Use real withdrawal data or fallback
+  const recentPayments = dashboardData?.recent_withdrawals?.length > 0
+    ? dashboardData.recent_withdrawals.slice(0, 4).map((withdrawal: any) => ({
+        id: `#WD-${toFarsiNumber(withdrawal.id)}`,
+        customer: `درخواست ${toFarsiNumber(withdrawal.id)}`,
+        amount: `$${toFarsiNumber(withdrawal.amount)} ${withdrawal.currency}`,
+        status: getStatusText(withdrawal.status),
+        country: getCountryName(withdrawal.source_country),
+        date: toPersianDate(withdrawal.requested_at || withdrawal.created_at)
+      }))
+    : [
+        { id: '#WD-۰', customer: 'هیچ درخواستی', amount: '$۰', status: 'وجود ندارد', country: '-', date: '-' },
+      ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -178,20 +249,26 @@ const DashboardSection = () => {
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <Card className="bg-muted/50 border-border rounded-2xl">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{toFarsiNumber(15600)}</div>
-                <p className="text-sm text-muted-foreground">کل فروش (دلار)</p>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {toFarsiNumber(dashboardData?.withdrawal_stats?.total_amount || 0)}
+                </div>
+                <p className="text-sm text-muted-foreground">کل برداشت (دلار)</p>
               </CardContent>
             </Card>
             <Card className="bg-muted/50 border-border rounded-2xl">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-400">{toFarsiNumber(24)}</div>
-                <p className="text-sm text-muted-foreground">تعداد سفارش</p>
+                <div className="text-2xl font-bold text-blue-400">
+                  {toFarsiNumber(dashboardData?.withdrawal_stats?.total || 0)}
+                </div>
+                <p className="text-sm text-muted-foreground">تعداد درخواست</p>
               </CardContent>
             </Card>
             <Card className="bg-muted/50 border-border rounded-2xl">
               <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-400">{toFarsiNumber(87)}%</div>
-                <p className="text-sm text-muted-foreground">رضایت مشتریان</p>
+                <div className="text-2xl font-bold text-purple-400">
+                  {toFarsiNumber(dashboardData?.withdrawal_stats?.completed || 0)}
+                </div>
+                <p className="text-sm text-muted-foreground">تکمیل شده</p>
               </CardContent>
             </Card>
           </div>
@@ -229,6 +306,34 @@ const DashboardSection = () => {
       </Card>
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-4 bg-muted rounded mb-4"></div>
+              <div className="h-8 bg-muted rounded mb-6"></div>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-16 bg-muted rounded-2xl"></div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl border border-border bg-card/90">
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-6 bg-muted rounded mb-4"></div>
+              <div className="h-48 bg-muted rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

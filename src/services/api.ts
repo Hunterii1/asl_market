@@ -933,6 +933,16 @@ class ApiService {
       body: formData,
     });
   }
+
+  // Dashboard with withdrawal data
+  async getDashboardData(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/dashboard`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService(); 
