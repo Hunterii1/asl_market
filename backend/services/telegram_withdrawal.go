@@ -2,6 +2,9 @@ package services
 
 import (
 	"fmt"
+	"log"
+	"strconv"
+	"strings"
 
 	"asl-market-backend/models"
 
@@ -223,21 +226,34 @@ func (s *TelegramService) handleWithdrawalCallback(callbackQuery *tgbotapi.Callb
 	chatID := callbackQuery.Message.Chat.ID
 	data := callbackQuery.Data
 
+	log.Printf("Withdrawal callback received: %s", data)
+
 	// Admin ID for tracking
 	adminID := uint(callbackQuery.From.ID)
 
-	if data[:17] == "approve_withdrawal_" {
-		withdrawalID := data[19:]
+	if strings.HasPrefix(data, "approve_withdrawal_") {
+		withdrawalID := strings.TrimPrefix(data, "approve_withdrawal_")
+		log.Printf("Approving withdrawal ID: %s", withdrawalID)
 		s.sendWithdrawalApprovalPrompt(chatID, withdrawalID, adminID)
-	} else if data[:17] == "reject_withdrawal_" {
-		withdrawalID := data[18:]
+	} else if strings.HasPrefix(data, "reject_withdrawal_") {
+		withdrawalID := strings.TrimPrefix(data, "reject_withdrawal_")
+		log.Printf("Rejecting withdrawal ID: %s", withdrawalID)
 		s.sendWithdrawalRejectionPrompt(chatID, withdrawalID, adminID)
-	} else if data[:18] == "process_withdrawal_" {
-		withdrawalID := data[19:]
+	} else if strings.HasPrefix(data, "process_withdrawal_") {
+		withdrawalID := strings.TrimPrefix(data, "process_withdrawal_")
 		s.processWithdrawal(chatID, withdrawalID, adminID)
-	} else if data[:19] == "complete_withdrawal_" {
-		withdrawalID := data[20:]
+	} else if strings.HasPrefix(data, "complete_withdrawal_") {
+		withdrawalID := strings.TrimPrefix(data, "complete_withdrawal_")
 		s.completeWithdrawal(chatID, withdrawalID, adminID)
+	} else if strings.HasPrefix(data, "withdrawals_") {
+		// Handle pagination
+		parts := strings.Split(strings.TrimPrefix(data, "withdrawals_"), "_")
+		if len(parts) == 2 {
+			status := parts[0]
+			if page, err := strconv.Atoi(parts[1]); err == nil {
+				s.showWithdrawalsList(chatID, status, page)
+			}
+		}
 	}
 
 	// Answer the callback to remove loading state
@@ -246,24 +262,68 @@ func (s *TelegramService) handleWithdrawalCallback(callbackQuery *tgbotapi.Callb
 }
 
 func (s *TelegramService) sendWithdrawalApprovalPrompt(chatID int64, withdrawalID string, adminID uint) {
-	text := fmt.Sprintf("✅ تایید درخواست برداشت %s\n\n", withdrawalID)
-	text += "لطفاً شماره حساب مقصد برای واریز را وارد کنید:"
+	// Convert withdrawalID to uint
+	id := s.parseWithdrawalID(withdrawalID)
+	if id == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ شناسه درخواست نامعتبر است")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get withdrawal details first
+	_, err := models.GetWithdrawalRequestByID(s.db, id)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ درخواست یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// For now, approve with a default account - in real scenario you'd want admin to enter account
+	defaultAccount := "IR123456789012345678901234" // This should be configurable
+
+	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusApproved, adminID, "تایید شده توسط ادمین", defaultAccount)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تایید درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	text := fmt.Sprintf("✅ درخواست برداشت %s تایید شد\n\n", withdrawalID)
+	text += fmt.Sprintf("شماره حساب مقصد: %s\n\n", defaultAccount)
+	text += "کاربر می‌تواند واریز کند و فیش را بارگذاری کند."
 
 	msg := tgbotapi.NewMessage(chatID, text)
 	s.bot.Send(msg)
-
-	// Store admin state for next message
-	// This would require implementing a state management system
 }
 
 func (s *TelegramService) sendWithdrawalRejectionPrompt(chatID int64, withdrawalID string, adminID uint) {
-	text := fmt.Sprintf("❌ رد درخواست برداشت %s\n\n", withdrawalID)
-	text += "لطفاً دلیل رد درخواست را وارد کنید:"
+	// Convert withdrawalID to uint
+	id := s.parseWithdrawalID(withdrawalID)
+	if id == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ شناسه درخواست نامعتبر است")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get withdrawal details first
+	_, err := models.GetWithdrawalRequestByID(s.db, id)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ درخواست یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusRejected, adminID, "رد شده توسط ادمین", "")
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	text := fmt.Sprintf("❌ درخواست برداشت %s رد شد", withdrawalID)
 
 	msg := tgbotapi.NewMessage(chatID, text)
 	s.bot.Send(msg)
-
-	// Store admin state for next message
 }
 
 func (s *TelegramService) processWithdrawal(chatID int64, withdrawalID string, adminID uint) {
@@ -312,11 +372,10 @@ func (s *TelegramService) completeWithdrawal(chatID int64, withdrawalID string, 
 }
 
 func (s *TelegramService) parseWithdrawalID(idStr string) uint {
-	// Simple string to uint conversion
-	// You should implement proper error handling here
-	var id uint
-	fmt.Sscanf(idStr, "%d", &id)
-	return id
+	if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
+		return uint(id)
+	}
+	return 0
 }
 
 // Notify admin when new withdrawal request is created
