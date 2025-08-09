@@ -366,7 +366,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case MENU_LIST_LICENSES:
 		s.showLicensesList(message.Chat.ID, 1)
 	case MENU_SETTINGS:
-		s.showSettings(message.Chat.ID)
+		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
 	case "🔙 بازگشت به منو اصلی":
 		s.showMainMenu(message.Chat.ID)
 	default:
@@ -567,15 +567,29 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 					"یا از منوی زیر استفاده کنید:")
 			msg.ParseMode = "Markdown"
 
-			// Show main menu
+			// Show main menu - use the same as showMainMenu function
 			keyboard := tgbotapi.NewReplyKeyboard(
 				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton(MENU_STATS),
 					tgbotapi.NewKeyboardButton(MENU_USERS),
+					tgbotapi.NewKeyboardButton(MENU_STATS),
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_LICENSES),
+					tgbotapi.NewKeyboardButton(MENU_WITHDRAWALS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_VISITORS),
+					tgbotapi.NewKeyboardButton(MENU_RESEARCH_PRODUCTS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_MARKETING_POPUPS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT),
+					tgbotapi.NewKeyboardButton(MENU_SINGLE_ADD),
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_SETTINGS),
