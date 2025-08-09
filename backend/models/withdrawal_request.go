@@ -35,7 +35,7 @@ type WithdrawalRequest struct {
 
 	// Status and tracking
 	Status      WithdrawalStatus `json:"status" gorm:"type:varchar(20);default:'pending'"`
-	RequestedAt time.Time        `json:"requested_at" gorm:"default:CURRENT_TIMESTAMP"`
+	RequestedAt time.Time        `json:"requested_at"`
 	ApprovedAt  *time.Time       `json:"approved_at"`
 	CompletedAt *time.Time       `json:"completed_at"`
 	RejectedAt  *time.Time       `json:"rejected_at"`
@@ -81,8 +81,11 @@ func GetWithdrawalRequests(db *gorm.DB, userID *uint, status *WithdrawalStatus, 
 
 // CreateWithdrawalRequest creates a new withdrawal request
 func CreateWithdrawalRequest(db *gorm.DB, request *WithdrawalRequest) error {
+	now := time.Now()
 	request.Status = WithdrawalStatusPending
-	request.RequestedAt = time.Now()
+	request.RequestedAt = now
+	request.CreatedAt = now
+	request.UpdatedAt = now
 
 	return db.Create(request).Error
 }
