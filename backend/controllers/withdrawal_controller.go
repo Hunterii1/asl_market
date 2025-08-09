@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -245,8 +246,8 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 	}
 
 	// Check if status allows receipt upload
-	if request.Status != models.WithdrawalStatusProcessing {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "فقط در حالت پردازش امکان بارگذاری فیش وجود دارد"})
+	if request.Status != models.WithdrawalStatusProcessing && request.Status != models.WithdrawalStatusApproved {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فقط در حالت تایید شده یا پردازش امکان بارگذاری فیش وجود دارد"})
 		return
 	}
 
@@ -267,6 +268,14 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 	if err := models.UploadReceipt(wc.db, uint(requestID), filename); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بروزرسانی درخواست"})
 		return
+	}
+
+	// If the status was approved, change it to processing after receipt upload
+	if request.Status == models.WithdrawalStatusApproved {
+		if err := models.UpdateWithdrawalStatus(wc.db, uint(requestID), models.WithdrawalStatusProcessing, nil, "کاربر فیش را بارگذاری کرد", ""); err != nil {
+			// Log error but don't fail the request since receipt was uploaded successfully
+			log.Printf("Failed to update status to processing after receipt upload: %v", err)
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
