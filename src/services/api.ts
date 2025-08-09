@@ -867,6 +867,65 @@ class ApiService {
       },
     });
   }
+
+  // Withdrawal API methods
+  async createWithdrawalRequest(data: {
+    amount: number;
+    currency: string;
+    source_country: string;
+    bank_card_number: string;
+    card_holder_name: string;
+    sheba_number: string;
+    bank_name: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/withdrawal/request`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getUserWithdrawalRequests(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/withdrawal/requests`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getWithdrawalRequest(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/withdrawal/request/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getWithdrawalStats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/withdrawal/stats`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async uploadWithdrawalReceipt(id: number, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('receipt', file);
+
+    return this.makeRequest(`${API_BASE_URL}/withdrawal/receipt/${id}`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: formData,
+    });
+  }
 }
 
 export const apiService = new ApiService(); 

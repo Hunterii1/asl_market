@@ -36,6 +36,7 @@ const (
 	MENU_STATS         = "📊 آمار سیستم"
 	MENU_SEARCH        = "🔍 جستجوی کاربر"
 	MENU_LICENSES      = "🔑 مدیریت لایسنس"
+	MENU_WITHDRAWALS   = "💰 مدیریت برداشت‌ها"
 	MENU_GENERATE      = "➕ تولید لایسنس"
 	MENU_LIST_LICENSES = "📋 لیست لایسنس‌ها"
 	MENU_SETTINGS      = "⚙️ تنظیمات"
@@ -69,6 +70,15 @@ const (
 	MENU_REJECTED_VISITORS = "❌ ویزیتورهای رد شده"
 	MENU_ALL_VISITORS      = "📋 همه ویزیتورها"
 	MENU_VISITOR_STATS     = "📊 آمار ویزیتورها"
+
+	// Withdrawal management
+	MENU_WITHDRAWALS_PENDING    = "⏳ درخواست‌های در انتظار"
+	MENU_WITHDRAWALS_APPROVED   = "✅ درخواست‌های تایید شده"
+	MENU_WITHDRAWALS_PROCESSING = "🔄 درخواست‌های در حال پردازش"
+	MENU_WITHDRAWALS_COMPLETED  = "✅ درخواست‌های تکمیل شده"
+	MENU_WITHDRAWALS_REJECTED   = "❌ درخواست‌های رد شده"
+	MENU_WITHDRAWALS_ALL        = "📋 همه درخواست‌ها"
+	MENU_WITHDRAWALS_STATS      = "📊 آمار برداشت‌ها"
 
 	// Research products management sub-menus
 	MENU_RESEARCH_PRODUCTS      = "🔬 مدیریت محصولات تحقیقی"
@@ -199,6 +209,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_LICENSES),
+			tgbotapi.NewKeyboardButton(MENU_WITHDRAWALS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -264,6 +277,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSearchPrompt(message.Chat.ID)
 	case MENU_LICENSES:
 		s.showLicenseMenu(message.Chat.ID)
+	case MENU_WITHDRAWALS:
+		s.showWithdrawalMenu(message.Chat.ID)
 	case MENU_SUPPLIERS:
 		s.showSupplierMenu(message.Chat.ID)
 	case MENU_PENDING_SUPPLIERS:
@@ -288,6 +303,22 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showVisitorsList(message.Chat.ID, "all", 1)
 	case MENU_VISITOR_STATS:
 		s.showVisitorStats(message.Chat.ID)
+
+	// Withdrawal management cases
+	case MENU_WITHDRAWALS_PENDING:
+		s.showWithdrawalsList(message.Chat.ID, "pending", 1)
+	case MENU_WITHDRAWALS_APPROVED:
+		s.showWithdrawalsList(message.Chat.ID, "approved", 1)
+	case MENU_WITHDRAWALS_PROCESSING:
+		s.showWithdrawalsList(message.Chat.ID, "processing", 1)
+	case MENU_WITHDRAWALS_COMPLETED:
+		s.showWithdrawalsList(message.Chat.ID, "completed", 1)
+	case MENU_WITHDRAWALS_REJECTED:
+		s.showWithdrawalsList(message.Chat.ID, "rejected", 1)
+	case MENU_WITHDRAWALS_ALL:
+		s.showWithdrawalsList(message.Chat.ID, "", 1)
+	case MENU_WITHDRAWALS_STATS:
+		s.showWithdrawalStats(message.Chat.ID)
 	case MENU_RESEARCH_PRODUCTS:
 		s.showResearchProductsMenu(message.Chat.ID)
 	case MENU_ADD_RESEARCH_PRODUCT:
@@ -977,6 +1008,12 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	chatID := query.Message.Chat.ID
 
 	log.Printf("Callback query received: chatID %d, data: %s", chatID, data)
+
+	// Handle withdrawal callbacks
+	if strings.Contains(data, "withdrawal") {
+		s.handleWithdrawalCallback(query)
+		return
+	}
 
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {

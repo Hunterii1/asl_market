@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { apiService } from "@/services/api";
+import { errorHandler } from "@/utils/errorHandler";
 import { 
   CreditCard, 
   DollarSign, 
@@ -18,7 +21,8 @@ import {
   Banknote,
   Shield,
   FileText,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 
 const AslPay = () => {
@@ -26,6 +30,13 @@ const AslPay = () => {
   const [amount, setAmount] = useState("");
   const [sourceCountry, setSourceCountry] = useState("");
   const [currency, setCurrency] = useState("");
+  const [bankCardNumber, setBankCardNumber] = useState("");
+  const [cardHolderName, setCardHolderName] = useState("");
+  const [shebaNumber, setShebaNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+  const [stats, setStats] = useState(null);
 
   const countries = [
     { code: "AE", name: "امارات متحده عربی", flag: "🇦🇪", currency: "AED" },
@@ -36,39 +47,7 @@ const AslPay = () => {
     { code: "OM", name: "عمان", flag: "🇴🇲", currency: "OMR" }
   ];
 
-  const paymentRequests = [
-    {
-      id: "PAY-001",
-      amount: 2500,
-      currency: "AED",
-      sourceCountry: "AE",
-      status: "completed",
-      bankAccount: "IR123456789012345678901234",
-      userBankCard: "6037-9977-****-1234",
-      createdAt: "۱۴۰۳/۰۸/۱۵",
-      completedAt: "۱۴۰۳/۰۸/۱۷",
-      receipt: "receipt_001.pdf"
-    },
-    {
-      id: "PAY-002",
-      amount: 1800,
-      currency: "SAR",
-      sourceCountry: "SA",
-      status: "processing",
-      bankAccount: "IR987654321098765432109876",
-      createdAt: "۱۴۰۳/۰۸/۲۰",
-      receipt: null
-    },
-    {
-      id: "PAY-003",
-      amount: 950,
-      currency: "USD",
-      sourceCountry: "QA",
-      status: "pending",
-      createdAt: "۱۴۰۳/۰۸/۲۲",
-      receipt: null
-    }
-  ];
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -100,19 +79,73 @@ const AslPay = () => {
     }
   };
 
-  const handleSubmitRequest = () => {
-    if (!amount || !sourceCountry || !currency) {
-      alert("لطفا تمام فیلدها را پر کنید");
+  useEffect(() => {
+    loadWithdrawalRequests();
+    loadStats();
+  }, []);
+
+  const loadWithdrawalRequests = async () => {
+    try {
+      const requests = await apiService.getUserWithdrawalRequests();
+      setWithdrawalRequests(requests.requests || []);
+    } catch (error) {
+      console.error('Error loading withdrawal requests:', error);
+    }
+  };
+
+  const loadStats = async () => {
+    try {
+      const stats = await apiService.getWithdrawalStats();
+      setStats(stats);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const handleSubmitRequest = async () => {
+    if (!amount || !sourceCountry || !currency || !bankCardNumber || !cardHolderName || !shebaNumber || !bankName) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "لطفا تمام فیلدها را پر کنید",
+      });
       return;
     }
     
-    // Here you would typically send the request to your backend
-    alert("درخواست شما با موفقیت ثبت شد و در حال بررسی است");
-    
-    // Reset form
-    setAmount("");
-    setSourceCountry("");
-    setCurrency("");
+    setLoading(true);
+    try {
+      const response = await apiService.createWithdrawalRequest({
+        amount: parseFloat(amount),
+        currency,
+        source_country: sourceCountry,
+        bank_card_number: bankCardNumber,
+        card_holder_name: cardHolderName,
+        sheba_number: shebaNumber,
+        bank_name: bankName,
+      });
+
+      toast({
+        title: "موفقیت",
+        description: response.message || "درخواست برداشت با موفقیت ثبت شد",
+      });
+      
+      // Reset form
+      setAmount("");
+      setSourceCountry("");
+      setCurrency("");
+      setBankCardNumber("");
+      setCardHolderName("");
+      setShebaNumber("");
+      setBankName("");
+      
+      // Reload data
+      loadWithdrawalRequests();
+      loadStats();
+    } catch (error) {
+      errorHandler.handleApiError(error, "خطا در ثبت درخواست برداشت");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const PaymentRequestForm = () => (
@@ -181,21 +214,29 @@ const AslPay = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <Input
               placeholder="شماره کارت (۱۶ رقم)"
+              value={bankCardNumber}
+              onChange={(e) => setBankCardNumber(e.target.value)}
               className="bg-muted border-border text-foreground rounded-2xl"
               maxLength={19}
             />
             <Input
               placeholder="نام صاحب کارت"
+              value={cardHolderName}
+              onChange={(e) => setCardHolderName(e.target.value)}
               className="bg-muted border-border text-foreground rounded-2xl"
             />
           </div>
           <div className="grid md:grid-cols-2 gap-4 mt-4">
             <Input
               placeholder="شماره شبا (IR)"
+              value={shebaNumber}
+              onChange={(e) => setShebaNumber(e.target.value)}
               className="bg-muted border-border text-foreground rounded-2xl"
             />
             <Input
               placeholder="نام بانک"
+              value={bankName}
+              onChange={(e) => setBankName(e.target.value)}
               className="bg-muted border-border text-foreground rounded-2xl"
             />
           </div>
@@ -219,10 +260,11 @@ const AslPay = () => {
 
         <Button 
           onClick={handleSubmitRequest}
+          disabled={loading}
           className="w-full bg-green-500 hover:bg-green-600 rounded-2xl"
         >
-          <Plus className="w-4 h-4 ml-2" />
-          ثبت درخواست
+          {loading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Plus className="w-4 h-4 ml-2" />}
+          {loading ? "در حال ثبت..." : "ثبت درخواست"}
         </Button>
       </CardContent>
     </Card>
@@ -230,9 +272,9 @@ const AslPay = () => {
 
   const PaymentHistory = () => (
     <div className="space-y-6">
-      {paymentRequests.map((request) => {
+      {withdrawalRequests.map((request: any) => {
         const StatusIcon = getStatusIcon(request.status);
-        const country = countries.find(c => c.code === request.sourceCountry);
+        const country = countries.find(c => c.code === request.source_country);
         
         return (
           <Card key={request.id} className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
@@ -240,22 +282,22 @@ const AslPay = () => {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-foreground">{request.id}</h4>
+                    <h4 className="font-bold text-foreground">#{request.id}</h4>
                     <Badge className={`${getStatusColor(request.status)} rounded-full`}>
                       <StatusIcon className="w-3 h-3 ml-1" />
                       {getStatusText(request.status)}
                     </Badge>
                   </div>
                   <div className="text-muted-foreground text-sm">
-                    ایجاد شده: {request.createdAt}
-                    {request.completedAt && (
-                      <span className="mr-4">تکمیل شده: {request.completedAt}</span>
+                    ایجاد شده: {new Date(request.created_at).toLocaleDateString('fa-IR')}
+                    {request.completed_at && (
+                      <span className="mr-4">تکمیل شده: {new Date(request.completed_at).toLocaleDateString('fa-IR')}</span>
                     )}
                   </div>
                 </div>
                 <div className="text-left">
                   <div className="text-2xl font-bold text-foreground">
-                    {request.amount.toLocaleString()} {request.currency}
+                    {request.amount?.toLocaleString()} {request.currency}
                   </div>
                   {country && (
                     <div className="text-muted-foreground text-sm">
@@ -269,19 +311,27 @@ const AslPay = () => {
                 <div className="space-y-3">
                   <h5 className="text-foreground font-medium">جزئیات درخواست</h5>
                   
-                  {request.bankAccount && (
+                  {request.destination_account && (
                     <div className="flex items-center gap-2 text-sm">
                       <Banknote className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">حساب مقصد:</span>
-                      <span className="text-foreground font-mono">{request.bankAccount}</span>
+                      <span className="text-foreground font-mono">{request.destination_account}</span>
                     </div>
                   )}
                   
-                  {request.userBankCard && (
+                  {request.bank_card_number && (
                     <div className="flex items-center gap-2 text-sm">
                       <CreditCard className="w-4 h-4 text-muted-foreground" />
                       <span className="text-muted-foreground">کارت شما:</span>
-                      <span className="text-foreground font-mono">{request.userBankCard}</span>
+                      <span className="text-foreground font-mono">{request.bank_card_number}</span>
+                    </div>
+                  )}
+
+                  {request.admin_notes && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">یادداشت:</span>
+                      <span className="text-foreground">{request.admin_notes}</span>
                     </div>
                   )}
                 </div>
@@ -290,14 +340,14 @@ const AslPay = () => {
                   <h5 className="text-foreground font-medium">عملیات</h5>
                   
                   <div className="flex flex-wrap gap-2">
-                    {request.status === "processing" && request.bankAccount && (
+                    {request.status === "processing" && request.destination_account && (
                       <Button size="sm" className="bg-blue-500 hover:bg-blue-600 rounded-2xl">
                         <Upload className="w-4 h-4 ml-2" />
                         بارگذاری فیش
                       </Button>
                     )}
                     
-                    {request.receipt && (
+                    {request.receipt_path && (
                       <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
                         <Download className="w-4 h-4 ml-2" />
                         دانلود فیش
@@ -400,35 +450,37 @@ const AslPay = () => {
       {activeTab === "request" ? <PaymentRequestForm /> : <PaymentHistory />}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۱۲</div>
-            <p className="text-sm text-muted-foreground">درخواست کل</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۸</div>
-            <p className="text-sm text-muted-foreground">تکمیل شده</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">$۱۵,۲۴۰</div>
-            <p className="text-sm text-muted-foreground">کل دریافتی</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۲۴ ساعت</div>
-            <p className="text-sm text-muted-foreground">میانگین پردازش</p>
-          </CardContent>
-        </Card>
-      </div>
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-foreground">{stats.total || 0}</div>
+              <p className="text-sm text-muted-foreground">درخواست کل</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-foreground">{stats.completed || 0}</div>
+              <p className="text-sm text-muted-foreground">تکمیل شده</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-foreground">{stats.pending || 0}</div>
+              <p className="text-sm text-muted-foreground">در انتظار</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-card/80 border-border rounded-3xl transition-colors duration-300">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-foreground">{stats.processing || 0}</div>
+              <p className="text-sm text-muted-foreground">در حال پردازش</p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
     </LicenseGate>
   );

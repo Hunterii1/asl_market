@@ -14,6 +14,7 @@ func SetupRoutes(router *gin.Engine) {
 	// Initialize controllers
 	authController := controllers.NewAuthController(models.GetDB())
 	contactController := controllers.NewContactController(models.GetDB())
+	withdrawalController := controllers.NewWithdrawalController(models.GetDB())
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -60,6 +61,13 @@ func SetupRoutes(router *gin.Engine) {
 		// Daily limits routes
 		protected.GET("/daily-limits", controllers.GetDailyLimitsStatus)
 		protected.GET("/daily-limits/visitor-permission", controllers.CheckVisitorViewPermission)
+
+		// Withdrawal routes
+		protected.POST("/withdrawal/request", withdrawalController.CreateWithdrawalRequest)
+		protected.GET("/withdrawal/requests", withdrawalController.GetUserWithdrawalRequests)
+		protected.GET("/withdrawal/request/:id", withdrawalController.GetWithdrawalRequest)
+		protected.POST("/withdrawal/receipt/:id", withdrawalController.UploadReceipt)
+		protected.GET("/withdrawal/stats", withdrawalController.GetUserWithdrawalStats)
 		protected.GET("/daily-limits/supplier-permission", controllers.CheckSupplierViewPermission)
 
 		// Contact view limits routes
@@ -116,6 +124,11 @@ func SetupRoutes(router *gin.Engine) {
 		protected.POST("/admin/marketing-popups", controllers.CreateMarketingPopup)
 		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
 		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)
+
+		// Admin withdrawal management routes
+		protected.GET("/admin/withdrawal/requests", withdrawalController.GetAllWithdrawalRequests)
+		protected.PUT("/admin/withdrawal/request/:id/status", withdrawalController.UpdateWithdrawalStatus)
+		protected.GET("/admin/withdrawal/stats", withdrawalController.GetAllWithdrawalStats)
 
 		// Available products routes (public access for viewing)
 		protected.GET("/available-products", controllers.GetAvailableProducts)
