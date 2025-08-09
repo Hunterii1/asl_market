@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -275,6 +276,16 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 		if err := models.UpdateWithdrawalStatus(wc.db, uint(requestID), models.WithdrawalStatusProcessing, nil, "کاربر فیش را بارگذاری کرد", ""); err != nil {
 			// Log error but don't fail the request since receipt was uploaded successfully
 			log.Printf("Failed to update status to processing after receipt upload: %v", err)
+		}
+	}
+
+	// Notify admin via Telegram about the receipt upload
+	telegramService := services.GetTelegramService()
+	if telegramService != nil {
+		// Get updated request with receipt path
+		updatedRequest, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
+		if err == nil {
+			telegramService.NotifyReceiptUploaded(updatedRequest)
 		}
 	}
 

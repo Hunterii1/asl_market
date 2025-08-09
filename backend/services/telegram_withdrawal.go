@@ -245,6 +245,9 @@ func (s *TelegramService) handleWithdrawalCallback(callbackQuery *tgbotapi.Callb
 	} else if strings.HasPrefix(data, "complete_withdrawal_") {
 		withdrawalID := strings.TrimPrefix(data, "complete_withdrawal_")
 		s.completeWithdrawal(chatID, withdrawalID, adminID)
+	} else if strings.HasPrefix(data, "withdrawal_details_") {
+		withdrawalID := strings.TrimPrefix(data, "withdrawal_details_")
+		s.showWithdrawalDetailsFromCallback(chatID, withdrawalID)
 	} else if strings.HasPrefix(data, "withdrawals_") {
 		// Handle pagination
 		parts := strings.Split(strings.TrimPrefix(data, "withdrawals_"), "_")
@@ -417,4 +420,107 @@ func (s *TelegramService) NotifyNewWithdrawalRequest(withdrawal *models.Withdraw
 		msg.ReplyMarkup = keyboard
 		s.bot.Send(msg)
 	}
+}
+
+// Notify admin when receipt is uploaded
+func (s *TelegramService) NotifyReceiptUploaded(withdrawal *models.WithdrawalRequest) {
+	text := "📄 فیش واریز بارگذاری شد!\n\n"
+	text += fmt.Sprintf("🆔 ID: %d\n", withdrawal.ID)
+	text += fmt.Sprintf("💰 مبلغ: %.2f %s\n", withdrawal.Amount, withdrawal.Currency)
+	text += fmt.Sprintf("👤 کاربر: %s %s\n", withdrawal.User.FirstName, withdrawal.User.LastName)
+	text += fmt.Sprintf("🏦 کارت: %s\n", withdrawal.BankCardNumber)
+	text += fmt.Sprintf("📁 فیش: %s\n\n", withdrawal.ReceiptPath)
+
+	// Add inline buttons for quick actions
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("✅ تکمیل %d", withdrawal.ID),
+				fmt.Sprintf("complete_withdrawal_%d", withdrawal.ID),
+			),
+			tgbotapi.NewInlineKeyboardButtonData(
+				fmt.Sprintf("📋 جزئیات %d", withdrawal.ID),
+				fmt.Sprintf("withdrawal_details_%d", withdrawal.ID),
+			),
+		),
+	)
+
+	text += "🔄 وضعیت: در حال پردازش\n"
+	text += "👈 برای تکمیل پرداخت دکمه 'تکمیل' را فشار دهید"
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, text)
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+		// Try to send the receipt file if it exists and is accessible
+		if withdrawal.ReceiptPath != "" {
+			receiptMsg := tgbotapi.NewDocument(adminID, tgbotapi.FilePath("uploads/"+withdrawal.ReceiptPath))
+			receiptMsg.Caption = fmt.Sprintf("فیش واریز - درخواست #%d", withdrawal.ID)
+			s.bot.Send(receiptMsg)
+		}
+	}
+}
+
+// Show withdrawal details from callback button
+func (s *TelegramService) showWithdrawalDetailsFromCallback(chatID int64, withdrawalID string) {
+	id := s.parseWithdrawalID(withdrawalID)
+	if id == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ شناسه درخواست نامعتبر است")
+		s.bot.Send(msg)
+		return
+	}
+
+	withdrawal, err := models.GetWithdrawalRequestByID(s.db, id)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ درخواست یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Build detailed text
+	statusEmoji := s.getWithdrawalStatusEmoji(string(withdrawal.Status))
+	text := "📋 جزئیات درخواست برداشت\n\n"
+	text += fmt.Sprintf("🆔 ID: %d\n", withdrawal.ID)
+	text += fmt.Sprintf("👤 کاربر: %s %s\n", withdrawal.User.FirstName, withdrawal.User.LastName)
+	text += fmt.Sprintf("💰 مبلغ: %.2f %s\n", withdrawal.Amount, withdrawal.Currency)
+	text += fmt.Sprintf("🌍 کشور: %s\n", withdrawal.SourceCountry)
+	text += fmt.Sprintf("💳 کارت: %s\n", withdrawal.BankCardNumber)
+	text += fmt.Sprintf("👤 نام: %s\n", withdrawal.CardHolderName)
+	text += fmt.Sprintf("🏦 شبا: %s\n", withdrawal.ShebaNumber)
+	text += fmt.Sprintf("🏛️ بانک: %s\n", withdrawal.BankName)
+	text += fmt.Sprintf("📅 درخواست: %s\n", withdrawal.RequestedAt.Format("2006/01/02 15:04"))
+	text += fmt.Sprintf("📊 وضعیت: %s %s\n", statusEmoji, s.getWithdrawalStatusText(string(withdrawal.Status)))
+
+	if withdrawal.DestinationAccount != "" {
+		text += fmt.Sprintf("🎯 حساب مقصد: %s\n", withdrawal.DestinationAccount)
+	}
+
+	if withdrawal.ReceiptPath != "" {
+		text += fmt.Sprintf("📄 فیش: %s\n", withdrawal.ReceiptPath)
+	}
+
+	if withdrawal.AdminNotes != "" {
+		text += fmt.Sprintf("📝 یادداشت: %s\n", withdrawal.AdminNotes)
+	}
+
+	// Add action buttons based on status
+	var keyboard [][]tgbotapi.InlineKeyboardButton
+	if withdrawal.Status == models.WithdrawalStatusPending {
+		keyboard = append(keyboard, []tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardButtonData("✅ تایید", fmt.Sprintf("approve_withdrawal_%d", withdrawal.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("reject_withdrawal_%d", withdrawal.ID)),
+		})
+	} else if withdrawal.Status == models.WithdrawalStatusProcessing {
+		keyboard = append(keyboard, []tgbotapi.InlineKeyboardButton{
+			tgbotapi.NewInlineKeyboardButtonData("✅ تکمیل", fmt.Sprintf("complete_withdrawal_%d", withdrawal.ID)),
+		})
+	}
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	if len(keyboard) > 0 {
+		msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
+	}
+	s.bot.Send(msg)
 }
