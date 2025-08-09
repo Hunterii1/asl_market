@@ -71,7 +71,7 @@ func SetupRoutes(router *gin.Engine) {
 		// Supplier routes
 		protected.POST("/supplier/register", controllers.RegisterSupplier)
 		protected.GET("/supplier/status", controllers.GetMySupplierStatus)
-		protected.GET("/suppliers", middleware.SupplierViewLimitMiddleware(), controllers.GetApprovedSuppliers)
+		protected.GET("/suppliers", controllers.GetApprovedSuppliers)
 
 		// Admin supplier management routes
 		protected.GET("/admin/suppliers", controllers.GetSuppliersForAdmin)
@@ -81,7 +81,7 @@ func SetupRoutes(router *gin.Engine) {
 		// Visitor routes
 		protected.POST("/visitor/register", controllers.RegisterVisitor)
 		protected.GET("/visitor/status", controllers.GetMyVisitorStatus)
-		protected.GET("/visitors", middleware.VisitorViewLimitMiddleware(), controllers.GetApprovedVisitors)
+		protected.GET("/visitors", controllers.GetApprovedVisitors)
 		protected.GET("/debug/visitor/:id", controllers.GetVisitorByID)
 
 		// Product submission

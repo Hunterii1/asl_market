@@ -8,7 +8,9 @@ import {
   Building, 
   Clock, 
   AlertTriangle,
-  Zap
+  Zap,
+  Eye,
+  Phone
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 
@@ -23,6 +25,13 @@ interface DailyLimits {
     used: number;
     max: number;
     remaining: number;
+  };
+  contact_limits?: {
+    supplier_views_today: number;
+    visitor_views_today: number;
+    total_views_today: number;
+    max_daily_views: number;
+    remaining_views: number;
   };
   date: string;
 }
@@ -40,8 +49,16 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
     try {
       setLoading(true);
       setError(null);
-      const data = await apiService.getDailyLimitsStatus();
-      setLimits(data);
+      const [dailyLimits, contactLimits] = await Promise.all([
+        apiService.getDailyLimitsStatus(),
+        apiService.getContactLimits()
+      ]);
+      
+      // Merge the data
+      setLimits({
+        ...dailyLimits,
+        contact_limits: contactLimits
+      });
     } catch (err: any) {
       setError('خطا در دریافت محدودیت‌های روزانه');
       console.error('Failed to fetch daily limits:', err);
@@ -110,21 +127,23 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
               <span className="text-sm font-medium">مشاهده ویزیتورها</span>
             </div>
             <div className="flex items-center gap-2">
+              <Badge className={`text-xs rounded-full ${
+                limits.visitor_limits.remaining <= 0
+                  ? "bg-red-500/20 text-red-400 border-red-500/30"
+                  : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+              }`}>
+                {limits.visitor_limits.remaining} مونده
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {limits.visitor_limits.used} / {limits.visitor_limits.max}
               </span>
-              {isLimitReached(limits.visitor_limits.remaining) && (
-                <Badge variant="destructive" className="text-xs">
-                  محدود شده
-                </Badge>
-              )}
             </div>
           </div>
           <Progress 
             value={(limits.visitor_limits.used / limits.visitor_limits.max) * 100}
             className="h-2"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground text-center">
             {limits.visitor_limits.remaining > 0 
               ? `${limits.visitor_limits.remaining} مشاهده باقی‌مانده`
               : 'محدودیت امروز به پایان رسیده'
@@ -140,27 +159,67 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
               <span className="text-sm font-medium">مشاهده تأمین‌کنندگان</span>
             </div>
             <div className="flex items-center gap-2">
+              <Badge className={`text-xs rounded-full ${
+                limits.supplier_limits.remaining <= 0
+                  ? "bg-red-500/20 text-red-400 border-red-500/30"
+                  : "bg-green-500/20 text-green-400 border-green-500/30"
+              }`}>
+                {limits.supplier_limits.remaining} مونده
+              </Badge>
               <span className="text-xs text-muted-foreground">
                 {limits.supplier_limits.used} / {limits.supplier_limits.max}
               </span>
-              {isLimitReached(limits.supplier_limits.remaining) && (
-                <Badge variant="destructive" className="text-xs">
-                  محدود شده
-                </Badge>
-              )}
             </div>
           </div>
           <Progress 
             value={(limits.supplier_limits.used / limits.supplier_limits.max) * 100}
             className="h-2"
           />
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground text-center">
             {limits.supplier_limits.remaining > 0 
               ? `${limits.supplier_limits.remaining} مشاهده باقی‌مانده`
               : 'محدودیت امروز به پایان رسیده'
             }
           </p>
         </div>
+
+        {/* Contact Information Limits */}
+        {limits.contact_limits && (
+          <div className="space-y-2 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-medium">مشاهده اطلاعات تماس</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={`text-xs rounded-full ${
+                  limits.contact_limits.remaining_views <= 0
+                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                    : "bg-orange-500/20 text-orange-400 border-orange-500/30"
+                }`}>
+                  {limits.contact_limits.remaining_views} مونده
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {limits.contact_limits.total_views_today} / {limits.contact_limits.max_daily_views}
+                </span>
+              </div>
+            </div>
+            <Progress 
+              value={(limits.contact_limits.total_views_today / limits.contact_limits.max_daily_views) * 100}
+              className="h-2"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>تامین‌کنندگان: {limits.contact_limits.supplier_views_today}</span>
+              <span>ویزیتورها: {limits.contact_limits.visitor_views_today}</span>
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              {limits.contact_limits.remaining_views > 0 
+                ? `${limits.contact_limits.remaining_views} مشاهده اطلاعات تماس باقی‌مانده`
+                : 'محدودیت مشاهده اطلاعات تماس به پایان رسیده'
+              }
+            </p>
+          </div>
+        )}
 
         {/* Reset Info */}
         <div className="pt-2 border-t">
@@ -173,7 +232,9 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
         </div>
 
         {/* Warning for limits reached */}
-        {(isLimitReached(limits.visitor_limits.remaining) || isLimitReached(limits.supplier_limits.remaining)) && (
+        {(isLimitReached(limits.visitor_limits.remaining) || 
+          isLimitReached(limits.supplier_limits.remaining) || 
+          (limits.contact_limits && limits.contact_limits.remaining_views <= 0)) && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertDescription className="text-sm">

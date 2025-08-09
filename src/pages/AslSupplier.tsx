@@ -33,13 +33,7 @@ const AslSupplier = () => {
   const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [contactLimits, setContactLimits] = useState({
-    supplier_views_today: 0,
-    visitor_views_today: 0,
-    total_views_today: 0,
-    max_daily_views: 6,
-    remaining_views: 6
-  });
+
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [userSupplierStatus, setUserSupplierStatus] = useState(null);
@@ -85,18 +79,11 @@ const AslSupplier = () => {
     if (user) {
       loadApprovedSuppliers();
       checkUserSupplierStatus();
-      loadContactLimits();
+  
     }
   }, [user]);
 
-  const loadContactLimits = async () => {
-    try {
-      const response = await apiService.getContactLimits();
-      setContactLimits(response);
-    } catch (error) {
-      console.error('Error loading contact limits:', error);
-    }
-  };
+
 
   const loadApprovedSuppliers = async () => {
     try {
@@ -188,31 +175,7 @@ const AslSupplier = () => {
             </div>
           </div>
 
-          {/* Daily Contact Limit */}
-          <div className="bg-muted/50 rounded-2xl p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Eye className="w-5 h-5 text-blue-400" />
-                <span className="text-foreground font-medium">مشاهده اطلاعات تماس روزانه</span>
-              </div>
-              <Badge className={`rounded-full ${
-                contactLimits.remaining_views <= 0
-                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                  : "bg-green-500/20 text-green-400 border-green-500/30"
-              }`}>
-                {contactLimits.total_views_today} از {contactLimits.max_daily_views}
-              </Badge>
-            </div>
-            <div className="mt-2 w-full bg-muted rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all"
-                style={{ width: `${(contactLimits.total_views_today / contactLimits.max_daily_views) * 100}%` }}
-              ></div>
-            </div>
-            <div className="mt-2 text-xs text-muted-foreground">
-              تامین‌کنندگان: {contactLimits.supplier_views_today} • ویزیتورها: {contactLimits.visitor_views_today}
-            </div>
-          </div>
+
         </CardContent>
       </Card>
 
