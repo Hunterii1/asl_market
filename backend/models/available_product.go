@@ -445,6 +445,16 @@ func GetFeaturedAvailableProducts(db *gorm.DB, limit int) ([]AvailableProduct, e
 	return products, err
 }
 
+// GetActiveAvailableProducts retrieves all active available products
+func GetActiveAvailableProducts(db *gorm.DB) ([]AvailableProduct, error) {
+	var products []AvailableProduct
+	err := db.Where("status = ?", "active").
+		Preload("AddedBy").
+		Order("created_at DESC").
+		Find(&products).Error
+	return products, err
+}
+
 // GetHotDealsAvailableProducts retrieves hot deal available products
 func GetHotDealsAvailableProducts(db *gorm.DB, limit int) ([]AvailableProduct, error) {
 	var products []AvailableProduct

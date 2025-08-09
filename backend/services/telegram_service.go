@@ -61,6 +61,8 @@ const (
 	// Supplier action buttons
 	MENU_APPROVE_SUPPLIER = "✅ تأیید"
 	MENU_REJECT_SUPPLIER  = "❌ رد"
+	MENU_EDIT_SUPPLIER    = "✏️ ویرایش"
+	MENU_DELETE_SUPPLIER  = "🗑️ حذف"
 	MENU_VIEW_SUPPLIER    = "👁️ جزئیات"
 
 	// Visitor management sub-menus
@@ -81,10 +83,12 @@ const (
 	MENU_WITHDRAWALS_STATS      = "📊 آمار برداشت‌ها"
 
 	// Research products management sub-menus
-	MENU_RESEARCH_PRODUCTS      = "🔬 مدیریت محصولات تحقیقی"
-	MENU_ADD_RESEARCH_PRODUCT   = "➕ اضافه کردن محصول"
-	MENU_LIST_RESEARCH_PRODUCTS = "📋 لیست محصولات"
-	MENU_RESEARCH_PRODUCT_STATS = "📊 آمار محصولات"
+	MENU_RESEARCH_PRODUCTS       = "🔬 مدیریت محصولات تحقیقی"
+	MENU_ADD_RESEARCH_PRODUCT    = "➕ اضافه کردن محصول"
+	MENU_LIST_RESEARCH_PRODUCTS  = "📋 لیست محصولات"
+	MENU_RESEARCH_PRODUCT_STATS  = "📊 آمار محصولات"
+	MENU_EDIT_RESEARCH_PRODUCT   = "✏️ ویرایش محصول"
+	MENU_DELETE_RESEARCH_PRODUCT = "🗑️ حذف محصول"
 
 	// Marketing popup management sub-menus
 	MENU_MARKETING_POPUPS        = "📢 مدیریت پاپ‌اپ تبلیغاتی"
@@ -93,9 +97,19 @@ const (
 	MENU_ACTIVE_MARKETING_POPUPS = "✅ پاپ‌اپ‌های فعال"
 	MENU_MARKETING_POPUP_STATS   = "📊 آمار پاپ‌اپ‌ها"
 
+	// Available products management sub-menus
+	MENU_AVAILABLE_PRODUCTS       = "📦 مدیریت کالاهای موجود"
+	MENU_ADD_AVAILABLE_PRODUCT    = "➕ اضافه کردن کالا"
+	MENU_LIST_AVAILABLE_PRODUCTS  = "📋 لیست کالاها"
+	MENU_AVAILABLE_PRODUCT_STATS  = "📊 آمار کالاها"
+	MENU_EDIT_AVAILABLE_PRODUCT   = "✏️ ویرایش کالا"
+	MENU_DELETE_AVAILABLE_PRODUCT = "🗑️ حذف کالا"
+
 	// Visitor action buttons
 	MENU_APPROVE_VISITOR = "✅ تأیید"
 	MENU_REJECT_VISITOR  = "❌ رد"
+	MENU_EDIT_VISITOR    = "✏️ ویرایش"
+	MENU_DELETE_VISITOR  = "🗑️ حذف"
 	MENU_VIEW_VISITOR    = "👁️ جزئیات"
 
 	// Navigation
@@ -220,6 +234,7 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_MARKETING_POPUPS),
+			tgbotapi.NewKeyboardButton(MENU_AVAILABLE_PRODUCTS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT),
@@ -337,6 +352,14 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showActiveMarketingPopups(message.Chat.ID)
 	case MENU_MARKETING_POPUP_STATS:
 		s.showMarketingPopupsStats(message.Chat.ID)
+	case MENU_AVAILABLE_PRODUCTS:
+		s.showAvailableProductsMenu(message.Chat.ID)
+	case MENU_ADD_AVAILABLE_PRODUCT:
+		s.promptAddAvailableProduct(message.Chat.ID)
+	case MENU_LIST_AVAILABLE_PRODUCTS:
+		s.showAvailableProductsList(message.Chat.ID)
+	case MENU_AVAILABLE_PRODUCT_STATS:
+		s.showAvailableProductsStats(message.Chat.ID)
 	case MENU_BULK_IMPORT:
 		s.showBulkImportMenu(message.Chat.ID)
 	case MENU_BULK_IMPORT_SUPPLIERS:
@@ -559,6 +582,16 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				return
 			}
 
+			// Check for research product command patterns
+			if s.handleResearchProductCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
+			// Check for available product command patterns
+			if s.handleAvailableProductCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
 			// No active session - show help message
 			msg := tgbotapi.NewMessage(message.Chat.ID,
 				"❓ **راهنمای استفاده:**\n\n"+
@@ -586,6 +619,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_MARKETING_POPUPS),
+					tgbotapi.NewKeyboardButton(MENU_AVAILABLE_PRODUCTS),
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_BULK_IMPORT),
@@ -1108,6 +1142,22 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle delete confirmation callbacks
+	if strings.HasPrefix(data, "confirm_delete_") {
+		s.handleDeleteConfirmation(query)
+		return
+	}
+
+	if data == "cancel_delete" {
+		// Send acknowledgment
+		callback := tgbotapi.NewCallback(query.ID, "عملیات لغو شد")
+		s.bot.Request(callback)
+
+		msg := tgbotapi.NewMessage(chatID, "❌ عملیات حذف لغو شد.")
+		s.bot.Send(msg)
+		return
+	}
+
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {
 		filter := strings.TrimPrefix(data, "userlist_")
@@ -1481,10 +1531,15 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 				businessIcon,
 			)
 
-			// Add action buttons for pending suppliers
+			// Add action buttons
 			if supplier.Status == "pending" {
 				supplierInfo += fmt.Sprintf(
 					"🔘 عملیات: /view%d | /approve%d | /reject%d\n",
+					supplier.ID, supplier.ID, supplier.ID,
+				)
+			} else {
+				supplierInfo += fmt.Sprintf(
+					"🔧 عملیات: /view%d | /edit%d | /delete%d\n",
 					supplier.ID, supplier.ID, supplier.ID,
 				)
 			}
@@ -1589,7 +1644,7 @@ func (s *TelegramService) showSupplierStats(chatID int64) {
 // Supplier Command Handlers
 
 func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool {
-	// Check for supplier action commands: /view123, /approve123, /reject123
+	// Check for supplier action commands: /view123, /approve123, /reject123, /edit123, /delete123
 	if strings.HasPrefix(text, "/view") && len(text) > 5 {
 		supplierIDStr := strings.TrimPrefix(text, "/view")
 		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
@@ -1608,6 +1663,18 @@ func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool
 			s.promptSupplierReject(chatID, uint(supplierID))
 			return true
 		}
+	} else if strings.HasPrefix(text, "/edit") && len(text) > 5 {
+		supplierIDStr := strings.TrimPrefix(text, "/edit")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.promptSupplierEdit(chatID, uint(supplierID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/delete") && len(text) > 7 {
+		supplierIDStr := strings.TrimPrefix(text, "/delete")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.confirmSupplierDelete(chatID, uint(supplierID))
+			return true
+		}
 	}
 	return false
 }
@@ -1615,7 +1682,7 @@ func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool
 // Visitor Command Handlers
 
 func (s *TelegramService) handleVisitorCommands(chatID int64, text string) bool {
-	// Check for visitor action commands: /vview3, /vapprove3, /vreject3
+	// Check for visitor action commands: /vview3, /vapprove3, /vreject3, /vedit3, /vdelete3
 	if strings.HasPrefix(text, "/vview") && len(text) > 6 {
 		visitorIDStr := strings.TrimPrefix(text, "/vview")
 		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
@@ -1632,6 +1699,18 @@ func (s *TelegramService) handleVisitorCommands(chatID int64, text string) bool 
 		visitorIDStr := strings.TrimPrefix(text, "/vreject")
 		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
 			s.promptVisitorReject(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vedit") && len(text) > 6 {
+		visitorIDStr := strings.TrimPrefix(text, "/vedit")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.promptVisitorEdit(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vdelete") && len(text) > 8 {
+		visitorIDStr := strings.TrimPrefix(text, "/vdelete")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.confirmVisitorDelete(chatID, uint(visitorID))
 			return true
 		}
 	}
@@ -2085,6 +2164,7 @@ func (s *TelegramService) showResearchProductsList(chatID int64) {
 		}
 		text += fmt.Sprintf("%s تقاضا: %s\n", marketDemandEmoji, product.MarketDemand)
 		text += fmt.Sprintf("📅 ثبت: %s\n", product.CreatedAt.Format("2006/01/02"))
+		text += fmt.Sprintf("🔧 عملیات: /rp_edit%d | /rp_delete%d\n", product.ID, product.ID)
 		text += "➖➖➖➖➖➖➖➖\n"
 	}
 
@@ -2757,10 +2837,15 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 				visitor.Status,
 			)
 
-			// Add action buttons for pending visitors
+			// Add action buttons
 			if visitor.Status == "pending" {
 				visitorInfo += fmt.Sprintf(
 					"🔘 عملیات: /vview%d | /vapprove%d | /vreject%d\n",
+					visitor.ID, visitor.ID, visitor.ID,
+				)
+			} else {
+				visitorInfo += fmt.Sprintf(
+					"🔧 عملیات: /vview%d | /vedit%d | /vdelete%d\n",
 					visitor.ID, visitor.ID, visitor.ID,
 				)
 			}
@@ -2873,5 +2958,463 @@ func (s *TelegramService) showVisitorStats(chatID int64) {
 	msg := tgbotapi.NewMessage(chatID, message)
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// =================== NEW EDIT/DELETE HANDLERS ===================
+
+// Research Product Command Handlers
+func (s *TelegramService) handleResearchProductCommands(chatID int64, text string) bool {
+	// Commands for research products: /rp_edit123, /rp_delete123
+	if strings.HasPrefix(text, "/rp_edit") && len(text) > 8 {
+		productIDStr := strings.TrimPrefix(text, "/rp_edit")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.promptResearchProductEdit(chatID, uint(productID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/rp_delete") && len(text) > 10 {
+		productIDStr := strings.TrimPrefix(text, "/rp_delete")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.confirmResearchProductDelete(chatID, uint(productID))
+			return true
+		}
+	}
+	return false
+}
+
+// Available Product Command Handlers
+func (s *TelegramService) handleAvailableProductCommands(chatID int64, text string) bool {
+	// Commands for available products: /ap_edit123, /ap_delete123
+	if strings.HasPrefix(text, "/ap_edit") && len(text) > 8 {
+		productIDStr := strings.TrimPrefix(text, "/ap_edit")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.promptAvailableProductEdit(chatID, uint(productID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/ap_delete") && len(text) > 10 {
+		productIDStr := strings.TrimPrefix(text, "/ap_delete")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.confirmAvailableProductDelete(chatID, uint(productID))
+			return true
+		}
+	}
+	return false
+}
+
+// =================== SUPPLIER EDIT/DELETE ===================
+
+func (s *TelegramService) promptSupplierEdit(chatID int64, supplierID uint) {
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش تأمین‌کننده #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", supplierID))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) confirmSupplierDelete(chatID int64, supplierID uint) {
+	// Get supplier info first
+	var supplier models.Supplier
+	err := s.db.Preload("User").Where("id = ?", supplierID).First(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create confirmation keyboard
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ بله، حذف کن", fmt.Sprintf("confirm_delete_supplier_%d", supplierID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ لغو", "cancel_delete"),
+		),
+	)
+
+	confirmMsg := fmt.Sprintf("🗑️ **تأیید حذف تأمین‌کننده**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر:** %s\n\n"+
+		"⚠️ **هشدار:** این عمل غیرقابل بازگشت است!\n"+
+		"تمام اطلاعات مربوط به این تأمین‌کننده حذف خواهد شد.\n\n"+
+		"آیا مطمئن هستید؟", supplier.FullName, supplier.Mobile, supplier.City)
+
+	msg := tgbotapi.NewMessage(chatID, confirmMsg)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// =================== VISITOR EDIT/DELETE ===================
+
+func (s *TelegramService) promptVisitorEdit(chatID int64, visitorID uint) {
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش ویزیتور #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", visitorID))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) confirmVisitorDelete(chatID int64, visitorID uint) {
+	// Get visitor info first
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create confirmation keyboard
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ بله، حذف کن", fmt.Sprintf("confirm_delete_visitor_%d", visitorID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ لغو", "cancel_delete"),
+		),
+	)
+
+	confirmMsg := fmt.Sprintf("🗑️ **تأیید حذف ویزیتور**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر:** %s\n\n"+
+		"⚠️ **هشدار:** این عمل غیرقابل بازگشت است!\n"+
+		"تمام اطلاعات مربوط به این ویزیتور حذف خواهد شد.\n\n"+
+		"آیا مطمئن هستید؟", visitor.FullName, visitor.Mobile, visitor.CityProvince)
+
+	msg := tgbotapi.NewMessage(chatID, confirmMsg)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// =================== RESEARCH PRODUCT EDIT/DELETE ===================
+
+func (s *TelegramService) promptResearchProductEdit(chatID int64, productID uint) {
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش محصول تحقیقی #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", productID))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) confirmResearchProductDelete(chatID int64, productID uint) {
+	// Get product info first
+	var product models.ResearchProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ محصول تحقیقی یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create confirmation keyboard
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ بله، حذف کن", fmt.Sprintf("confirm_delete_research_%d", productID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ لغو", "cancel_delete"),
+		),
+	)
+
+	confirmMsg := fmt.Sprintf("🗑️ **تأیید حذف محصول تحقیقی**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"🌍 **کشور هدف:** %s\n\n"+
+		"⚠️ **هشدار:** این عمل غیرقابل بازگشت است!\n"+
+		"تمام اطلاعات مربوط به این محصول حذف خواهد شد.\n\n"+
+		"آیا مطمئن هستید؟", product.Name, product.Category, product.TargetCountry)
+
+	msg := tgbotapi.NewMessage(chatID, confirmMsg)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// =================== AVAILABLE PRODUCT EDIT/DELETE ===================
+
+func (s *TelegramService) promptAvailableProductEdit(chatID int64, productID uint) {
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش کالای موجود #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", productID))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) confirmAvailableProductDelete(chatID int64, productID uint) {
+	// Get product info first
+	var product models.AvailableProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالای موجود یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create confirmation keyboard
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ بله، حذف کن", fmt.Sprintf("confirm_delete_available_%d", productID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ لغو", "cancel_delete"),
+		),
+	)
+
+	confirmMsg := fmt.Sprintf("🗑️ **تأیید حذف کالای موجود**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"📍 **مکان:** %s\n\n"+
+		"⚠️ **هشدار:** این عمل غیرقابل بازگشت است!\n"+
+		"تمام اطلاعات مربوط به این کالا حذف خواهد شد.\n\n"+
+		"آیا مطمئن هستید؟", product.ProductName, product.Category, product.Location)
+
+	msg := tgbotapi.NewMessage(chatID, confirmMsg)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// =================== AVAILABLE PRODUCTS MENU ===================
+
+func (s *TelegramService) showAvailableProductsMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ADD_AVAILABLE_PRODUCT),
+			tgbotapi.NewKeyboardButton(MENU_LIST_AVAILABLE_PRODUCTS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_AVAILABLE_PRODUCT_STATS),
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID,
+		"📦 **مدیریت کالاهای موجود**\n\n"+
+			"با استفاده از این بخش می‌توانید:\n\n"+
+			"➕ **اضافه کردن کالا**: افزودن کالای جدید به لیست\n"+
+			"📋 **لیست کالاها**: مشاهده و مدیریت کالاهای موجود\n"+
+			"📊 **آمار کالاها**: نمایش آمار کلی کالاها\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) promptAddAvailableProduct(chatID int64) {
+	s.promptAddSingleProduct(chatID) // Reuse existing function
+}
+
+func (s *TelegramService) showAvailableProductsList(chatID int64) {
+	products, err := models.GetActiveAvailableProducts(s.db)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست کالاها")
+		s.bot.Send(msg)
+		return
+	}
+
+	if len(products) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "📋 **لیست کالاهای موجود**\n\nهنوز کالایی اضافه نشده است.")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	text := "📋 **لیست کالاهای موجود**\n\n"
+	text += fmt.Sprintf("📊 **آمار:** %d کالا\n\n", len(products))
+
+	for i, product := range products {
+		if i >= 10 { // Limit to 10 products per message
+			text += "...\n\n💡 *برای مشاهده کالاهای بیشتر از بخش مربوطه استفاده کنید*"
+			break
+		}
+
+		statusEmoji := "📦"
+		switch product.Status {
+		case "active":
+			statusEmoji = "✅"
+		case "inactive":
+			statusEmoji = "❌"
+		case "out_of_stock":
+			statusEmoji = "📤"
+		}
+
+		text += fmt.Sprintf("%d. **%s**\n", i+1, product.ProductName)
+		text += fmt.Sprintf("🏷️ دسته: %s\n", product.Category)
+		text += fmt.Sprintf("💰 قیمت: %s %s\n", product.WholesalePrice, product.Currency)
+		text += fmt.Sprintf("📍 مکان: %s\n", product.Location)
+		text += fmt.Sprintf("📊 موجودی: %d %s\n", product.AvailableQuantity, product.Unit)
+		text += fmt.Sprintf("%s وضعیت: %s\n", statusEmoji, product.Status)
+		text += fmt.Sprintf("🔧 عملیات: /ap_edit%d | /ap_delete%d\n", product.ID, product.ID)
+		text += "➖➖➖➖➖➖➖➖\n"
+	}
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showAvailableProductsStats(chatID int64) {
+	var total, active, inactive, outOfStock int64
+
+	s.db.Model(&models.AvailableProduct{}).Count(&total)
+	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "active").Count(&active)
+	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "inactive").Count(&inactive)
+	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "out_of_stock").Count(&outOfStock)
+
+	text := fmt.Sprintf(
+		"📊 **آمار کالاهای موجود**\n\n"+
+			"📈 **آمار کلی:**\n"+
+			"• تعداد کل کالاها: `%d`\n"+
+			"• فعال: `%d` کالا (%.1f%%)\n"+
+			"• غیرفعال: `%d` کالا (%.1f%%)\n"+
+			"• تمام شده: `%d` کالا (%.1f%%)\n",
+		total,
+		active, getSafePercentage(active, total),
+		inactive, getSafePercentage(inactive, total),
+		outOfStock, getSafePercentage(outOfStock, total),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, text)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// =================== DELETE CONFIRMATION HANDLER ===================
+
+func (s *TelegramService) handleDeleteConfirmation(query *tgbotapi.CallbackQuery) {
+	data := query.Data
+	chatID := query.Message.Chat.ID
+
+	// Parse callback data
+	if strings.HasPrefix(data, "confirm_delete_supplier_") {
+		idStr := strings.TrimPrefix(data, "confirm_delete_supplier_")
+		if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
+			s.executeSupplierDelete(chatID, uint(id))
+		}
+	} else if strings.HasPrefix(data, "confirm_delete_visitor_") {
+		idStr := strings.TrimPrefix(data, "confirm_delete_visitor_")
+		if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
+			s.executeVisitorDelete(chatID, uint(id))
+		}
+	} else if strings.HasPrefix(data, "confirm_delete_research_") {
+		idStr := strings.TrimPrefix(data, "confirm_delete_research_")
+		if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
+			s.executeResearchProductDelete(chatID, uint(id))
+		}
+	} else if strings.HasPrefix(data, "confirm_delete_available_") {
+		idStr := strings.TrimPrefix(data, "confirm_delete_available_")
+		if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
+			s.executeAvailableProductDelete(chatID, uint(id))
+		}
+	}
+
+	// Send acknowledgment
+	callback := tgbotapi.NewCallback(query.ID, "")
+	s.bot.Request(callback)
+}
+
+// =================== DELETE EXECUTION FUNCTIONS ===================
+
+func (s *TelegramService) executeSupplierDelete(chatID int64, supplierID uint) {
+	// Get supplier info for final confirmation
+	var supplier models.Supplier
+	err := s.db.Preload("User").Where("id = ?", supplierID).First(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Delete supplier (this will also delete related products due to cascade)
+	err = s.db.Delete(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	successMsg := fmt.Sprintf("✅ **تأمین‌کننده با موفقیت حذف شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر:** %s\n\n"+
+		"🗑️ تمام اطلاعات مربوط به این تأمین‌کننده حذف شدند.", supplier.FullName, supplier.Mobile, supplier.City)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) executeVisitorDelete(chatID int64, visitorID uint) {
+	// Get visitor info for final confirmation
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Delete visitor
+	err = s.db.Delete(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	successMsg := fmt.Sprintf("✅ **ویزیتور با موفقیت حذف شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر:** %s\n\n"+
+		"🗑️ تمام اطلاعات مربوط به این ویزیتور حذف شدند.", visitor.FullName, visitor.Mobile, visitor.CityProvince)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) executeResearchProductDelete(chatID int64, productID uint) {
+	// Get product info for final confirmation
+	var product models.ResearchProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ محصول تحقیقی یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Delete product
+	err = s.db.Delete(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف محصول تحقیقی")
+		s.bot.Send(msg)
+		return
+	}
+
+	successMsg := fmt.Sprintf("✅ **محصول تحقیقی با موفقیت حذف شد**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"🌍 **کشور هدف:** %s\n\n"+
+		"🗑️ تمام اطلاعات مربوط به این محصول حذف شدند.", product.Name, product.Category, product.TargetCountry)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) executeAvailableProductDelete(chatID int64, productID uint) {
+	// Get product info for final confirmation
+	var product models.AvailableProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالای موجود یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Delete product
+	err = s.db.Delete(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف کالای موجود")
+		s.bot.Send(msg)
+		return
+	}
+
+	successMsg := fmt.Sprintf("✅ **کالای موجود با موفقیت حذف شد**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"📍 **مکان:** %s\n\n"+
+		"🗑️ تمام اطلاعات مربوط به این کالا حذف شدند.", product.ProductName, product.Category, product.Location)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
 	s.bot.Send(msg)
 }
