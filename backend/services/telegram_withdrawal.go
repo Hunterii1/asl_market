@@ -281,7 +281,8 @@ func (s *TelegramService) sendWithdrawalApprovalPrompt(chatID int64, withdrawalI
 	// For now, approve with a default account - in real scenario you'd want admin to enter account
 	defaultAccount := "IR123456789012345678901234" // This should be configurable
 
-	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusApproved, adminID, "تایید شده توسط ادمین", defaultAccount)
+	// Use nil for adminID since Telegram ID doesn't match our users table
+	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusApproved, nil, "تایید شده توسط ادمین", defaultAccount)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تایید درخواست")
 		s.bot.Send(msg)
@@ -313,7 +314,7 @@ func (s *TelegramService) sendWithdrawalRejectionPrompt(chatID int64, withdrawal
 		return
 	}
 
-	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusRejected, adminID, "رد شده توسط ادمین", "")
+	err = models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusRejected, nil, "رد شده توسط ادمین", "")
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد درخواست")
 		s.bot.Send(msg)
@@ -335,7 +336,7 @@ func (s *TelegramService) processWithdrawal(chatID int64, withdrawalID string, a
 		return
 	}
 
-	err := models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusProcessing, adminID, "در حال پردازش توسط ادمین", "")
+	err := models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusProcessing, nil, "در حال پردازش توسط ادمین", "")
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در بروزرسانی وضعیت درخواست")
 		s.bot.Send(msg)
@@ -358,7 +359,7 @@ func (s *TelegramService) completeWithdrawal(chatID int64, withdrawalID string, 
 		return
 	}
 
-	err := models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusCompleted, adminID, "تکمیل شده توسط ادمین", "")
+	err := models.UpdateWithdrawalStatus(s.db, id, models.WithdrawalStatusCompleted, nil, "تکمیل شده توسط ادمین", "")
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در بروزرسانی وضعیت درخواست")
 		s.bot.Send(msg)

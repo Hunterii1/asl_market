@@ -91,7 +91,7 @@ func CreateWithdrawalRequest(db *gorm.DB, request *WithdrawalRequest) error {
 }
 
 // UpdateWithdrawalStatus updates the status of a withdrawal request
-func UpdateWithdrawalStatus(db *gorm.DB, requestID uint, status WithdrawalStatus, adminID uint, notes string, destinationAccount string) error {
+func UpdateWithdrawalStatus(db *gorm.DB, requestID uint, status WithdrawalStatus, adminID *uint, notes string, destinationAccount string) error {
 	updates := map[string]interface{}{
 		"status":      status,
 		"admin_id":    adminID,

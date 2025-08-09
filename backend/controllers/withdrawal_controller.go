@@ -192,7 +192,7 @@ func (wc *WithdrawalController) UpdateWithdrawalStatus(c *gin.Context) {
 	}
 
 	status := models.WithdrawalStatus(req.Status)
-	if err := models.UpdateWithdrawalStatus(wc.db, uint(requestID), status, adminID, req.AdminNotes, req.DestinationAccount); err != nil {
+	if err := models.UpdateWithdrawalStatus(wc.db, uint(requestID), status, &adminID, req.AdminNotes, req.DestinationAccount); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بروزرسانی وضعیت"})
 		return
 	}
