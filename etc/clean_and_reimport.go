@@ -98,8 +98,8 @@ type Visitor struct {
 }
 
 func main() {
-	log.Println("🧹 ASL Market Clean & Re-import Data")
-	log.Println("====================================")
+	log.Println("📋 ASL Market Excel Import Tool")
+	log.Println("===============================")
 
 	// Connect to database
 	db, err := connectToDatabase()
@@ -107,22 +107,16 @@ func main() {
 		log.Fatalf("❌ Failed to connect to database: %v", err)
 	}
 
-	// Step 1: Clean existing data
-	log.Println("🗑️  Cleaning existing data...")
-	if err := cleanExistingData(db); err != nil {
-		log.Fatalf("❌ Failed to clean existing data: %v", err)
-	}
-
 	// Get current directory (which is /etc)
 	wd, _ := os.Getwd()
 	log.Printf("📂 Looking for Excel files in: %s", wd)
 
-	supplierFile := filepath.Join(wd, "َASL SUPPLIER.xlsx")
+	supplierFile := filepath.Join(wd, "ASL SUPPLIER.xlsx")
 	visitorFile := filepath.Join(wd, "ASL MARKET VISITOR.xlsx")
 
 	totalImported := 0
 
-	// Step 2: Analyze and import suppliers
+	// Step 1: Analyze and import suppliers
 	if _, err := os.Stat(supplierFile); err == nil {
 		log.Println("📋 Analyzing supplier Excel structure...")
 		analyzeSupplierExcel(supplierFile)
@@ -139,7 +133,7 @@ func main() {
 		log.Printf("⚠️  Supplier file not found: %s", supplierFile)
 	}
 
-	// Step 3: Analyze and import visitors
+	// Step 2: Analyze and import visitors
 	if _, err := os.Stat(visitorFile); err == nil {
 		log.Println("📋 Analyzing visitor Excel structure...")
 		analyzeVisitorExcel(visitorFile)
@@ -156,7 +150,7 @@ func main() {
 		log.Printf("⚠️  Visitor file not found: %s", visitorFile)
 	}
 
-	log.Printf("🎉 Clean & Re-import completed! Total records imported: %d", totalImported)
+	log.Printf("🎉 Import completed! Total records imported: %d", totalImported)
 }
 
 func connectToDatabase() (*gorm.DB, error) {
@@ -177,69 +171,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func cleanExistingData(db *gorm.DB) error {
-	log.Println("🗑️  Deleting existing supplier products...")
-	if err := db.Exec("DELETE FROM supplier_products").Error; err != nil {
-		return fmt.Errorf("failed to delete supplier products: %w", err)
-	}
-
-	log.Println("🗑️  Deleting existing suppliers...")
-	if err := db.Exec("DELETE FROM suppliers").Error; err != nil {
-		return fmt.Errorf("failed to delete suppliers: %w", err)
-	}
-
-	log.Println("🗑️  Deleting existing visitors...")
-	if err := db.Exec("DELETE FROM visitors").Error; err != nil {
-		return fmt.Errorf("failed to delete visitors: %w", err)
-	}
-
-	// Delete related data first to avoid foreign key constraints
-	log.Println("🗑️  Deleting user-related data...")
-
-	// Delete withdrawal requests for these users
-	if err := db.Exec("DELETE FROM withdrawal_requests WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete withdrawal requests: %v", err)
-	}
-
-	// Delete daily view limits for these users
-	if err := db.Exec("DELETE FROM daily_view_limits WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete daily view limits: %v", err)
-	}
-
-	// Delete contact view limits for these users
-	if err := db.Exec("DELETE FROM contact_view_limits WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete contact view limits: %v", err)
-	}
-
-	// Delete chat messages for these users
-	if err := db.Exec("DELETE FROM messages WHERE chat_id IN (SELECT id FROM chats WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local'))").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete messages: %v", err)
-	}
-
-	// Delete chats for these users
-	if err := db.Exec("DELETE FROM chats WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete chats: %v", err)
-	}
-
-	// Set licenses generated_by to NULL for these users (don't delete licenses, just unlink)
-	if err := db.Exec("UPDATE licenses SET generated_by = NULL WHERE generated_by IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to update licenses: %v", err)
-	}
-
-	// Delete user licenses (license ownership records)
-	if err := db.Exec("DELETE FROM user_licenses WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
-		log.Printf("⚠️  Warning: Failed to delete user licenses: %v", err)
-	}
-
-	log.Println("🗑️  Deleting users...")
-	if err := db.Exec("DELETE FROM users WHERE email LIKE '%@aslmarket.local'").Error; err != nil {
-		return fmt.Errorf("failed to delete users: %w", err)
-	}
-
-	log.Println("✅ Existing data cleaned successfully!")
-	return nil
 }
 
 func analyzeSupplierExcel(filePath string) {
@@ -268,18 +199,29 @@ func analyzeSupplierExcel(filePath string) {
 	}
 
 	log.Println("📊 Supplier Excel Structure:")
+	log.Println("==========================")
+	log.Printf("Total rows: %d (including header)", len(rows))
 	log.Println("Header row:")
 	for i, col := range rows[0] {
-		log.Printf("  Column %d: %s", i, col)
+		log.Printf("  Column %d: [%s]", i, col)
 	}
 
 	if len(rows) > 1 {
-		log.Println("First data row sample:")
+		log.Println("\nFirst data row sample:")
 		for i, col := range rows[1] {
-			if i < 10 { // Show first 10 columns
-				log.Printf("  Column %d: %s", i, col)
+			if i < 15 { // Show first 15 columns
+				log.Printf("  Column %d: [%s]", i, col)
 			}
 		}
+		log.Println("\nColumn mapping will be:")
+		log.Println("  Column 2 -> Full Name (نام و نام خانوادگی)")
+		log.Println("  Column 3 -> Mobile (شماره تماس)")
+		log.Println("  Column 4 -> Email (ایمیل)")
+		log.Println("  Column 5 -> Product Name (نام محصول)")
+		log.Println("  Column 6 -> Product Type (نوع محصول)")
+		log.Println("  Column 7 -> City (شهر)")
+		log.Println("  Column 8 -> Address (آدرس)")
+		log.Println("  Column 9 -> Wholesale Price (قیمت عمده)")
 	}
 }
 
@@ -309,18 +251,31 @@ func analyzeVisitorExcel(filePath string) {
 	}
 
 	log.Println("📊 Visitor Excel Structure:")
+	log.Println("==========================")
+	log.Printf("Total rows: %d (including header)", len(rows))
 	log.Println("Header row:")
 	for i, col := range rows[0] {
-		log.Printf("  Column %d: %s", i, col)
+		log.Printf("  Column %d: [%s]", i, col)
 	}
 
 	if len(rows) > 1 {
-		log.Println("First data row sample:")
+		log.Println("\nFirst data row sample:")
 		for i, col := range rows[1] {
-			if i < 15 { // Show first 15 columns
-				log.Printf("  Column %d: %s", i, col)
+			if i < 20 { // Show first 20 columns
+				log.Printf("  Column %d: [%s]", i, col)
 			}
 		}
+		log.Println("\nColumn mapping will be:")
+		log.Println("  Column 2 -> Full Name (نام و نام خانوادگی)")
+		log.Println("  Column 3 -> Mobile (شماره تماس)")
+		log.Println("  Column 4 -> Email (ایمیل)")
+		log.Println("  Column 5 -> National ID (کد ملی)")
+		log.Println("  Column 6 -> Birth Date (تاریخ تولد)")
+		log.Println("  Column 7 -> City/Province (شهر/استان)")
+		log.Println("  Column 8 -> Address (آدرس سکونت)")
+		log.Println("  Column 9 -> Destination Cities (شهرهای مقصد)")
+		log.Println("  Column 10 -> Bank IBAN (شماره حساب)")
+		log.Println("  Column 11 -> Bank Name (نام بانک)")
 	}
 }
 
