@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func main() {
+func main2() {
 	// Load config
 	config.LoadConfig()
 
