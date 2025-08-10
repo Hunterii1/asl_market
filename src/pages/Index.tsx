@@ -56,15 +56,15 @@ const Index = () => {
   };
 
   const menuItems = [
-    { id: "dashboard", label: "داشبورد", icon: BarChart3 },
-    { id: "asllearn", label: "آموزش", icon: BookOpen },
-    { id: "products", label: "محصولات تحقیقی", icon: Target },
-    { id: "aslsupplier", label: "تأمین‌کنندگان", icon: Users },
-    { id: "aslvisit", label: "ویزیتورها", icon: Logo },
-    { id: "aslpay", label: "دریافت پول", icon: CreditCard },
-    { id: "aslexpress", label: "ارسال", icon: Truck },
-    { id: "aslai", label: "هوش مصنوعی", icon: Bot },
-    { id: "aslavailable", label: "کالاهای موجود", icon: Package },
+    { id: "dashboard", label: "داشبورد", englishLabel: "DASHBOARD", icon: BarChart3 },
+    { id: "asllearn", label: "آموزش", englishLabel: "ASL LEARN", icon: BookOpen },
+    { id: "products", label: "محصولات تحقیقی", englishLabel: "RESEARCH PRODUCTS", icon: Target },
+    { id: "aslsupplier", label: "تأمین‌کنندگان", englishLabel: "ASL SUPPLIER", icon: Users },
+    { id: "aslvisit", label: "ویزیتورها", englishLabel: "ASL VISIT", icon: Logo },
+    { id: "aslpay", label: "دریافت پول", englishLabel: "ASL PAY", icon: CreditCard },
+    { id: "aslexpress", label: "ارسال", englishLabel: "ASL EXPRESS", icon: Truck },
+    { id: "aslai", label: "هوش مصنوعی", englishLabel: "ASL AI", icon: Bot },
+    { id: "aslavailable", label: "کالاهای موجود", englishLabel: "ASL AVAILABLE", icon: Package },
   ];
 
   const handleSectionClick = async (sectionId: string, sectionLabel: string) => {
@@ -159,9 +159,14 @@ const Index = () => {
                 }`}>
                   <Icon className={`w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-10 lg:h-10 ${isActive ? "text-white" : "text-orange-400"} drop-shadow-lg`} />
                 </div>
-                <span className={`text-xs sm:text-sm font-bold ${isActive ? "text-orange-600 dark:text-orange-400" : "text-foreground"} leading-tight text-center`}>
-                  {item.label}
-                </span>
+                <div className="text-center">
+                  <span className={`text-xs sm:text-sm font-bold ${isActive ? "text-orange-600 dark:text-orange-400" : "text-gray-800 dark:text-foreground"} leading-tight block`}>
+                    {item.label}
+                  </span>
+                  <span className={`text-[10px] sm:text-xs font-medium ${isActive ? "text-orange-500 dark:text-orange-300" : "text-gray-600 dark:text-muted-foreground"} leading-tight block mt-0.5`}>
+                    {item.englishLabel}
+                  </span>
+                </div>
               </Button>
             );
           })}
