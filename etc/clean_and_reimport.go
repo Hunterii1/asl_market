@@ -195,7 +195,45 @@ func cleanExistingData(db *gorm.DB) error {
 		return fmt.Errorf("failed to delete visitors: %w", err)
 	}
 
-	log.Println("🗑️  Deleting existing users...")
+	// Delete related data first to avoid foreign key constraints
+	log.Println("🗑️  Deleting user-related data...")
+
+	// Delete withdrawal requests for these users
+	if err := db.Exec("DELETE FROM withdrawal_requests WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete withdrawal requests: %v", err)
+	}
+
+	// Delete daily view limits for these users
+	if err := db.Exec("DELETE FROM daily_view_limits WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete daily view limits: %v", err)
+	}
+
+	// Delete contact view limits for these users
+	if err := db.Exec("DELETE FROM contact_view_limits WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete contact view limits: %v", err)
+	}
+
+	// Delete chat messages for these users
+	if err := db.Exec("DELETE FROM messages WHERE chat_id IN (SELECT id FROM chats WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local'))").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete messages: %v", err)
+	}
+
+	// Delete chats for these users
+	if err := db.Exec("DELETE FROM chats WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete chats: %v", err)
+	}
+
+	// Set licenses generated_by to NULL for these users (don't delete licenses, just unlink)
+	if err := db.Exec("UPDATE licenses SET generated_by = NULL WHERE generated_by IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to update licenses: %v", err)
+	}
+
+	// Delete user licenses (license ownership records)
+	if err := db.Exec("DELETE FROM user_licenses WHERE user_id IN (SELECT id FROM users WHERE email LIKE '%@aslmarket.local')").Error; err != nil {
+		log.Printf("⚠️  Warning: Failed to delete user licenses: %v", err)
+	}
+
+	log.Println("🗑️  Deleting users...")
 	if err := db.Exec("DELETE FROM users WHERE email LIKE '%@aslmarket.local'").Error; err != nil {
 		return fmt.Errorf("failed to delete users: %w", err)
 	}
