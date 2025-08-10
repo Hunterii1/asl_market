@@ -53,7 +53,9 @@ const AslLearn = () => {
         
         console.log('📚 Training data loaded:', {
           categories: categories.length,
-          videos: videos.length
+          videos: videos.length,
+          categoriesData: categories,
+          videosData: videos
         });
       } catch (error) {
         console.error('❌ Error loading training data:', error);
@@ -111,6 +113,12 @@ const AslLearn = () => {
       color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
       description: categoryIconMap[category.name]?.description || category.description || ""
     }));
+
+  console.log('🔍 Debug groupedVideos:', groupedVideos);
+  console.log('🔍 Debug realVideos:', realVideos);
+  console.log('🔍 Debug realCategories:', realCategories);
+  console.log('🔍 Debug trainingCategories after mapping:', trainingCategories);
+  console.log('🔍 Debug selectedCategory:', selectedCategory);
 
 
 
