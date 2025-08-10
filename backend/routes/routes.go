@@ -53,6 +53,13 @@ func SetupRoutes(router *gin.Engine) {
 		// User routes
 		protected.GET("/me", authController.Me)
 
+		// Progress tracking routes
+		protected.GET("/progress", controllers.GetUserProgress)
+		protected.POST("/progress/update", controllers.UpdateUserProgress)
+
+		// Dashboard route
+		protected.GET("/dashboard", getDashboard)
+
 		// License routes (no license check needed)
 		protected.POST("/license/verify", controllers.VerifyLicense)
 		protected.GET("/license/status", controllers.CheckLicenseStatus)
@@ -228,6 +235,30 @@ func getDashboard(c *gin.Context) {
 		chartData = []map[string]interface{}{}
 	}
 
+	// Get user progress (create with 0% default if doesn't exist)
+	progress, err := models.GetOrCreateUserProgress(models.GetDB(), userID)
+	var progressData map[string]interface{}
+	if err != nil {
+		// Fallback progress data - start at 0%
+		progressData = map[string]interface{}{
+			"overall_progress": 0,
+			"activities": map[string]bool{
+				"tutorial":   false,
+				"suppliers":  false,
+				"visitors":   false,
+				"ai":         false,
+				"products":   false,
+				"withdrawal": false,
+				"available":  false,
+				"express":    false,
+				"learning":   false,
+			},
+			"next_steps": []string{"مشاهده آموزش‌های پلتفرم"},
+		}
+	} else {
+		progressData = progress.GetProgressBreakdown()
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "User dashboard",
 		"user_id": userID,
@@ -235,6 +266,7 @@ func getDashboard(c *gin.Context) {
 			"withdrawal_stats":   withdrawalStats,
 			"recent_withdrawals": recentWithdrawals,
 			"chart_data":         chartData,
+			"progress":           progressData,
 		},
 	})
 }

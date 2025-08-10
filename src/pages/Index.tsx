@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiService } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,14 +60,14 @@ const Index = () => {
     { id: "asllearn", label: "آموزش", icon: BookOpen },
     { id: "products", label: "محصولات تحقیقی", icon: Target },
     { id: "aslsupplier", label: "تأمین‌کنندگان", icon: Users },
-    { id: "aslexpress", label: "ارسال", icon: Truck },
     { id: "aslvisit", label: "ویزیتورها", icon: Logo },
     { id: "aslpay", label: "دریافت پول", icon: CreditCard },
+    { id: "aslexpress", label: "ارسال", icon: Truck },
     { id: "aslai", label: "هوش مصنوعی", icon: Bot },
     { id: "aslavailable", label: "کالاهای موجود", icon: Package },
   ];
 
-  const handleSectionClick = (sectionId: string, sectionLabel: string) => {
+  const handleSectionClick = async (sectionId: string, sectionLabel: string) => {
     // Features that require authentication
     const protectedFeatures = ["asllearn", "aslsupplier", "aslexpress", "aslvisit", "aslpay", "aslai", "aslavailable"];
     
@@ -77,6 +78,32 @@ const Index = () => {
     }
     
     setActiveSection(sectionId);
+
+    // Update progress for authenticated users
+    if (isAuthenticated && protectedFeatures.includes(sectionId)) {
+      try {
+        // Map section to activity
+        const activityMap: Record<string, string> = {
+          "asllearn": "learning",
+          "aslsupplier": "suppliers", 
+          "aslexpress": "express",
+          "aslvisit": "visitors",
+          "aslpay": "withdrawal",
+          "aslai": "ai",
+          "aslavailable": "available",
+          "products": "products"
+        };
+
+        const activity = activityMap[sectionId];
+        if (activity) {
+          await apiService.updateUserProgress(activity);
+          console.log(`✅ Progress updated for activity: ${activity}`);
+        }
+      } catch (error) {
+        console.error('Error updating progress:', error);
+        // Don't show error to user, just log it
+      }
+    }
   };
 
   const renderActiveSection = () => {

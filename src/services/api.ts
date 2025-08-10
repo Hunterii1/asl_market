@@ -943,6 +943,26 @@ class ApiService {
       },
     });
   }
+
+  // Progress tracking
+  async getUserProgress(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/progress`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateUserProgress(activity: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/progress/update`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ activity }),
+    });
+  }
 }
 
 export const apiService = new ApiService(); 

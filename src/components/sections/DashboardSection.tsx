@@ -79,14 +79,52 @@ const DashboardSection = () => {
         { name: '۱۴۰۳/۰۸/۱۵', sales: 0 },
       ];
 
-  // Learning path steps
+  // Dynamic learning steps based on user progress
+  const progressData = dashboardData?.progress || { overall_progress: 0, activities: {}, next_steps: [] };
+  
   const learningSteps = [
-    { id: 1, title: "انتخاب محصول", completed: true, current: false },
-    { id: 2, title: "یافتن تأمین‌کننده", completed: true, current: false },
-    { id: 3, title: "تنظیم قیمت و بازاریابی", completed: false, current: true },
-    { id: 4, title: "راه‌اندازی فروش", completed: false, current: false },
-    { id: 5, title: "مدیریت ارسال", completed: false, current: false },
-    { id: 6, title: "دریافت پول و رشد", completed: false, current: false },
+    { 
+      id: 1, 
+      title: "آموزش پلتفرم", 
+      completed: progressData.activities?.tutorial || false, 
+      current: !progressData.activities?.tutorial,
+      activity: "tutorial"
+    },
+    { 
+      id: 2, 
+      title: "یافتن تأمین‌کنندگان", 
+      completed: progressData.activities?.suppliers || false, 
+      current: !progressData.activities?.suppliers && progressData.activities?.tutorial,
+      activity: "suppliers"
+    },
+    { 
+      id: 3, 
+      title: "مشاهده ویزیتورها", 
+      completed: progressData.activities?.visitors || false, 
+      current: !progressData.activities?.visitors && progressData.activities?.suppliers,
+      activity: "visitors"
+    },
+    { 
+      id: 4, 
+      title: "استفاده از هوش مصنوعی", 
+      completed: progressData.activities?.ai || false, 
+      current: !progressData.activities?.ai && progressData.activities?.visitors,
+      activity: "ai"
+    },
+    { 
+      id: 5, 
+      title: "محصولات تحقیقی", 
+      completed: progressData.activities?.products || false, 
+      current: !progressData.activities?.products && progressData.activities?.ai,
+      activity: "products"
+    },
+    { 
+      id: 6, 
+      title: "دریافت پول و رشد", 
+      completed: progressData.activities?.withdrawal || false, 
+      current: !progressData.activities?.withdrawal && progressData.activities?.products,
+      activity: "withdrawal"
+    },
   ];
 
   // Map withdrawal status to Persian
@@ -343,11 +381,15 @@ const DashboardSection = () => {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-xl font-bold text-foreground">مسیر یادگیری شما</h3>
-              <p className="text-orange-600 dark:text-orange-300">مرحله ۳ از ۶ - در حال پیشرفت</p>
+              <p className="text-orange-600 dark:text-orange-300">
+                {learningSteps.filter(s => s.completed).length} از {learningSteps.length} مرحله - در حال پیشرفت
+              </p>
             </div>
             <div className="text-left">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">۳۳%</div>
-                              <p className="text-orange-600 dark:text-orange-300 text-sm">تکمیل شده</p>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {toFarsiNumber(progressData.overall_progress || 0)}%
+              </div>
+              <p className="text-orange-600 dark:text-orange-300 text-sm">تکمیل شده</p>
             </div>
           </div>
           
@@ -392,7 +434,16 @@ const DashboardSection = () => {
           </div>
           
           <div className="mt-6">
-            <Button className="bg-orange-500 hover:bg-orange-600 rounded-2xl">
+            <Button 
+              className="bg-orange-500 hover:bg-orange-600 rounded-2xl"
+              onClick={() => {
+                const nextStep = learningSteps.find(s => s.current);
+                if (nextStep) {
+                  // Show next step suggestion
+                  alert(`مرحله بعدی: ${nextStep.title}`);
+                }
+              }}
+            >
               <PlayCircle className="w-4 h-4 ml-2" />
               ادامه مرحله فعلی
             </Button>
