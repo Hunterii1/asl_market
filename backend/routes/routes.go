@@ -115,6 +115,14 @@ func SetupRoutes(router *gin.Engine) {
 		protected.GET("/research-products/categories", controllers.GetResearchProductCategories)
 		protected.GET("/research-products/:id", controllers.GetResearchProduct)
 
+		// Training videos routes (public access)
+		protected.GET("/training/categories", controllers.GetTrainingCategories)
+		protected.GET("/training/videos", controllers.GetAllTrainingVideos)
+		protected.GET("/training/videos/search", controllers.SearchTrainingVideos)
+		protected.GET("/training/category/:id/videos", controllers.GetVideosByCategory)
+		protected.GET("/training/video/:id", controllers.GetTrainingVideo)
+		protected.GET("/training/stats", controllers.GetTrainingStats)
+
 		// Admin research products management routes
 		protected.POST("/admin/research-products", controllers.CreateResearchProduct)
 		protected.PUT("/admin/research-products/:id", controllers.UpdateResearchProduct)
@@ -149,6 +157,13 @@ func SetupRoutes(router *gin.Engine) {
 		protected.PUT("/admin/available-products/:id", controllers.UpdateAvailableProduct)
 		protected.DELETE("/admin/available-products/:id", controllers.DeleteAvailableProduct)
 		protected.PUT("/admin/available-products/:id/status", controllers.UpdateAvailableProductStatus)
+
+		// Admin training videos management routes
+		protected.GET("/admin/training/videos", controllers.GetAllVideosForAdmin)
+		protected.POST("/admin/training/videos", controllers.CreateTrainingVideo)
+		protected.PUT("/admin/training/videos/:id", controllers.UpdateTrainingVideo)
+		protected.DELETE("/admin/training/videos/:id", controllers.DeleteTrainingVideo)
+		protected.POST("/admin/training/categories", controllers.CreateTrainingCategory)
 
 		// License-protected routes
 		licensed := protected.Group("/")

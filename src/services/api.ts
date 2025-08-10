@@ -963,6 +963,61 @@ class ApiService {
       body: JSON.stringify({ activity }),
     });
   }
+
+  // Training Videos API
+  async getTrainingCategories(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/categories`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getAllTrainingVideos(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/videos`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getVideosByCategory(categoryId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/category/${categoryId}/videos`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getTrainingVideo(videoId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/video/${videoId}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async searchTrainingVideos(query: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/videos/search?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getTrainingStats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/stats`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService(); 

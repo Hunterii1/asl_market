@@ -37,6 +37,7 @@ const (
 	MENU_SEARCH        = "🔍 جستجوی کاربر"
 	MENU_LICENSES      = "🔑 مدیریت لایسنس"
 	MENU_WITHDRAWALS   = "💰 مدیریت برداشت‌ها"
+	MENU_TRAINING      = "🎓 مدیریت آموزش"
 	MENU_GENERATE      = "➕ تولید لایسنس"
 	MENU_LIST_LICENSES = "📋 لیست لایسنس‌ها"
 	MENU_SETTINGS      = "⚙️ تنظیمات"
@@ -226,6 +227,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_WITHDRAWALS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_TRAINING),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
@@ -294,6 +298,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showLicenseMenu(message.Chat.ID)
 	case MENU_WITHDRAWALS:
 		s.showWithdrawalMenu(message.Chat.ID)
+	case MENU_TRAINING:
+		s.showTrainingMenu(message.Chat.ID)
 	case MENU_SUPPLIERS:
 		s.showSupplierMenu(message.Chat.ID)
 	case MENU_PENDING_SUPPLIERS:
@@ -1139,6 +1145,14 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle withdrawal callbacks
 	if strings.Contains(data, "withdrawal") {
 		s.handleWithdrawalCallback(query)
+		return
+	}
+
+	// Handle training callbacks
+	if strings.Contains(data, "training") || strings.HasPrefix(data, "select_category_") ||
+		strings.HasPrefix(data, "edit_video_") || strings.HasPrefix(data, "delete_video_") ||
+		strings.HasPrefix(data, "video_type_") {
+		s.handleTrainingCallback(query)
 		return
 	}
 

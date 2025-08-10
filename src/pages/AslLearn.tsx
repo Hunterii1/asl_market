@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiService } from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,32 @@ import { LicenseGate } from '@/components/LicenseGate';
 const AslLearn = () => {
   const [selectedCategory, setSelectedCategory] = useState("platform");
   const [searchTerm, setSearchTerm] = useState("");
+  const [realVideos, setRealVideos] = useState<any[]>([]);
+  const [realCategories, setRealCategories] = useState<any[]>([]);
+
+  // Load real training data on component mount
+  useEffect(() => {
+    const loadTrainingData = async () => {
+      try {
+        const [categoriesRes, videosRes] = await Promise.all([
+          apiService.getTrainingCategories(),
+          apiService.getAllTrainingVideos()
+        ]);
+        
+        setRealCategories(categoriesRes.data || []);
+        setRealVideos(videosRes.data || []);
+        
+        console.log('📚 Training data loaded:', {
+          categories: categoriesRes.data?.length || 0,
+          videos: videosRes.data?.length || 0
+        });
+      } catch (error) {
+        console.error('❌ Error loading training data:', error);
+      }
+    };
+
+    loadTrainingData();
+  }, []);
 
   const trainingCategories = [
     { 
