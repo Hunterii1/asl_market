@@ -582,7 +582,7 @@ const DashboardSection = () => {
               <TrendingUp className="w-6 h-6 text-blue-400" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">گزارش‌های تحلیلی</h3>
-            <p className="text-sm text-muted-foreground">عملکرد فروش خود را تحلیل کنید</p>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">عملکرد فروش خود را تحلیل کنید</p>
           </CardContent>
         </Card>
       </div>

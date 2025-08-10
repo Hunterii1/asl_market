@@ -61,8 +61,8 @@ const HeaderAuth = () => {
         <div className="container mx-auto px-3 sm:px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
-                <Logo className="text-white" size={20} />
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
+                <Logo className="" textColor="text-orange-400" size={20} />
               </div>
               <div className="hidden sm:block">
                 <h1 className="text-lg sm:text-xl font-bold text-foreground">اصل مارکت</h1>
@@ -87,8 +87,8 @@ const HeaderAuth = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center p-1">
-                <Logo className="text-white" size={24} />
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center p-1">
+                <Logo className="" textColor="text-orange-400" size={24} />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground">اصل مارکت</h1>
@@ -124,8 +124,8 @@ const HeaderAuth = () => {
       <div className="container mx-auto px-3 sm:px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
-              <Logo className="text-white" size={20} />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl flex items-center justify-center p-1">
+              <Logo className="" textColor="text-orange-400" size={20} />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg sm:text-xl font-bold text-foreground">اصل مارکت</h1>

@@ -1,7 +1,7 @@
 {
-  "name": "اصل مارکت - سیستم هوشمند فروش بین‌المللی",
-  "short_name": "اصل مارکت",
-  "description": "پلتفرم جامع فروش محصولات ایرانی در بازارهای عربی. زعفران، خرما، پسته، فرش و صنایع دستی با بهترین قیمت و کیفیت.",
+  "name": "ASL Market - International Sales Platform",
+  "short_name": "ASL Market",
+  "description": "Comprehensive platform for selling Iranian products in Arab markets. Saffron, dates, pistachios, carpets and handicrafts with the best price and quality.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a1a",
@@ -44,9 +44,9 @@
   ],
   "shortcuts": [
     {
-      "name": "آموزش",
-      "short_name": "آموزش", 
-      "description": "دسترسی سریع به بخش آموزش",
+      "name": "Learning",
+      "short_name": "Learn", 
+      "description": "Quick access to learning section",
       "url": "/asllearn",
       "icons": [
         {
@@ -56,9 +56,9 @@
       ]
     },
     {
-      "name": "محصولات",
-      "short_name": "محصولات",
-      "description": "مشاهده محصولات موجود",
+      "name": "Products",
+      "short_name": "Products",
+      "description": "View available products",
       "url": "/products", 
       "icons": [
         {
@@ -68,9 +68,9 @@
       ]
     },
     {
-      "name": "تأمین‌کنندگان",
-      "short_name": "تأمین‌کنندگان",
-      "description": "لیست تأمین‌کنندگان",
+      "name": "Suppliers",
+      "short_name": "Suppliers",
+      "description": "Suppliers list",
       "url": "/aslsupplier",
       "icons": [
         {
@@ -80,9 +80,9 @@
       ]
     },
     {
-      "name": "هوش مصنوعی",
+      "name": "Artificial Intelligence",
       "short_name": "AI",
-      "description": "ابزارهای هوش مصنوعی",
+      "description": "AI tools and features",
       "url": "/aslai",
       "icons": [
         {

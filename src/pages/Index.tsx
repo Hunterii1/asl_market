@@ -20,7 +20,7 @@ import {
   MessageSquare,
   Wrench,
   BookOpen,
-
+  UserCheck,
   Zap,
   Star,
   Settings,
@@ -60,7 +60,7 @@ const Index = () => {
     { id: "asllearn", label: "آموزش", englishLabel: "ASL LEARN", icon: BookOpen },
     { id: "products", label: "محصولات تحقیقی", englishLabel: "RESEARCH PRODUCTS", icon: Target },
     { id: "aslsupplier", label: "تأمین‌کنندگان", englishLabel: "ASL SUPPLIER", icon: Users },
-    { id: "aslvisit", label: "ویزیتورها", englishLabel: "ASL VISIT", icon: Logo },
+    { id: "aslvisit", label: "ویزیتورها", englishLabel: "ASL VISIT", icon: UserCheck },
     { id: "aslpay", label: "دریافت پول", englishLabel: "ASL PAY", icon: CreditCard },
     { id: "aslexpress", label: "ارسال", englishLabel: "ASL EXPRESS", icon: Truck },
     { id: "aslai", label: "هوش مصنوعی", englishLabel: "ASL AI", icon: Bot },
