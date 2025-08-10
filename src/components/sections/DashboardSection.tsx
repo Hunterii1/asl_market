@@ -411,7 +411,7 @@ const DashboardSection = () => {
                       ? 'bg-green-500 text-white'
                       : step.current
                       ? 'bg-orange-500 text-white'
-                      : 'bg-muted text-muted-foreground'
+                      : 'bg-gray-300 dark:bg-muted text-gray-600 dark:text-muted-foreground'
                   }`}>
                     {step.completed ? (
                       <CheckCircle className="w-4 h-4" />
@@ -421,10 +421,10 @@ const DashboardSection = () => {
                   </div>
                   <p className={`text-xs font-medium ${
                     step.completed
-                      ? 'text-green-400'
+                      ? 'text-green-600 dark:text-green-400'
                       : step.current
-                      ? 'text-orange-400'
-                      : 'text-muted-foreground'
+                      ? 'text-orange-600 dark:text-orange-400'
+                      : 'text-gray-700 dark:text-muted-foreground'
                   }`}>
                     {step.title}
                   </p>
@@ -556,7 +556,7 @@ const DashboardSection = () => {
               <Plus className="w-6 h-6 text-orange-400" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">افزودن محصول جدید</h3>
-            <p className="text-sm text-muted-foreground">محصول جدید خود را به کاتالوگ اضافه کنید</p>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">محصول جدید خود را به کاتالوگ اضافه کنید</p>
           </CardContent>
         </Card>
 
@@ -569,7 +569,7 @@ const DashboardSection = () => {
               <Users className="w-6 h-6 text-green-400" />
             </div>
             <h3 className="font-semibold text-foreground mb-2">مدیریت مشتریان</h3>
-            <p className="text-sm text-muted-foreground">مشتریان و سفارش‌هایشان را مدیریت کنید</p>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">مشتریان و سفارش‌هایشان را مدیریت کنید</p>
           </CardContent>
         </Card>
 
