@@ -8,16 +8,16 @@ import (
 
 // TrainingCategory represents video categories
 type TrainingCategory struct {
-	ID          uint   `gorm:"primaryKey"`
-	Name        string `gorm:"size:100;not null"` // نام دسته‌بندی
-	NameEn      string `gorm:"size:100"`          // نام انگلیسی
-	Description string `gorm:"type:text"`         // توضیحات دسته‌بندی
-	Icon        string `gorm:"size:50"`           // نام آیکون
-	Color       string `gorm:"size:20"`           // رنگ دسته‌بندی
-	Order       int    `gorm:"default:0"`         // ترتیب نمایش
-	IsActive    bool   `gorm:"default:true"`      // فعال/غیرفعال
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID           uint   `gorm:"primaryKey"`
+	Name         string `gorm:"size:100;not null"`              // نام دسته‌بندی
+	NameEn       string `gorm:"size:100"`                       // نام انگلیسی
+	Description  string `gorm:"type:text"`                      // توضیحات دسته‌بندی
+	Icon         string `gorm:"size:50"`                        // نام آیکون
+	Color        string `gorm:"size:20"`                        // رنگ دسته‌بندی
+	DisplayOrder int    `gorm:"default:0;column:display_order"` // ترتیب نمایش
+	IsActive     bool   `gorm:"default:true"`                   // فعال/غیرفعال
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 
 	// Relations
 	Videos []TrainingVideo `gorm:"foreignKey:CategoryID"`
@@ -44,9 +44,9 @@ type TrainingVideo struct {
 	FileSize  int64  `gorm:"default:0"` // حجم فایل (بایت)
 
 	// Organization
-	Order      int    `gorm:"default:0"`                  // ترتیب در دسته‌بندی
-	Difficulty string `gorm:"size:20;default:'beginner'"` // مقطع (beginner/intermediate/advanced)
-	Tags       string `gorm:"type:text"`                  // برچسب‌ها (JSON array)
+	DisplayOrder int    `gorm:"default:0;column:display_order"` // ترتیب در دسته‌بندی
+	Difficulty   string `gorm:"size:20;default:'beginner'"`     // مقطع (beginner/intermediate/advanced)
+	Tags         string `gorm:"type:text"`                      // برچسب‌ها (JSON array)
 
 	// Status
 	Status string `gorm:"size:20;default:'active'"` // active/inactive/draft
@@ -67,7 +67,7 @@ func GetTrainingCategories(db *gorm.DB) ([]TrainingCategory, error) {
 
 	err := db.Preload("Videos", "status = ?", "active").
 		Where("is_active = ?", true).
-		Order("order ASC, name ASC").
+		Order("display_order ASC, name ASC").
 		Find(&categories).Error
 
 	return categories, err
@@ -79,7 +79,7 @@ func GetVideosByCategory(db *gorm.DB, categoryID uint) ([]TrainingVideo, error) 
 
 	err := db.Preload("Category").
 		Where("category_id = ? AND status = ?", categoryID, "active").
-		Order("order ASC, created_at DESC").
+		Order("display_order ASC, created_at DESC").
 		Find(&videos).Error
 
 	return videos, err
@@ -91,7 +91,7 @@ func GetAllActiveVideos(db *gorm.DB) ([]TrainingVideo, error) {
 
 	err := db.Preload("Category").
 		Where("status = ?", "active").
-		Order("category_id ASC, order ASC, created_at DESC").
+		Order("category_id ASC, display_order ASC, created_at DESC").
 		Find(&videos).Error
 
 	return videos, err
