@@ -566,6 +566,19 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleSingleVisitorInput(message.Chat.ID, message.Text)
 			case "single_product_data":
 				s.handleSingleProductInput(message.Chat.ID, message.Text)
+			default:
+				// Handle training video link inputs
+				if strings.HasPrefix(state.WaitingForInput, "awaiting_video_link_") {
+					// Create TelegramService with training methods
+					ts := &TelegramService{bot: s.bot, db: s.db}
+					ts.handleVideoLinkInput(message.Chat.ID, message.Text, state.WaitingForInput)
+				} else if strings.HasPrefix(state.WaitingForInput, "awaiting_video_title_") {
+					ts := &TelegramService{bot: s.bot, db: s.db}
+					ts.handleVideoTitleInput(message.Chat.ID, message.Text, state.WaitingForInput)
+				} else if strings.HasPrefix(state.WaitingForInput, "awaiting_video_desc_") {
+					ts := &TelegramService{bot: s.bot, db: s.db}
+					ts.handleVideoDescInput(message.Chat.ID, message.Text, state.WaitingForInput)
+				}
 			}
 		} else {
 			// Check for supplier command patterns
@@ -1151,14 +1164,10 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle training callbacks
 	if strings.Contains(data, "training") || strings.HasPrefix(data, "select_category_") ||
 		strings.HasPrefix(data, "edit_video_") || strings.HasPrefix(data, "delete_video_") ||
-		strings.HasPrefix(data, "video_type_") {
-		s.handleTrainingCallback(query)
-		return
-	}
-
-	// Handle delete confirmation callbacks
-	if strings.HasPrefix(data, "confirm_delete_") {
-		s.handleDeleteConfirmation(query)
+		strings.HasPrefix(data, "video_type_") || strings.HasPrefix(data, "confirm_delete_") {
+		// Create TelegramService with training methods
+		ts := &TelegramService{bot: s.bot, db: s.db}
+		ts.handleTrainingCallback(query)
 		return
 	}
 

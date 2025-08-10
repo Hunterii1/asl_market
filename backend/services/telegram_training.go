@@ -135,37 +135,63 @@ func (ts *TelegramService) showTrainingVideos(chatID int64) {
 				"draft":    "پیش‌نویس",
 			}[video.Status])
 
-			// Add edit/delete buttons for each video
-			keyboard := [][]tgbotapi.InlineKeyboardButton{
-				{
-					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_video_%d", video.ID)),
-					tgbotapi.NewInlineKeyboardButtonData("🗑 حذف", fmt.Sprintf("delete_video_%d", video.ID)),
-				},
-			}
-
-			msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("🎬 **%s**", video.Title))
-			msg.ParseMode = "Markdown"
-			msg.ReplyMarkup = tgbotapi.NewInlineKeyboardMarkup(keyboard...)
-			ts.bot.Send(msg)
-
 			message += "\n"
 		}
+
+		// Add main action buttons when there are videos
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("➕ ویدیو جدید", MENU_TRAINING_ADD_VIDEO),
+				tgbotapi.NewInlineKeyboardButtonData("📊 آمار", MENU_TRAINING_STATS),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت", MENU_TRAINING),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		ts.bot.Send(msg)
+
+		// Send individual video cards with edit/delete buttons
+		for _, video := range videos {
+			videoMessage := fmt.Sprintf("🎬 **%s**\n", video.Title)
+			if video.Description != "" {
+				videoMessage += fmt.Sprintf("📄 %s\n", video.Description)
+			}
+			videoMessage += fmt.Sprintf("📂 دسته: %s\n", video.Category.Name)
+			if video.Duration > 0 {
+				minutes := video.Duration / 60
+				seconds := video.Duration % 60
+				videoMessage += fmt.Sprintf("⏱ مدت: %d:%02d\n", minutes, seconds)
+			}
+			if video.Views > 0 {
+				videoMessage += fmt.Sprintf("👁 بازدید: %d\n", video.Views)
+			}
+			videoMessage += fmt.Sprintf("📱 نوع: %s\n", map[string]string{
+				"file": "فایل آپلود شده",
+				"link": "لینک خارجی",
+			}[video.VideoType])
+			videoMessage += fmt.Sprintf("🎯 وضعیت: %s", map[string]string{
+				"active":   "فعال",
+				"inactive": "غیرفعال",
+				"draft":    "پیش‌نویس",
+			}[video.Status])
+
+			keyboard := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_video_%d", video.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑 حذف", fmt.Sprintf("delete_video_%d", video.ID)),
+				),
+			)
+
+			msg := tgbotapi.NewMessage(chatID, videoMessage)
+			msg.ParseMode = "Markdown"
+			msg.ReplyMarkup = keyboard
+			ts.bot.Send(msg)
+		}
 	}
-
-	// Main menu buttons
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("➕ ویدیو جدید", MENU_TRAINING_ADD_VIDEO),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت", MENU_TRAINING),
-		),
-	)
-
-	msg := tgbotapi.NewMessage(chatID, message)
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	ts.bot.Send(msg)
 }
 
 // showTrainingStats shows training statistics
@@ -267,10 +293,14 @@ func (ts *TelegramService) handleTrainingCallback(callback *tgbotapi.CallbackQue
 		ts.showTrainingStats(chatID)
 	case strings.HasPrefix(data, "select_category_"):
 		ts.handleCategorySelection(chatID, data)
+	case strings.HasPrefix(data, "video_type_"):
+		ts.handleVideoTypeSelection(chatID, data)
 	case strings.HasPrefix(data, "edit_video_"):
 		ts.handleVideoEdit(chatID, data)
 	case strings.HasPrefix(data, "delete_video_"):
 		ts.handleVideoDelete(chatID, data)
+	case strings.HasPrefix(data, "confirm_delete_"):
+		ts.handleVideoDeleteConfirmation(chatID, data)
 	}
 
 	// Answer callback to remove loading state
@@ -312,6 +342,49 @@ func (ts *TelegramService) handleCategorySelection(chatID int64, data string) {
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	ts.bot.Send(msg)
+}
+
+// handleVideoTypeSelection handles video type selection (file vs link)
+func (ts *TelegramService) handleVideoTypeSelection(chatID int64, data string) {
+	if strings.HasPrefix(data, "video_type_file_") {
+		categoryIDStr := strings.TrimPrefix(data, "video_type_file_")
+		sessionMutex.Lock()
+		sessionStates[chatID] = &SessionState{
+			ChatID:          chatID,
+			WaitingForInput: fmt.Sprintf("awaiting_video_file_%s", categoryIDStr),
+		}
+		sessionMutex.Unlock()
+
+		message := "📁 **آپلود فایل ویدیو**\n\n"
+		message += "لطفاً فایل ویدیو خود را ارسال کنید.\n\n"
+		message += "⚠️ **نکته**: حداکثر حجم مجاز ۵۰ مگابایت است."
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		msg.ParseMode = "Markdown"
+		ts.bot.Send(msg)
+
+	} else if strings.HasPrefix(data, "video_type_link_") {
+		categoryIDStr := strings.TrimPrefix(data, "video_type_link_")
+		sessionMutex.Lock()
+		sessionStates[chatID] = &SessionState{
+			ChatID:          chatID,
+			WaitingForInput: fmt.Sprintf("awaiting_video_link_%s", categoryIDStr),
+		}
+		sessionMutex.Unlock()
+
+		message := "🔗 **لینک ویدیو**\n\n"
+		message += "لطفاً لینک ویدیو خود را ارسال کنید.\n\n"
+		message += "📺 **پلتفرم‌های پشتیبانی شده:**\n"
+		message += "• یوتیوب (youtube.com)\n"
+		message += "• آپارات (aparat.com)\n"
+		message += "• ویمیو (vimeo.com)\n"
+		message += "• سایر پلتفرم‌ها\n\n"
+		message += "💡 **مثال**: https://www.aparat.com/v/ujntr19"
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		msg.ParseMode = "Markdown"
+		ts.bot.Send(msg)
+	}
 }
 
 // handleVideoEdit handles video editing
@@ -391,6 +464,41 @@ func (ts *TelegramService) handleVideoDelete(chatID int64, data string) {
 	ts.bot.Send(msg)
 }
 
+// handleVideoDeleteConfirmation handles video deletion confirmation
+func (ts *TelegramService) handleVideoDeleteConfirmation(chatID int64, data string) {
+	videoIDStr := strings.TrimPrefix(data, "confirm_delete_")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در پردازش"))
+		return
+	}
+
+	// Get video details before deletion
+	video, err := models.GetVideoByID(models.GetDB(), uint(videoID))
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ ویدیو یافت نشد"))
+		return
+	}
+
+	// Delete the video
+	if err := models.DeleteTrainingVideo(models.GetDB(), uint(videoID)); err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در حذف ویدیو"))
+		return
+	}
+
+	message := "✅ **ویدیو حذف شد**\n\n"
+	message += fmt.Sprintf("🎬 **عنوان:** %s\n", video.Title)
+	message += fmt.Sprintf("📂 **دسته‌بندی:** %s\n", video.Category.Name)
+	message += "\n🗑 ویدیو با موفقیت از سیستم حذف شد."
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	ts.bot.Send(msg)
+
+	// Show updated video list
+	ts.showTrainingVideos(chatID)
+}
+
 // processVideoUpload processes uploaded video files
 func (ts *TelegramService) processVideoUpload(message *tgbotapi.Message) {
 	if message.Video == nil {
@@ -440,6 +548,140 @@ func (ts *TelegramService) processVideoUpload(message *tgbotapi.Message) {
 	message_text += "حالا عنوان ویدیو را وارد کنید:"
 
 	msg := tgbotapi.NewMessage(message.Chat.ID, message_text)
+	msg.ParseMode = "Markdown"
+	ts.bot.Send(msg)
+}
+
+// handleVideoLinkInput processes video link input from users
+func (ts *TelegramService) handleVideoLinkInput(chatID int64, text, waitingFor string) {
+	categoryIDStr := strings.TrimPrefix(waitingFor, "awaiting_video_link_")
+	categoryID, err := strconv.ParseUint(categoryIDStr, 10, 32)
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در پردازش"))
+		return
+	}
+
+	// Basic URL validation
+	if !strings.HasPrefix(text, "http://") && !strings.HasPrefix(text, "https://") {
+		message := "❌ **لینک نامعتبر**\n\n"
+		message += "لطفاً یک لینک معتبر وارد کنید که با http:// یا https:// شروع شود.\n\n"
+		message += "💡 **مثال**: https://www.aparat.com/v/ujntr19"
+
+		msg := tgbotapi.NewMessage(chatID, message)
+		msg.ParseMode = "Markdown"
+		ts.bot.Send(msg)
+		return
+	}
+
+	// Create video record
+	video := models.TrainingVideo{
+		CategoryID: uint(categoryID),
+		Title:      "ویدیو جدید", // Will be updated by admin
+		VideoType:  "link",
+		VideoURL:   text,
+		Status:     "draft", // Start as draft
+	}
+
+	if err := models.CreateTrainingVideo(models.GetDB(), &video); err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در ذخیره ویدیو"))
+		return
+	}
+
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("awaiting_video_title_%d", video.ID),
+	}
+	sessionMutex.Unlock()
+
+	message_text := "✅ **لینک ویدیو ذخیره شد!**\n\n"
+	message_text += fmt.Sprintf("🔗 **لینک**: %s\n\n", text)
+	message_text += "حالا عنوان ویدیو را وارد کنید:"
+
+	msg := tgbotapi.NewMessage(chatID, message_text)
+	msg.ParseMode = "Markdown"
+	ts.bot.Send(msg)
+}
+
+// handleVideoTitleInput processes video title input
+func (ts *TelegramService) handleVideoTitleInput(chatID int64, text, waitingFor string) {
+	videoIDStr := strings.TrimPrefix(waitingFor, "awaiting_video_title_")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در پردازش"))
+		return
+	}
+
+	// Update video title
+	updates := &models.TrainingVideo{Title: text}
+	if err := models.UpdateTrainingVideo(models.GetDB(), uint(videoID), updates); err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در بروزرسانی عنوان"))
+		return
+	}
+
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("awaiting_video_desc_%d", videoID),
+	}
+	sessionMutex.Unlock()
+
+	message_text := "✅ **عنوان ذخیره شد!**\n\n"
+	message_text += fmt.Sprintf("📝 **عنوان**: %s\n\n", text)
+	message_text += "حالا توضیحات ویدیو را وارد کنید (اختیاری):\n\n"
+	message_text += "💡 می‌توانید /skip را برای رد کردن این مرحله ارسال کنید."
+
+	msg := tgbotapi.NewMessage(chatID, message_text)
+	msg.ParseMode = "Markdown"
+	ts.bot.Send(msg)
+}
+
+// handleVideoDescInput processes video description input
+func (ts *TelegramService) handleVideoDescInput(chatID int64, text, waitingFor string) {
+	videoIDStr := strings.TrimPrefix(waitingFor, "awaiting_video_desc_")
+	videoID, err := strconv.ParseUint(videoIDStr, 10, 32)
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در پردازش"))
+		return
+	}
+
+	// Handle skip command
+	if text == "/skip" {
+		text = ""
+	}
+
+	// Update video description and set status to active
+	updates := &models.TrainingVideo{Description: text, Status: "active"}
+	if err := models.UpdateTrainingVideo(models.GetDB(), uint(videoID), updates); err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در بروزرسانی توضیحات"))
+		return
+	}
+
+	// Clear session state
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	// Get the updated video for final message
+	video, err := models.GetVideoByID(models.GetDB(), uint(videoID))
+	if err != nil {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "✅ ویدیو با موفقیت اضافه شد!"))
+		return
+	}
+
+	message_text := "🎉 **ویدیو با موفقیت اضافه شد!**\n\n"
+	message_text += fmt.Sprintf("📝 **عنوان**: %s\n", video.Title)
+	if video.Description != "" {
+		message_text += fmt.Sprintf("📄 **توضیحات**: %s\n", video.Description)
+	}
+	message_text += fmt.Sprintf("📂 **دسته‌بندی**: %s\n", video.Category.Name)
+	message_text += fmt.Sprintf("🎯 **وضعیت**: فعال\n")
+	if video.VideoType == "link" {
+		message_text += fmt.Sprintf("🔗 **لینک**: %s\n", video.VideoURL)
+	}
+	message_text += "\n✅ ویدیو در وبسایت قابل مشاهده است."
+
+	msg := tgbotapi.NewMessage(chatID, message_text)
 	msg.ParseMode = "Markdown"
 	ts.bot.Send(msg)
 }
