@@ -202,8 +202,8 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
           <div className="flex items-start gap-3">
             <Shield className="w-5 h-5 text-blue-400 mt-0.5" />
             <div>
-              <h5 className="text-blue-300 font-medium mb-2">نکات مهم:</h5>
-              <ul className="text-blue-200 text-sm space-y-1">
+              <h5 className="text-blue-700 dark:text-blue-300 font-medium mb-2">نکات مهم:</h5>
+              <ul className="text-blue-600 dark:text-blue-200 text-sm space-y-1">
                 <li>• درخواست شما پس از بررسی کارشناس تایید می‌شود</li>
                 <li>• شماره حساب مقصد پس از تایید ارسال می‌شود</li>
                 <li>• پس از واریز، فیش را بارگذاری کنید</li>

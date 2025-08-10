@@ -118,7 +118,7 @@ const AslVisit = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-foreground mb-2">ویزیتور در کشورهای عربی هستید؟</h3>
-              <p className="text-blue-300">در شبکه ویزیتورهای اصل مارکت عضو شوید</p>
+              <p className="text-blue-600 dark:text-blue-300">در شبکه ویزیتورهای اصل مارکت عضو شوید</p>
             </div>
             <Button className="bg-blue-500 hover:bg-blue-600 rounded-2xl"
             onClick={() => navigate("/visitor-registration")}>
@@ -282,7 +282,7 @@ const AslVisit = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">ویزیتورهای اصل مارکت</h2>
-              <p className="text-blue-300">شبکه نمایندگان در کشورهای عربی</p>
+              <p className="text-blue-600 dark:text-blue-300">شبکه نمایندگان در کشورهای عربی</p>
             </div>
           </div>
         </CardContent>

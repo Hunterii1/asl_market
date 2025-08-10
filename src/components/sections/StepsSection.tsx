@@ -228,7 +228,7 @@ const StepsSection = () => {
     if (completedSteps.includes(stepId)) {
       return <CheckCircle className="w-5 h-5 text-green-400" />;
     } else {
-      return <Circle className="w-5 h-5 text-gray-500" />;
+      return <Circle className="w-5 h-5 text-gray-600 dark:text-gray-500" />;
     }
   };
 

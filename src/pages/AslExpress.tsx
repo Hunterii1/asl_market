@@ -297,10 +297,10 @@ const AslExpress = () => {
                 <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Info className="w-5 h-5 text-blue-400" />
-                    <span className="text-blue-300 font-medium">وزن قابل محاسبه</span>
+                    <span className="text-blue-600 dark:text-blue-300 font-medium">وزن قابل محاسبه</span>
                   </div>
                   <div className="text-foreground text-lg font-bold">{calculationResult.chargeableWeight} کیلوگرم</div>
-                  <div className="text-blue-300 text-sm">بیشترین مقدار بین وزن واقعی و حجمی</div>
+                  <div className="text-blue-600 dark:text-blue-300 text-sm">بیشترین مقدار بین وزن واقعی و حجمی</div>
                 </div>
 
                 <div className="space-y-3">

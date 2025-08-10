@@ -148,7 +148,7 @@ const ProductsResearch = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-foreground">محصولات تحقیقی</h2>
-                <p className="text-blue-300">در حال بارگذاری...</p>
+                <p className="text-blue-600 dark:text-blue-300">در حال بارگذاری...</p>
               </div>
             </div>
           </CardContent>
@@ -168,7 +168,7 @@ const ProductsResearch = () => {
             </div>
             <div>
               <h2 className="text-2xl font-bold text-foreground">محصولات تحقیقی</h2>
-              <p className="text-blue-300">محصولات پیشنهادی بر اساس آمار گمرک و صادرات ایران</p>
+              <p className="text-blue-600 dark:text-blue-300">محصولات پیشنهادی بر اساس آمار گمرک و صادرات ایران</p>
             </div>
             <div className="mr-auto">
               <Button 
