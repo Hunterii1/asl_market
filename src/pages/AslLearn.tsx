@@ -22,7 +22,7 @@ import {
 import { LicenseGate } from '@/components/LicenseGate';
 
 const AslLearn = () => {
-  const [selectedCategory, setSelectedCategory] = useState("platform");
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [realVideos, setRealVideos] = useState<any[]>([]);
   const [realCategories, setRealCategories] = useState<any[]>([]);
@@ -39,6 +39,11 @@ const AslLearn = () => {
         setRealCategories(categoriesRes.data || []);
         setRealVideos(videosRes.data || []);
         
+        // Set first category as default
+        if (categoriesRes.data && categoriesRes.data.length > 0) {
+          setSelectedCategory(categoriesRes.data[0].id);
+        }
+        
         console.log('📚 Training data loaded:', {
           categories: categoriesRes.data?.length || 0,
           videos: videosRes.data?.length || 0
@@ -51,44 +56,52 @@ const AslLearn = () => {
     loadTrainingData();
   }, []);
 
-  const trainingCategories = [
-    { 
-      id: "platform", 
-      name: "آموزش کار با پلتفرم", 
-      count: 12,
-      icon: Monitor,
-      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      description: "نحوه استفاده از امکانات سایت و پنل کاربری"
-    },
-    { 
-      id: "wholesale", 
-      name: "آموزش صادرات عمده", 
-      count: 18,
-      icon: Package,
-      color: "bg-green-500/20 text-green-400 border-green-500/30",
-      description: "تکنیک‌های فروش عمده و صادرات به کشورهای هدف"
-    },
-    { 
-      id: "retail", 
-      name: "آموزش فروش تکی محصول", 
-      count: 15,
-      icon: ShoppingCart,
-      color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      description: "استراتژی‌های فروش خرده و بازاریابی آنلاین"
-    },
-    { 
-      id: "sales", 
-      name: "دوره‌های آموزشی فروش", 
-      count: 24,
-      icon: GraduationCap,
-      color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      description: "آموزش‌های تخصصی مذاکره، بازاریابی و فروش"
-    }
-  ];
+  // Map backend categories to frontend icons and colors
+  const categoryIconMap = {
+    "آموزش کار با پلتفرم": { icon: Monitor, color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+    "آموزش صادرات عمده": { icon: Package, color: "bg-green-500/20 text-green-400 border-green-500/30" },
+    "آموزش فروش تکی محصول": { icon: ShoppingCart, color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
+    "دوره‌های آموزشی فروش": { icon: GraduationCap, color: "bg-purple-500/20 text-purple-400 border-purple-500/30" }
+  };
+
+  // Convert real categories from API to frontend format
+  const trainingCategories = realCategories.map(category => ({
+    id: category.id,
+    name: category.name,
+    count: category.videos ? category.videos.length : 0,
+    icon: categoryIconMap[category.name]?.icon || BookOpen,
+    color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
+    description: category.description || ""
+  }));
 
 
 
-  const trainingModules = {
+  // Group real videos by category
+  const groupedVideos = realVideos.reduce((acc, video) => {
+    const categoryId = video.category_id || video.category?.id;
+    if (!acc[categoryId]) acc[categoryId] = [];
+    acc[categoryId].push(video);
+    return acc;
+  }, {});
+
+  // Convert videos to frontend format
+  const formatVideo = (video) => ({
+    id: video.id,
+    title: video.title,
+    duration: video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
+    lessons: 1,
+    completed: false,
+    difficulty: video.difficulty === "beginner" ? "مقدماتی" : 
+                video.difficulty === "intermediate" ? "متوسط" : 
+                video.difficulty === "advanced" ? "پیشرفته" : "مقدماتی",
+    type: video.video_type === "file" ? "video" : "link",
+    description: video.description || "",
+    views: video.views || 0,
+    video_url: video.video_url,
+    telegram_file_id: video.telegram_file_id
+  });
+
+  const trainingModulesFake = {
     platform: [
       {
         id: 1,
@@ -238,7 +251,10 @@ const AslLearn = () => {
     }
   };
 
-  const currentModules = trainingModules[selectedCategory] || [];
+  // Get current modules from real data
+  const selectedCategoryData = trainingCategories.find(cat => cat.id == selectedCategory);
+  const currentModules = selectedCategoryData ? 
+    (groupedVideos[selectedCategoryData.id] || []).map(formatVideo) : [];
 
   return (
     <LicenseGate>
@@ -300,7 +316,21 @@ const AslLearn = () => {
             {trainingCategories.find(cat => cat.id === selectedCategory)?.name || "آموزش‌ها"}
           </h3>
           <div className="grid md:grid-cols-2 gap-4">
-            {currentModules.map((module) => (
+            {currentModules.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Video className="w-12 h-12 text-muted-foreground" />
+                </div>
+                <h4 className="text-lg font-bold text-foreground mb-2">هنوز ویدیویی آپلود نشده</h4>
+                <p className="text-muted-foreground mb-4">
+                  در این دسته‌بندی هیچ ویدیو آموزشی وجود ندارد
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  ادمین می‌تواند از طریق ربات تلگرام ویدیو اضافه کند
+                </p>
+              </div>
+            ) : (
+              currentModules.map((module) => (
               <Card key={module.id} className="bg-card/80 border-border hover:border-accent transition-all rounded-3xl">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -353,7 +383,7 @@ const AslLearn = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            )))}
           </div>
         </div>
 
@@ -369,7 +399,7 @@ const AslLearn = () => {
                 <div className="w-12 h-12 bg-blue-200/40 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
                   <BookOpen className="w-6 h-6 text-blue-500 dark:text-blue-400" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">۶۹</div>
+                <div className="text-2xl font-bold text-foreground">{realVideos.length || 0}</div>
                 <p className="text-sm text-muted-foreground">مجموع آموزش‌ها</p>
               </CardContent>
             </Card>
@@ -379,8 +409,8 @@ const AslLearn = () => {
                 <div className="w-12 h-12 bg-green-200/40 dark:bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
                   <Video className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">۳۵</div>
-                <p className="text-sm text-muted-foreground">ویدئوی آموزشی</p>
+                <div className="text-2xl font-bold text-foreground">{realVideos.filter(v => v.video_type === 'file').length || 0}</div>
+                <p className="text-sm text-muted-foreground">فایل آپلود شده</p>
               </CardContent>
             </Card>
             
@@ -389,8 +419,8 @@ const AslLearn = () => {
                 <div className="w-12 h-12 bg-orange-200/40 dark:bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
                   <Award className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">۲۱</div>
-                <p className="text-sm text-muted-foreground">دوره تخصصی</p>
+                <div className="text-2xl font-bold text-foreground">{realVideos.filter(v => v.video_type === 'link').length || 0}</div>
+                <p className="text-sm text-muted-foreground">لینک ویدیو</p>
               </CardContent>
             </Card>
             
@@ -399,8 +429,8 @@ const AslLearn = () => {
                 <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
                   <FileText className="w-6 h-6 text-purple-500 dark:text-purple-400" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">۱۳</div>
-                <p className="text-sm text-muted-foreground">راهنمای عملی</p>
+                <div className="text-2xl font-bold text-foreground">{realCategories.length || 0}</div>
+                <p className="text-sm text-muted-foreground">دسته‌بندی</p>
               </CardContent>
             </Card>
           </div>
