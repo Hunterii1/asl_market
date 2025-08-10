@@ -131,23 +131,33 @@ const AslLearn = () => {
 
   // Convert videos to frontend format
   const formatVideo = (video) => {
-    if (!video || !video.id || !video.title) return null;
+    const videoId = video.ID || video.id;
+    const videoTitle = video.Title || video.title;
+    const videoDuration = video.Duration || video.duration;
+    const videoDifficulty = video.Difficulty || video.difficulty;
+    const videoType = video.VideoType || video.video_type;
+    const videoDescription = video.Description || video.description;
+    const videoViews = video.Views || video.views;
+    const videoUrl = video.VideoURL || video.video_url;
+    const telegramFileId = video.TelegramFileID || video.telegram_file_id;
+    
+    if (!videoId || !videoTitle) return null;
     
     return {
-      id: video.id,
-      title: video.title,
-      duration: video.duration && typeof video.duration === 'number' ? 
-        `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
+      id: videoId,
+      title: videoTitle,
+      duration: videoDuration && typeof videoDuration === 'number' ? 
+        `${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
       lessons: 1,
       completed: false,
-      difficulty: video.difficulty === "beginner" ? "مقدماتی" : 
-                  video.difficulty === "intermediate" ? "متوسط" : 
-                  video.difficulty === "advanced" ? "پیشرفته" : "مقدماتی",
-      type: video.video_type === "file" ? "video" : "link",
-      description: video.description || "",
-      views: video.views || 0,
-      video_url: video.video_url || "",
-      telegram_file_id: video.telegram_file_id || ""
+      difficulty: videoDifficulty === "beginner" ? "مقدماتی" : 
+                  videoDifficulty === "intermediate" ? "متوسط" : 
+                  videoDifficulty === "advanced" ? "پیشرفته" : "مقدماتی",
+      type: videoType === "file" ? "video" : "link",
+      description: videoDescription || "",
+      views: videoViews || 0,
+      video_url: videoUrl || "",
+      telegram_file_id: telegramFileId || ""
     };
   };
 
@@ -303,9 +313,14 @@ const AslLearn = () => {
 
   // Get current modules from real data
   const selectedCategoryData = trainingCategories.find(cat => cat && cat.id === selectedCategory);
+  console.log('🔍 Debug selectedCategoryData:', selectedCategoryData);
+  console.log('🔍 Debug selectedCategory:', selectedCategory);
+  console.log('🔍 Debug parseInt(selectedCategoryData?.id):', selectedCategoryData ? parseInt(selectedCategoryData.id) : 'no category');
+  console.log('🔍 Debug groupedVideos[categoryId]:', selectedCategoryData ? groupedVideos[parseInt(selectedCategoryData.id)] : 'no videos');
+  
   const currentModules = selectedCategoryData && selectedCategoryData.id ? 
     (groupedVideos[parseInt(selectedCategoryData.id)] || [])
-      .filter(video => video && video.id && video.title) // Filter valid videos
+      .filter(video => video && (video.ID || video.id) && (video.Title || video.title)) // Filter valid videos
       .map(formatVideo)
       .filter(Boolean) : []; // Remove null results from formatVideo
 
