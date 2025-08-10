@@ -20,7 +20,8 @@ import {
   Languages,
   Briefcase,
   Award,
-  Lock
+  Lock,
+  Home
 } from "lucide-react";
 
 const AslVisit = () => {
@@ -172,6 +173,7 @@ const AslVisit = () => {
           {filteredVisitors.map((visitor) => (
             <Card key={visitor.id} className="bg-card border-border hover:border-border transition-all rounded-3xl transition-colors duration-300">
               <CardContent className="p-6">
+                {/* نام ویزیتور - اول */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
@@ -191,12 +193,19 @@ const AslVisit = () => {
                   </div>
                 </div>
 
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <MapPin className="w-4 h-4" />
-                    {visitor.city_province}
-                  </div>
-                  
+                {/* آدرس و محل سکونت - دوم */}
+                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate">{visitor.residence_address}</span>
+                </div>
+
+                {/* شهر/استان - سوم */}
+                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
+                  <Home className="w-4 h-4" />
+                  {visitor.city_province}
+                </div>
+
+                <div className="space-y-2 mb-4">
                   {visitor.has_marketing_experience && (
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <Briefcase className="w-4 h-4" />

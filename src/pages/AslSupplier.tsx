@@ -219,10 +219,13 @@ const AslSupplier = () => {
         {filteredSuppliers.map((supplier) => (
           <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group">
             <CardContent className="p-6">
+              {/* نام محصول اصلی - اول */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">{supplier.brand_name || supplier.full_name}</h4>
+                    <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
+                      {supplier.products?.[0]?.product_name || supplier.brand_name || supplier.full_name}
+                    </h4>
                     {supplier.status === 'approved' && (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     )}
@@ -235,12 +238,18 @@ const AslSupplier = () => {
                 </div>
               </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <MapPin className="w-4 h-4" />
-                  {supplier.city}
-                </div>
-                
+              {/* آدرس - دوم */}
+              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
+                <MapPin className="w-4 h-4" />
+                <span className="truncate">{supplier.address}</span>
+              </div>
+
+              {/* نام تامین‌کننده - سوم */}
+              <div className="mb-3">
+                <span className="text-sm font-medium text-foreground">{supplier.brand_name || supplier.full_name}</span>
+              </div>
+
+              <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <Package className="w-4 h-4" />
                   {supplier.products?.length || 0} محصول
@@ -266,8 +275,7 @@ const AslSupplier = () => {
                 )}
               </div>
 
-              <p className="text-muted-foreground text-sm mb-4">{supplier.address}</p>
-
+              {/* محصولات */}
               <div className="mb-4">
                 <span className="text-muted-foreground text-sm block mb-2">محصولات:</span>
                 <div className="flex flex-wrap gap-1">
