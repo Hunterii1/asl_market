@@ -154,9 +154,6 @@ func SetupRoutes(router *gin.Engine) {
 		licensed := protected.Group("/")
 		licensed.Use(middleware.LicenseMiddleware())
 		{
-			// Dashboard routes
-			licensed.GET("/dashboard", getDashboard)
-
 			// User-specific data
 			licensed.GET("/my-orders", getMyOrders)
 			licensed.GET("/my-products", getMyProducts)
