@@ -41,7 +41,7 @@ const AslLearn = () => {
         
         // Set first category as default
         if (categoriesRes.data && categoriesRes.data.length > 0) {
-          setSelectedCategory(categoriesRes.data[0].id);
+          setSelectedCategory(categoriesRes.data[0].id.toString());
         }
         
         console.log('📚 Training data loaded:', {
@@ -58,31 +58,49 @@ const AslLearn = () => {
 
   // Map backend categories to frontend icons and colors
   const categoryIconMap = {
-    "آموزش کار با پلتفرم": { icon: Monitor, color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-    "آموزش صادرات عمده": { icon: Package, color: "bg-green-500/20 text-green-400 border-green-500/30" },
-    "آموزش فروش تکی محصول": { icon: ShoppingCart, color: "bg-orange-500/20 text-orange-400 border-orange-500/30" },
-    "دوره‌های آموزشی فروش": { icon: GraduationCap, color: "bg-purple-500/20 text-purple-400 border-purple-500/30" }
+    "آموزش کار با پلتفرم": { 
+      icon: Monitor, 
+      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      description: "نحوه استفاده از امکانات سایت و پنل کاربری"
+    },
+    "آموزش صادرات عمده": { 
+      icon: Package, 
+      color: "bg-green-500/20 text-green-400 border-green-500/30",
+      description: "تکنیک‌های فروش عمده و صادرات به کشورهای هدف"
+    },
+    "آموزش فروش تکی محصول": { 
+      icon: ShoppingCart, 
+      color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
+      description: "استراتژی‌های فروش خرده و بازاریابی آنلاین"
+    },
+    "دوره‌های آموزشی فروش": { 
+      icon: GraduationCap, 
+      color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+      description: "آموزش‌های تخصصی مذاکره، بازاریابی و فروش"
+    }
   };
 
-  // Convert real categories from API to frontend format
-  const trainingCategories = realCategories.map(category => ({
-    id: category.id,
-    name: category.name,
-    count: category.videos ? category.videos.length : 0,
-    icon: categoryIconMap[category.name]?.icon || BookOpen,
-    color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
-    description: category.description || ""
-  }));
-
-
-
-  // Group real videos by category
+  // Group real videos by category first
   const groupedVideos = realVideos.reduce((acc, video) => {
     const categoryId = video.category_id || video.category?.id;
     if (!acc[categoryId]) acc[categoryId] = [];
     acc[categoryId].push(video);
     return acc;
   }, {});
+
+  // Convert real categories from API to frontend format with real video counts
+  const trainingCategories = realCategories.map(category => ({
+    id: category.id.toString(), // Convert to string for UI consistency
+    name: category.name,
+    count: groupedVideos[category.id] ? groupedVideos[category.id].length : 0,
+    icon: categoryIconMap[category.name]?.icon || BookOpen,
+    color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
+    description: categoryIconMap[category.name]?.description || category.description || ""
+  }));
+
+
+
+
 
   // Convert videos to frontend format
   const formatVideo = (video) => ({
@@ -252,9 +270,9 @@ const AslLearn = () => {
   };
 
   // Get current modules from real data
-  const selectedCategoryData = trainingCategories.find(cat => cat.id == selectedCategory);
+  const selectedCategoryData = trainingCategories.find(cat => cat.id === selectedCategory);
   const currentModules = selectedCategoryData ? 
-    (groupedVideos[selectedCategoryData.id] || []).map(formatVideo) : [];
+    (groupedVideos[parseInt(selectedCategoryData.id)] || []).map(formatVideo) : [];
 
   return (
     <LicenseGate>
