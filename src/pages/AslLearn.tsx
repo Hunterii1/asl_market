@@ -36,20 +36,30 @@ const AslLearn = () => {
           apiService.getAllTrainingVideos()
         ]);
         
-        setRealCategories(categoriesRes.data || []);
-        setRealVideos(videosRes.data || []);
+        // Safely set data with fallbacks
+        const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
+        const videos = Array.isArray(videosRes?.data) ? videosRes.data : [];
+        
+        setRealCategories(categories);
+        setRealVideos(videos);
         
         // Set first category as default
-        if (categoriesRes.data && categoriesRes.data.length > 0) {
-          setSelectedCategory(categoriesRes.data[0].id.toString());
+        if (categories.length > 0) {
+          const firstCategory = categories.find(cat => cat && cat.id);
+          if (firstCategory) {
+            setSelectedCategory(String(firstCategory.id));
+          }
         }
         
         console.log('📚 Training data loaded:', {
-          categories: categoriesRes.data?.length || 0,
-          videos: videosRes.data?.length || 0
+          categories: categories.length,
+          videos: videos.length
         });
       } catch (error) {
         console.error('❌ Error loading training data:', error);
+        // Set empty arrays as fallback
+        setRealCategories([]);
+        setRealVideos([]);
       }
     };
 
@@ -81,43 +91,52 @@ const AslLearn = () => {
   };
 
   // Group real videos by category first
-  const groupedVideos = realVideos.reduce((acc, video) => {
-    const categoryId = video.category_id || video.category?.id;
-    if (!acc[categoryId]) acc[categoryId] = [];
-    acc[categoryId].push(video);
-    return acc;
-  }, {});
+  const groupedVideos = realVideos
+    .filter(video => video && (video.category_id || video.category?.id)) // Filter valid videos
+    .reduce((acc, video) => {
+      const categoryId = video.category_id || video.category?.id;
+      if (categoryId && !acc[categoryId]) acc[categoryId] = [];
+      if (categoryId) acc[categoryId].push(video);
+      return acc;
+    }, {});
 
   // Convert real categories from API to frontend format with real video counts
-  const trainingCategories = realCategories.map(category => ({
-    id: category.id.toString(), // Convert to string for UI consistency
-    name: category.name,
-    count: groupedVideos[category.id] ? groupedVideos[category.id].length : 0,
-    icon: categoryIconMap[category.name]?.icon || BookOpen,
-    color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
-    description: categoryIconMap[category.name]?.description || category.description || ""
-  }));
+  const trainingCategories = realCategories
+    .filter(category => category && category.id && category.name) // Filter out invalid categories
+    .map(category => ({
+      id: String(category.id), // Safe string conversion
+      name: category.name,
+      count: groupedVideos[category.id] ? groupedVideos[category.id].length : 0,
+      icon: categoryIconMap[category.name]?.icon || BookOpen,
+      color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
+      description: categoryIconMap[category.name]?.description || category.description || ""
+    }));
 
 
 
 
 
   // Convert videos to frontend format
-  const formatVideo = (video) => ({
-    id: video.id,
-    title: video.title,
-    duration: video.duration ? `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
-    lessons: 1,
-    completed: false,
-    difficulty: video.difficulty === "beginner" ? "مقدماتی" : 
-                video.difficulty === "intermediate" ? "متوسط" : 
-                video.difficulty === "advanced" ? "پیشرفته" : "مقدماتی",
-    type: video.video_type === "file" ? "video" : "link",
-    description: video.description || "",
-    views: video.views || 0,
-    video_url: video.video_url,
-    telegram_file_id: video.telegram_file_id
-  });
+  const formatVideo = (video) => {
+    if (!video || !video.id || !video.title) return null;
+    
+    return {
+      id: video.id,
+      title: video.title,
+      duration: video.duration && typeof video.duration === 'number' ? 
+        `${Math.floor(video.duration / 60)}:${(video.duration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
+      lessons: 1,
+      completed: false,
+      difficulty: video.difficulty === "beginner" ? "مقدماتی" : 
+                  video.difficulty === "intermediate" ? "متوسط" : 
+                  video.difficulty === "advanced" ? "پیشرفته" : "مقدماتی",
+      type: video.video_type === "file" ? "video" : "link",
+      description: video.description || "",
+      views: video.views || 0,
+      video_url: video.video_url || "",
+      telegram_file_id: video.telegram_file_id || ""
+    };
+  };
 
   const trainingModulesFake = {
     platform: [
@@ -270,9 +289,12 @@ const AslLearn = () => {
   };
 
   // Get current modules from real data
-  const selectedCategoryData = trainingCategories.find(cat => cat.id === selectedCategory);
-  const currentModules = selectedCategoryData ? 
-    (groupedVideos[parseInt(selectedCategoryData.id)] || []).map(formatVideo) : [];
+  const selectedCategoryData = trainingCategories.find(cat => cat && cat.id === selectedCategory);
+  const currentModules = selectedCategoryData && selectedCategoryData.id ? 
+    (groupedVideos[parseInt(selectedCategoryData.id)] || [])
+      .filter(video => video && video.id && video.title) // Filter valid videos
+      .map(formatVideo)
+      .filter(Boolean) : []; // Remove null results from formatVideo
 
   return (
     <LicenseGate>
