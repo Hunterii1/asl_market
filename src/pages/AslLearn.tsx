@@ -45,9 +45,10 @@ const AslLearn = () => {
         
         // Set first category as default
         if (categories.length > 0) {
-          const firstCategory = categories.find(cat => cat && cat.id);
+          const firstCategory = categories.find(cat => cat && (cat.ID || cat.id));
           if (firstCategory) {
-            setSelectedCategory(String(firstCategory.id));
+            const categoryId = firstCategory.ID || firstCategory.id;
+            setSelectedCategory(String(categoryId));
           }
         }
         
@@ -94,9 +95,9 @@ const AslLearn = () => {
 
   // Group real videos by category first
   const groupedVideos = realVideos
-    .filter(video => video && (video.category_id || video.category?.id)) // Filter valid videos
+    .filter(video => video && (video.CategoryID || video.category_id || video.category?.id)) // Filter valid videos
     .reduce((acc, video) => {
-      const categoryId = video.category_id || video.category?.id;
+      const categoryId = video.CategoryID || video.category_id || video.category?.id;
       if (categoryId && !acc[categoryId]) acc[categoryId] = [];
       if (categoryId) acc[categoryId].push(video);
       return acc;
@@ -104,15 +105,19 @@ const AslLearn = () => {
 
   // Convert real categories from API to frontend format with real video counts
   const trainingCategories = realCategories
-    .filter(category => category && category.id && category.name) // Filter out invalid categories
-    .map(category => ({
-      id: String(category.id), // Safe string conversion
-      name: category.name,
-      count: groupedVideos[category.id] ? groupedVideos[category.id].length : 0,
-      icon: categoryIconMap[category.name]?.icon || BookOpen,
-      color: categoryIconMap[category.name]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
-      description: categoryIconMap[category.name]?.description || category.description || ""
-    }));
+    .filter(category => category && (category.ID || category.id) && (category.Name || category.name)) // Filter out invalid categories
+    .map(category => {
+      const categoryId = category.ID || category.id;
+      const categoryName = category.Name || category.name;
+      return {
+        id: String(categoryId), // Safe string conversion
+        name: categoryName,
+        count: groupedVideos[categoryId] ? groupedVideos[categoryId].length : 0,
+        icon: categoryIconMap[categoryName]?.icon || BookOpen,
+        color: categoryIconMap[categoryName]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30",
+        description: categoryIconMap[categoryName]?.description || category.Description || category.description || ""
+      };
+    });
 
   console.log('🔍 Debug groupedVideos:', groupedVideos);
   console.log('🔍 Debug realVideos:', realVideos);
