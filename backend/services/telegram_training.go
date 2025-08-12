@@ -2,8 +2,11 @@ package services
 
 import (
 	"fmt"
+	"log"
+	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 
 	"asl-market-backend/models"
 
@@ -243,6 +246,77 @@ func (ts *TelegramService) promptAddCategory(chatID int64) {
 	msg := tgbotapi.NewMessage(chatID, message)
 	msg.ParseMode = "Markdown"
 	ts.bot.Send(msg)
+}
+
+// getRandomIcon returns a random icon for training categories
+func getRandomIcon() string {
+	icons := []string{
+		"📚", "🎓", "🔬", "💡", "🎯", "🚀", "⚡", "🌟",
+		"🔥", "💎", "🎨", "🔧", "📈", "🎪", "🎭", "🎸",
+		"🎵", "🎬", "📸", "🔍", "🧠", "💻", "📱", "⌚",
+	}
+	return icons[rand.Intn(len(icons))]
+}
+
+// getRandomColor returns a random color for training categories
+func getRandomColor() string {
+	colors := []string{
+		"blue", "green", "red", "yellow", "purple", "orange",
+		"pink", "cyan", "teal", "indigo", "rose", "emerald",
+		"amber", "lime", "violet", "sky", "slate", "gray",
+	}
+	return colors[rand.Intn(len(colors))]
+}
+
+// handleCategoryNameInput handles the category name input from admin
+func (ts *TelegramService) handleCategoryNameInput(chatID int64, categoryName string) {
+	// Clear session state
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	// Validate input
+	categoryName = strings.TrimSpace(categoryName)
+	if len(categoryName) < 3 {
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ نام دسته‌بندی باید حداقل ۳ کاراکتر باشد"))
+		return
+	}
+
+	// Initialize random seed
+	rand.Seed(time.Now().UnixNano())
+
+	// Create category with random icon and color
+	category := &models.TrainingCategory{
+		Name:         categoryName,
+		NameEn:       "", // Can be set later if needed
+		Description:  "دسته‌بندی ایجاد شده توسط ادمین",
+		Icon:         getRandomIcon(),
+		Color:        getRandomColor(),
+		DisplayOrder: 999, // Will be at the end
+		IsActive:     true,
+	}
+
+	err := models.CreateTrainingCategory(models.GetDB(), category)
+	if err != nil {
+		log.Printf("Error creating category: %v", err)
+		ts.bot.Send(tgbotapi.NewMessage(chatID, "❌ خطا در ایجاد دسته‌بندی"))
+		return
+	}
+
+	message := fmt.Sprintf("✅ **دسته‌بندی جدید ایجاد شد**\n\n"+
+		"%s **نام:** %s\n"+
+		"🆔 **شناسه:** %d\n"+
+		"🎨 **رنگ:** %s\n"+
+		"📝 **توضیحات:** %s\n\n"+
+		"حالا می‌توانید ویدیوهای آموزشی به این دسته‌بندی اضافه کنید.",
+		category.Icon, category.Name, category.ID, category.Color, category.Description)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	ts.bot.Send(msg)
+
+	// Show training menu again
+	ts.showTrainingMenu(chatID)
 }
 
 // promptAddVideo prompts admin to add a new video

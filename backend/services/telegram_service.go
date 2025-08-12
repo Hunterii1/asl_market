@@ -661,8 +661,11 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 			} else if state.WaitingForInput == "single_product_data" {
 				s.handleSingleProductInput(message.Chat.ID, message.Text)
 			} else {
-				// Handle training video link inputs
-				if strings.HasPrefix(state.WaitingForInput, "awaiting_video_link_") {
+				// Handle training category name input
+				if state.WaitingForInput == "awaiting_category_name" {
+					ts := &TelegramService{bot: s.bot, db: s.db}
+					ts.handleCategoryNameInput(message.Chat.ID, message.Text)
+				} else if strings.HasPrefix(state.WaitingForInput, "awaiting_video_link_") {
 					// Create TelegramService with training methods
 					ts := &TelegramService{bot: s.bot, db: s.db}
 					ts.handleVideoLinkInput(message.Chat.ID, message.Text, state.WaitingForInput)

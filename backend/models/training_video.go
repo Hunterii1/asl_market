@@ -61,6 +61,11 @@ type TrainingVideo struct {
 	UploadedBy uint `gorm:"default:0"` // کاربری که اپلود کرده (از تلگرام)
 }
 
+// CreateTrainingCategory creates a new training category
+func CreateTrainingCategory(db *gorm.DB, category *TrainingCategory) error {
+	return db.Create(category).Error
+}
+
 // GetTrainingCategories returns all active categories with video counts
 func GetTrainingCategories(db *gorm.DB) ([]TrainingCategory, error) {
 	var categories []TrainingCategory
