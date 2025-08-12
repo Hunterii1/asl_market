@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import VideoPlayer from "@/components/VideoPlayer";
 import {
   BookOpen,
   Play,
@@ -17,7 +18,8 @@ import {
   ArrowRight,
   Video,
   FileText,
-  Award
+  Award,
+  Eye
 } from "lucide-react";
 import { LicenseGate } from '@/components/LicenseGate';
 
@@ -26,22 +28,33 @@ const AslLearn = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [realVideos, setRealVideos] = useState<any[]>([]);
   const [realCategories, setRealCategories] = useState<any[]>([]);
+  const [watchedVideoIds, setWatchedVideoIds] = useState<number[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
 
   // Load real training data on component mount
   useEffect(() => {
     const loadTrainingData = async () => {
       try {
-        const [categoriesRes, videosRes] = await Promise.all([
+        const [categoriesRes, videosRes, watchedRes] = await Promise.all([
           apiService.getTrainingCategories(),
-          apiService.getAllTrainingVideos()
+          apiService.getAllTrainingVideos(),
+          apiService.getWatchedVideos().catch(() => ({ data: [] })) // Don't fail if watched videos can't be loaded
         ]);
         
         // Safely set data with fallbacks
         const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
         const videos = Array.isArray(videosRes?.data) ? videosRes.data : [];
+        const watchedVideos = Array.isArray(watchedRes?.data) ? watchedRes.data : [];
         
         setRealCategories(categories);
         setRealVideos(videos);
+        
+        // Extract watched video IDs
+        const watchedIds = watchedVideos.map((watch: any) => 
+          watch.VideoID || watch.video_id || watch.video?.id || watch.video?.ID
+        ).filter(Boolean);
+        setWatchedVideoIds(watchedIds);
         
         // Set first category as default
         if (categories.length > 0) {
@@ -55,14 +68,17 @@ const AslLearn = () => {
         console.log('📚 Training data loaded:', {
           categories: categories.length,
           videos: videos.length,
+          watchedVideos: watchedIds.length,
           categoriesData: categories,
-          videosData: videos
+          videosData: videos,
+          watchedIds: watchedIds
         });
       } catch (error) {
         console.error('❌ Error loading training data:', error);
         // Set empty arrays as fallback
         setRealCategories([]);
         setRealVideos([]);
+        setWatchedVideoIds([]);
       }
     };
 
@@ -189,13 +205,16 @@ const AslLearn = () => {
     
     if (!videoId || !videoTitle) return null;
     
+    // Check if this video is watched
+    const isWatched = watchedVideoIds.includes(videoId);
+    
     return {
       id: videoId,
       title: videoTitle,
       duration: videoDuration && typeof videoDuration === 'number' ? 
         `${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
       lessons: 1,
-      completed: false,
+      completed: isWatched,
       difficulty: videoDifficulty === "beginner" ? "مقدماتی" : 
                   videoDifficulty === "intermediate" ? "متوسط" : 
                   videoDifficulty === "advanced" ? "پیشرفته" : "مقدماتی",
@@ -357,6 +376,22 @@ const AslLearn = () => {
     }
   };
 
+  // Video player handlers
+  const handlePlayVideo = (video: any) => {
+    setSelectedVideo(video);
+    setIsVideoPlayerOpen(true);
+  };
+
+  const handleVideoWatched = (videoId: number) => {
+    // Add to watched videos
+    setWatchedVideoIds(prev => [...prev.filter(id => id !== videoId), videoId]);
+  };
+
+  const handleCloseVideoPlayer = () => {
+    setIsVideoPlayerOpen(false);
+    setSelectedVideo(null);
+  };
+
   // Get current modules from real data
   const selectedCategoryData = trainingCategories.find(cat => cat && cat.id === selectedCategory);
   console.log('🔍 Debug selectedCategoryData:', selectedCategoryData);
@@ -490,9 +525,14 @@ const AslLearn = () => {
                           ? "border-border text-foreground hover:bg-muted" 
                           : "bg-blue-500 hover:bg-blue-600 text-white"
                       }`}
+                      onClick={() => handlePlayVideo(module)}
                     >
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                      {module.completed ? "مرور" : "شروع"}
+                      {module.completed ? (
+                        <Eye className="w-4 h-4 ml-2" />
+                      ) : (
+                        <Play className="w-4 h-4 ml-2" />
+                      )}
+                      {module.completed ? "مشاهده مجدد" : "پخش ویدیو"}
                     </Button>
                   </div>
                 </CardContent>
@@ -550,6 +590,16 @@ const AslLearn = () => {
           </div>
         </div>
     </div>
+
+    {/* Video Player Modal */}
+    {selectedVideo && (
+      <VideoPlayer
+        video={selectedVideo}
+        isOpen={isVideoPlayerOpen}
+        onClose={handleCloseVideoPlayer}
+        onVideoWatched={handleVideoWatched}
+      />
+    )}
     </LicenseGate>
   );
 };

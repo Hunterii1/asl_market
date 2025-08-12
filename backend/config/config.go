@@ -12,6 +12,7 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	CORS     CORSConfig     `mapstructure:"cors"`
 	OpenAI   OpenAIConfig   `mapstructure:"openai"`
+	SMS      SMSConfig      `mapstructure:"sms"`
 }
 
 type ServerConfig struct {
@@ -46,6 +47,12 @@ type OpenAIConfig struct {
 	Temperature float64 `mapstructure:"temperature"`
 }
 
+type SMSConfig struct {
+	APIKey      string `mapstructure:"api_key"`
+	Originator  string `mapstructure:"originator"`
+	PatternCode string `mapstructure:"pattern_code"`
+}
+
 var AppConfig *Config
 
 func LoadConfig() {
@@ -63,6 +70,7 @@ func LoadConfig() {
 	viper.SetDefault("openai.model", "gpt-3.5-turbo")
 	viper.SetDefault("openai.max_tokens", 1000)
 	viper.SetDefault("openai.temperature", 0.7)
+	viper.SetDefault("sms.pattern_code", "9i276pvpwvuj40w")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Error reading config file: %v", err)

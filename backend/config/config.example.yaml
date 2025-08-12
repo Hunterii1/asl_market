@@ -1,26 +1,22 @@
 server:
+  host: "localhost"
   port: "8080"
-  host: "127.0.0.1"
 
 database:
   host: "localhost"
   port: "3306"
-  user: "asl_user"
-  password: "asl_password_2024"
+  user: "root"
+  password: "password"
   name: "asl_market"
 
 jwt:
-  secret: "asl-market-jwt-secret-key-production-2024"
-  expiry_hours: 168  # 7 days
+  secret: "your-secret-key-change-in-production"
+  expiry_hours: 24
 
 cors:
-  allowed_origins: 
-    - "http://localhost:5173"
+  allowed_origins:
     - "http://localhost:3000"
     - "https://asllmarket.com"
-    - "https://www.asllmarket.com"
-    - "http://asllmarket.com"
-    - "http://www.asllmarket.com"
   allowed_methods:
     - "GET"
     - "POST"
@@ -43,5 +39,5 @@ openai:
 
 sms:
   api_key: "OWY5ZTAyMjEtMThmNi00NzRiLWFhOTItZTEwMmFhNDQzZTliZTcwM2EzODg5NzUzNWMwOWE3ZDliYWUyYTExMWZlMzY="
-  originator: "+9810002040006050"
-  pattern_code: "9i276pvpwvuj40w"
+  originator: "50004001"  # Your SMS sender number from ippanel
+  pattern_code: "9i276pvpwvuj40w"  # License activation pattern code

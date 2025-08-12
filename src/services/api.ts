@@ -1039,6 +1039,26 @@ class ApiService {
       },
     });
   }
+
+  // Video Watching API
+  async markVideoAsWatched(videoId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/video/${videoId}/watch`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async getWatchedVideos(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/training/watched-videos`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();

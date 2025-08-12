@@ -24,6 +24,18 @@ func main() {
 	telegramService := services.GetTelegramService()
 	log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
 
+	// Initialize SMS service
+	if config.AppConfig.SMS.APIKey != "" {
+		services.InitSMSService(
+			config.AppConfig.SMS.APIKey,
+			config.AppConfig.SMS.Originator,
+			config.AppConfig.SMS.PatternCode,
+		)
+		log.Println("SMS service initialized")
+	} else {
+		log.Println("SMS service not configured - license activation SMS disabled")
+	}
+
 	// Set Gin mode
 	gin.SetMode(gin.ReleaseMode)
 
@@ -37,6 +49,9 @@ func main() {
 	corsConfig.AllowHeaders = config.AppConfig.CORS.AllowedHeaders
 	corsConfig.AllowCredentials = true
 	router.Use(cors.New(corsConfig))
+
+	// Serve static files (uploaded videos)
+	router.Static("/uploads", "./uploads")
 
 	// Setup routes
 	routes.SetupRoutes(router, telegramService)

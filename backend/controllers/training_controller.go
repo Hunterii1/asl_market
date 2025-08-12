@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"asl-market-backend/models"
@@ -216,4 +217,119 @@ func GetAllVideosForAdmin(c *gin.Context) {
 		"message": "تمام ویدیوها برای مدیریت",
 		"data":    videos,
 	})
+}
+
+// MarkVideoAsWatched marks a video as watched by the authenticated user
+func MarkVideoAsWatched(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		return
+	}
+
+	// Check if video exists
+	var video models.TrainingVideo
+	err = models.GetDB().Where("id = ? AND status = ?", uint(videoID), "active").First(&video).Error
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ویدیو یافت نشد"})
+		return
+	}
+
+	// Mark as watched
+	err = models.MarkVideoAsWatched(models.GetDB(), userID, uint(videoID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره وضعیت تماشا"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ویدیو به عنوان تماشا شده علامت‌گذاری شد",
+	})
+}
+
+// GetWatchedVideos returns all videos watched by the authenticated user
+func GetWatchedVideos(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	watches, err := models.GetUserWatchedVideos(models.GetDB(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت ویدیوهای تماشا شده"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ویدیوهای تماشا شده با موفقیت دریافت شد",
+		"data":    watches,
+	})
+}
+
+// GetUserWatchStats returns watch statistics for the authenticated user
+func GetUserWatchStats(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
+
+	stats, err := models.GetUserWatchStats(models.GetDB(), userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت آمار تماشا"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "آمار تماشا با موفقیت دریافت شد",
+		"data":    stats,
+	})
+}
+
+// StreamVideo serves video files for training videos
+func StreamVideo(c *gin.Context) {
+	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		return
+	}
+
+	// Get video from database
+	var video models.TrainingVideo
+	err = models.GetDB().Where("id = ? AND status = ?", uint(videoID), "active").First(&video).Error
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "ویدیو یافت نشد"})
+		return
+	}
+
+	// Only serve files that are uploaded to our server (type = "file")
+	if video.VideoType != "file" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "این ویدیو برای استریم مستقیم در دسترس نیست"})
+		return
+	}
+
+	// Construct file path - assuming videos are stored in uploads/videos/ directory
+	videoPath := ""
+	if video.VideoURL != "" {
+		// If VideoURL is set, use it as the file path
+		videoPath = video.VideoURL
+	} else if video.TelegramFileID != "" {
+		// For Telegram files, they might be stored with specific naming
+		videoPath = filepath.Join("uploads", "videos", video.TelegramFileID+".mp4")
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"error": "فایل ویدیو یافت نشد"})
+		return
+	}
+
+	// Check if file exists and serve it
+	c.Header("Content-Type", "video/mp4")
+	c.Header("Accept-Ranges", "bytes")
+	c.File(videoPath)
 }

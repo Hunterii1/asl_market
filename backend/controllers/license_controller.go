@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -55,6 +56,31 @@ func VerifyLicense(c *gin.Context) {
 	if license.Type == "pro" {
 		licenseTypeName = "پرو"
 	}
+
+	// Send SMS notification after successful license activation
+	go func() {
+		// Get user information for SMS
+		var user models.User
+		if err := models.GetDB().First(&user, userIDUint).Error; err == nil {
+			smsService := services.GetSMSService()
+			if smsService != nil && user.Mobile() != "" {
+				// Validate and format phone number
+				phoneNumber := services.ValidateIranianPhoneNumber(user.Mobile())
+				if phoneNumber != "" {
+					// Send SMS with user name and license plan
+					userName := user.Name()
+					if userName == "" || userName == " " {
+						userName = user.Email // fallback to email if no full name
+					}
+
+					err := smsService.SendLicenseActivationSMS(phoneNumber, userName, licenseTypeName)
+					if err != nil {
+						fmt.Printf("Failed to send license activation SMS to %s: %v\n", phoneNumber, err)
+					}
+				}
+			}
+		}
+	}()
 
 	c.JSON(http.StatusOK, models.LicenseVerifyResponse{
 		Message:        fmt.Sprintf("لایسنس %s با موفقیت فعال شد! اکنون می‌توانید از تمام امکانات سایت استفاده کنید.", licenseTypeName),

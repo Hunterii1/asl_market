@@ -1,0 +1,40 @@
+# Uploaded files
+uploads/videos/*
+!uploads/videos/.gitkeep
+
+# Log files
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Go build files
+*.exe
+*.dll
+*.so
+*.dylib
+main
+asl-market-backend
+
+# Test files
+*.test
+*.out
+
+# Coverage files
+*.cover
+*.coverprofile
