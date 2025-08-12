@@ -21,7 +21,7 @@ import {
   Shield
 } from "lucide-react";
 import { Logo } from "./Logo";
-import { apiService, LicenseStatus } from "@/services/api";
+import { apiService, type LicenseStatus } from "@/services/api";
 
 const HeaderAuth = () => {
   const { user, isAuthenticated, logout, isLoading, licenseStatus: authLicenseStatus } = useAuth();

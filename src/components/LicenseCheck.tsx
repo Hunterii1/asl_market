@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Info, CheckCircle } from 'lucide-react';
-import { apiService, LicenseStatus } from '@/services/api';
+import { apiService, type LicenseStatus } from '@/services/api';
 import { licenseStorage } from '@/utils/licenseStorage';
 import { ErrorDisplay } from '@/components/ErrorDisplay';
 

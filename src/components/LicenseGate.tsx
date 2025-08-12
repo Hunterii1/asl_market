@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { apiService, LicenseStatus } from '@/services/api';
+import { apiService, type LicenseStatus } from '@/services/api';
 
 interface LicenseGateProps {
   children: React.ReactNode;
@@ -32,6 +32,7 @@ export function LicenseGate({ children }: LicenseGateProps) {
         setStatus({
           has_license: data.has_license,
           is_approved: data.is_approved,
+          is_active: false, // در صورت خطا، لایسنس فعال نیست
         });
       } else {
         console.error('Error checking license status:', error);

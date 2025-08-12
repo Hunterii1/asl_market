@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { LicenseCheck } from './LicenseCheck';
 import { Loader2 } from 'lucide-react';
-import { apiService, LicenseStatus } from '@/services/api';
+import { apiService, type LicenseStatus } from '@/services/api';
 
 interface LicenseRequiredRouteProps {
   children: React.ReactNode;

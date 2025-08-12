@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { apiService, User, LoginRequest, RegisterRequest, LicenseStatus } from '@/services/api';
+import { apiService, type User, type LoginRequest, type RegisterRequest, type LicenseStatus } from '@/services/api';
 import { LicenseRequestModal } from '@/components/LicenseRequestModal';
 import { licenseStorage } from '@/utils/licenseStorage';
 import { errorHandler } from '@/utils/errorHandler';
