@@ -57,12 +57,17 @@ func (uc *UpgradeController) CreateUpgradeRequest(c *gin.Context) {
 	// Get user's current license
 	license, err := models.GetUserLicense(models.DB, userID)
 	if err != nil {
+		log.Printf("License not found for user %d: %v", userID, err)
 		c.JSON(http.StatusNotFound, gin.H{"error": "لایسنس کاربر یافت نشد"})
 		return
 	}
 
+	// Debug log
+	log.Printf("User %d license type: '%s', requesting upgrade to: '%s'", userID, license.Type, dto.ToPlan)
+
 	// Validate upgrade path (only Plus to Pro for now)
 	if license.Type != "Plus" || dto.ToPlan != "Pro" {
+		log.Printf("Upgrade validation failed: license.Type='%s', dto.ToPlan='%s'", license.Type, dto.ToPlan)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ارتقا فقط از پلن پلاس به پرو امکان‌پذیر است"})
 		return
 	}

@@ -49,16 +49,16 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-			// Validate token
-	claims, err := utils.ValidateToken(token)
-	if err != nil {
-		log.Printf("Token validation failed: %v", err)
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid or expired token",
-		})
-		c.Abort()
-		return
-	}
+		// Validate token
+		claims, err := utils.ValidateToken(token)
+		if err != nil {
+			log.Printf("Token validation failed: %v", err)
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid or expired token",
+			})
+			c.Abort()
+			return
+		}
 
 		// Get user from database
 		db := models.GetDB()
