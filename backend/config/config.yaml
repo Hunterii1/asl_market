@@ -43,5 +43,5 @@ openai:
 
 sms:
   api_key: "OWY5ZTAyMjEtMThmNi00NzRiLWFhOTItZTEwMmFhNDQzZTliZTcwM2EzODg5NzUzNWMwOWE3ZDliYWUyYTExMWZlMzY="
-  originator: "10002040006050"
+  originator: "+9850002040000000"
   pattern_code: "9i276pvpwvuj40w"
