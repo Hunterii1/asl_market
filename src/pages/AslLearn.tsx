@@ -157,7 +157,11 @@ const AslLearn = () => {
         // Use backend data first, then fallback to legacy mapping
         icon: backendIcon ? getIconComponent(backendIcon) : (categoryIconMap[categoryName]?.icon || BookOpen),
         color: backendColor ? getColorClasses(backendColor) : (categoryIconMap[categoryName]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30"),
-        description: category.Description || category.description || categoryIconMap[categoryName]?.description || ""
+        description: (() => {
+          const desc = category.Description || category.description || categoryIconMap[categoryName]?.description || "";
+          // Don't show generic admin-created description
+          return desc === "دسته‌بندی ایجاد شده توسط ادمین" ? "" : desc;
+        })()
       };
     });
 
