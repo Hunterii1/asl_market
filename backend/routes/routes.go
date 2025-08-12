@@ -6,15 +6,17 @@ import (
 	"asl-market-backend/controllers"
 	"asl-market-backend/middleware"
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(router *gin.Engine) {
+func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) {
 	// Initialize controllers
 	authController := controllers.NewAuthController(models.GetDB())
 	contactController := controllers.NewContactController(models.GetDB())
 	withdrawalController := controllers.NewWithdrawalController(models.GetDB())
+	upgradeController := controllers.NewUpgradeController(telegramService)
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -64,6 +66,15 @@ func SetupRoutes(router *gin.Engine) {
 		protected.POST("/license/verify", controllers.VerifyLicense)
 		protected.GET("/license/status", controllers.CheckLicenseStatus)
 		protected.GET("/license/info", controllers.GetUserLicenseInfo)
+
+		// Upgrade request routes
+		protected.POST("/upgrade/request", upgradeController.CreateUpgradeRequest)
+		protected.GET("/upgrade/requests", upgradeController.GetUserUpgradeRequests)
+
+		// Admin upgrade management routes
+		protected.GET("/admin/upgrade/requests", upgradeController.GetPendingUpgradeRequests)
+		protected.POST("/admin/upgrade/requests/:id/approve", upgradeController.ApproveUpgradeRequest)
+		protected.POST("/admin/upgrade/requests/:id/reject", upgradeController.RejectUpgradeRequest)
 
 		// Daily limits routes
 		protected.GET("/daily-limits", controllers.GetDailyLimitsStatus)

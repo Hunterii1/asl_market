@@ -197,6 +197,22 @@ func GetUserLicense(db *gorm.DB, userID uint) (*License, error) {
 	return &license, nil
 }
 
+// UpdateUserLicenseType updates a user's license type (for upgrades)
+func UpdateUserLicenseType(db *gorm.DB, userID uint, newType string) error {
+	// Update the license type and extend duration if upgrading to Pro
+	updates := map[string]interface{}{
+		"type": newType,
+	}
+
+	// If upgrading to Pro, extend duration to 30 months from now
+	if newType == "pro" {
+		newExpiresAt := time.Now().AddDate(0, 30, 0)
+		updates["expires_at"] = newExpiresAt
+	}
+
+	return db.Model(&License{}).Where("used_by = ? AND is_used = ?", userID, true).Updates(updates).Error
+}
+
 // TableName specifies the table name for License
 func (License) TableName() string {
 	return "licenses"

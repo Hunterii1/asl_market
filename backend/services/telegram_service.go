@@ -124,6 +124,91 @@ type TelegramService struct {
 	db  *gorm.DB
 }
 
+// NotifyUpgradeRequest notifies admins about a new upgrade request
+func (t *TelegramService) NotifyUpgradeRequest(request *models.UpgradeRequest, user *models.User) {
+	message := fmt.Sprintf(
+		"🆙 **درخواست ارتقا جدید**\n\n"+
+			"👤 **کاربر:** %s\n"+
+			"📧 **ایمیل:** %s\n"+
+			"📱 **شماره تماس:** %s\n\n"+
+			"📦 **از پلن:** %s\n"+
+			"⬆️ **به پلن:** %s\n\n"+
+			"📝 **یادداشت کاربر:**\n%s\n\n"+
+			"🆔 **شناسه درخواست:** %d",
+		user.Name(), user.Email, user.Mobile(),
+		request.FromPlan, request.ToPlan,
+		getDefaultIfEmpty(request.RequestNote, "بدون یادداشت"),
+		request.ID,
+	)
+
+	// Create inline keyboard for approval/rejection
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("✅ تایید", fmt.Sprintf("upgrade_approve_%d", request.ID)),
+			tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("upgrade_reject_%d", request.ID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("📋 جزئیات", fmt.Sprintf("upgrade_details_%d", request.ID)),
+		),
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		t.bot.Send(msg)
+	}
+}
+
+// NotifyUpgradeResult notifies user about upgrade request result
+func (t *TelegramService) NotifyUpgradeResult(userID uint, approved bool, adminNote string) {
+	// Get user's telegram chat ID (if available)
+	user, err := models.GetUserByID(models.DB, userID)
+	if err != nil {
+		log.Printf("Failed to get user for upgrade notification: %v", err)
+		return
+	}
+
+	// For now, we'll send to admins to manually inform the user
+	// In the future, you could implement a way to link user accounts to telegram chat IDs
+	var status string
+	var emoji string
+	if approved {
+		status = "تایید شد"
+		emoji = "✅"
+	} else {
+		status = "رد شد"
+		emoji = "❌"
+	}
+
+	message := fmt.Sprintf(
+		"%s **نتیجه درخواست ارتقا**\n\n"+
+			"👤 **کاربر:** %s (%s)\n"+
+			"📧 **ایمیل:** %s\n\n"+
+			"📊 **وضعیت:** %s\n\n"+
+			"📝 **یادداشت ادمین:**\n%s\n\n"+
+			"💡 **اقدام لازم:** لطفاً با کاربر تماس بگیرید و نتیجه را اطلاع دهید.",
+		emoji, user.Name(), user.Mobile(), user.Email,
+		status,
+		getDefaultIfEmpty(adminNote, "بدون یادداشت"),
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
+}
+
+func getDefaultIfEmpty(value, defaultValue string) string {
+	if strings.TrimSpace(value) == "" {
+		return defaultValue
+	}
+	return value
+}
+
 // Pagination structure for user management
 type UserPagination struct {
 	ChatID      int64
@@ -405,8 +490,14 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		sessionMutex.RUnlock()
 
 		if exists {
-			switch state.WaitingForInput {
-			case "withdrawal_account":
+			switch {
+			case strings.HasPrefix(state.WaitingForInput, "awaiting_upgrade_approval_note_"):
+				s.handleUpgradeApprovalNote(message, state)
+				return
+			case strings.HasPrefix(state.WaitingForInput, "awaiting_upgrade_rejection_note_"):
+				s.handleUpgradeRejectionNote(message, state)
+				return
+			case state.WaitingForInput == "withdrawal_account":
 				withdrawalID := state.Data["withdrawal_id"].(string)
 				accountNumber := strings.TrimSpace(message.Text)
 
@@ -446,7 +537,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
 				return
-			case "withdrawal_reject_reason":
+			case state.WaitingForInput == "withdrawal_reject_reason":
 				withdrawalID := state.Data["withdrawal_id"].(string)
 				rejectReason := strings.TrimSpace(message.Text)
 
@@ -485,7 +576,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
 				return
-			case "license_count":
+			case state.WaitingForInput == "license_count":
 				if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
 					// Get license type from session data
 					licenseType := "plus" // default
@@ -504,13 +595,13 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 					msg := tgbotapi.NewMessage(message.Chat.ID, "❌ لطفا عددی بین 1 تا 100 وارد کنید.")
 					s.bot.Send(msg)
 				}
-			case "search_query":
+			case state.WaitingForInput == "search_query":
 				s.handleSearch(message.Chat.ID, message.Text)
 				// Clear session state
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
-			case "reject_reason":
+			case state.WaitingForInput == "reject_reason":
 				// Process rejection reason
 				sessionMutex.RLock()
 				state := sessionStates[message.Chat.ID]
@@ -526,7 +617,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
-			case "visitor_reject_reason":
+			case state.WaitingForInput == "visitor_reject_reason":
 				// Process visitor rejection reason
 				sessionMutex.RLock()
 				state := sessionStates[message.Chat.ID]
@@ -542,31 +633,34 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
-			case "research_product_name":
+			}
+
+			// Handle remaining state cases with simple if statements
+			if state.WaitingForInput == "research_product_name" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "name")
-			case "research_product_category":
+			} else if state.WaitingForInput == "research_product_category" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "category")
-			case "research_product_description":
+			} else if state.WaitingForInput == "research_product_description" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "description")
-			case "research_product_target_country":
+			} else if state.WaitingForInput == "research_product_target_country" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "target_country")
-			case "research_product_iran_price":
+			} else if state.WaitingForInput == "research_product_iran_price" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "iran_price")
-			case "research_product_target_price":
+			} else if state.WaitingForInput == "research_product_target_price" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "target_price")
-			case "research_product_currency":
+			} else if state.WaitingForInput == "research_product_currency" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "currency")
-			case "research_product_market_demand":
+			} else if state.WaitingForInput == "research_product_market_demand" {
 				s.handleResearchProductCreation(message.Chat.ID, message.Text, "market_demand")
-			case "marketing_popup_data":
+			} else if state.WaitingForInput == "marketing_popup_data" {
 				s.handleMarketingPopupInput(message.Chat.ID, message.Text)
-			case "single_supplier_data":
+			} else if state.WaitingForInput == "single_supplier_data" {
 				s.handleSingleSupplierInput(message.Chat.ID, message.Text)
-			case "single_visitor_data":
+			} else if state.WaitingForInput == "single_visitor_data" {
 				s.handleSingleVisitorInput(message.Chat.ID, message.Text)
-			case "single_product_data":
+			} else if state.WaitingForInput == "single_product_data" {
 				s.handleSingleProductInput(message.Chat.ID, message.Text)
-			default:
+			} else {
 				// Handle training video link inputs
 				if strings.HasPrefix(state.WaitingForInput, "awaiting_video_link_") {
 					// Create TelegramService with training methods
@@ -1158,6 +1252,12 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle withdrawal callbacks
 	if strings.Contains(data, "withdrawal") {
 		s.handleWithdrawalCallback(query)
+		return
+	}
+
+	// Handle upgrade callbacks
+	if strings.HasPrefix(data, "upgrade_") {
+		s.handleUpgradeCallback(query)
 		return
 	}
 
@@ -3351,6 +3451,251 @@ func (s *TelegramService) executeSupplierDelete(chatID int64, supplierID uint) {
 		"🗑️ تمام اطلاعات مربوط به این تأمین‌کننده حذف شدند.", supplier.FullName, supplier.Mobile, supplier.City)
 
 	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// handleUpgradeCallback handles upgrade-related callback queries
+func (s *TelegramService) handleUpgradeCallback(query *tgbotapi.CallbackQuery) {
+	data := query.Data
+	chatID := query.Message.Chat.ID
+
+	log.Printf("Handling upgrade callback: %s", data)
+
+	// Send acknowledgment
+	callback := tgbotapi.NewCallback(query.ID, "")
+	s.bot.Request(callback)
+
+	if strings.HasPrefix(data, "upgrade_approve_") {
+		requestIDStr := strings.TrimPrefix(data, "upgrade_approve_")
+		requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا: شناسه درخواست نامعتبر است")
+			s.bot.Send(msg)
+			return
+		}
+
+		s.promptUpgradeApproval(chatID, uint(requestID))
+	} else if strings.HasPrefix(data, "upgrade_reject_") {
+		requestIDStr := strings.TrimPrefix(data, "upgrade_reject_")
+		requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا: شناسه درخواست نامعتبر است")
+			s.bot.Send(msg)
+			return
+		}
+
+		s.promptUpgradeRejection(chatID, uint(requestID))
+	} else if strings.HasPrefix(data, "upgrade_details_") {
+		requestIDStr := strings.TrimPrefix(data, "upgrade_details_")
+		requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا: شناسه درخواست نامعتبر است")
+			s.bot.Send(msg)
+			return
+		}
+
+		s.showUpgradeDetails(chatID, uint(requestID))
+	}
+}
+
+// promptUpgradeApproval prompts admin for approval note
+func (s *TelegramService) promptUpgradeApproval(chatID int64, requestID uint) {
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		WaitingForInput: fmt.Sprintf("awaiting_upgrade_approval_note_%d", requestID),
+		Data:            map[string]interface{}{"request_id": requestID},
+	}
+	sessionMutex.Unlock()
+
+	message := "✅ **تایید درخواست ارتقا**\n\n" +
+		"لطفاً یادداشت تایید را وارد کنید:\n" +
+		"(مثلاً: درخواست شما تایید شد. لایسنس پرو فعال گردید.)\n\n" +
+		"یا /cancel برای لغو عملیات."
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// promptUpgradeRejection prompts admin for rejection reason
+func (s *TelegramService) promptUpgradeRejection(chatID int64, requestID uint) {
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		WaitingForInput: fmt.Sprintf("awaiting_upgrade_rejection_note_%d", requestID),
+		Data:            map[string]interface{}{"request_id": requestID},
+	}
+	sessionMutex.Unlock()
+
+	message := "❌ **رد درخواست ارتقا**\n\n" +
+		"لطفاً دلیل رد درخواست را وارد کنید:\n" +
+		"(مثلاً: درخواست شما به دلیل عدم تطابق شرایط رد شد.)\n\n" +
+		"یا /cancel برای لغو عملیات."
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// showUpgradeDetails shows detailed information about an upgrade request
+func (s *TelegramService) showUpgradeDetails(chatID int64, requestID uint) {
+	request, err := models.GetUpgradeRequestByID(models.DB, requestID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا: درخواست یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	var statusEmoji string
+	switch request.Status {
+	case models.UpgradeRequestStatusPending:
+		statusEmoji = "🔄"
+	case models.UpgradeRequestStatusApproved:
+		statusEmoji = "✅"
+	case models.UpgradeRequestStatusRejected:
+		statusEmoji = "❌"
+	}
+
+	message := fmt.Sprintf(
+		"📋 **جزئیات درخواست ارتقا**\n\n"+
+			"🆔 **شناسه:** %d\n"+
+			"👤 **کاربر:** %s\n"+
+			"📧 **ایمیل:** %s\n"+
+			"📱 **موبایل:** %s\n\n"+
+			"📦 **از پلن:** %s\n"+
+			"⬆️ **به پلن:** %s\n\n"+
+			"%s **وضعیت:** %s\n"+
+			"📅 **تاریخ درخواست:** %s\n\n"+
+			"📝 **یادداشت کاربر:**\n%s",
+		request.ID,
+		request.User.Name(),
+		request.User.Email,
+		request.User.Mobile(),
+		request.FromPlan,
+		request.ToPlan,
+		statusEmoji,
+		string(request.Status),
+		request.CreatedAt.Format("2006/01/02 15:04"),
+		getDefaultIfEmpty(request.RequestNote, "بدون یادداشت"),
+	)
+
+	if request.Status != models.UpgradeRequestStatusPending {
+		message += fmt.Sprintf(
+			"\n\n📝 **یادداشت ادمین:**\n%s\n"+
+				"📅 **تاریخ پردازش:** %s",
+			getDefaultIfEmpty(request.AdminNote, "بدون یادداشت"),
+			request.ProcessedAt.Format("2006/01/02 15:04"),
+		)
+	}
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// handleUpgradeApprovalNote processes admin's approval note for upgrade request
+func (s *TelegramService) handleUpgradeApprovalNote(message *tgbotapi.Message, state *SessionState) {
+	chatID := message.Chat.ID
+	adminNote := strings.TrimSpace(message.Text)
+
+	requestID := state.Data["request_id"].(uint)
+
+	// Clear session state
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	// Update upgrade request status
+	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusApproved, adminNote, 0) // TODO: Get admin ID
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تایید درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get request details to update user license
+	request, err := models.GetUpgradeRequestByID(models.DB, requestID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت اطلاعات درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update user's license to Pro
+	err = models.UpdateUserLicenseType(models.DB, request.UserID, "pro")
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در ارتقا لایسنس کاربر")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Notify about successful upgrade
+	s.NotifyUpgradeResult(request.UserID, true, adminNote)
+
+	message_text := fmt.Sprintf(
+		"✅ **درخواست ارتقا تایید شد**\n\n"+
+			"👤 **کاربر:** %s\n"+
+			"📦 **ارتقا:** %s → %s\n"+
+			"📝 **یادداشت:** %s\n\n"+
+			"🔄 لایسنس کاربر به پرو ارتقا یافت.",
+		request.User.Name(),
+		request.FromPlan, request.ToPlan,
+		adminNote,
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message_text)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// handleUpgradeRejectionNote processes admin's rejection note for upgrade request
+func (s *TelegramService) handleUpgradeRejectionNote(message *tgbotapi.Message, state *SessionState) {
+	chatID := message.Chat.ID
+	adminNote := strings.TrimSpace(message.Text)
+
+	if adminNote == "" {
+		msg := tgbotapi.NewMessage(chatID, "❌ دلیل رد درخواست الزامی است. لطفاً دوباره وارد کنید.")
+		s.bot.Send(msg)
+		return
+	}
+
+	requestID := state.Data["request_id"].(uint)
+
+	// Clear session state
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	// Update upgrade request status
+	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusRejected, adminNote, 0) // TODO: Get admin ID
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get request details for notification
+	request, err := models.GetUpgradeRequestByID(models.DB, requestID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت اطلاعات درخواست")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Notify about rejection
+	s.NotifyUpgradeResult(request.UserID, false, adminNote)
+
+	message_text := fmt.Sprintf(
+		"❌ **درخواست ارتقا رد شد**\n\n"+
+			"👤 **کاربر:** %s\n"+
+			"📦 **درخواست:** %s → %s\n"+
+			"📝 **دلیل رد:** %s",
+		request.User.Name(),
+		request.FromPlan, request.ToPlan,
+		adminNote,
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message_text)
 	msg.ParseMode = "Markdown"
 	s.bot.Send(msg)
 }

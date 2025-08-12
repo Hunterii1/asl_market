@@ -20,6 +20,24 @@ type User struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
+// Helper methods for User
+func (u *User) Name() string {
+	return u.FirstName + " " + u.LastName
+}
+
+func (u *User) Mobile() string {
+	return u.Phone
+}
+
+// GetUserByID retrieves a user by ID
+func GetUserByID(db *gorm.DB, userID uint) (*User, error) {
+	var user User
+	if err := db.First(&user, userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`

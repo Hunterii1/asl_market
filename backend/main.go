@@ -21,7 +21,7 @@ func main() {
 	models.ConnectDatabase()
 
 	// Initialize Telegram bot service
-	_ = services.GetTelegramService()
+	telegramService := services.GetTelegramService()
 	log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
 
 	// Set Gin mode
@@ -39,7 +39,7 @@ func main() {
 	router.Use(cors.New(corsConfig))
 
 	// Setup routes
-	routes.SetupRoutes(router)
+	routes.SetupRoutes(router, telegramService)
 
 	// Start server
 	serverAddr := fmt.Sprintf("%s:%s", config.AppConfig.Server.Host, config.AppConfig.Server.Port)
