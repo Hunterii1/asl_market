@@ -3,6 +3,7 @@ package controllers
 import (
 	"asl-market-backend/models"
 	"asl-market-backend/services"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -27,6 +28,13 @@ type CreateUpgradeRequestDTO struct {
 // CreateUpgradeRequest creates a new upgrade request
 func (uc *UpgradeController) CreateUpgradeRequest(c *gin.Context) {
 	userID := c.GetUint("user_id")
+
+	// Debug log
+	log.Printf("Upgrade request from user ID: %d", userID)
+	if userID == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+		return
+	}
 
 	var dto CreateUpgradeRequestDTO
 	if err := c.ShouldBindJSON(&dto); err != nil {
