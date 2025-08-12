@@ -13,7 +13,7 @@ type VideoWatch struct {
 	VideoID   uint          `gorm:"not null;index" json:"video_id"`
 	User      User          `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Video     TrainingVideo `gorm:"foreignKey:VideoID" json:"video,omitempty"`
-	WatchedAt time.Time     `gorm:"default:CURRENT_TIMESTAMP" json:"watched_at"`
+	WatchedAt *time.Time    `json:"watched_at"` // Nullable to avoid MySQL default value issues
 	CreatedAt time.Time     `json:"created_at"`
 	UpdatedAt time.Time     `json:"updated_at"`
 }
@@ -26,17 +26,19 @@ func MarkVideoAsWatched(db *gorm.DB, userID, videoID uint) error {
 
 	if err == gorm.ErrRecordNotFound {
 		// Create new watch record
+		now := time.Now()
 		watch := VideoWatch{
 			UserID:    userID,
 			VideoID:   videoID,
-			WatchedAt: time.Now(),
+			WatchedAt: &now,
 		}
 		return db.Create(&watch).Error
 	}
 
 	// Already watched, update timestamp
 	if err == nil {
-		return db.Model(&existing).Update("watched_at", time.Now()).Error
+		now := time.Now()
+		return db.Model(&existing).Update("watched_at", &now).Error
 	}
 
 	return err
