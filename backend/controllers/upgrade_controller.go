@@ -65,8 +65,8 @@ func (uc *UpgradeController) CreateUpgradeRequest(c *gin.Context) {
 	// Debug log
 	log.Printf("User %d license type: '%s', requesting upgrade to: '%s'", userID, license.Type, dto.ToPlan)
 
-	// Validate upgrade path (only Plus to Pro for now)
-	if license.Type != "Plus" || dto.ToPlan != "Pro" {
+	// Validate upgrade path (only plus to pro for now)
+	if license.Type != "plus" || dto.ToPlan != "Pro" {
 		log.Printf("Upgrade validation failed: license.Type='%s', dto.ToPlan='%s'", license.Type, dto.ToPlan)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ارتقا فقط از پلن پلاس به پرو امکان‌پذیر است"})
 		return
