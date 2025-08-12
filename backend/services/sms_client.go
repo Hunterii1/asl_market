@@ -231,14 +231,34 @@ func (sms *IPPanelClient) SendPattern(patternCode string, originator string, rec
 		Variable:  values,
 	}
 
+	// Debug logging
+	jsonData, _ := json.Marshal(data)
+	fmt.Printf("🔍 SMS Request: %s\n", string(jsonData))
+
 	_res, err := sms.post("/sms/pattern/normal/send", "application/json", data)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("SMS API request failed: %v", err)
+	}
+
+	if _res == nil {
+		return 0, fmt.Errorf("SMS API returned empty response")
+	}
+
+	// Debug logging
+	fmt.Printf("🔍 SMS Response Status: %s, Code: %d\n", _res.Status, _res.Code)
+	fmt.Printf("🔍 SMS Response Data: %s\n", string(_res.Data))
+
+	if _res.Data == nil {
+		return 0, fmt.Errorf("SMS API returned null data")
 	}
 
 	res := sendResType{}
 	if err = json.Unmarshal(_res.Data, &res); err != nil {
-		return 0, err
+		return 0, fmt.Errorf("Failed to parse SMS API response: %v. Raw data: %s", err, string(_res.Data))
+	}
+
+	if res.MessageId == 0 {
+		return 0, fmt.Errorf("SMS API returned invalid message ID. Raw response: %s", string(_res.Data))
 	}
 
 	return res.MessageId, nil

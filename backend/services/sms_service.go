@@ -36,18 +36,15 @@ func (s *SMSService) SendLicenseActivationSMS(phoneNumber, userName, licensePlan
 		return fmt.Errorf("SMS service not initialized")
 	}
 
-	// Prepare pattern values
-	patternValues := map[string]string{
-		"name": userName,
-		"plan": licensePlan,
-	}
+	// For simple pattern without parameters, send empty map
+	patternValues := map[string]string{}
 
 	// Send SMS with pattern
 	messageID, err := s.client.SendPattern(
 		s.patternCode, // "9i276pvpwvuj40w"
 		s.originator,  // originator number
 		phoneNumber,   // recipient
-		patternValues, // pattern values
+		patternValues, // empty pattern values for simple pattern
 	)
 
 	if err != nil {
