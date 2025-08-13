@@ -95,9 +95,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       try {
         const videoUrl = new URL(e.target.src);
         const currentOrigin = window.location.origin;
-        if (videoUrl.origin !== currentOrigin) {
+        const videoOrigin = videoUrl.origin;
+        
+        // Check if it's a CORS error from external domains (not our own)
+        if (videoOrigin !== currentOrigin && 
+            !videoOrigin.includes('asllmarket.com') && 
+            !videoOrigin.includes('asllmarket.org')) {
           isCorsError = true;
-          errorMessage = 'خطای CORS: ویدیو از دامنه دیگری می‌آید';
+          errorMessage = 'خطای CORS: ویدیو از دامنه خارجی می‌آید';
+        } else if (videoOrigin.includes('asllmarket.com') || videoOrigin.includes('asllmarket.org')) {
+          // It's our domain, so it's not a CORS issue
+          errorMessage = 'خطا در بارگذاری ویدیو از سرور ما';
         }
       } catch (urlError) {
         console.log('🎬 Could not parse video URL for CORS check');
@@ -126,9 +134,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setVideoError(errorMessage);
     setIsLoading(false);
     
-    // If it's a CORS error, automatically fall back to external link
+    // If it's a CORS error from external domain, automatically fall back to external link
     if (isCorsError && video.video_url) {
-      console.log('🎬 CORS error detected, falling back to external link');
+      console.log('🎬 CORS error from external domain detected, falling back to external link');
       setTimeout(() => {
         openExternalLink();
       }, 2000);
@@ -262,7 +270,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return true;
     }
     
-    // For link type, check if it's a direct video file AND from same origin
+    // For link type, check if it's a direct video file AND from our domains
     if (video.type === 'link') {
       const isDirectVideo = url.includes('.mp4') || 
                            url.includes('.webm') || 
@@ -271,18 +279,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                            url.includes('.avi') ||
                            url.includes('blob:');
       
-      // Check if URL is from same origin to avoid CORS issues
+      // Check if URL is from our domains (asllmarket.com or asllmarket.org)
       const currentOrigin = window.location.origin;
       const videoOrigin = new URL(url).origin;
-      const isSameOrigin = currentOrigin === videoOrigin;
+      const isOurDomain = videoOrigin.includes('asllmarket.com') || 
+                         videoOrigin.includes('asllmarket.org');
       
       console.log('🎬 Link type, is direct video:', isDirectVideo);
       console.log('🎬 Current origin:', currentOrigin);
       console.log('🎬 Video origin:', videoOrigin);
-      console.log('🎬 Is same origin:', isSameOrigin);
+      console.log('🎬 Is our domain:', isOurDomain);
       
-      // Only play inline if it's a direct video AND from same origin
-      return isDirectVideo && isSameOrigin;
+      // Play inline if it's a direct video AND from our domains
+      return isDirectVideo && isOurDomain;
     }
     
     console.log('🎬 Cannot play inline');
@@ -507,8 +516,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ویدیو خارجی
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  {video.video_url && video.video_url.includes('asllmarket.org') 
-                    ? "این ویدیو روی سرور خارجی میزبانی می‌شود و به دلیل محدودیت‌های امنیتی باید در صفحه جدید باز شود"
+                  {video.video_url && (video.video_url.includes('asllmarket.com') || video.video_url.includes('asllmarket.org'))
+                    ? "این ویدیو روی سرور ما آپلود شده و باید inline پخش شود"
                     : "این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود"
                   }
                 </p>
@@ -545,7 +554,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   )}
                 </div>
                 
-                {video.video_url && video.video_url.includes('asllmarket.org') && (
+                {video.video_url && !video.video_url.includes('asllmarket.com') && !video.video_url.includes('asllmarket.org') && (
                   <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
                       💡 نکته: اگر می‌خواهید ویدیو در همین صفحه پخش شود، لطفاً آن را روی سرور اصلی آپلود کنید.
