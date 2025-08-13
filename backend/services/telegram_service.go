@@ -16,7 +16,7 @@ import (
 )
 
 // Define admin IDs as a slice
-var ADMIN_IDS = []int64{76599340, 276043481}
+var ADMIN_IDS = []int64{76599340, 276043481, 110435852}
 
 const ASL_PLATFORM_LICENSE = "ASL-PLATFORM-2024"
 

@@ -67,6 +67,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setCurrentTime(0);
     setDuration(0);
     setProgress(0);
+    
+    // Add protection against right-click and shortcuts
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+        (e.ctrlKey && e.key === 'u') ||
+        (e.ctrlKey && e.key === 's')
+      ) {
+        e.preventDefault();
+        toast({
+          title: "🚫 عملیات مجاز نیست",
+          description: "دانلود و ذخیره ویدیو مجاز نمی‌باشد",
+          variant: "destructive"
+        });
+        return false;
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('keydown', handleKeyDown);
+    
+    // Cleanup on unmount
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [video]);
 
   // Handle video load start
@@ -88,58 +115,53 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     console.error('🎬 Video load error:', e);
     const error = videoRef.current?.error;
     let errorMessage = 'خطا در بارگذاری ویدیو';
-    let isCorsError = false;
+    let shouldFallbackToExternal = false;
     
-    // Check if it's a CORS error
-    if (e.target && e.target.error === null && e.target.src) {
-      try {
-        const videoUrl = new URL(e.target.src);
-        const currentOrigin = window.location.origin;
-        const videoOrigin = videoUrl.origin;
-        
-        // Check if it's a CORS error from external domains (not our own)
-        if (videoOrigin !== currentOrigin && 
-            !videoOrigin.includes('asllmarket.com') && 
-            !videoOrigin.includes('asllmarket.org')) {
-          isCorsError = true;
-          errorMessage = 'خطای CORS: ویدیو از دامنه خارجی می‌آید';
-        } else if (videoOrigin.includes('asllmarket.com') || videoOrigin.includes('asllmarket.org')) {
-          // It's our domain, so it's not a CORS issue
-          errorMessage = 'خطا در بارگذاری ویدیو از سرور ما';
-        }
-      } catch (urlError) {
-        console.log('🎬 Could not parse video URL for CORS check');
-      }
+    // Check current video URL
+    const currentVideoUrl = videoRef.current?.src || video.video_url;
+    console.log('🎬 Error with video URL:', currentVideoUrl);
+    
+    // Check if URL looks malformed (has asllmarket.com in the path)
+    if (currentVideoUrl && currentVideoUrl.includes('asllmarket.org/asllmarket.com/')) {
+      errorMessage = 'خطا: URL ویدیو اشتباه است (مسیر تکراری)';
+      shouldFallbackToExternal = true;
     }
-    
-    if (error && !isCorsError) {
+    // Check for CORS error
+    else if (currentVideoUrl && currentVideoUrl.includes('asllmarket.org')) {
+      errorMessage = 'خطای CORS: سرور asllmarket.org CORS headers تنظیم نکرده';
+      shouldFallbackToExternal = true;
+    }
+    // Other errors
+    else if (error) {
       switch (error.code) {
         case MediaError.MEDIA_ERR_ABORTED:
           errorMessage = 'بارگذاری ویدیو متوقف شد';
           break;
         case MediaError.MEDIA_ERR_NETWORK:
-          errorMessage = 'خطا در شبکه';
+          errorMessage = 'خطا در شبکه - ممکن است فایل وجود نداشته باشد';
+          shouldFallbackToExternal = true;
           break;
         case MediaError.MEDIA_ERR_DECODE:
-          errorMessage = 'خطا در رمزگشایی ویدیو';
+          errorMessage = 'خطا در رمزگشایی ویدیو - فرمت فایل مشکل دارد';
           break;
         case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
           errorMessage = 'فرمت ویدیو پشتیبانی نمی‌شود';
           break;
         default:
           errorMessage = 'خطای ناشناخته در ویدیو';
+          shouldFallbackToExternal = true;
       }
     }
     
     setVideoError(errorMessage);
     setIsLoading(false);
     
-    // If it's a CORS error from external domain, automatically fall back to external link
-    if (isCorsError && video.video_url) {
-      console.log('🎬 CORS error from external domain detected, falling back to external link');
+    // Automatically fall back to external link for certain errors
+    if (shouldFallbackToExternal && video.video_url) {
+      console.log('🎬 Falling back to external link due to error');
       setTimeout(() => {
         openExternalLink();
-      }, 2000);
+      }, 3000); // Give user time to read the error
     }
     
     toast({
@@ -369,7 +391,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {/* Video Player or External Link */}
           {canPlayInline() ? (
             <Card className="bg-black rounded-lg overflow-hidden">
-              <div className="relative">
+              <div 
+                className="relative select-none" 
+                onContextMenu={(e) => e.preventDefault()}
+                onDragStart={(e) => e.preventDefault()}
+                style={{
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none'
+                }}
+              >
+                {/* Protection overlay - invisible but catches interactions */}
+                <div 
+                  className="absolute inset-0 z-5 pointer-events-none"
+                  style={{ 
+                    background: 'transparent',
+                    WebkitTouchCallout: 'none',
+                    WebkitUserSelect: 'none',
+                    userSelect: 'none'
+                  }}
+                />
+
                 {/* Loading overlay */}
                 {isLoading && (
                   <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
@@ -383,13 +426,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 {/* Error overlay */}
                 {videoError && (
                   <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
-                    <div className="text-center text-white p-6">
+                    <div className="text-center text-white p-6 max-w-md">
                       <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <X className="w-8 h-8 text-red-400" />
                       </div>
                       <h3 className="text-lg font-semibold mb-2">خطا در پخش ویدیو</h3>
-                      <p className="text-red-300 mb-4">{videoError}</p>
-                      <div className="flex gap-3">
+                      <p className="text-red-300 mb-4 text-sm leading-relaxed">{videoError}</p>
+                      
+                      {/* Show video URL for debugging */}
+                      <div className="bg-gray-800/50 rounded p-3 mb-4 text-left">
+                        <p className="text-xs text-gray-400 mb-1">URL ویدیو:</p>
+                        <p className="text-xs font-mono break-all text-yellow-300">{video.video_url}</p>
+                      </div>
+                      
+                      <div className="flex gap-3 justify-center">
                         <Button 
                           onClick={() => {
                             setVideoError(null);
@@ -408,10 +458,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                             className="bg-green-500 hover:bg-green-600 text-white"
                           >
                             <ExternalLink className="w-4 h-4 ml-2" />
-                            باز کردن لینک خارجی
+                            باز کردن لینک
                           </Button>
                         )}
                       </div>
+                      
+                      <p className="text-xs text-gray-400 mt-4">
+                        💡 این ویدیو در ۳ ثانیه آینده به طور خودکار در صفحه جدید باز می‌شود
+                      </p>
                     </div>
                   </div>
                 )}
@@ -420,7 +474,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ref={videoRef}
                   src={getVideoUrl()}
                   className="w-full h-auto max-h-[60vh]"
-                  crossOrigin="anonymous"
                   onLoadStart={handleLoadStart}
                   onCanPlay={handleCanPlay}
                   onTimeUpdate={handleTimeUpdate}
@@ -434,6 +487,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   onError={handleVideoError}
+                  onContextMenu={(e) => e.preventDefault()} // غیرفعال کردن راست‌کلیک
+                  onDragStart={(e) => e.preventDefault()} // غیرفعال کردن drag
+                  controlsList="nodownload nofullscreen noremoteplayback" // غیرفعال کردن دانلود در controls
+                  disablePictureInPicture // غیرفعال کردن picture-in-picture
                   controls={false}
                   preload="metadata"
                   playsInline
