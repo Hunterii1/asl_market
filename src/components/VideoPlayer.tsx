@@ -88,8 +88,23 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     console.error('🎬 Video load error:', e);
     const error = videoRef.current?.error;
     let errorMessage = 'خطا در بارگذاری ویدیو';
+    let isCorsError = false;
     
-    if (error) {
+    // Check if it's a CORS error
+    if (e.target && e.target.error === null && e.target.src) {
+      try {
+        const videoUrl = new URL(e.target.src);
+        const currentOrigin = window.location.origin;
+        if (videoUrl.origin !== currentOrigin) {
+          isCorsError = true;
+          errorMessage = 'خطای CORS: ویدیو از دامنه دیگری می‌آید';
+        }
+      } catch (urlError) {
+        console.log('🎬 Could not parse video URL for CORS check');
+      }
+    }
+    
+    if (error && !isCorsError) {
       switch (error.code) {
         case MediaError.MEDIA_ERR_ABORTED:
           errorMessage = 'بارگذاری ویدیو متوقف شد';
@@ -110,6 +125,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     
     setVideoError(errorMessage);
     setIsLoading(false);
+    
+    // If it's a CORS error, automatically fall back to external link
+    if (isCorsError && video.video_url) {
+      console.log('🎬 CORS error detected, falling back to external link');
+      setTimeout(() => {
+        openExternalLink();
+      }, 2000);
+    }
     
     toast({
       title: "❌ خطا در پخش ویدیو",
@@ -239,7 +262,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       return true;
     }
     
-    // For link type, check if it's a direct video file
+    // For link type, check if it's a direct video file AND from same origin
     if (video.type === 'link') {
       const isDirectVideo = url.includes('.mp4') || 
                            url.includes('.webm') || 
@@ -247,8 +270,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                            url.includes('.mov') ||
                            url.includes('.avi') ||
                            url.includes('blob:');
+      
+      // Check if URL is from same origin to avoid CORS issues
+      const currentOrigin = window.location.origin;
+      const videoOrigin = new URL(url).origin;
+      const isSameOrigin = currentOrigin === videoOrigin;
+      
       console.log('🎬 Link type, is direct video:', isDirectVideo);
-      return isDirectVideo;
+      console.log('🎬 Current origin:', currentOrigin);
+      console.log('🎬 Video origin:', videoOrigin);
+      console.log('🎬 Is same origin:', isSameOrigin);
+      
+      // Only play inline if it's a direct video AND from same origin
+      return isDirectVideo && isSameOrigin;
     }
     
     console.log('🎬 Cannot play inline');
@@ -391,7 +425,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
                   onError={handleVideoError}
-                  poster="/placeholder-video.jpg"
                   controls={false}
                   preload="metadata"
                   playsInline
@@ -474,8 +507,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ویدیو خارجی
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود
+                  {video.video_url && video.video_url.includes('asllmarket.org') 
+                    ? "این ویدیو روی سرور خارجی میزبانی می‌شود و به دلیل محدودیت‌های امنیتی باید در صفحه جدید باز شود"
+                    : "این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود"
+                  }
                 </p>
+                
+                {video.video_url && (
+                  <div className="bg-muted/50 rounded-lg p-3 mb-4 text-left">
+                    <p className="text-xs text-muted-foreground mb-1">لینک ویدیو:</p>
+                    <p className="text-xs font-mono break-all">{video.video_url}</p>
+                  </div>
+                )}
+                
                 <div className="flex gap-3 justify-center">
                   <Button 
                     onClick={openExternalLink}
@@ -489,7 +533,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     <Button 
                       variant="outline"
                       onClick={() => {
-                        // Show description in a toast or expand description section
                         toast({
                           title: "📝 توضیحات ویدیو",
                           description: video.description,
@@ -501,6 +544,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     </Button>
                   )}
                 </div>
+                
+                {video.video_url && video.video_url.includes('asllmarket.org') && (
+                  <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      💡 نکته: اگر می‌خواهید ویدیو در همین صفحه پخش شود، لطفاً آن را روی سرور اصلی آپلود کنید.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
