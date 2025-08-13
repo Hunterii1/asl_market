@@ -208,7 +208,7 @@ const AslLearn = () => {
     // Check if this video is watched
     const isWatched = watchedVideoIds.includes(videoId);
     
-    return {
+    const formattedVideo = {
       id: videoId,
       title: videoTitle,
       duration: videoDuration && typeof videoDuration === 'number' ? 
@@ -224,6 +224,9 @@ const AslLearn = () => {
       video_url: videoUrl || "",
       telegram_file_id: telegramFileId || ""
     };
+    
+    console.log('🎬 Formatted video:', formattedVideo);
+    return formattedVideo;
   };
 
   const trainingModulesFake = {
@@ -378,7 +381,23 @@ const AslLearn = () => {
 
   // Video player handlers
   const handlePlayVideo = (video: any) => {
-    setSelectedVideo(video);
+    console.log('🎬 Playing video:', video);
+    
+    // Ensure video has all required properties
+    const formattedVideo = {
+      id: video.id,
+      title: video.title,
+      description: video.description || "",
+      video_url: video.video_url || "",
+      telegram_file_id: video.telegram_file_id || "",
+      type: video.type || "video",
+      duration: video.duration || "نامشخص",
+      views: video.views || 0,
+      difficulty: video.difficulty || "مقدماتی"
+    };
+    
+    console.log('🎬 Formatted video for player:', formattedVideo);
+    setSelectedVideo(formattedVideo);
     setIsVideoPlayerOpen(true);
   };
 
@@ -404,6 +423,8 @@ const AslLearn = () => {
       .filter(video => video && (video.ID || video.id) && (video.Title || video.title)) // Filter valid videos
       .map(formatVideo)
       .filter(Boolean) : []; // Remove null results from formatVideo
+
+  console.log('🎬 Current modules for category:', currentModules);
 
   return (
     <LicenseGate>
@@ -480,12 +501,13 @@ const AslLearn = () => {
               </div>
             ) : (
               currentModules.map((module) => (
-              <Card key={module.id} className="bg-card/80 border-border hover:border-accent transition-all rounded-3xl">
+              <Card key={module.id} className="bg-card/80 border-border hover:border-accent transition-all rounded-3xl hover:shadow-lg">
                 <CardContent className="p-6">
+                  {/* Header with title and badges */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
-                      <h4 className="font-bold text-foreground mb-2">{module.title}</h4>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <h4 className="font-bold text-foreground mb-2 text-lg">{module.title}</h4>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
                           <Clock className="w-4 h-4" />
                           {module.duration}
@@ -495,17 +517,47 @@ const AslLearn = () => {
                           {module.lessons} {module.type === "guide" ? "بخش" : "درس"}
                         </div>
                       </div>
+                      
+                      {/* Description if available */}
+                      {module.description && (
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                          {module.description}
+                        </p>
+                      )}
                     </div>
+                    
+                    {/* Badges column */}
                     <div className="flex flex-col gap-2">
-                      <Badge className={`${getDifficultyColor(module.difficulty)} rounded-2xl text-xs`}>
+                      <Badge className={`${getDifficultyColor(module.difficulty)} rounded-2xl text-xs px-3 py-1`}>
                         {module.difficulty}
                       </Badge>
-                      <Badge className={`${getTypeColor(module.type)} rounded-2xl text-xs`}>
+                      <Badge className={`${getTypeColor(module.type)} rounded-2xl text-xs px-3 py-1`}>
                         {module.type === "video" ? "ویدئو" : module.type === "course" ? "دوره" : "راهنما"}
                       </Badge>
                     </div>
                   </div>
 
+                  {/* Progress and status */}
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">پیشرفت</span>
+                      <span className="font-medium">
+                        {module.completed ? "100%" : "0%"}
+                      </span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          module.completed 
+                            ? "bg-green-500" 
+                            : "bg-blue-500"
+                        }`}
+                        style={{ width: module.completed ? "100%" : "0%" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Action section */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {module.completed ? (
@@ -517,22 +569,29 @@ const AslLearn = () => {
                         {module.completed ? "تکمیل شده" : "شروع نشده"}
                       </span>
                     </div>
+                    
+                    {/* Enhanced play button */}
                     <Button 
                       size="sm" 
                       variant={module.completed ? "outline" : "default"}
-                      className={`rounded-2xl ${
+                      className={`rounded-2xl px-6 py-2 transition-all duration-200 ${
                         module.completed 
-                          ? "border-border text-foreground hover:bg-muted" 
-                          : "bg-blue-500 hover:bg-blue-600 text-white"
+                          ? "border-border text-foreground hover:bg-muted hover:scale-105" 
+                          : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hover:scale-105 shadow-lg"
                       }`}
                       onClick={() => handlePlayVideo(module)}
                     >
                       {module.completed ? (
-                        <Eye className="w-4 h-4 ml-2" />
+                        <>
+                          <Eye className="w-4 h-4 ml-2" />
+                          مشاهده مجدد
+                        </>
                       ) : (
-                        <Play className="w-4 h-4 ml-2" />
+                        <>
+                          <Play className="w-4 h-4 ml-2" />
+                          شروع آموزش
+                        </>
                       )}
-                      {module.completed ? "مشاهده مجدد" : "پخش ویدیو"}
                     </Button>
                   </div>
                 </CardContent>
@@ -589,17 +648,17 @@ const AslLearn = () => {
             </Card>
           </div>
         </div>
-    </div>
+      </div>
 
-    {/* Video Player Modal */}
-    {selectedVideo && (
-      <VideoPlayer
-        video={selectedVideo}
-        isOpen={isVideoPlayerOpen}
-        onClose={handleCloseVideoPlayer}
-        onVideoWatched={handleVideoWatched}
-      />
-    )}
+      {/* Video Player Modal */}
+      {selectedVideo && (
+        <VideoPlayer
+          video={selectedVideo}
+          isOpen={isVideoPlayerOpen}
+          onClose={handleCloseVideoPlayer}
+          onVideoWatched={handleVideoWatched}
+        />
+      )}
     </LicenseGate>
   );
 };

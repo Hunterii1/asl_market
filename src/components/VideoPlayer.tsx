@@ -15,7 +15,8 @@ import {
   Clock,
   Eye,
   CheckCircle,
-  X
+  X,
+  FileText
 } from 'lucide-react';
 
 interface VideoPlayerProps {
@@ -48,8 +49,74 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const [duration, setDuration] = useState(0);
   const [progress, setProgress] = useState(0);
   const [hasWatched, setHasWatched] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const watchThreshold = 0.8; // 80% watched counts as completion
+
+  // Debug video data on mount
+  useEffect(() => {
+    console.log('🎬 VideoPlayer mounted with video:', video);
+    console.log('🎬 Video URL:', getVideoUrl());
+    console.log('🎬 Can play inline:', canPlayInline());
+    
+    // Reset states when video changes
+    setVideoError(null);
+    setIsLoading(true);
+    setHasWatched(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setProgress(0);
+  }, [video]);
+
+  // Handle video load start
+  const handleLoadStart = () => {
+    console.log('🎬 Video load started');
+    setIsLoading(true);
+    setVideoError(null);
+  };
+
+  // Handle video can play
+  const handleCanPlay = () => {
+    console.log('🎬 Video can play');
+    setIsLoading(false);
+    setVideoError(null);
+  };
+
+  // Handle video load error
+  const handleVideoError = (e: any) => {
+    console.error('🎬 Video load error:', e);
+    const error = videoRef.current?.error;
+    let errorMessage = 'خطا در بارگذاری ویدیو';
+    
+    if (error) {
+      switch (error.code) {
+        case MediaError.MEDIA_ERR_ABORTED:
+          errorMessage = 'بارگذاری ویدیو متوقف شد';
+          break;
+        case MediaError.MEDIA_ERR_NETWORK:
+          errorMessage = 'خطا در شبکه';
+          break;
+        case MediaError.MEDIA_ERR_DECODE:
+          errorMessage = 'خطا در رمزگشایی ویدیو';
+          break;
+        case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+          errorMessage = 'فرمت ویدیو پشتیبانی نمی‌شود';
+          break;
+        default:
+          errorMessage = 'خطای ناشناخته در ویدیو';
+      }
+    }
+    
+    setVideoError(errorMessage);
+    setIsLoading(false);
+    
+    toast({
+      title: "❌ خطا در پخش ویدیو",
+      description: errorMessage,
+      variant: "destructive"
+    });
+  };
 
   // Convert Farsi numbers to English for time display
   const toEnglishNumber = (str: string) => {
@@ -143,46 +210,80 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   // Get video source URL
   const getVideoUrl = () => {
+    console.log('🎬 Getting video URL for:', video);
+    console.log('🎬 Video type:', video.type);
+    console.log('🎬 Video URL:', video.video_url);
+    console.log('🎬 Telegram file ID:', video.telegram_file_id);
+    
     if (video.type === 'link' && video.video_url) {
-      // Return the direct link (could be from any hosting provider)
+      console.log('🎬 Using external link:', video.video_url);
       return video.video_url;
     } else if (video.type === 'video' && video.telegram_file_id) {
-      // For Telegram files uploaded to our server, use streaming endpoint
-      return `/api/v1/training/video/${video.id}/stream`;
+      const streamUrl = `/api/v1/training/video/${video.id}/stream`;
+      console.log('🎬 Using streaming URL:', streamUrl);
+      return streamUrl;
     }
+    
+    console.log('🎬 No valid video URL found');
     return '';
   };
 
   // Check if video can be played inline
   const canPlayInline = () => {
     const url = getVideoUrl();
+    console.log('🎬 Checking if can play inline for URL:', url);
+    
     // Always play inline if it's a file type (uploaded to our server)
-    if (video.type === 'video') return true;
+    if (video.type === 'video') {
+      console.log('🎬 Video type is file, can play inline');
+      return true;
+    }
     
     // For link type, check if it's a direct video file
     if (video.type === 'link') {
-      // Check if URL is a direct video file (any .mp4, .webm, .ogg file)
-      // This includes external hosting services like file hosting providers
-      return url.includes('.mp4') || 
-             url.includes('.webm') || 
-             url.includes('.ogg') ||
-             url.includes('.mov') ||
-             url.includes('.avi') ||
-             url.includes('blob:');
+      const isDirectVideo = url.includes('.mp4') || 
+                           url.includes('.webm') || 
+                           url.includes('.ogg') ||
+                           url.includes('.mov') ||
+                           url.includes('.avi') ||
+                           url.includes('blob:');
+      console.log('🎬 Link type, is direct video:', isDirectVideo);
+      return isDirectVideo;
     }
     
+    console.log('🎬 Cannot play inline');
     return false;
   };
 
   // Open external link
   const openExternalLink = () => {
     if (video.video_url) {
+      console.log('🎬 Opening external link:', video.video_url);
       window.open(video.video_url, '_blank');
       // Still mark as "watched" when they click external link
       if (!hasWatched) {
         setHasWatched(true);
         markVideoAsWatched();
       }
+    }
+  };
+
+  // Try to play video inline first, fallback to external if needed
+  const handleVideoPlayback = () => {
+    if (canPlayInline()) {
+      console.log('🎬 Attempting to play video inline');
+      if (videoRef.current) {
+        videoRef.current.play().catch((error) => {
+          console.error('🎬 Failed to play inline, falling back to external:', error);
+          setVideoError('خطا در پخش ویدیو، در حال باز کردن لینک خارجی...');
+          setTimeout(() => {
+            openExternalLink();
+          }, 2000);
+        });
+      }
+    } else {
+      console.log('🎬 Cannot play inline, opening external link');
+      openExternalLink();
     }
   };
 
@@ -226,11 +327,59 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {canPlayInline() ? (
             <Card className="bg-black rounded-lg overflow-hidden">
               <div className="relative">
+                {/* Loading overlay */}
+                {isLoading && (
+                  <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+                    <div className="text-center text-white">
+                      <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                      <p>در حال بارگذاری ویدیو...</p>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Error overlay */}
+                {videoError && (
+                  <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
+                    <div className="text-center text-white p-6">
+                      <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <X className="w-8 h-8 text-red-400" />
+                      </div>
+                      <h3 className="text-lg font-semibold mb-2">خطا در پخش ویدیو</h3>
+                      <p className="text-red-300 mb-4">{videoError}</p>
+                      <div className="flex gap-3">
+                        <Button 
+                          onClick={() => {
+                            setVideoError(null);
+                            setIsLoading(true);
+                            if (videoRef.current) {
+                              videoRef.current.load();
+                            }
+                          }}
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          تلاش مجدد
+                        </Button>
+                        {video.video_url && (
+                          <Button 
+                            onClick={openExternalLink}
+                            className="bg-green-500 hover:bg-green-600 text-white"
+                          >
+                            <ExternalLink className="w-4 h-4 ml-2" />
+                            باز کردن لینک خارجی
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <video
                   ref={videoRef}
                   src={getVideoUrl()}
                   className="w-full h-auto max-h-[60vh]"
                   crossOrigin="anonymous"
+                  onLoadStart={handleLoadStart}
+                  onCanPlay={handleCanPlay}
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={() => {
                     setIsPlaying(false);
@@ -241,11 +390,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   }}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
-                  onError={(e) => {
-                    console.error('Video load error:', e);
-                    // Fallback to opening external link if video fails to load
-                  }}
+                  onError={handleVideoError}
                   poster="/placeholder-video.jpg"
+                  controls={false}
+                  preload="metadata"
+                  playsInline
+                  muted={isMuted}
                 >
                   مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
                 </video>
@@ -289,14 +439,28 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                       </span>
                     </div>
 
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={goFullScreen}
-                      className="text-white hover:bg-white/20"
-                    >
-                      <Maximize className="w-5 h-5" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {video.video_url && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={openExternalLink}
+                          className="text-white hover:bg-white/20"
+                          title="باز کردن در لینک خارجی"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      )}
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={goFullScreen}
+                        className="text-white hover:bg-white/20"
+                      >
+                        <Maximize className="w-5 h-5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -310,15 +474,33 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ویدیو خارجی
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  این ویدیو در پلتفرم خارجی میزبانی می‌شود
+                  این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود
                 </p>
-                <Button 
-                  onClick={openExternalLink}
-                  className="bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                  مشاهده ویدیو
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button 
+                    onClick={openExternalLink}
+                    className="bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                    مشاهده ویدیو
+                  </Button>
+                  
+                  {video.description && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => {
+                        // Show description in a toast or expand description section
+                        toast({
+                          title: "📝 توضیحات ویدیو",
+                          description: video.description,
+                        });
+                      }}
+                    >
+                      <FileText className="w-4 h-4 ml-2" />
+                      مشاهده توضیحات
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
