@@ -29,68 +29,33 @@ const ProductsResearch = () => {
     { id: "all", name: "همه دسته‌ها" }
   ]);
   const [loading, setLoading] = useState(true);
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Debounced load data function
-  const loadData = useCallback(async (search: string, category: string) => {
-    try {
-      setLoading(true);
-      
-      // Load products and categories
-      const [productsResponse, categoriesResponse] = await Promise.all([
-        apiService.getResearchProducts({
-          page: 1,
-          per_page: 100, // Get more products
-          status: "active",
-          ...(search && { hs_code: search }),
-          ...(category !== "all" && { category: category })
-        }),
-        apiService.getResearchProductCategories()
-      ]);
-
-      setResearchProducts(productsResponse.products || []);
-      
-      // Add "همه دسته‌ها" to the beginning of categories
-      const allCategories = [
-        { id: "all", name: "همه دسته‌ها" },
-        ...(categoriesResponse.categories || []).map(cat => ({ id: cat, name: cat }))
-      ];
-      setCategories(allCategories);
-      
-    } catch (error) {
-      console.error('Error loading research products:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Handle search with debounce
-  const handleSearch = useCallback((value: string) => {
-    setSearchTerm(value);
-    
-    // Clear existing timeout
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
-    
-    // Set new timeout for debounced search
-    const timeout = setTimeout(() => {
-      loadData(value, selectedCategory);
-    }, 500); // 500ms delay
-    
-    setSearchTimeout(timeout);
-  }, [selectedCategory, loadData, searchTimeout]);
-
-  // Handle category change (immediate)
-  const handleCategoryChange = useCallback((category: string) => {
-    setSelectedCategory(category);
-    loadData(searchTerm, category);
-  }, [searchTerm, loadData]);
-
-  // Initial load
+  // Load data from API (fetch all active products once)
   useEffect(() => {
-    loadData("", "all");
-  }, [loadData]);
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [productsResponse, categoriesResponse] = await Promise.all([
+          apiService.getActiveResearchProducts(),
+          apiService.getResearchProductCategories()
+        ]);
+
+        setResearchProducts(productsResponse.products || []);
+
+        const allCategories = [
+          { id: "all", name: "همه دسته‌ها" },
+          ...(categoriesResponse.categories || []).map((cat: any) => ({ id: cat, name: cat }))
+        ];
+        setCategories(allCategories);
+      } catch (error) {
+        console.error('Error loading research products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   // Helper functions for styling and text conversion
   const getMarketDemandColor = (demand: string) => {
@@ -147,8 +112,13 @@ const ProductsResearch = () => {
     }
   };
 
-  // No need for local filtering since we're using API filters
-  const filteredProducts = researchProducts;
+  // Local filtering: show all when searchTerm is empty; filter by HS code otherwise
+  const filteredProducts = researchProducts.filter((product: any) => {
+    const matchesSearch = !searchTerm 
+      || (product.hs_code && String(product.hs_code).toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   if (loading) {
     return (
@@ -209,11 +179,11 @@ const ProductsResearch = () => {
               <Input
                 placeholder="جستجو بر اساس کد HS (مثال: 390120)..."
                 value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="pr-10 bg-muted border-border text-foreground rounded-2xl"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl md:w-48">
                 <SelectValue placeholder="دسته‌بندی" />
               </SelectTrigger>
