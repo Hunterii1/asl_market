@@ -7,7 +7,7 @@ import (
 	"asl-market-backend/models"
 )
 
-func main() {
+func main44() {
 	// Load configuration
 	config.LoadConfig()
 

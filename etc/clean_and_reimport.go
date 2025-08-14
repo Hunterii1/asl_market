@@ -97,7 +97,7 @@ type Visitor struct {
 	UpdatedAt                     time.Time
 }
 
-func main() {
+func main66() {
 	log.Println("📋 ASL Market Excel Import Tool")
 	log.Println("===============================")
 

@@ -12,6 +12,7 @@ import (
 type ResearchProduct struct {
 	ID          uint   `json:"id" gorm:"primaryKey"`
 	Name        string `json:"name" gorm:"size:255;charset:utf8mb4;collation:utf8mb4_unicode_ci;not null"`
+	HSCode      string `json:"hs_code" gorm:"size:100;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 	Category    string `json:"category" gorm:"size:100;charset:utf8mb4;collation:utf8mb4_unicode_ci;not null"`
 	Description string `json:"description" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"`
 
@@ -49,6 +50,7 @@ type ResearchProduct struct {
 // ResearchProductRequest represents the request structure for creating research products
 type ResearchProductRequest struct {
 	Name               string `json:"name" validate:"required,min=2,max=255"`
+	HSCode             string `json:"hs_code"`
 	Category           string `json:"category" validate:"required,min=2,max=100"`
 	Description        string `json:"description"`
 	ExportValue        string `json:"export_value"`
@@ -71,6 +73,7 @@ type ResearchProductRequest struct {
 type ResearchProductResponse struct {
 	ID                 uint         `json:"id"`
 	Name               string       `json:"name"`
+	HSCode             string       `json:"hs_code"`
 	Category           string       `json:"category"`
 	Description        string       `json:"description"`
 	ExportValue        string       `json:"export_value"`

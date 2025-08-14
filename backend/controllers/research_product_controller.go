@@ -2,10 +2,16 @@ package controllers
 
 import (
 	"asl-market-backend/models"
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xuri/excelize/v2"
+	"gorm.io/gorm"
 )
 
 // GetResearchProducts godoc
@@ -53,6 +59,7 @@ func GetResearchProducts(c *gin.Context) {
 		productResponse := models.ResearchProductResponse{
 			ID:                 product.ID,
 			Name:               product.Name,
+			HSCode:             product.HSCode,
 			Category:           product.Category,
 			Description:        product.Description,
 			ExportValue:        product.ExportValue,
@@ -122,6 +129,7 @@ func GetActiveResearchProducts(c *gin.Context) {
 		productResponse := models.ResearchProductResponse{
 			ID:                 product.ID,
 			Name:               product.Name,
+			HSCode:             product.HSCode,
 			Category:           product.Category,
 			Description:        product.Description,
 			ExportValue:        product.ExportValue,
@@ -267,6 +275,241 @@ func CreateResearchProduct(c *gin.Context) {
 		"message": "محصول تحقیقی با موفقیت ایجاد شد",
 		"product": product,
 	})
+}
+
+// ImportResearchProductsFromExcel godoc
+// @Summary Import research products from Excel (Admin only)
+// @Description Import research products from uploaded Excel file
+// @Tags research-products
+// @Accept multipart/form-data
+// @Produce json
+// @Param file formData file true "Excel file"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /admin/research-products/import [post]
+func ImportResearchProductsFromExcel(c *gin.Context) {
+	// Get admin user ID from context
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "احراز هویت شکست خورد",
+		})
+		return
+	}
+
+	adminID, ok := userID.(uint)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در شناسایی کاربر",
+		})
+		return
+	}
+
+	// Get uploaded file
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "فایل آپلود نشده است",
+		})
+		return
+	}
+
+	// Validate file extension
+	if !strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "فقط فایل‌های Excel (.xlsx) پشتیبانی می‌شوند",
+		})
+		return
+	}
+
+	// Save uploaded file temporarily
+	tempFilePath := filepath.Join("tmp", fmt.Sprintf("research_products_%d.xlsx", time.Now().Unix()))
+	err = c.SaveUploadedFile(fileHeader, tempFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در ذخیره فایل",
+		})
+		return
+	}
+
+	// Import products from Excel
+	db := models.GetDB()
+	count, importErr := importResearchProductsFromExcel(db, tempFilePath, adminID)
+
+	// Clean up temporary file
+	// os.Remove(tempFilePath) // Uncomment in production
+
+	if importErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":   "خطا در import داده‌ها",
+			"details": importErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "فایل با موفقیت import شد",
+		"imported_count": count,
+	})
+}
+
+// Helper function for importing research products from Excel
+func importResearchProductsFromExcel(db *gorm.DB, filePath string, adminID uint) (int, error) {
+	f, err := excelize.OpenFile(filePath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to open Excel file: %w", err)
+	}
+	defer f.Close()
+
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		return 0, fmt.Errorf("no sheets found")
+	}
+
+	rows, err := f.GetRows(sheets[0])
+	if err != nil {
+		return 0, fmt.Errorf("failed to read rows: %w", err)
+	}
+
+	if len(rows) < 3 { // Header + at least 2 data rows (skip first 2 rows)
+		return 0, fmt.Errorf("insufficient data rows found")
+	}
+
+	successCount := 0
+
+	// Skip first 2 rows (header and sample), start from row 2 (index 2)
+	for i := 2; i < len(rows); i++ {
+		row := rows[i]
+
+		// Skip empty rows
+		if len(row) == 0 || isEmptyRow(row) {
+			continue
+		}
+
+		if len(row) < 5 {
+			continue
+		}
+
+		// Extract data from columns based on structure:
+		// 0: نام محصول
+		// 1: HS code
+		// 2: مقصدهای عربی اصلی
+		// 3: کاربرد/نکته قابل استفاده در فروش
+		// 4: حجم معاملات در سال ۲۰۲۴
+
+		name := cleanStringField(getColumnValue(row, 0))
+		hsCode := cleanStringField(getColumnValue(row, 1))
+		targetCountries := cleanStringField(getColumnValue(row, 2))
+		description := cleanStringField(getColumnValue(row, 3))
+		exportValue := cleanStringField(getColumnValue(row, 4))
+
+		// Validate required fields
+		if name == "" {
+			continue
+		}
+
+		// Check if product already exists
+		var existingProduct models.ResearchProduct
+		err := db.Where("name = ?", name).First(&existingProduct).Error
+		if err == nil {
+			continue // Skip if already exists
+		}
+
+		// Determine category based on product name
+		category := determineCategoryFromName(name)
+
+		// Create research product
+		product := models.ResearchProduct{
+			Name:            name,
+			HSCode:          hsCode,
+			Category:        category,
+			Description:     description,
+			ExportValue:     exportValue,
+			TargetCountries: targetCountries,
+			Status:          "active",
+			Priority:        0,
+			AddedBy:         adminID,
+		}
+
+		// Save to database
+		err = db.Create(&product).Error
+		if err != nil {
+			continue
+		}
+
+		successCount++
+	}
+
+	return successCount, nil
+}
+
+// Helper functions
+func getColumnValue(row []string, index int) string {
+	if index >= len(row) {
+		return ""
+	}
+	return row[index]
+}
+
+func cleanStringField(s string) string {
+	s = strings.TrimSpace(s)
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", " ")
+	s = strings.ReplaceAll(s, "\t", " ")
+	// Remove multiple spaces
+	for strings.Contains(s, "  ") {
+		s = strings.ReplaceAll(s, "  ", " ")
+	}
+	return s
+}
+
+func isEmptyRow(row []string) bool {
+	for _, cell := range row {
+		if strings.TrimSpace(cell) != "" {
+			return false
+		}
+	}
+	return true
+}
+
+func determineCategoryFromName(name string) string {
+	name = strings.ToLower(name)
+
+	// Category mapping based on product names
+	categoryMap := map[string]string{
+		"پلی":     "پلاستیک و پلیمر",
+		"پلاستیک": "پلاستیک و پلیمر",
+		"پلیمر":   "پلاستیک و پلیمر",
+		"زعفران":  "ادویه و چاشنی",
+		"خرما":    "میوه و خشکبار",
+		"پسته":    "میوه و خشکبار",
+		"فرش":     "صنایع دستی",
+		"قالی":    "صنایع دستی",
+		"چای":     "نوشیدنی",
+		"برنج":    "غلات",
+		"نفت":     "انرژی",
+		"گاز":     "انرژی",
+		"مس":      "فلزات",
+		"آهن":     "فلزات",
+		"فولاد":   "فلزات",
+		"سیمان":   "مصالح ساختمانی",
+		"سنگ":     "مصالح ساختمانی",
+		"شیمیایی": "مواد شیمیایی",
+		"دارو":    "دارو و بهداشت",
+		"کشمش":    "میوه و خشکبار",
+		"انجیر":   "میوه و خشکبار",
+	}
+
+	// Check for category keywords in product name
+	for keyword, category := range categoryMap {
+		if strings.Contains(name, keyword) {
+			return category
+		}
+	}
+
+	// Default category
+	return "سایر محصولات"
 }
 
 // UpdateResearchProduct godoc

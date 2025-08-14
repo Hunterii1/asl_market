@@ -126,6 +126,11 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/research-products/categories", controllers.GetResearchProductCategories)
 		protected.GET("/research-products/:id", controllers.GetResearchProduct)
 
+		// Admin research products routes
+		protected.POST("/admin/research-products", controllers.CreateResearchProduct)
+		protected.PUT("/admin/research-products/:id", controllers.UpdateResearchProduct)
+		protected.POST("/admin/research-products/import", controllers.ImportResearchProductsFromExcel)
+
 		// Training videos routes (public access)
 		protected.GET("/training/categories", controllers.GetTrainingCategories)
 		protected.GET("/training/videos", controllers.GetAllTrainingVideos)
