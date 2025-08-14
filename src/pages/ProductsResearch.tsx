@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { apiService } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,55 +24,73 @@ import {
 const ProductsResearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedMarket, setSelectedMarket] = useState("all");
   const [researchProducts, setResearchProducts] = useState([]);
   const [categories, setCategories] = useState([
     { id: "all", name: "همه دسته‌ها" }
   ]);
   const [loading, setLoading] = useState(true);
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Categories will be loaded from API
+  // Debounced load data function
+  const loadData = useCallback(async (search: string, category: string) => {
+    try {
+      setLoading(true);
+      
+      // Load products and categories
+      const [productsResponse, categoriesResponse] = await Promise.all([
+        apiService.getResearchProducts({
+          page: 1,
+          per_page: 100, // Get more products
+          status: "active",
+          ...(search && { hs_code: search }),
+          ...(category !== "all" && { category: category })
+        }),
+        apiService.getResearchProductCategories()
+      ]);
 
-  const targetMarkets = [
-    { id: "all", name: "همه بازارها" },
-    { id: "AE", name: "امارات متحده عربی", flag: "🇦🇪" },
-    { id: "SA", name: "عربستان سعودی", flag: "🇸🇦" },
-    { id: "KW", name: "کویت", flag: "🇰🇼" },
-    { id: "QA", name: "قطر", flag: "🇶🇦" },
-    { id: "BH", name: "بحرین", flag: "🇧🇭" },
-    { id: "OM", name: "عمان", flag: "🇴🇲" }
-  ];
-
-  // Load data from API
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        
-        // Load products and categories
-        const [productsResponse, categoriesResponse] = await Promise.all([
-          apiService.getActiveResearchProducts(),
-          apiService.getResearchProductCategories()
-        ]);
-
-        setResearchProducts(productsResponse.products || []);
-        
-        // Add "همه دسته‌ها" to the beginning of categories
-        const allCategories = [
-          { id: "all", name: "همه دسته‌ها" },
-          ...(categoriesResponse.categories || []).map(cat => ({ id: cat, name: cat }))
-        ];
-        setCategories(allCategories);
-        
-      } catch (error) {
-        console.error('Error loading research products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
+      setResearchProducts(productsResponse.products || []);
+      
+      // Add "همه دسته‌ها" to the beginning of categories
+      const allCategories = [
+        { id: "all", name: "همه دسته‌ها" },
+        ...(categoriesResponse.categories || []).map(cat => ({ id: cat, name: cat }))
+      ];
+      setCategories(allCategories);
+      
+    } catch (error) {
+      console.error('Error loading research products:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Handle search with debounce
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value);
+    
+    // Clear existing timeout
+    if (searchTimeout) {
+      clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout for debounced search
+    const timeout = setTimeout(() => {
+      loadData(value, selectedCategory);
+    }, 500); // 500ms delay
+    
+    setSearchTimeout(timeout);
+  }, [selectedCategory, loadData, searchTimeout]);
+
+  // Handle category change (immediate)
+  const handleCategoryChange = useCallback((category: string) => {
+    setSelectedCategory(category);
+    loadData(searchTerm, category);
+  }, [searchTerm, loadData]);
+
+  // Initial load
+  useEffect(() => {
+    loadData("", "all");
+  }, [loadData]);
 
   // Helper functions for styling and text conversion
   const getMarketDemandColor = (demand: string) => {
@@ -129,14 +147,8 @@ const ProductsResearch = () => {
     }
   };
 
-  const filteredProducts = researchProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesMarket = selectedMarket === "all" || 
-      product.target_country?.toLowerCase().includes(targetMarkets.find(m => m.id === selectedMarket)?.name.toLowerCase() || '') ||
-      product.target_countries?.toLowerCase().includes(targetMarkets.find(m => m.id === selectedMarket)?.name.toLowerCase() || '');
-    return matchesSearch && matchesCategory && matchesMarket;
-  });
+  // No need for local filtering since we're using API filters
+  const filteredProducts = researchProducts;
 
   if (loading) {
     return (
@@ -195,13 +207,13 @@ const ProductsResearch = () => {
             <div className="flex-1 relative">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
-                placeholder="جستجو در محصولات..."
+                placeholder="جستجو بر اساس کد HS (مثال: 390120)..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="pr-10 bg-muted border-border text-foreground rounded-2xl"
               />
             </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
               <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl md:w-48">
                 <SelectValue placeholder="دسته‌بندی" />
               </SelectTrigger>
@@ -209,18 +221,6 @@ const ProductsResearch = () => {
                 {categories.map((category) => (
                   <SelectItem key={category.id} value={category.id} className="text-foreground">
                     {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedMarket} onValueChange={setSelectedMarket}>
-              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl md:w-48">
-                <SelectValue placeholder="بازار هدف" />
-              </SelectTrigger>
-              <SelectContent className="bg-muted border-border">
-                {targetMarkets.map((market) => (
-                  <SelectItem key={market.id} value={market.id} className="text-foreground">
-                    {market.flag ? `${market.flag} ${market.name}` : market.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -235,9 +235,16 @@ const ProductsResearch = () => {
           <Card key={product.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
-                <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
-                  #{product.id}
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                    #{product.id}
+                  </Badge>
+                  {product.hs_code && (
+                    <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30 rounded-full text-xs">
+                      HS: {product.hs_code}
+                    </Badge>
+                  )}
+                </div>
                 <Badge className={`${getMarketDemandColor(product.market_demand)} rounded-full`}>
                   {getMarketDemandText(product.market_demand)}
                 </Badge>

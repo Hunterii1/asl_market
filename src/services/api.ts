@@ -515,12 +515,14 @@ class ApiService {
     per_page?: number;
     category?: string;
     status?: string;
+    hs_code?: string;
   } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.category) queryParams.append('category', params.category);
     if (params.status) queryParams.append('status', params.status);
+    if (params.hs_code) queryParams.append('hs_code', params.hs_code);
 
     return this.makeRequest(`${API_BASE_URL}/research-products?${queryParams}`, {
       method: 'GET',

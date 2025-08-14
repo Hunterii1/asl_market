@@ -145,7 +145,7 @@ func CreateResearchProduct(req ResearchProductRequest, adminID uint) (*ResearchP
 }
 
 // GetResearchProducts returns paginated research products
-func GetResearchProducts(page, perPage int, category, status string) ([]ResearchProduct, int64, error) {
+func GetResearchProducts(page, perPage int, category, status, hsCode string) ([]ResearchProduct, int64, error) {
 	db := GetDB()
 	var products []ResearchProduct
 	var total int64
@@ -159,6 +159,10 @@ func GetResearchProducts(page, perPage int, category, status string) ([]Research
 
 	if status != "" && status != "all" {
 		query = query.Where("status = ?", status)
+	}
+
+	if hsCode != "" {
+		query = query.Where("hs_code LIKE ?", "%"+hsCode+"%")
 	}
 
 	// Get total count

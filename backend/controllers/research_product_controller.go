@@ -24,6 +24,7 @@ import (
 // @Param per_page query int false "Items per page" default(10)
 // @Param category query string false "Filter by category"
 // @Param status query string false "Filter by status"
+// @Param hs_code query string false "Search by HS Code"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Router /research-products [get]
@@ -33,6 +34,7 @@ func GetResearchProducts(c *gin.Context) {
 	perPageStr := c.DefaultQuery("per_page", "10")
 	category := c.DefaultQuery("category", "")
 	status := c.DefaultQuery("status", "")
+	hsCode := c.DefaultQuery("hs_code", "")
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 {
@@ -45,7 +47,7 @@ func GetResearchProducts(c *gin.Context) {
 	}
 
 	// Get products
-	products, total, err := models.GetResearchProducts(page, perPage, category, status)
+	products, total, err := models.GetResearchProducts(page, perPage, category, status, hsCode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "خطا در دریافت محصولات تحقیقی",
