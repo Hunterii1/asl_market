@@ -134,9 +134,20 @@ export function LicenseCheck() {
             <>
               <Alert className="mb-6">
                 <AlertDescription>
-                  برای استفاده از امکانات سایت، لطفا لایسنس معتبر ASL را وارد کنید.
-                  <br />
-                  <strong>توجه:</strong> هر لایسنس فقط یک بار قابل استفاده است.
+                  <div className="space-y-3">
+                    <p className="font-medium">کد لایسنس خودتون رو وارد کنید:</p>
+                    <p className="text-sm">
+                      درصورتی نداشتن کد لایسنس، جهت ثبت نام اشتراک نسخه پلاس یا پرو به آی دی تلگرام زیر پیام بدین 👇
+                    </p>
+                    <div className="bg-muted/50 rounded-lg p-3 text-center">
+                      <p className="font-mono text-blue-600 dark:text-blue-400 font-semibold">
+                        @incoming_center
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <strong>توجه:</strong> هر لایسنس فقط یک بار قابل استفاده است.
+                    </p>
+                  </div>
                 </AlertDescription>
               </Alert>
               <form onSubmit={handleSubmit} className="space-y-4">

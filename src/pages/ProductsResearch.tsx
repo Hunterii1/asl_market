@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { LicenseGate } from '@/components/LicenseGate';
 import { 
   Target, 
   Search, 
@@ -139,28 +140,31 @@ const ProductsResearch = () => {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-3xl flex items-center justify-center">
-                <Target className="w-8 h-8 text-blue-400" />
+      <LicenseGate>
+        <div className="space-y-6 animate-fade-in">
+          <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-3xl flex items-center justify-center">
+                  <Target className="w-8 h-8 text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">محصولات تحقیقی</h2>
+                  <p className="text-blue-600 dark:text-blue-300">در حال بارگذاری...</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">محصولات تحقیقی</h2>
-                <p className="text-blue-600 dark:text-blue-300">در حال بارگذاری...</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </div>
+      </LicenseGate>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
+    <LicenseGate>
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
+        <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-3xl flex items-center justify-center">
@@ -376,7 +380,8 @@ const ProductsResearch = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+      </div>
+    </LicenseGate>
   );
 };
 
