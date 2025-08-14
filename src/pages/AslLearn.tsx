@@ -583,12 +583,12 @@ const AslLearn = () => {
                     >
                       {module.completed ? (
                         <>
-                          <Eye className="w-4 h-4 ml-2" />
+                        <Eye className="w-4 h-4 ml-2" />
                           مشاهده مجدد
                         </>
                       ) : (
                         <>
-                          <Play className="w-4 h-4 ml-2" />
+                        <Play className="w-4 h-4 ml-2" />
                           شروع آموزش
                         </>
                       )}
@@ -648,17 +648,17 @@ const AslLearn = () => {
             </Card>
           </div>
         </div>
-      </div>
+    </div>
 
-      {/* Video Player Modal */}
-      {selectedVideo && (
-        <VideoPlayer
-          video={selectedVideo}
-          isOpen={isVideoPlayerOpen}
-          onClose={handleCloseVideoPlayer}
-          onVideoWatched={handleVideoWatched}
-        />
-      )}
+    {/* Video Player Modal */}
+    {selectedVideo && (
+      <VideoPlayer
+        video={selectedVideo}
+        isOpen={isVideoPlayerOpen}
+        onClose={handleCloseVideoPlayer}
+        onVideoWatched={handleVideoWatched}
+      />
+    )}
     </LicenseGate>
   );
 };

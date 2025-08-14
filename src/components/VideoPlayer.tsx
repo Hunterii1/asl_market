@@ -295,11 +295,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     // For link type, check if it's a direct video file AND from our domains
     if (video.type === 'link') {
       const isDirectVideo = url.includes('.mp4') || 
-                           url.includes('.webm') || 
-                           url.includes('.ogg') ||
-                           url.includes('.mov') ||
-                           url.includes('.avi') ||
-                           url.includes('blob:');
+             url.includes('.webm') || 
+             url.includes('.ogg') ||
+             url.includes('.mov') ||
+             url.includes('.avi') ||
+             url.includes('blob:');
       
       // Check if URL is from our domains (asllmarket.com or asllmarket.org)
       const currentOrigin = window.location.origin;
@@ -550,15 +550,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}
-                      
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={goFullScreen}
-                        className="text-white hover:bg-white/20"
-                      >
-                        <Maximize className="w-5 h-5" />
-                      </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={goFullScreen}
+                      className="text-white hover:bg-white/20"
+                    >
+                      <Maximize className="w-5 h-5" />
+                    </Button>
                     </div>
                   </div>
                 </div>
@@ -587,13 +587,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                 )}
                 
                 <div className="flex gap-3 justify-center">
-                  <Button 
-                    onClick={openExternalLink}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                    مشاهده ویدیو
-                  </Button>
+                <Button 
+                  onClick={openExternalLink}
+                  className="bg-blue-500 hover:bg-blue-600 text-white"
+                >
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                  مشاهده ویدیو
+                </Button>
                   
                   {video.description && (
                     <Button 

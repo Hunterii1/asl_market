@@ -127,9 +127,6 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/research-products/:id", controllers.GetResearchProduct)
 
 		// Admin research products routes
-		protected.POST("/admin/research-products", controllers.CreateResearchProduct)
-		protected.PUT("/admin/research-products/:id", controllers.UpdateResearchProduct)
-		protected.POST("/admin/research-products/import", controllers.ImportResearchProductsFromExcel)
 
 		// Training videos routes (public access)
 		protected.GET("/training/categories", controllers.GetTrainingCategories)
@@ -150,6 +147,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.PUT("/admin/research-products/:id", controllers.UpdateResearchProduct)
 		protected.DELETE("/admin/research-products/:id", controllers.DeleteResearchProduct)
 		protected.PATCH("/admin/research-products/:id/status", controllers.UpdateResearchProductStatus)
+		protected.POST("/admin/research-products/import", controllers.ImportResearchProductsFromExcel)
 
 		// Marketing popup routes (public access for active popup)
 		protected.GET("/marketing-popups/active", controllers.GetActiveMarketingPopup)
