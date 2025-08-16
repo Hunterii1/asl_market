@@ -35,7 +35,20 @@ func VerifyLicense(c *gin.Context) {
 	}
 
 	if hasLicense {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شما قبلاً از یک لایسنس استفاده کرده‌اید"})
+		// Instead of blocking, show current license info
+		existingLicense, err := models.GetUserLicense(models.GetDB(), userIDUint)
+		if err == nil && existingLicense != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "شما در حال حاضر لایسنس فعال دارید",
+				"current_license": gin.H{
+					"code":       existingLicense.Code,
+					"type":       existingLicense.Type,
+					"expires_at": existingLicense.ExpiresAt,
+				},
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "شما قبلاً از یک لایسنس استفاده کرده‌اید"})
+		}
 		return
 	}
 
@@ -113,6 +126,65 @@ func CheckLicenseStatus(c *gin.Context) {
 		"has_license": hasLicense,
 		"is_approved": hasLicense, // Since licenses are auto-approved now
 		"is_active":   hasLicense,
+	})
+}
+
+// RefreshLicense helps users recover their license status
+func RefreshLicense(c *gin.Context) {
+	// Get user ID from context (set by auth middleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Check if user has valid license
+	hasLicense, err := models.CheckUserLicense(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بررسی وضعیت لایسنس"})
+		return
+	}
+
+	if !hasLicense {
+		c.JSON(http.StatusOK, gin.H{
+			"message":     "شما در حال حاضر لایسنس فعال ندارید",
+			"has_license": false,
+		})
+		return
+	}
+
+	// Get license details
+	license, err := models.GetUserLicense(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات لایسنس"})
+		return
+	}
+
+	// Calculate remaining time
+	now := time.Now()
+	remaining := license.ExpiresAt.Sub(now)
+	remainingDays := int(remaining.Hours() / 24)
+	remainingHours := int(remaining.Hours()) % 24
+
+	licenseTypeName := "پلاس"
+	if license.Type == "pro" {
+		licenseTypeName = "پرو"
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     fmt.Sprintf("لایسنس %s شما فعال است", licenseTypeName),
+		"has_license": true,
+		"license_info": gin.H{
+			"code":            license.Code,
+			"type":            license.Type,
+			"type_name":       licenseTypeName,
+			"expires_at":      license.ExpiresAt.Format("2006-01-02 15:04:05"),
+			"remaining_days":  remainingDays,
+			"remaining_hours": remainingHours,
+			"used_at":         license.UsedAt.Format("2006-01-02 15:04:05"),
+		},
 	})
 }
 

@@ -66,6 +66,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/license/verify", controllers.VerifyLicense)
 		protected.GET("/license/status", controllers.CheckLicenseStatus)
 		protected.GET("/license/info", controllers.GetUserLicenseInfo)
+		protected.POST("/license/refresh", controllers.RefreshLicense)
 
 		// Upgrade request routes
 		protected.POST("/upgrade/request", upgradeController.CreateUpgradeRequest)

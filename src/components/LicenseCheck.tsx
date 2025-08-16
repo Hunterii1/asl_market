@@ -14,6 +14,7 @@ import { ErrorDisplay } from '@/components/ErrorDisplay';
 export function LicenseCheck() {
   const [license, setLicense] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [status, setStatus] = useState<LicenseStatus | null>(null);
   const { user, refreshUserData } = useAuth();
   const navigate = useNavigate();
@@ -84,6 +85,69 @@ export function LicenseCheck() {
       console.error('Error verifying license:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRefreshLicense = async () => {
+    setRefreshing(true);
+    try {
+      // Use same API base URL logic as apiService
+      const getApiBaseUrl = () => {
+        if (typeof window !== 'undefined') {
+          const hostname = window.location.hostname;
+          if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+            return 'https://asllmarket.com/backend/api/v1';
+          }
+        }
+        return 'http://localhost:8080/api/v1';
+      };
+      
+      const response = await fetch(`${getApiBaseUrl()}/license/refresh`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        if (data.has_license) {
+          toast({
+            title: "بازیابی موفقیت‌آمیز",
+            description: data.message,
+          });
+          
+          // Store license info if available
+          if (data.license_info && user) {
+            licenseStorage.storeLicenseInfo(
+              data.license_info.code, 
+              data.license_info.used_at, 
+              user.email
+            );
+          }
+          
+          // Refresh status
+          await checkLicenseStatus();
+          await refreshUserData();
+        } else {
+          toast({
+            title: "اطلاعات",
+            description: data.message,
+          });
+        }
+      } else {
+        throw new Error(data.error || 'خطا در بازیابی لایسنس');
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "خطا در بازیابی لایسنس",
+      });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -162,20 +226,44 @@ export function LicenseCheck() {
                     dir="rtl"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      در حال بررسی...
-                    </>
-                  ) : (
-                    'بررسی لایسنس'
-                  )}
-                </Button>
+                <div className="space-y-3">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={loading || refreshing}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        در حال بررسی...
+                      </>
+                    ) : (
+                      'بررسی لایسنس'
+                    )}
+                  </Button>
+                  
+                  <div className="text-center">
+                    <div className="text-sm text-muted-foreground mb-2">
+                      اگر قبلاً لایسنس فعال کرده‌اید:
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={loading || refreshing}
+                      onClick={handleRefreshLicense}
+                    >
+                      {refreshing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          در حال بازیابی...
+                        </>
+                      ) : (
+                        'بازیابی لایسنس'
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </form>
             </>
           )}
