@@ -25,7 +25,7 @@ const (
 	COL_EXPORT_VALUE     = 4 // حجم معاملات در سال ۲۰۲۴
 )
 
-func main() {
+func main99() {
 	// Database connection
 	dsn := "root:@tcp(localhost:3306)/asl_market?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
