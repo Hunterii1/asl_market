@@ -328,6 +328,14 @@ export function LicenseInfo() {
                   <p className="text-xs text-blue-700 dark:text-blue-300">
                     دسترسی به امکانات پیشرفته با مدت زمان بیشتر (30 ماه)
                   </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-2">
+                    درصورت درخواست ارتقاء از نسخه «پلاس ۱۲ ماهه» به «نسخه پرو ۳۰ ماهه» ، به آی دی تلگرام زیر پیام بدین 👇
+                  </p>
+                  <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-2 mt-2">
+                    <p className="font-mono text-blue-800 dark:text-blue-200 font-semibold text-center text-sm">
+                      incoming_center
+                    </p>
+                  </div>
                 </div>
               </div>
               

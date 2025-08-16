@@ -102,7 +102,7 @@ export function LicenseGate({ children }: LicenseGateProps) {
                     </p>
                     <div className="bg-muted/50 rounded-lg p-3 text-center">
                       <p className="font-mono text-blue-600 dark:text-blue-400 font-semibold">
-                        @incoming_center
+                        incoming_center
                       </p>
                     </div>
                   </div>
