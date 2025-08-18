@@ -1284,6 +1284,12 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle delete confirmation callbacks
+	if strings.HasPrefix(data, "confirm_delete_") {
+		s.handleDeleteConfirmation(query)
+		return
+	}
+
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {
 		filter := strings.TrimPrefix(data, "userlist_")
