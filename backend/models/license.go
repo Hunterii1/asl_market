@@ -81,7 +81,7 @@ type LicenseListResponse struct {
 	Licenses  []License `json:"licenses"`
 }
 
-// GenerateLicenseCode generates a unique license code
+// GenerateLicenseCode generates a unique license code (new format without dashes)
 func GenerateLicenseCode() (string, error) {
 	// Generate random bytes
 	bytes := make([]byte, 16)
@@ -89,17 +89,16 @@ func GenerateLicenseCode() (string, error) {
 		return "", err
 	}
 
-	// Convert to hex and format as ASL-XXXX-XXXX-XXXX-XXXX
+	// Convert to hex and format as ASL followed by 16 hex characters (no dashes)
 	hex := fmt.Sprintf("%x", bytes)
-	parts := []string{
-		"ASL",
+	code := fmt.Sprintf("ASL%s%s%s%s",
 		strings.ToUpper(hex[0:4]),
 		strings.ToUpper(hex[4:8]),
 		strings.ToUpper(hex[8:12]),
 		strings.ToUpper(hex[12:16]),
-	}
+	)
 
-	return strings.Join(parts, "-"), nil
+	return code, nil
 }
 
 // GenerateLicenses creates multiple license codes
