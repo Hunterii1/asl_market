@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LicenseGate } from '@/components/LicenseGate';
-import { apiService, type Chat, type Message, type ChatRequest } from "@/services/api";
+import { apiService, type Chat, type Message, type ChatRequest, type AIUsageResponse } from "@/services/api";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { translateSuccess } from "@/utils/errorMessages";
@@ -43,14 +43,17 @@ const AslAI = () => {
   const [typingMessageId, setTypingMessageId] = useState<number | null>(null);
   const [displayedContent, setDisplayedContent] = useState<string>("");
   const [originalContent, setOriginalContent] = useState<string>("");
+  const [aiUsage, setAiUsage] = useState<AIUsageResponse | null>(null);
+  const [isUsageLoading, setIsUsageLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentChatRef = useRef<Chat | null>(null);
 
-  // Load chats on component mount (only if authenticated)
+  // Load chats and AI usage on component mount (only if authenticated)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       loadChats();
+      loadAIUsage();
     }
   }, [isAuthenticated, authLoading]);
 
@@ -150,6 +153,19 @@ const AslAI = () => {
     }
   };
 
+  const loadAIUsage = async () => {
+    try {
+      setIsUsageLoading(true);
+      const usage = await apiService.getAIUsage();
+      setAiUsage(usage);
+    } catch (error) {
+      console.error("Failed to load AI usage:", error);
+      // Error toast is handled in api.ts
+    } finally {
+      setIsUsageLoading(false);
+    }
+  };
+
   const loadChat = async (chatId: number) => {
     try {
       // Stop any ongoing typewriter effect
@@ -224,12 +240,24 @@ const AslAI = () => {
         startTypewriter(aiMessage.content, aiMessage.id);
       }, 500); // Small delay before starting to type
       
-      // Refresh chats list
+      // Refresh chats list and AI usage
       loadChats();
+      loadAIUsage();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to send message:", error);
-      // Error toast is handled in api.ts
+      
+      // Handle rate limit error specifically
+      if (error?.status === 429 || error?.message?.includes('limit')) {
+        toast({
+          title: "محدودیت روزانه",
+          description: error?.message || "شما به حد روزانه ۲۰ پیام رسیده‌اید. فردا دوباره تلاش کنید.",
+          variant: "destructive",
+        });
+        // Refresh usage to show updated count
+        loadAIUsage();
+      }
+      // Error toast for other errors is handled in api.ts
     } finally {
       setIsSending(false);
     }
@@ -464,12 +492,27 @@ const AslAI = () => {
                   <Button
                     onClick={startNewChat}
                     size="sm"
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl"
+                    disabled={aiUsage?.remaining_count === 0}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl disabled:opacity-50"
                   >
                     <Plus className="w-4 h-4 ml-1" />
                     جدید
                   </Button>
                 </div>
+                {/* Usage info in sidebar */}
+                {aiUsage && (
+                  <div className="mt-2 p-2 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">پیام‌های امروز:</span>
+                      <Badge 
+                        variant={aiUsage.remaining_count === 0 ? "destructive" : aiUsage.remaining_count <= 5 ? "outline" : "secondary"}
+                        className="text-xs"
+                      >
+                        {aiUsage.message_count} / {aiUsage.daily_limit}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="p-0">
                 <ChatHistoryList />
@@ -651,17 +694,51 @@ const AslAI = () => {
 
                 <Separator />
 
+                {/* Usage Information */}
+                {aiUsage && (
+                  <div className="px-3 sm:px-4 py-2 border-t bg-muted/30">
+                    <div className="flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
+                      <span>پیام‌های امروز:</span>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={aiUsage.remaining_count === 0 ? "destructive" : aiUsage.remaining_count <= 5 ? "outline" : "secondary"}
+                          className="text-xs"
+                        >
+                          {aiUsage.message_count} / {aiUsage.daily_limit}
+                        </Badge>
+                        {aiUsage.remaining_count > 0 && (
+                          <span className="text-green-600 dark:text-green-400">
+                            {aiUsage.remaining_count} باقی‌مانده
+                          </span>
+                        )}
+                        {aiUsage.remaining_count === 0 && (
+                          <span className="text-red-600 dark:text-red-400">
+                            محدودیت تمام شد
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Input Area */}
                 <div className="p-3 sm:p-4">
+                  {aiUsage?.remaining_count === 0 && (
+                    <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                        شما به حد روزانه ۲۰ پیام رسیده‌اید. فردا دوباره تلاش کنید.
+                      </p>
+                    </div>
+                  )}
                   <div className="flex gap-2">
                     <Input
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       placeholder="پیام خود را بنویسید..."
                       className="flex-1 bg-muted border-border text-foreground rounded-xl sm:rounded-2xl h-10 sm:h-auto text-sm sm:text-base"
-                      disabled={isSending || isTyping}
+                      disabled={isSending || isTyping || aiUsage?.remaining_count === 0}
                       onKeyPress={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey && !isSending && !isTyping) {
+                        if (e.key === "Enter" && !e.shiftKey && !isSending && !isTyping && aiUsage?.remaining_count !== 0) {
                           e.preventDefault();
                           sendMessage();
                         }
@@ -669,7 +746,7 @@ const AslAI = () => {
                     />
                     <Button
                       onClick={sendMessage}
-                      disabled={!inputMessage.trim() || isSending || isTyping}
+                      disabled={!inputMessage.trim() || isSending || isTyping || aiUsage?.remaining_count === 0}
                       className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl sm:rounded-2xl px-3 sm:px-4 h-10 sm:h-auto"
                     >
                       {isSending ? (

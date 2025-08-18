@@ -84,6 +84,13 @@ export interface ChatsResponse {
   chats: Chat[];
 }
 
+export interface AIUsageResponse {
+  date: string;
+  message_count: number;
+  remaining_count: number;
+  daily_limit: number;
+}
+
 export interface LicenseRequest {
   license: string;
 }
@@ -320,6 +327,15 @@ class ApiService {
   async deleteChat(chatId: number): Promise<{ message: string }> {
     return this.makeRequest(`${API_BASE_URL}/ai/chats/${chatId}`, {
       method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getAIUsage(): Promise<AIUsageResponse> {
+    return this.makeRequest(`${API_BASE_URL}/ai/usage`, {
+      method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
       },

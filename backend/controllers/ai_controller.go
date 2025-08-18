@@ -44,7 +44,28 @@ func Chat(c *gin.Context) {
 	fmt.Printf("🔄 Chat request received - User: %d, Message: '%s', ChatID: %v\n",
 		user.ID, request.Message, request.ChatID)
 
+	// Check AI usage rate limit
 	db := models.GetDB()
+	aiUsageService := services.NewAIUsageService(db)
+
+	canSend, remaining, err := aiUsageService.CanSendMessage(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to check message limit",
+		})
+		return
+	}
+
+	if !canSend {
+		c.JSON(http.StatusTooManyRequests, gin.H{
+			"error":           "Daily message limit exceeded",
+			"message":         "شما به حد روزانه ۲۰ پیام رسیده‌اید. فردا دوباره تلاش کنید.",
+			"daily_limit":     models.DailyAIMessageLimit,
+			"remaining_count": remaining,
+		})
+		return
+	}
+
 	var chat models.Chat
 
 	// Get or create chat
@@ -150,6 +171,12 @@ func Chat(c *gin.Context) {
 			"error": "Failed to save AI response",
 		})
 		return
+	}
+
+	// Increment AI usage count
+	if err := aiUsageService.IncrementUsage(user.ID); err != nil {
+		// Log error but don't fail the request since the message was already processed
+		fmt.Printf("⚠️ Failed to increment AI usage for user %d: %v\n", user.ID, err)
 	}
 
 	// Get updated chat with all messages
@@ -294,6 +321,40 @@ func DeleteChat(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Chat deleted successfully",
 	})
+}
+
+// GetAIUsage returns AI usage information for the current user
+func GetAIUsage(c *gin.Context) {
+	// Get current user from context
+	userInterface, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "User not authenticated",
+		})
+		return
+	}
+
+	user, ok := userInterface.(models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Invalid user context",
+		})
+		return
+	}
+
+	// Get usage information
+	db := models.GetDB()
+	aiUsageService := services.NewAIUsageService(db)
+
+	usageInfo, err := aiUsageService.GetUsageInfo(user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get usage information",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, usageInfo)
 }
 
 // generateChatTitle creates a title from the first message

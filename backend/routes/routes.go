@@ -201,6 +201,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 			licensed.GET("/ai/chats", controllers.GetChats)
 			licensed.GET("/ai/chats/:id", controllers.GetChat)
 			licensed.DELETE("/ai/chats/:id", controllers.DeleteChat)
+			licensed.GET("/ai/usage", controllers.GetAIUsage)
 		}
 	}
 }
