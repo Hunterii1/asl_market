@@ -1267,7 +1267,7 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle training callbacks
 	if strings.Contains(data, "training") || strings.HasPrefix(data, "select_category_") ||
 		strings.HasPrefix(data, "edit_video_") || strings.HasPrefix(data, "delete_video_") ||
-		strings.HasPrefix(data, "video_type_") || strings.HasPrefix(data, "confirm_delete_") {
+		strings.HasPrefix(data, "video_type_") || strings.HasPrefix(data, "confirm_delete_video_") {
 		// Create TelegramService with training methods
 		ts := &TelegramService{bot: s.bot, db: s.db}
 		ts.handleTrainingCallback(query)
@@ -1286,6 +1286,7 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 
 	// Handle delete confirmation callbacks
 	if strings.HasPrefix(data, "confirm_delete_") {
+		log.Printf("Delete confirmation callback received: %s", data)
 		s.handleDeleteConfirmation(query)
 		return
 	}
@@ -3405,6 +3406,8 @@ func (s *TelegramService) handleDeleteConfirmation(query *tgbotapi.CallbackQuery
 	data := query.Data
 	chatID := query.Message.Chat.ID
 
+	log.Printf("Processing delete confirmation: chatID %d, data: %s", chatID, data)
+
 	// Parse callback data
 	if strings.HasPrefix(data, "confirm_delete_supplier_") {
 		idStr := strings.TrimPrefix(data, "confirm_delete_supplier_")
@@ -3426,6 +3429,8 @@ func (s *TelegramService) handleDeleteConfirmation(query *tgbotapi.CallbackQuery
 		if id, err := strconv.ParseUint(idStr, 10, 32); err == nil {
 			s.executeAvailableProductDelete(chatID, uint(id))
 		}
+	} else {
+		log.Printf("Unknown delete confirmation callback: %s", data)
 	}
 
 	// Send acknowledgment
@@ -3710,6 +3715,8 @@ func (s *TelegramService) handleUpgradeRejectionNote(message *tgbotapi.Message, 
 }
 
 func (s *TelegramService) executeVisitorDelete(chatID int64, visitorID uint) {
+	log.Printf("Executing visitor delete: chatID %d, visitorID %d", chatID, visitorID)
+
 	// Get visitor info for final confirmation
 	var visitor models.Visitor
 	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
