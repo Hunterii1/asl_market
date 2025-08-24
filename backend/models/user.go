@@ -12,7 +12,7 @@ type User struct {
 	LastName  string         `json:"last_name" gorm:"size:100;not null"`
 	Email     string         `json:"email" gorm:"size:255"`
 	Password  string         `json:"-" gorm:"size:255;not null"`
-	Phone     string         `json:"phone" gorm:"uniqueIndex;size:255;not null"`
+	Phone     string         `json:"phone" gorm:"size:255;not null"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	IsAdmin   bool           `json:"is_admin" gorm:"default:false"`
 	CreatedAt time.Time      `json:"created_at"`
