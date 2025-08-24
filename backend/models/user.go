@@ -10,9 +10,9 @@ type User struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	FirstName string         `json:"first_name" gorm:"size:100;not null"`
 	LastName  string         `json:"last_name" gorm:"size:100;not null"`
-	Email     string         `json:"email" gorm:"uniqueIndex;size:255;not null"`
+	Email     string         `json:"email" gorm:"size:255"`
 	Password  string         `json:"-" gorm:"size:255;not null"`
-	Phone     string         `json:"phone" gorm:"size:255"`
+	Phone     string         `json:"phone" gorm:"uniqueIndex;size:255;not null"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	IsAdmin   bool           `json:"is_admin" gorm:"default:false"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -39,16 +39,17 @@ func GetUserByID(db *gorm.DB, userID uint) (*User, error) {
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
+	Phone    string `json:"phone" binding:"omitempty"` // At least one of phone or email must be provided
+	Email    string `json:"email" binding:"omitempty"` // At least one of phone or email must be provided
 	Password string `json:"password" binding:"required,min=6"`
 }
 
 type RegisterRequest struct {
 	FirstName string `json:"first_name" binding:"required,min=2,max=100"`
 	LastName  string `json:"last_name" binding:"required,min=2,max=100"`
-	Email     string `json:"email" binding:"required,email"`
+	Email     string `json:"email" binding:"omitempty,email"`
 	Password  string `json:"password" binding:"required,min=6"`
-	Phone     string `json:"phone"`
+	Phone     string `json:"phone" binding:"required"`
 }
 
 type UserResponse struct {
@@ -64,6 +65,21 @@ type UserResponse struct {
 type AuthResponse struct {
 	Token string       `json:"token"`
 	User  UserResponse `json:"user"`
+}
+
+type PasswordRecoveryRequest struct {
+	Phone string `json:"phone" binding:"required"`
+}
+
+type PasswordResetRequest struct {
+	Phone       string `json:"phone" binding:"required"`
+	Code        string `json:"code" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+type PasswordRecoveryResponse struct {
+	Message string `json:"message"`
+	Success bool   `json:"success"`
 }
 
 func (u *User) ToResponse() UserResponse {

@@ -45,3 +45,4 @@ sms:
   api_key: "OWY5ZTAyMjEtMThmNi00NzRiLWFhOTItZTEwMmFhNDQzZTliZTcwM2EzODg5NzUzNWMwOWE3ZDliYWUyYTExMWZlMzY="
   originator: "+9850002040000000"
   pattern_code: "9i276pvpwvuj40w"
+  password_recovery_pattern: "gvqto0pk77stx2t"

@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import AslLearn from "./pages/AslLearn";
 import AslSupplier from "./pages/AslSupplier";
 import AslExpress from "./pages/AslExpress";
@@ -50,6 +51,7 @@ const App = () => (
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/" element={<Index />} />
 
               {/* Supplier routes */}

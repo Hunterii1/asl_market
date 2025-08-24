@@ -48,9 +48,10 @@ type OpenAIConfig struct {
 }
 
 type SMSConfig struct {
-	APIKey      string `mapstructure:"api_key"`
-	Originator  string `mapstructure:"originator"`
-	PatternCode string `mapstructure:"pattern_code"`
+	APIKey                  string `mapstructure:"api_key"`
+	Originator              string `mapstructure:"originator"`
+	PatternCode             string `mapstructure:"pattern_code"`
+	PasswordRecoveryPattern string `mapstructure:"password_recovery_pattern"`
 }
 
 var AppConfig *Config

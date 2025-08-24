@@ -7,20 +7,22 @@ import (
 
 // SMS service for sending notifications
 type SMSService struct {
-	client      *IPPanelClient
-	originator  string
-	patternCode string
+	client                  *IPPanelClient
+	originator              string
+	patternCode             string
+	passwordRecoveryPattern string
 }
 
 var smsService *SMSService
 
 // Initialize SMS service
-func InitSMSService(apiKey, originator, patternCode string) {
+func InitSMSService(apiKey, originator, patternCode, passwordRecoveryPattern string) {
 	client := NewIPPanelClient(apiKey)
 	smsService = &SMSService{
-		client:      client,
-		originator:  originator,
-		patternCode: patternCode,
+		client:                  client,
+		originator:              originator,
+		patternCode:             patternCode,
+		passwordRecoveryPattern: passwordRecoveryPattern,
 	}
 	log.Printf("SMS service initialized with originator: %s", originator)
 }
@@ -53,6 +55,34 @@ func (s *SMSService) SendLicenseActivationSMS(phoneNumber, userName, licensePlan
 	}
 
 	log.Printf("SMS sent successfully to %s with message ID: %d", phoneNumber, messageID)
+	return nil
+}
+
+// Send password recovery SMS
+func (s *SMSService) SendPasswordRecoverySMS(phoneNumber, code string) error {
+	if s == nil || s.client == nil {
+		return fmt.Errorf("SMS service not initialized")
+	}
+
+	// Send SMS with password recovery pattern
+	patternValues := map[string]string{
+		"code": code,
+	}
+
+	// Send SMS with pattern
+	messageID, err := s.client.SendPattern(
+		s.passwordRecoveryPattern, // "gvqto0pk77stx2t"
+		s.originator,              // originator number
+		phoneNumber,               // recipient
+		patternValues,             // pattern values with code
+	)
+
+	if err != nil {
+		log.Printf("Error sending password recovery SMS to %s: %v", phoneNumber, err)
+		return fmt.Errorf("failed to send password recovery SMS: %v", err)
+	}
+
+	log.Printf("Password recovery SMS sent successfully to %s with message ID: %d", phoneNumber, messageID)
 	return nil
 }
 

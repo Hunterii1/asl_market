@@ -133,13 +133,13 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-foreground">ایمیل</Label>
+                <Label htmlFor="phone" className="text-foreground">شماره موبایل *</Label>
                 <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="example@email.com"
-                  value={formData.email}
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  placeholder="09123456789"
+                  value={formData.phone}
                   onChange={handleChange}
                   required
                   className="bg-background border-border text-foreground rounded-2xl"
@@ -148,13 +148,13 @@ const Signup = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-foreground">شماره تلفن (اختیاری)</Label>
+                <Label htmlFor="email" className="text-foreground">ایمیل (اختیاری)</Label>
                 <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  placeholder="09123456789"
-                  value={formData.phone}
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="example@email.com"
+                  value={formData.email}
                   onChange={handleChange}
                   className="bg-background border-border text-foreground rounded-2xl"
                   disabled={isLoading}

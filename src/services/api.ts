@@ -37,16 +37,17 @@ export interface AuthResponse {
 }
 
 export interface LoginRequest {
-  email: string;
+  phone?: string;
+  email?: string;
   password: string;
 }
 
 export interface RegisterRequest {
   first_name: string;
   last_name: string;
-  email: string;
+  email?: string;
   password: string;
-  phone?: string;
+  phone: string;
 }
 
 // Chat interfaces

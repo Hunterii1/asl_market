@@ -30,6 +30,7 @@ func main() {
 			config.AppConfig.SMS.APIKey,
 			config.AppConfig.SMS.Originator,
 			config.AppConfig.SMS.PatternCode,
+			config.AppConfig.SMS.PasswordRecoveryPattern,
 		)
 		log.Println("SMS service initialized")
 	} else {
