@@ -49,10 +49,29 @@ func main() {
 	corsConfig.AllowMethods = config.AppConfig.CORS.AllowedMethods
 	corsConfig.AllowHeaders = config.AppConfig.CORS.AllowedHeaders
 	corsConfig.AllowCredentials = true
+	corsConfig.ExposeHeaders = []string{"Content-Length", "Content-Range", "Accept-Ranges"}
+	corsConfig.MaxAge = 12 * 60 * 60 // 12 hours
 	router.Use(cors.New(corsConfig))
 
-	// Serve static files (uploaded videos)
+	// Serve static files (uploaded videos) with proper headers
 	router.Static("/uploads", "./uploads")
+
+	// Add video streaming middleware
+	router.Use(func(c *gin.Context) {
+		// Add CORS headers for video requests
+		c.Header("Access-Control-Allow-Origin", "*")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With, Range")
+		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges")
+
+		// Handle preflight requests
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+
+		c.Next()
+	})
 
 	// Setup routes
 	routes.SetupRoutes(router, telegramService)

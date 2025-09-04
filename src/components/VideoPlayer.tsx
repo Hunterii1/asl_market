@@ -266,7 +266,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       console.log('🎬 Using external link:', video.video_url);
       return video.video_url;
     } else if (video.type === 'video' && video.telegram_file_id) {
-      const streamUrl = `/api/v1/training/video/${video.id}/stream`;
+      // Get API base URL
+      const getApiBaseUrl = () => {
+        if (typeof window !== 'undefined') {
+          const hostname = window.location.hostname;
+          if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+            return 'https://asllmarket.com/api/v1';
+          }
+        }
+        return 'http://localhost:8080/api/v1';
+      };
+      
+      const streamUrl = `${getApiBaseUrl()}/training/video/${video.id}/stream`;
       console.log('🎬 Using streaming URL:', streamUrl);
       return streamUrl;
     }
@@ -490,6 +501,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   preload="metadata"
                   playsInline
                   muted={isMuted}
+                  crossOrigin="anonymous"
                 >
                   مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
                 </video>
