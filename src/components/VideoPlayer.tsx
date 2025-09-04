@@ -12,8 +12,6 @@ import {
   VolumeX,
   Maximize,
   ExternalLink,
-  Clock,
-  Eye,
   CheckCircle,
   X,
   FileText
@@ -200,11 +198,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       setDuration(total);
       setProgress(total > 0 ? (current / total) * 100 : 0);
       
-      // Mark as watched if user has watched 80% of the video
-      if (total > 0 && current / total >= watchThreshold && !hasWatched) {
-        setHasWatched(true);
-        markVideoAsWatched();
-      }
+      // No automatic marking as watched - user must click the button
     }
   };
 
@@ -325,11 +319,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (video.video_url) {
       console.log('🎬 Opening external link:', video.video_url);
       window.open(video.video_url, '_blank');
-      // Still mark as "watched" when they click external link
-      if (!hasWatched) {
-        setHasWatched(true);
-        markVideoAsWatched();
-      }
+      // External link opened but not automatically marked as watched
+      // User must click the "تکمیل شد" button after watching
     }
   };
 
@@ -366,25 +357,31 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
         <div className="space-y-4">
           {/* Video Info */}
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Clock className="w-4 h-4" />
-              {video.duration || "نامشخص"}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              {video.difficulty && (
+                <Badge variant="outline" className="text-xs">
+                  {video.difficulty}
+                </Badge>
+              )}
+              {hasWatched && (
+                <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                  <CheckCircle className="w-3 h-3 ml-1" />
+                  تکمیل شده
+                </Badge>
+              )}
             </div>
-            <div className="flex items-center gap-1">
-              <Eye className="w-4 h-4" />
-              {video.views || 0} بازدید
-            </div>
-            {video.difficulty && (
-              <Badge variant="outline" className="text-xs">
-                {video.difficulty}
-              </Badge>
-            )}
-            {hasWatched && (
-              <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                <CheckCircle className="w-3 h-3 ml-1" />
-                تکمیل شده
-              </Badge>
+            
+            {/* Manual Complete Button */}
+            {!hasWatched && (
+              <Button
+                onClick={markVideoAsWatched}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-4 py-2 text-sm font-medium"
+                disabled={isLoading}
+              >
+                <CheckCircle className="w-4 h-4 ml-2" />
+                تکمیل شد
+              </Button>
             )}
           </div>
 
@@ -479,10 +476,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={() => {
                     setIsPlaying(false);
-                    if (!hasWatched) {
-                      setHasWatched(true);
-                      markVideoAsWatched();
-                    }
+                    // Video ended but not automatically marked as watched
+                    // User must click the "تکمیل شد" button
                   }}
                   onPlay={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
@@ -610,6 +605,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     </Button>
                   )}
                 </div>
+                
+                {/* Manual Complete Button for External Links */}
+                {!hasWatched && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      onClick={markVideoAsWatched}
+                      className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl px-6 py-2 font-medium"
+                      disabled={isLoading}
+                    >
+                      <CheckCircle className="w-4 h-4 ml-2" />
+                      تکمیل شد
+                    </Button>
+                  </div>
+                )}
                 
                 {video.video_url && !video.video_url.includes('asllmarket.com') && !video.video_url.includes('asllmarket.org') && (
                   <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
