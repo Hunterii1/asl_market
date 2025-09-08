@@ -56,8 +56,9 @@ class ErrorHandler {
         // تشخیص نوع خطا
         if (data.needs_auth || statusCode === 401) {
           errorType = 'auth';
-          errorTitle = 'نیاز به ورود';
-          errorMessage = 'لطفا ابتدا وارد حساب کاربری خود شوید';
+          errorTitle = 'خطا در ورود';
+          // Use the specific error message from backend instead of generic message
+          errorMessage = this.extractErrorMessage(data);
         } else if (data.license_status) {
           errorType = 'license';
           errorTitle = 'مشکل لایسنس';
@@ -260,9 +261,11 @@ class ErrorHandler {
   handleAuthError(error: any) {
     if (error?.response?.data?.needs_auth || 
         error?.response?.status === 401) {
+      // Use the specific error message from backend
+      const errorMessage = this.extractErrorMessage(error?.response?.data || error);
       this.showWarning(
-        'لطفا ابتدا وارد حساب کاربری خود شوید.',
-        'نیاز به ورود'
+        errorMessage,
+        'خطا در ورود'
       );
       
       // می‌توان redirect به صفحه login اضافه کرد

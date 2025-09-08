@@ -270,7 +270,7 @@ export function LicenseInfo() {
               <div>
                 <p className="text-sm font-medium">نوع لایسنس</p>
                 <Badge variant={licenseInfo.type === 'pro' ? 'default' : 'secondary'} className="mt-1">
-                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.duration || 12} ماه)
+                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.type === 'pro' ? 30 : 12} ماه)
                 </Badge>
               </div>
             </div>

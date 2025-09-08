@@ -191,14 +191,15 @@ const HeaderAuth = () => {
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-border" />
-                <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
+                {/* Profile and Settings temporarily commented out */}
+                {/* <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
                   <User className="w-4 h-4 ml-2" />
                   پروفایل
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
                   <Settings className="w-4 h-4 ml-2" />
                   تنظیمات
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 {currentLicenseStatus?.is_approved && (
                   <DropdownMenuItem 
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
