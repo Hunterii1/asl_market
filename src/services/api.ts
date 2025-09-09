@@ -12,14 +12,14 @@ const getApiBaseUrl = () => {
       return 'https://asllmarket.com/backend/api/v1';
     }
     
-    // Development server - use production backend for testing
+    // Development server - use proxy for testing
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
-      return 'https://asllmarket.com/backend/api/v1';
+      return '/api/v1';
     }
   }
   
-  // Fallback to production
-  return 'https://asllmarket.com/backend/api/v1';
+  // Fallback to proxy for development
+  return '/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
