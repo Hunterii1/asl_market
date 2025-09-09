@@ -3,8 +3,8 @@ import { apiService } from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import VideoPlayer from "@/components/VideoPlayer";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 import {
   BookOpen,
   Play,
@@ -19,412 +19,96 @@ import {
   Video,
   FileText,
   Award,
-  Eye
+  Eye,
+  Download,
+  Copy,
+  ExternalLink,
+  Loader2,
+  AlertTriangle,
+  Info,
+  Phone,
+  Mail
 } from "lucide-react";
 import { LicenseGate } from '@/components/LicenseGate';
 
 const AslLearn = () => {
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [realVideos, setRealVideos] = useState<any[]>([]);
-  const [realCategories, setRealCategories] = useState<any[]>([]);
-  const [watchedVideoIds, setWatchedVideoIds] = useState<number[]>([]);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
-  const [isVideoPlayerOpen, setIsVideoPlayerOpen] = useState(false);
+  const [spotPlayerLicense, setSpotPlayerLicense] = useState<any>(null);
+  const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
+  const [isLoadingLicense, setIsLoadingLicense] = useState(true);
+  const { toast } = useToast();
 
-  // Load real training data on component mount
+  // Load SpotPlayer license on component mount
   useEffect(() => {
-    const loadTrainingData = async () => {
+    const loadSpotPlayerLicense = async () => {
       try {
-        const [categoriesRes, videosRes, watchedRes] = await Promise.all([
-          apiService.getTrainingCategories(),
-          apiService.getAllTrainingVideos(),
-          apiService.getWatchedVideos().catch(() => ({ data: [] })) // Don't fail if watched videos can't be loaded
-        ]);
-        
-        // Safely set data with fallbacks
-        const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
-        const videos = Array.isArray(videosRes?.data) ? videosRes.data : [];
-        const watchedVideos = Array.isArray(watchedRes?.data) ? watchedRes.data : [];
-        
-        setRealCategories(categories);
-        setRealVideos(videos);
-        
-        // Extract watched video IDs
-        const watchedIds = watchedVideos.map((watch: any) => 
-          watch.VideoID || watch.video_id || watch.video?.id || watch.video?.ID
-        ).filter(Boolean);
-        setWatchedVideoIds(watchedIds);
-        
-        // Set first category as default
-        if (categories.length > 0) {
-          const firstCategory = categories.find(cat => cat && (cat.ID || cat.id));
-          if (firstCategory) {
-            const categoryId = firstCategory.ID || firstCategory.id;
-            setSelectedCategory(String(categoryId));
-          }
+        setIsLoadingLicense(true);
+        const response = await apiService.getSpotPlayerLicense();
+        if (response.success) {
+          setSpotPlayerLicense(response.data);
         }
-        
-        console.log('📚 Training data loaded:', {
-          categories: categories.length,
-          videos: videos.length,
-          watchedVideos: watchedIds.length,
-          categoriesData: categories,
-          videosData: videos,
-          watchedIds: watchedIds
-        });
       } catch (error) {
-        console.error('❌ Error loading training data:', error);
-        // Set empty arrays as fallback
-        setRealCategories([]);
-        setRealVideos([]);
-        setWatchedVideoIds([]);
+        console.error('Error loading SpotPlayer license:', error);
+        // License not found, user needs to generate one
+      } finally {
+        setIsLoadingLicense(false);
       }
     };
 
-    loadTrainingData();
+    loadSpotPlayerLicense();
   }, []);
 
-  // Convert backend color name to Tailwind classes
-  const getColorClasses = (colorName: string) => {
-    const colorMap: Record<string, string> = {
-      'blue': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-      'green': 'bg-green-500/20 text-green-400 border-green-500/30',
-      'red': 'bg-red-500/20 text-red-400 border-red-500/30',
-      'yellow': 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-      'purple': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-      'orange': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-      'pink': 'bg-pink-500/20 text-pink-400 border-pink-500/30',
-      'cyan': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-      'teal': 'bg-teal-500/20 text-teal-400 border-teal-500/30',
-      'indigo': 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30',
-      'rose': 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-      'emerald': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-      'amber': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-      'lime': 'bg-lime-500/20 text-lime-400 border-lime-500/30',
-      'violet': 'bg-violet-500/20 text-violet-400 border-violet-500/30',
-      'sky': 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-      'slate': 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-      'gray': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-    };
-    return colorMap[colorName] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-  };
-
-  // Convert backend icon emoji to Lucide icon
-  const getIconComponent = (iconEmoji: string) => {
-    const iconMap: Record<string, any> = {
-      '📚': BookOpen, '🎓': GraduationCap, '🔬': Award, '💡': TrendingUp, 
-      '🎯': ArrowRight, '🚀': TrendingUp, '⚡': Play, '🌟': Award,
-      '🔥': TrendingUp, '💎': Award, '🎨': FileText, '🔧': Monitor,
-      '📈': TrendingUp, '🎪': Video, '🎭': FileText, '🎸': Video,
-      '🎵': Video, '🎬': Video, '📸': Video, '🔍': ArrowRight,
-      '🧠': GraduationCap, '💻': Monitor, '📱': Monitor, '⌚': Clock,
-    };
-    return iconMap[iconEmoji] || BookOpen;
-  };
-
-  // Legacy icon mapping for backward compatibility with hardcoded categories
-  const categoryIconMap = {
-    "آموزش کار با پلتفرم": { 
-      icon: Monitor, 
-      color: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-      description: "نحوه استفاده از امکانات سایت و پنل کاربری"
-    },
-    "آموزش صادرات عمده": { 
-      icon: Package, 
-      color: "bg-green-500/20 text-green-400 border-green-500/30",
-      description: "تکنیک‌های فروش عمده و صادرات به کشورهای هدف"
-    },
-    "آموزش فروش تکی محصول": { 
-      icon: ShoppingCart, 
-      color: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-      description: "استراتژی‌های فروش خرده و بازاریابی آنلاین"
-    },
-    "دوره‌های آموزشی فروش": { 
-      icon: GraduationCap, 
-      color: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-      description: "آموزش‌های تخصصی مذاکره، بازاریابی و فروش"
-    }
-  };
-
-  // Group real videos by category first
-  const groupedVideos = realVideos
-    .filter(video => video && (video.CategoryID || video.category_id || video.category?.id)) // Filter valid videos
-    .reduce((acc, video) => {
-      const categoryId = video.CategoryID || video.category_id || video.category?.id;
-      if (categoryId && !acc[categoryId]) acc[categoryId] = [];
-      if (categoryId) acc[categoryId].push(video);
-      return acc;
-    }, {});
-
-  // Convert real categories from API to frontend format with real video counts
-  const trainingCategories = realCategories
-    .filter(category => category && (category.ID || category.id) && (category.Name || category.name)) // Filter out invalid categories
-    .map(category => {
-      const categoryId = category.ID || category.id;
-      const categoryName = category.Name || category.name;
-      const backendIcon = category.Icon || category.icon;
-      const backendColor = category.Color || category.color;
+  const handleGenerateLicense = async () => {
+    try {
+      setIsGeneratingLicense(true);
+      const response = await apiService.generateSpotPlayerLicense();
       
-      return {
-        id: String(categoryId), // Safe string conversion
-        name: categoryName,
-        count: groupedVideos[categoryId] ? groupedVideos[categoryId].length : 0,
-        // Use backend data first, then fallback to legacy mapping
-        icon: backendIcon ? getIconComponent(backendIcon) : (categoryIconMap[categoryName]?.icon || BookOpen),
-        color: backendColor ? getColorClasses(backendColor) : (categoryIconMap[categoryName]?.color || "bg-gray-500/20 text-gray-400 border-gray-500/30"),
-        description: (() => {
-          const desc = category.Description || category.description || categoryIconMap[categoryName]?.description || "";
-          // Don't show generic admin-created description
-          return desc === "دسته‌بندی ایجاد شده توسط ادمین" ? "" : desc;
-        })()
-      };
+      if (response.success) {
+        setSpotPlayerLicense(response.data);
+        toast({
+          title: "موفقیت",
+          description: "لایسنس SpotPlayer با موفقیت ایجاد شد",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: response.message || "خطا در ایجاد لایسنس",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error generating license:', error);
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: error.message || "خطا در ایجاد لایسنس",
+      });
+    } finally {
+      setIsGeneratingLicense(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "کپی شد",
+      description: "متن در کلیپ‌بورد کپی شد",
     });
-
-  console.log('🔍 Debug groupedVideos:', groupedVideos);
-  console.log('🔍 Debug realVideos:', realVideos);
-  console.log('🔍 Debug realCategories:', realCategories);
-  console.log('🔍 Debug trainingCategories after mapping:', trainingCategories);
-  console.log('🔍 Debug selectedCategory:', selectedCategory);
-
-
-
-
-
-  // Convert videos to frontend format
-  const formatVideo = (video) => {
-    const videoId = video.ID || video.id;
-    const videoTitle = video.Title || video.title;
-    const videoDuration = video.Duration || video.duration;
-    const videoDifficulty = video.Difficulty || video.difficulty;
-    const videoType = video.VideoType || video.video_type;
-    const videoDescription = video.Description || video.description;
-    const videoViews = video.Views || video.views;
-    const videoUrl = video.VideoURL || video.video_url;
-    const telegramFileId = video.TelegramFileID || video.telegram_file_id;
-    
-    if (!videoId || !videoTitle) return null;
-    
-    // Check if this video is watched
-    const isWatched = watchedVideoIds.includes(videoId);
-    
-    const formattedVideo = {
-      id: videoId,
-      title: videoTitle,
-      duration: videoDuration && typeof videoDuration === 'number' ? 
-        `${Math.floor(videoDuration / 60)}:${(videoDuration % 60).toString().padStart(2, '0')} دقیقه` : "نامشخص",
-      lessons: 1,
-      completed: isWatched,
-      difficulty: videoDifficulty === "beginner" ? "مقدماتی" : 
-                  videoDifficulty === "intermediate" ? "متوسط" : 
-                  videoDifficulty === "advanced" ? "پیشرفته" : "مقدماتی",
-      type: videoType === "file" ? "video" : "link",
-      description: videoDescription || "",
-      views: videoViews || 0,
-      video_url: videoUrl || "",
-      telegram_file_id: telegramFileId || ""
-    };
-    
-    console.log('🎬 Formatted video:', formattedVideo);
-    return formattedVideo;
   };
 
-  const trainingModulesFake = {
-    platform: [
-      {
-        id: 1,
-        title: "آشنایی با پنل کاربری",
-        duration: "۳۰ دقیقه",
-        lessons: 5,
-        completed: false,
-        difficulty: "مقدماتی",
-        type: "video"
-      },
-      {
-        id: 2,
-        title: "ثبت‌نام تأمین‌کننده و ویزیتور",
-        duration: "۲۵ دقیقه",
-        lessons: 4,
-        completed: false,
-        difficulty: "مقدماتی",
-        type: "video"
-      },
-      {
-        id: 3,
-        title: "استفاده از محدودیت‌های روزانه",
-        duration: "۲۰ دقیقه",
-        lessons: 3,
-        completed: false,
-        difficulty: "مقدماتی",
-        type: "guide"
-      }
-    ],
-    wholesale: [
-      {
-        id: 4,
-        title: "شناخت بازار کشورهای عربی",
-        duration: "۴۵ دقیقه",
-        lessons: 6,
-        completed: false,
-        difficulty: "متوسط",
-        type: "video"
-      },
-      {
-        id: 5,
-        title: "تکنیک‌های صادرات عمده",
-        duration: "۶۰ دقیقه",
-        lessons: 8,
-        completed: false,
-        difficulty: "متوسط",
-        type: "course"
-      },
-      {
-        id: 6,
-        title: "مدیریت زنجیره تأمین",
-        duration: "۵۰ دقیقه",
-        lessons: 7,
-        completed: false,
-        difficulty: "پیشرفته",
-        type: "video"
-      }
-    ],
-    retail: [
-      {
-        id: 7,
-        title: "فروش آنلاین محصولات ایرانی",
-        duration: "۴۰ دقیقه",
-        lessons: 6,
-        completed: false,
-        difficulty: "مقدماتی",
-        type: "video"
-      },
-      {
-        id: 8,
-        title: "بازاریابی شبکه‌های اجتماعی",
-        duration: "۵۵ دقیقه",
-        lessons: 8,
-        completed: false,
-        difficulty: "متوسط",
-        type: "course"
-      },
-      {
-        id: 9,
-        title: "مدیریت موجودی و انبار",
-        duration: "۳۵ دقیقه",
-        lessons: 5,
-        completed: false,
-        difficulty: "متوسط",
-        type: "guide"
-      }
-    ],
-    sales: [
-      {
-        id: 10,
-        title: "مذاکره و قرارداد نویسی",
-        duration: "۹۰ دقیقه",
-        lessons: 12,
-        completed: false,
-        difficulty: "پیشرفته",
-        type: "course"
-      },
-      {
-        id: 11,
-        title: "بازاریابی دیجیتال در خاورمیانه",
-        duration: "۷۵ دقیقه",
-        lessons: 10,
-        completed: false,
-        difficulty: "متوسط",
-        type: "course"
-      },
-      {
-        id: 12,
-        title: "روانشناسی فروش",
-        duration: "۶۵ دقیقه",
-        lessons: 9,
-        completed: false,
-        difficulty: "متوسط",
-        type: "video"
-      }
-    ]
-  };
-
-
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "آسان": return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "متوسط": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-      case "پیشرفته": return "bg-red-500/20 text-red-400 border-red-500/30";
-      default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('fa-IR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return 'نامشخص';
     }
   };
-
-
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "video": return <Video className="w-4 h-4" />;
-      case "course": return <BookOpen className="w-4 h-4" />;
-      case "guide": return <FileText className="w-4 h-4" />;
-      default: return <BookOpen className="w-4 h-4" />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case "video": return "bg-red-500/20 text-red-400 border-red-500/30";
-      case "course": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-      case "guide": return "bg-green-500/20 text-green-400 border-green-500/30";
-      default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-    }
-  };
-
-  // Video player handlers
-  const handlePlayVideo = (video: any) => {
-    console.log('🎬 Playing video:', video);
-    
-    // Ensure video has all required properties
-    const formattedVideo = {
-      id: video.id,
-      title: video.title,
-      description: video.description || "",
-      video_url: video.video_url || "",
-      telegram_file_id: video.telegram_file_id || "",
-      type: video.type || "video",
-      duration: video.duration || "نامشخص",
-      views: video.views || 0,
-      difficulty: video.difficulty || "مقدماتی"
-    };
-    
-    console.log('🎬 Formatted video for player:', formattedVideo);
-    setSelectedVideo(formattedVideo);
-    setIsVideoPlayerOpen(true);
-  };
-
-  const handleVideoWatched = (videoId: number) => {
-    // Add to watched videos
-    setWatchedVideoIds(prev => [...prev.filter(id => id !== videoId), videoId]);
-  };
-
-  const handleCloseVideoPlayer = () => {
-    setIsVideoPlayerOpen(false);
-    setSelectedVideo(null);
-  };
-
-  // Get current modules from real data
-  const selectedCategoryData = trainingCategories.find(cat => cat && cat.id === selectedCategory);
-  console.log('🔍 Debug selectedCategoryData:', selectedCategoryData);
-  console.log('🔍 Debug selectedCategory:', selectedCategory);
-  console.log('🔍 Debug parseInt(selectedCategoryData?.id):', selectedCategoryData ? parseInt(selectedCategoryData.id) : 'no category');
-  console.log('🔍 Debug groupedVideos[categoryId]:', selectedCategoryData ? groupedVideos[parseInt(selectedCategoryData.id)] : 'no videos');
-  
-  const currentModules = selectedCategoryData && selectedCategoryData.id ? 
-    (groupedVideos[parseInt(selectedCategoryData.id)] || [])
-      .filter(video => video && (video.ID || video.id) && (video.Title || video.title)) // Filter valid videos
-      .map(formatVideo)
-      .filter(Boolean) : []; // Remove null results from formatVideo
-
-  console.log('🎬 Current modules for category:', currentModules);
 
   return (
     <LicenseGate>
@@ -437,228 +121,328 @@ const AslLearn = () => {
                 <GraduationCap className="w-8 h-8 text-blue-500 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">آموزش اصل مارکت</h2>
-                <p className="text-blue-600 dark:text-blue-300">آموزش جامع کار با پلتفرم و تکنیک‌های فروش</p>
+                <h2 className="text-2xl font-bold text-foreground">آموزش SpotPlayer</h2>
+                <p className="text-blue-600 dark:text-blue-300">راهنمای کامل استفاده از پلتفرم SpotPlayer</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Training Categories */}
-        <div>
-          <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <BookOpen className="w-6 h-6 text-blue-400" />
-            دسته‌بندی آموزش‌ها
-          </h3>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            {trainingCategories.map((category) => {
-              const IconComponent = category.icon;
-              return (
-                <Card 
-                  key={category.id} 
-                  className={`cursor-pointer transition-all hover:scale-105 rounded-3xl ${
-                    selectedCategory === category.id 
-                      ? "border-blue-500/50 bg-blue-500/10" 
-                      : "bg-card/80 border-border hover:border-accent"
-                  }`}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  <CardContent className="p-4 text-center">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3 ${category.color}`}>
-                      <IconComponent className="w-6 h-6" />
-                    </div>
-                    <h4 className="font-bold text-foreground mb-1 text-sm">{category.name}</h4>
-                    <p className="text-xs text-muted-foreground mb-2">{category.description}</p>
-                    <Badge className={`${category.color} rounded-full text-xs`}>
-                      {category.count} آموزش
-                    </Badge>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Current Category Training Modules */}
-        <div>
-          <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <Play className="w-6 h-6 text-blue-400" />
-            {trainingCategories.find(cat => cat.id === selectedCategory)?.name || "آموزش‌ها"}
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {currentModules.length === 0 ? (
-              <div className="col-span-full text-center py-12">
-                <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Video className="w-12 h-12 text-muted-foreground" />
+        {/* SpotPlayer Introduction */}
+        <Card className="bg-gradient-to-r from-purple-100/40 to-purple-200/40 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200/70 dark:border-purple-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                <Info className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-foreground mb-3">درباره SpotPlayer</h3>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  SpotPlayer یک پلتفرم پیشرفته برای پخش ویدیوهای آموزشی است که امکان کنترل دسترسی، 
+                  واترمارک و مدیریت محتوا را فراهم می‌کند. با استفاده از این پلتفرم می‌توانید 
+                  ویدیوهای آموزشی خود را به صورت امن و کنترل شده در اختیار کاربران قرار دهید.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">ویژگی‌های کلیدی:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• پخش ویدیو با کیفیت بالا</li>
+                      <li>• کنترل دسترسی بر اساس لایسنس</li>
+                      <li>• واترمارک اختصاصی</li>
+                      <li>• آمارگیری دقیق</li>
+                    </ul>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-foreground">مزایا:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• امنیت بالا</li>
+                      <li>• سرعت پخش عالی</li>
+                      <li>• پشتیبانی از فرمت‌های مختلف</li>
+                      <li>• رابط کاربری ساده</li>
+                    </ul>
+                  </div>
                 </div>
-                <h4 className="text-lg font-bold text-foreground mb-2">هنوز ویدیویی آپلود نشده</h4>
-                <p className="text-muted-foreground mb-4">
-                  در این دسته‌بندی هیچ ویدیو آموزشی وجود ندارد
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  ادمین می‌تواند از طریق ربات تلگرام ویدیو اضافه کند
-                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Video Tutorial */}
+        <Card className="bg-gradient-to-r from-green-100/40 to-green-200/40 dark:from-green-900/20 dark:to-green-800/20 border-green-200/70 dark:border-green-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-green-200/40 dark:bg-green-500/20 rounded-2xl flex items-center justify-center">
+                <Play className="w-6 h-6 text-green-500 dark:text-green-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">ویدیو آموزشی</h3>
+                <p className="text-green-600 dark:text-green-300">راهنمای کامل استفاده از SpotPlayer</p>
+              </div>
+            </div>
+            
+            <div className="bg-black rounded-2xl overflow-hidden">
+              <video 
+                controls 
+                className="w-full h-auto"
+                poster="/api/placeholder/800/450"
+              >
+                <source src="https://spotplayer.ir/assets/img/index/vid/v1.mp4" type="video/mp4" />
+                مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+              </video>
+            </div>
+            
+            <div className="mt-4 p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                این ویدیو نحوه استفاده از پلتفرم SpotPlayer را به طور کامل آموزش می‌دهد
+              </p>
+              
+              {/* Educational Instructions */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-4 border border-blue-200/50 dark:border-blue-700/50">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 text-lg">📚</span>
+                    <p className="text-foreground">مطالب آموزشی این دوره در پلتفرم اسپات پلیر قابل دسترسی است.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600 dark:text-green-400 text-lg">✴️</span>
+                    <p className="text-foreground">لطفاً به ترتیب، آموزش‌ها رو مشاهده بفرمایید.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-orange-600 dark:text-orange-400 text-lg">✳️</span>
+                    <p className="text-foreground">برای مشاهده آموزش‌ها، لطفاً نسخه مناسب دستگاه خود را از وب‌سایت <a href="https://spotplayer.ir" target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 hover:underline font-semibold">spotplayer.ir</a> (قسمت پایین صفحه سایت) دریافت و نصب نمایید.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-600 dark:text-purple-400 text-lg">🔑</span>
+                    <p className="text-foreground">کد لایسنس برای ورود به پنل آموزشی اسپات پلیر 👇</p>
+                  </div>
+                  
+                  {spotPlayerLicense ? (
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border-2 border-dashed border-purple-300 dark:border-purple-600">
+                      <code className="text-lg font-mono text-purple-600 dark:text-purple-400 break-all">
+                        {spotPlayerLicense.license_key}
+                      </code>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 border-2 border-dashed border-gray-300 dark:border-gray-600">
+                      <code className="text-lg font-mono text-gray-500 dark:text-gray-400">
+                        ۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰
+                      </code>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-yellow-600 dark:text-yellow-400 text-lg">✨</span>
+                    <p className="text-foreground">با آرزوی موفقیت و سربلندی در مسیر آموزش و توسعه.</p>
+                  </div>
+                  
+                  <div className="text-center pt-2">
+                    <p className="text-blue-600 dark:text-blue-400 font-semibold">مرکز اینکامینگ ایران</p>
+                  </div>
+                  
+                  {/* Support Information */}
+                  <div className="mt-4 pt-4 border-t border-blue-200/50 dark:border-blue-700/50">
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-600 dark:text-green-400 text-lg">❇️</span>
+                      <div className="flex-1">
+                        <p className="text-foreground mb-2">آی دی تلگرام پشتیبانی جهت هر گونه مشکل دسترسی به آموزش ها 👇</p>
+                        <a 
+                          href="https://t.me/incoming_center" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
+                        >
+                          @incoming_center
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* License Section */}
+        <Card className="bg-gradient-to-r from-orange-100/40 to-orange-200/40 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200/70 dark:border-orange-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-orange-200/40 dark:bg-orange-500/20 rounded-2xl flex items-center justify-center">
+                <Award className="w-6 h-6 text-orange-500 dark:text-orange-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">لایسنس SpotPlayer</h3>
+                <p className="text-orange-600 dark:text-orange-300">لایسنس اختصاصی شما برای دسترسی به محتوا</p>
+              </div>
+            </div>
+
+            {isLoadingLicense ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                <span className="mr-2 text-muted-foreground">در حال بارگذاری...</span>
+              </div>
+            ) : spotPlayerLicense ? (
+              <div className="space-y-4">
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    لایسنس شما با موفقیت ایجاد شده است و آماده استفاده می‌باشد.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">کلید لایسنس:</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="flex-1 bg-muted px-3 py-2 rounded-lg text-sm font-mono break-all">
+                          {spotPlayerLicense.license_key}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(spotPlayerLicense.license_key)}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">لینک دانلود:</label>
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="flex-1 bg-muted px-3 py-2 rounded-lg text-sm font-mono break-all">
+                          {spotPlayerLicense.license_url}
+                        </code>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(spotPlayerLicense.license_url)}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(spotPlayerLicense.license_url, '_blank')}
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">تاریخ ایجاد:</label>
+                      <p className="text-sm bg-muted px-3 py-2 rounded-lg">
+                        {formatDate(spotPlayerLicense.created_at)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">وضعیت:</label>
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        فعال
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <h4 className="font-semibold text-foreground mb-2">نحوه استفاده:</h4>
+                  <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                    <li>کلید لایسنس را کپی کنید</li>
+                    <li>در نرم‌افزار SpotPlayer وارد کنید</li>
+                    <li>از لینک دانلود برای دریافت فایل استفاده کنید</li>
+                    <li>حالا می‌توانید به محتوای آموزشی دسترسی داشته باشید</li>
+                  </ol>
+                </div>
               </div>
             ) : (
-              currentModules.map((module) => (
-              <Card key={module.id} className="bg-card/80 border-border hover:border-accent transition-all rounded-3xl hover:shadow-lg">
-                <CardContent className="p-6">
-                  {/* Header with title and badges */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h4 className="font-bold text-foreground mb-2 text-lg">{module.title}</h4>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {module.duration}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {getTypeIcon(module.type)}
-                          {module.lessons} {module.type === "guide" ? "بخش" : "درس"}
-                        </div>
-                      </div>
-                      
-                      {/* Description if available */}
-                      {module.description && (
-                        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
-                          {module.description}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* Badges column */}
-                    <div className="flex flex-col gap-2">
-                      <Badge className={`${getDifficultyColor(module.difficulty)} rounded-2xl text-xs px-3 py-1`}>
-                        {module.difficulty}
-                      </Badge>
-                      <Badge className={`${getTypeColor(module.type)} rounded-2xl text-xs px-3 py-1`}>
-                        {module.type === "video" ? "ویدئو" : module.type === "course" ? "دوره" : "راهنما"}
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {/* Progress and status */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between text-sm mb-2">
-                      <span className="text-muted-foreground">پیشرفت</span>
-                      <span className="font-medium">
-                        {module.completed ? "100%" : "0%"}
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          module.completed 
-                            ? "bg-green-500" 
-                            : "bg-blue-500"
-                        }`}
-                        style={{ width: module.completed ? "100%" : "0%" }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Action section */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {module.completed ? (
-                        <CheckCircle className="w-5 h-5 text-green-400" />
-                      ) : (
-                        <Play className="w-5 h-5 text-orange-400" />
-                      )}
-                      <span className="text-sm text-muted-foreground">
-                        {module.completed ? "تکمیل شده" : "شروع نشده"}
-                      </span>
-                    </div>
-                    
-                    {/* Enhanced play button */}
-                    <Button 
-                      size="sm" 
-                      variant={module.completed ? "outline" : "default"}
-                      className={`rounded-2xl px-6 py-2 transition-all duration-200 ${
-                        module.completed 
-                          ? "border-border text-foreground hover:bg-muted hover:scale-105" 
-                          : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white hover:scale-105 shadow-lg"
-                      }`}
-                      onClick={() => handlePlayVideo(module)}
-                    >
-                      {module.completed ? (
-                        <>
-                        <Eye className="w-4 h-4 ml-2" />
-                          مشاهده مجدد
-                        </>
-                      ) : (
-                        <>
-                        <Play className="w-4 h-4 ml-2" />
-                          شروع آموزش
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )))}
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div>
-          <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-green-400" />
-            آمار آموزش‌ها
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card className="bg-card/80 border-border rounded-3xl">
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-blue-200/40 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                  <BookOpen className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Award className="w-8 h-8 text-muted-foreground" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">{realVideos.length || 0}</div>
-                <p className="text-sm text-muted-foreground">مجموع آموزش‌ها</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card/80 border-border rounded-3xl">
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-green-200/40 dark:bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                  <Video className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="text-2xl font-bold text-foreground">{realVideos.filter(v => v.video_type === 'file').length || 0}</div>
-                <p className="text-sm text-muted-foreground">فایل آپلود شده</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card/80 border-border rounded-3xl">
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-orange-200/40 dark:bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                  <Award className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div className="text-2xl font-bold text-foreground">{realVideos.filter(v => v.video_type === 'link').length || 0}</div>
-                <p className="text-sm text-muted-foreground">لینک ویدیو</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-card/80 border-border rounded-3xl">
-              <CardContent className="p-4 text-center">
-                <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                  <FileText className="w-6 h-6 text-purple-500 dark:text-purple-400" />
-                </div>
-                <div className="text-2xl font-bold text-foreground">{realCategories.length || 0}</div>
-                <p className="text-sm text-muted-foreground">دسته‌بندی</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-    </div>
+                <h4 className="text-lg font-semibold text-foreground mb-2">لایسنس ایجاد نشده</h4>
+                <p className="text-muted-foreground mb-6">
+                  برای دسترسی به محتوای آموزشی، ابتدا باید لایسنس SpotPlayer خود را ایجاد کنید.
+                </p>
+                <Button
+                  onClick={handleGenerateLicense}
+                  disabled={isGeneratingLicense}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
+                >
+                  {isGeneratingLicense ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      در حال ایجاد...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="w-4 h-4 mr-2" />
+                      ایجاد لایسنس
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-    {/* Video Player Modal */}
-    {selectedVideo && (
-      <VideoPlayer
-        video={selectedVideo}
-        isOpen={isVideoPlayerOpen}
-        onClose={handleCloseVideoPlayer}
-        onVideoWatched={handleVideoWatched}
-      />
-    )}
+        {/* Usage Instructions */}
+        <Card className="bg-gradient-to-r from-indigo-100/40 to-indigo-200/40 dark:from-indigo-900/20 dark:to-indigo-800/20 border-indigo-200/70 dark:border-indigo-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-indigo-200/40 dark:bg-indigo-500/20 rounded-2xl flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">راهنمای استفاده</h3>
+                <p className="text-indigo-600 dark:text-indigo-300">مراحل کامل استفاده از SpotPlayer</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">مرحله 1: نصب نرم‌افزار</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• نرم‌افزار SpotPlayer را دانلود کنید</li>
+                  <li>• آن را روی سیستم خود نصب کنید</li>
+                  <li>• نرم‌افزار را اجرا کنید</li>
+                </ul>
+
+                <h4 className="font-semibold text-foreground">مرحله 2: وارد کردن لایسنس</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• کلید لایسنس را از بالا کپی کنید</li>
+                  <li>• در نرم‌افزار SpotPlayer وارد کنید</li>
+                  <li>• روی دکمه تأیید کلیک کنید</li>
+                </ul>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-semibold text-foreground">مرحله 3: دانلود محتوا</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• لینک دانلود را از بالا کپی کنید</li>
+                  <li>• در مرورگر خود باز کنید</li>
+                  <li>• فایل را دانلود کنید</li>
+                </ul>
+
+                <h4 className="font-semibold text-foreground">مرحله 4: پخش ویدیو</h4>
+                <ul className="text-sm text-muted-foreground space-y-2">
+                  <li>• فایل دانلود شده را در SpotPlayer باز کنید</li>
+                  <li>• از محتوای آموزشی استفاده کنید</li>
+                  <li>• پیشرفت خود را دنبال کنید</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </LicenseGate>
   );
 };

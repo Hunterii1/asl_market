@@ -29,7 +29,7 @@ const ForgotPassword = () => {
         return 'https://asllmarket.com/backend/api/v1';
       }
     }
-    return 'http://localhost:8080/api/v1';
+    return 'https://asllmarket.com/backend/api/v1';
   };
 
   const handleRequestCode = async (e: React.FormEvent) => {

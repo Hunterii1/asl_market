@@ -6,11 +6,20 @@ import { errorHandler } from '@/utils/errorHandler';
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    
+    // Production server
     if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
       return 'https://asllmarket.com/backend/api/v1';
     }
+    
+    // Development server - use production backend for testing
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'https://asllmarket.com/backend/api/v1';
+    }
   }
-  return 'http://localhost:8080/api/v1';
+  
+  // Fallback to production
+  return 'https://asllmarket.com/backend/api/v1';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -1072,6 +1081,25 @@ class ApiService {
 
   async getWatchedVideos(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/training/watched-videos`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // SpotPlayer API methods
+  async generateSpotPlayerLicense(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/spotplayer/generate-license`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getSpotPlayerLicense(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/spotplayer/license`, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
