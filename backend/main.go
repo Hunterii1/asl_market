@@ -46,14 +46,8 @@ func main() {
 	// Setup CORS
 	corsConfig := cors.DefaultConfig()
 
-	// Allow all origins for development, specific origins for production
-	if len(config.AppConfig.CORS.AllowedOrigins) > 0 {
-		corsConfig.AllowOrigins = config.AppConfig.CORS.AllowedOrigins
-	} else {
-		// Fallback to allow all origins for development
-		corsConfig.AllowAllOrigins = true
-	}
-
+	// Allow all origins for development and testing
+	corsConfig.AllowAllOrigins = true
 	corsConfig.AllowMethods = config.AppConfig.CORS.AllowedMethods
 	corsConfig.AllowHeaders = config.AppConfig.CORS.AllowedHeaders
 	corsConfig.AllowCredentials = true
@@ -69,21 +63,8 @@ func main() {
 		// Get origin from request
 		origin := c.Request.Header.Get("Origin")
 
-		// Check if origin is allowed
-		allowedOrigins := config.AppConfig.CORS.AllowedOrigins
-		if len(allowedOrigins) > 0 {
-			// Check if origin is in allowed list
-			for _, allowedOrigin := range allowedOrigins {
-				if origin == allowedOrigin {
-					c.Header("Access-Control-Allow-Origin", origin)
-					break
-				}
-			}
-		} else {
-			// Allow all origins for development
-			c.Header("Access-Control-Allow-Origin", origin)
-		}
-
+		// Allow all origins for development and testing
+		c.Header("Access-Control-Allow-Origin", origin)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With, Range")
 		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges")

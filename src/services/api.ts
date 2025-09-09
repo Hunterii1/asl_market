@@ -13,7 +13,7 @@ const getApiBaseUrl = () => {
     }
     
     // Development server - use production backend for testing
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
       return 'https://asllmarket.com/backend/api/v1';
     }
   }
