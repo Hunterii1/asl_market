@@ -121,47 +121,8 @@ const AslLearn = () => {
                 <GraduationCap className="w-8 h-8 text-blue-500 dark:text-blue-400" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">آموزش SpotPlayer</h2>
-                <p className="text-blue-600 dark:text-blue-300">راهنمای کامل استفاده از پلتفرم SpotPlayer</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* SpotPlayer Introduction */}
-        <Card className="bg-gradient-to-r from-purple-100/40 to-purple-200/40 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200/70 dark:border-purple-700/50 rounded-3xl">
-          <CardContent className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center">
-                <Info className="w-6 h-6 text-purple-500 dark:text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-foreground mb-3">درباره SpotPlayer</h3>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  SpotPlayer یک پلتفرم پیشرفته برای پخش ویدیوهای آموزشی است که امکان کنترل دسترسی، 
-                  واترمارک و مدیریت محتوا را فراهم می‌کند. با استفاده از این پلتفرم می‌توانید 
-                  ویدیوهای آموزشی خود را به صورت امن و کنترل شده در اختیار کاربران قرار دهید.
-                </p>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-foreground">ویژگی‌های کلیدی:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• پخش ویدیو با کیفیت بالا</li>
-                      <li>• کنترل دسترسی بر اساس لایسنس</li>
-                      <li>• واترمارک اختصاصی</li>
-                      <li>• آمارگیری دقیق</li>
-                    </ul>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-semibold text-foreground">مزایا:</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• امنیت بالا</li>
-                      <li>• سرعت پخش عالی</li>
-                      <li>• پشتیبانی از فرمت‌های مختلف</li>
-                      <li>• رابط کاربری ساده</li>
-                    </ul>
-                  </div>
-                </div>
+                <h2 className="text-2xl font-bold text-foreground">آموزش های اصل مارکت</h2>
+                <p className="text-blue-600 dark:text-blue-300">راهنمای کامل استفاده از آموزش های پلتفرم در SpotPlayer</p>
               </div>
             </div>
           </CardContent>
@@ -391,55 +352,6 @@ const AslLearn = () => {
                 </Button>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Usage Instructions */}
-        <Card className="bg-gradient-to-r from-indigo-100/40 to-indigo-200/40 dark:from-indigo-900/20 dark:to-indigo-800/20 border-indigo-200/70 dark:border-indigo-700/50 rounded-3xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-indigo-200/40 dark:bg-indigo-500/20 rounded-2xl flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-indigo-500 dark:text-indigo-400" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-foreground">راهنمای استفاده</h3>
-                <p className="text-indigo-600 dark:text-indigo-300">مراحل کامل استفاده از SpotPlayer</p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">مرحله 1: نصب نرم‌افزار</h4>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• نرم‌افزار SpotPlayer را دانلود کنید</li>
-                  <li>• آن را روی سیستم خود نصب کنید</li>
-                  <li>• نرم‌افزار را اجرا کنید</li>
-                </ul>
-
-                <h4 className="font-semibold text-foreground">مرحله 2: وارد کردن لایسنس</h4>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• کلید لایسنس را از بالا کپی کنید</li>
-                  <li>• در نرم‌افزار SpotPlayer وارد کنید</li>
-                  <li>• روی دکمه تأیید کلیک کنید</li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-foreground">مرحله 3: دانلود محتوا</h4>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• لینک دانلود را از بالا کپی کنید</li>
-                  <li>• در مرورگر خود باز کنید</li>
-                  <li>• فایل را دانلود کنید</li>
-                </ul>
-
-                <h4 className="font-semibold text-foreground">مرحله 4: پخش ویدیو</h4>
-                <ul className="text-sm text-muted-foreground space-y-2">
-                  <li>• فایل دانلود شده را در SpotPlayer باز کنید</li>
-                  <li>• از محتوای آموزشی استفاده کنید</li>
-                  <li>• پیشرفت خود را دنبال کنید</li>
-                </ul>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
