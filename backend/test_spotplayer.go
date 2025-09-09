@@ -9,7 +9,7 @@ import (
 	"asl-market-backend/services"
 )
 
-func main() {
+func main22() {
 	// Load configuration
 	config.LoadConfig()
 
