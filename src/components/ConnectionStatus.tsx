@@ -25,7 +25,7 @@ export function ConnectionStatus() {
         const hostname = window.location.hostname;
         const apiUrl = hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com'
           ? 'https://asllmarket.com/backend/health'
-          : '/api/health';
+          : '/health';
         
         const response = await fetch(apiUrl, { 
           method: 'GET',
