@@ -71,7 +71,7 @@ const SupportTicket = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -93,7 +93,7 @@ const SupportTicket = () => {
       setLoading(true);
       const response = await apiService.getSupportTickets({
         page,
-        status: filterStatus || undefined
+        status: filterStatus === "all" ? undefined : filterStatus
       });
       
       if (response.success) {
@@ -561,7 +561,7 @@ const SupportTicket = () => {
                 <SelectValue placeholder="فیلتر بر اساس وضعیت" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">همه وضعیت‌ها</SelectItem>
+                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
                 <SelectItem value="open">باز</SelectItem>
                 <SelectItem value="in_progress">در حال بررسی</SelectItem>
                 <SelectItem value="waiting_response">منتظر پاسخ</SelectItem>

@@ -110,7 +110,7 @@ func (stc *SupportTicketController) GetUserTickets(c *gin.Context) {
 
 	offset := (page - 1) * perPage
 
-	query := db.Where("user_id = ?", userID)
+	query := db.Model(&models.SupportTicket{}).Where("user_id = ?", userID)
 	if status != "" {
 		query = query.Where("status = ?", status)
 	}
@@ -127,7 +127,12 @@ func (stc *SupportTicketController) GetUserTickets(c *gin.Context) {
 		return
 	}
 
-	if err := query.Preload("User").Preload("Messages", func(db *gorm.DB) *gorm.DB {
+	findQuery := db.Model(&models.SupportTicket{}).Where("user_id = ?", userID)
+	if status != "" {
+		findQuery = findQuery.Where("status = ?", status)
+	}
+
+	if err := findQuery.Preload("User").Preload("Messages", func(db *gorm.DB) *gorm.DB {
 		return db.Order("created_at DESC")
 	}).Order("created_at DESC").Offset(offset).Limit(perPage).Find(&tickets).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
