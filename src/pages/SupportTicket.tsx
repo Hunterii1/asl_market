@@ -28,6 +28,7 @@ import {
   Eye,
   Lock
 } from "lucide-react";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 
 interface Ticket {
   id: number;
@@ -273,10 +274,13 @@ const SupportTicket = () => {
 
   if (loading && tickets.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">در حال بارگذاری تیکت‌ها...</p>
+      <div className="min-h-screen">
+        <HeaderAuth />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">در حال بارگذاری تیکت‌ها...</p>
+          </div>
         </div>
       </div>
     );
@@ -284,9 +288,11 @@ const SupportTicket = () => {
 
   if (selectedTicket) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="min-h-screen">
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-6 space-y-6 animate-fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
@@ -408,14 +414,17 @@ const SupportTicket = () => {
             )}
           </CardContent>
         </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
+    <div className="min-h-screen">
+      <HeaderAuth />
+      <div className="container mx-auto px-4 py-6 space-y-6 animate-fade-in">
+        {/* Header */}
+        <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -592,34 +601,71 @@ const SupportTicket = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tickets.map((ticket) => (
-            <Card key={ticket.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => loadTicket(ticket.id)}>
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="font-semibold text-lg">#{ticket.id} - {ticket.title}</h3>
-                      <Badge className={getPriorityColor(ticket.priority)}>
-                        {getPriorityText(ticket.priority)}
-                      </Badge>
-                      <Badge className={getStatusColor(ticket.status)}>
-                        {getStatusText(ticket.status)}
-                      </Badge>
+            <Card 
+              key={ticket.id} 
+              className="group hover:shadow-lg hover:shadow-blue-100/50 dark:hover:shadow-blue-900/20 transition-all duration-300 cursor-pointer border-l-4 hover:border-l-blue-500 hover:scale-[1.02]" 
+              onClick={() => loadTicket(ticket.id)}
+            >
+              <CardContent className="p-5">
+                <div className="space-y-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                          #{ticket.id}
+                        </div>
+                        <h3 className="font-semibold text-base line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {ticket.title}
+                        </h3>
+                      </div>
+                      
+                      {/* Badges */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge className={`${getPriorityColor(ticket.priority)} text-xs px-2 py-1`}>
+                          {getPriorityText(ticket.priority)}
+                        </Badge>
+                        <Badge className={`${getStatusColor(ticket.status)} text-xs px-2 py-1`}>
+                          {getStatusText(ticket.status)}
+                        </Badge>
+                      </div>
                     </div>
-                    <p className="text-muted-foreground mb-3 line-clamp-2">
-                      {ticket.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {formatDate(ticket.created_at)}
-                      </span>
-                      <span>{getCategoryText(ticket.category)}</span>
-                      <span>{ticket.messages?.length || 0} پیام</span>
+                    
+                    <div className="flex flex-col items-end gap-2">
+                      <Eye className="w-5 h-5 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                      <div className="text-right">
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(ticket.created_at)}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <Eye className="w-5 h-5 text-muted-foreground" />
+                  
+                  {/* Description */}
+                  <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                    {ticket.description}
+                  </p>
+                  
+                  {/* Footer */}
+                  <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3" />
+                        {ticket.messages?.length || 0} پیام
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        {getCategoryText(ticket.category)}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center text-xs text-muted-foreground group-hover:text-blue-500 transition-colors">
+                      مشاهده جزئیات
+                      <ChevronLeft className="w-3 h-3 mr-1" />
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -659,6 +705,7 @@ const SupportTicket = () => {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   );
 };

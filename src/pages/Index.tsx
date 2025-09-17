@@ -41,7 +41,6 @@ import AslPay from "./AslPay";
 import AslAI from "./AslAI";
 import AslAvailable from "./AslAvailable";
 import ProductsResearch from "./ProductsResearch";
-import SupportTicket from "./SupportTicket";
 import MarketingPopup from "@/components/MarketingPopup";
 
 const Index = () => {
@@ -128,8 +127,6 @@ const Index = () => {
         return isAuthenticated ? <AslAI /> : <DashboardSection />;
       case "aslavailable":
         return isAuthenticated ? <AslAvailable /> : <DashboardSection />;
-      case "support":
-        return isAuthenticated ? <SupportTicket /> : <DashboardSection />;
       default:
         return <DashboardSection />;
     }
