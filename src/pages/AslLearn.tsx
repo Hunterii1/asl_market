@@ -128,6 +128,96 @@ const AslLearn = () => {
           </CardContent>
         </Card>
 
+        {/* ASL Market Platform Tutorial */}
+        <Card className="bg-gradient-to-r from-purple-100/40 to-purple-200/40 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200/70 dark:border-purple-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                <Monitor className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">ویدیو آموزش اصل مارکت</h3>
+                <p className="text-purple-600 dark:text-purple-300">راهنمای کامل استفاده از پلتفرم اصل مارکت</p>
+              </div>
+            </div>
+            
+            <div className="bg-black rounded-2xl overflow-hidden">
+              <video 
+                controls 
+                className="w-full h-auto"
+                poster="/api/placeholder/800/450"
+              >
+                <source src="/intro.mp4" type="video/mp4" />
+                مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+              </video>
+            </div>
+            
+            <div className="mt-4 p-4 bg-muted/50 rounded-xl">
+              <p className="text-sm text-muted-foreground text-center mb-4">
+                این ویدیو نحوه استفاده از پلتفرم اصل مارکت را به طور کامل آموزش می‌دهد
+              </p>
+              
+              {/* Platform Instructions */}
+              <div className="bg-gradient-to-r from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/50">
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-purple-600 dark:text-purple-400 text-lg">🏢</span>
+                    <p className="text-foreground">پلتفرم اصل مارکت شامل بخش‌های مختلفی برای تجارت و کسب‌وکار است.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-600 dark:text-blue-400 text-lg">📊</span>
+                    <p className="text-foreground">بخش‌های اصلی شامل: اصل لرن، اصل ساپلایر، اصل اکسپرس، اصل ویزیت، اصل پی و اصل آی.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-green-600 dark:text-green-400 text-lg">🔐</span>
+                    <p className="text-foreground">برای دسترسی به تمام امکانات، ابتدا باید لایسنس معتبر خود را فعال کنید.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-orange-600 dark:text-orange-400 text-lg">💡</span>
+                    <p className="text-foreground">هر بخش دارای آموزش‌ها و راهنمای مخصوص به خود است که در این ویدیو به تفصیل توضیح داده شده.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-red-600 dark:text-red-400 text-lg">⚡</span>
+                    <p className="text-foreground">توصیه می‌شود قبل از شروع کار، این ویدیو آموزشی را به طور کامل مشاهده کنید.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
+                    <span className="text-indigo-600 dark:text-indigo-400 text-lg">🎯</span>
+                    <p className="text-foreground">با استفاده صحیح از پلتفرم، می‌توانید به اهداف تجاری خود برسید.</p>
+                  </div>
+                  
+                  <div className="text-center pt-2">
+                    <p className="text-purple-600 dark:text-purple-400 font-semibold">پلتفرم اصل مارکت</p>
+                  </div>
+                  
+                  {/* Support Information */}
+                  <div className="mt-4 pt-4 border-t border-purple-200/50 dark:border-purple-700/50">
+                    <div className="flex items-start gap-2">
+                      <span className="text-purple-600 dark:text-purple-400 text-lg">🆘</span>
+                      <div className="flex-1">
+                        <p className="text-foreground mb-2">در صورت نیاز به راهنمایی بیشتر با پشتیبانی تماس بگیرید 👇</p>
+                        <a 
+                          href="https://t.me/incoming_center" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-mono font-bold"
+                        >
+                          incoming_center
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Video Tutorial */}
         <Card className="bg-gradient-to-r from-green-100/40 to-green-200/40 dark:from-green-900/20 dark:to-green-800/20 border-green-200/70 dark:border-green-700/50 rounded-3xl">
           <CardContent className="p-6">
@@ -176,6 +266,11 @@ const AslLearn = () => {
                   </div>
                   
                   <div className="flex items-start gap-2">
+                    <span className="text-red-600 dark:text-red-400 text-lg">🍎</span>
+                    <p className="text-foreground">دوستانی که iOS یا Mac دارند باید از نسخه وب اپلیکیشن SpotPlayer استفاده کنند.</p>
+                  </div>
+                  
+                  <div className="flex items-start gap-2">
                     <span className="text-purple-600 dark:text-purple-400 text-lg">🔑</span>
                     <p className="text-foreground">کد لایسنس برای ورود به پنل آموزشی اسپات پلیر 👇</p>
                   </div>
@@ -215,7 +310,7 @@ const AslLearn = () => {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
                         >
-                          @incoming_center
+                          incoming_center
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       </div>
