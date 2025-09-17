@@ -88,7 +88,7 @@ func (stc *SupportTicketController) CreateTicket(c *gin.Context) {
 	// Send notification to Telegram
 	go func() {
 		if stc.telegramService != nil {
-			stc.telegramService.NotifyNewSupportTicket(&ticket, user)
+			stc.telegramService.NotifyNewTicket(&ticket, user)
 		}
 	}()
 

@@ -260,22 +260,56 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 }
 
 func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user *models.User, message *models.SupportTicketMessage) {
-	messageEmoji := "💬"
+	// Only notify for user messages (not admin messages)
 	if message.IsAdmin {
-		messageEmoji = "👨‍💼"
+		return
 	}
 
 	messageText := fmt.Sprintf(
-		"%s **پیام جدید در تیکت**\n\n"+
+		"💬 **پیام جدید از کاربر**\n\n"+
+			"📋 **تیکت #%d:** %s\n"+
+			"👤 **کاربر:** %s %s (%s)\n"+
+			"📧 **ایمیل:** %s\n"+
+			"🎯 **دسته:** %s | **اولویت:** %s\n"+
+			"📊 **وضعیت:** %s\n\n"+
+			"💬 **پیام جدید:**\n%s\n\n"+
+			"🔗 **دستورات:** /view_ticket_%d /respond_ticket_%d",
+		ticket.ID, ticket.Title,
+		user.FirstName, user.LastName, user.Phone,
+		user.Email,
+		ticket.Category, ticket.Priority,
+		ticket.Status,
+		truncateText(message.Message, 250),
+		ticket.ID, ticket.ID,
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, messageText)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
+}
+
+func (t *TelegramService) NotifyNewTicket(ticket *models.SupportTicket, user *models.User) {
+	messageText := fmt.Sprintf(
+		"🆕 **تیکت جدید ایجاد شد**\n\n"+
 			"📋 **شناسه تیکت:** #%d\n"+
-			"👤 **کاربر:** %s (%s)\n\n"+
-			"💬 **پیام:** %s\n\n"+
-			"🔗 **لینک تیکت:** /ticket_%d",
-		messageEmoji,
+			"👤 **کاربر:** %s %s (%s)\n"+
+			"📧 **ایمیل:** %s\n"+
+			"🎯 **دسته:** %s\n"+
+			"⚡ **اولویت:** %s\n\n"+
+			"📝 **عنوان:** %s\n\n"+
+			"📄 **توضیحات:** %s\n\n"+
+			"🔗 **دستورات:** /view_ticket_%d /respond_ticket_%d",
 		ticket.ID,
-		user.Name(), user.Mobile(),
-		truncateText(message.Message, 300),
-		ticket.ID,
+		user.FirstName, user.LastName, user.Phone,
+		user.Email,
+		ticket.Category,
+		ticket.Priority,
+		ticket.Title,
+		truncateText(ticket.Description, 200),
+		ticket.ID, ticket.ID,
 	)
 
 	// Send to all admins
@@ -486,6 +520,10 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case MENU_NEXT_PAGE:
 		s.handlePagination(message.Chat.ID, 1)
 	case MENU_BACK:
+		// Clear any active session state when going back
+		sessionMutex.Lock()
+		delete(sessionStates, message.Chat.ID)
+		sessionMutex.Unlock()
 		s.showMainMenu(message.Chat.ID)
 	case MENU_STATS:
 		s.showStats(message.Chat.ID)
@@ -760,6 +798,16 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
 			case strings.HasPrefix(state.WaitingForInput, "ticket_response_"):
+				// Check if user wants to cancel the response
+				if message.Text == MENU_BACK || message.Text == "🔙 بازگشت" {
+					// Clear session state and go back to main menu
+					sessionMutex.Lock()
+					delete(sessionStates, message.Chat.ID)
+					sessionMutex.Unlock()
+					s.showMainMenu(message.Chat.ID)
+					return
+				}
+
 				// Process ticket response
 				ticketIDStr := strings.TrimPrefix(state.WaitingForInput, "ticket_response_")
 				if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
@@ -4034,8 +4082,8 @@ func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
 		message.WriteString(fmt.Sprintf("   🎯 دسته: %s | اولویت: %s\n",
 			s.getCategoryName(ticket.Category), s.getPriorityName(ticket.Priority)))
 
-		// Add action buttons for open tickets
-		if ticket.Status == "open" {
+		// Add action buttons for active tickets
+		if ticket.Status == "open" || ticket.Status == "in_progress" || ticket.Status == "waiting_response" {
 			message.WriteString(fmt.Sprintf("   🔗 دستورات: /view_ticket_%d /respond_ticket_%d /close_ticket_%d\n",
 				ticket.ID, ticket.ID, ticket.ID))
 		} else {
@@ -4405,8 +4453,16 @@ func (s *TelegramService) promptTicketResponse(chatID int64, ticketID uint) {
 	}
 	sessionMutex.Unlock()
 
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("💬 **پاسخ به تیکت #%d**\n\nلطفاً پاسخ خود را بنویسید:", ticketID))
+	// Create keyboard with back option
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("💬 **پاسخ به تیکت #%d**\n\n📝 **عنوان:** %s\n\nلطفاً پاسخ خود را بنویسید:\n\n💡 **نکته:** برای لغو، دکمه 'بازگشت' را بزنید", ticketID, ticket.Title))
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
@@ -4495,11 +4551,11 @@ func (s *TelegramService) handleTicketResponse(chatID int64, ticketID uint, resp
 
 	successMsg := fmt.Sprintf("✅ **پاسخ ارسال شد**\n\n"+
 		"📋 تیکت #%d\n"+
-		"👤 کاربر: %s %s\n"+
+		"👤 کاربر: %s %s (%s)\n"+
 		"📝 عنوان: %s\n\n"+
 		"💬 **پاسخ شما:**\n%s\n\n"+
-		"📊 وضعیت تیکت: در حال بررسی",
-		ticket.ID, ticket.User.FirstName, ticket.User.LastName, ticket.Title, responseText)
+		"📊 وضعیت تیکت: منتظر پاسخ کاربر",
+		ticket.ID, ticket.User.FirstName, ticket.User.LastName, ticket.User.Phone, ticket.Title, responseText)
 
 	msg := tgbotapi.NewMessage(chatID, successMsg)
 	msg.ParseMode = "Markdown"
