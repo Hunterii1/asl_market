@@ -4308,7 +4308,7 @@ func (s *TelegramService) showSupportTicketDetails(chatID int64, ticketID uint) 
 		message.WriteString(fmt.Sprintf("💬 **مکالمه (%d پیام):**\n", len(ticket.Messages)))
 		message.WriteString(fmt.Sprintf("   🛡️ پشتیبانی: %d پیام | 👤 کاربر: %d پیام\n\n", adminMsgCount, userMsgCount))
 
-		for i, msg := range ticket.Messages {
+		for _, msg := range ticket.Messages {
 			if msg.IsAdmin {
 				message.WriteString(fmt.Sprintf("🛡️ **پشتیبانی** - %s\n", msg.CreatedAt.Format("2006/01/02 15:04")))
 			} else {
