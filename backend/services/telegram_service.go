@@ -759,6 +759,17 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
+			case strings.HasPrefix(state.WaitingForInput, "ticket_response_"):
+				// Process ticket response
+				ticketIDStr := strings.TrimPrefix(state.WaitingForInput, "ticket_response_")
+				if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+					s.handleTicketResponse(message.Chat.ID, uint(ticketID), message.Text)
+				}
+
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
 			}
 
 			// Handle remaining state cases with simple if statements
@@ -811,6 +822,11 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 
 			// Check for visitor command patterns
 			if s.handleVisitorCommands(message.Chat.ID, message.Text) {
+				return
+			}
+
+			// Check for support ticket command patterns
+			if s.handleSupportTicketCommands(message.Chat.ID, message.Text) {
 				return
 			}
 
@@ -4194,4 +4210,255 @@ func (s *TelegramService) getCategoryName(category string) string {
 	default:
 		return "عمومی"
 	}
+}
+
+// Support Ticket Command Handlers
+
+func (s *TelegramService) handleSupportTicketCommands(chatID int64, text string) bool {
+	// Check for support ticket action commands: /view_ticket_123, /respond_ticket_123, /close_ticket_123
+	if strings.HasPrefix(text, "/view_ticket_") && len(text) > 13 {
+		ticketIDStr := strings.TrimPrefix(text, "/view_ticket_")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.showSupportTicketDetails(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	if strings.HasPrefix(text, "/respond_ticket_") && len(text) > 16 {
+		ticketIDStr := strings.TrimPrefix(text, "/respond_ticket_")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.promptTicketResponse(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	if strings.HasPrefix(text, "/close_ticket_") && len(text) > 14 {
+		ticketIDStr := strings.TrimPrefix(text, "/close_ticket_")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.handleTicketClose(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	// Also handle the old format for backward compatibility
+	if strings.HasPrefix(text, "/viewticket") && len(text) > 11 {
+		ticketIDStr := strings.TrimPrefix(text, "/viewticket")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.showSupportTicketDetails(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	if strings.HasPrefix(text, "/respondticket") && len(text) > 13 {
+		ticketIDStr := strings.TrimPrefix(text, "/respondticket")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.promptTicketResponse(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	if strings.HasPrefix(text, "/closeticket") && len(text) > 12 {
+		ticketIDStr := strings.TrimPrefix(text, "/closeticket")
+		if ticketID, err := strconv.ParseUint(ticketIDStr, 10, 32); err == nil {
+			s.handleTicketClose(chatID, uint(ticketID))
+			return true
+		}
+	}
+
+	return false
+}
+
+func (s *TelegramService) showSupportTicketDetails(chatID int64, ticketID uint) {
+	var ticket models.SupportTicket
+	err := s.db.Preload("User").Preload("Messages").Where("id = ?", ticketID).First(&ticket).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تیکت یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	priorityIcon := s.getPriorityIcon(ticket.Priority)
+	categoryIcon := s.getCategoryIcon(ticket.Category)
+
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("🎫 **جزئیات تیکت #%d**\n\n", ticket.ID))
+	message.WriteString(fmt.Sprintf("📝 **عنوان:** %s\n", ticket.Title))
+	message.WriteString(fmt.Sprintf("👤 **کاربر:** %s %s\n", ticket.User.FirstName, ticket.User.LastName))
+	message.WriteString(fmt.Sprintf("📱 **تلفن:** %s\n", ticket.User.Phone))
+	message.WriteString(fmt.Sprintf("📧 **ایمیل:** %s\n", ticket.User.Email))
+	message.WriteString(fmt.Sprintf("🎯 **دسته:** %s %s\n", categoryIcon, s.getCategoryName(ticket.Category)))
+	message.WriteString(fmt.Sprintf("⚡ **اولویت:** %s %s\n", priorityIcon, s.getPriorityName(ticket.Priority)))
+	message.WriteString(fmt.Sprintf("📊 **وضعیت:** %s\n", s.getTicketStatusText(ticket.Status)))
+	message.WriteString(fmt.Sprintf("📅 **تاریخ ایجاد:** %s\n\n", ticket.CreatedAt.Format("2006/01/02 15:04")))
+
+	message.WriteString(fmt.Sprintf("📄 **توضیحات:**\n%s\n\n", ticket.Description))
+
+	if len(ticket.Messages) > 0 {
+		message.WriteString(fmt.Sprintf("💬 **پیام‌ها (%d):**\n", len(ticket.Messages)))
+		for i, msg := range ticket.Messages {
+			sender := "👤 کاربر"
+			if msg.IsAdmin {
+				sender = "🛡️ پشتیبانی"
+			}
+			message.WriteString(fmt.Sprintf("%d. %s - %s\n", i+1, sender, msg.CreatedAt.Format("2006/01/02 15:04")))
+			message.WriteString(fmt.Sprintf("   %s\n\n", msg.Message))
+		}
+	} else {
+		message.WriteString("💬 **پیام‌ها:** هیچ پیامی وجود ندارد\n\n")
+	}
+
+	// Action buttons based on status
+	var keyboard tgbotapi.ReplyKeyboardMarkup
+	if ticket.Status == "open" || ticket.Status == "in_progress" {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/respond_ticket_%d", ticket.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/close_ticket_%d", ticket.ID)),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	} else {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	}
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) promptTicketResponse(chatID int64, ticketID uint) {
+	var ticket models.SupportTicket
+	err := s.db.Where("id = ?", ticketID).First(&ticket).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تیکت یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	if ticket.Status == "closed" {
+		msg := tgbotapi.NewMessage(chatID, "❌ این تیکت بسته شده و امکان پاسخ وجود ندارد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Set session state to wait for response
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("ticket_response_%d", ticketID),
+		Data: map[string]interface{}{
+			"ticket_id": ticketID,
+		},
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("💬 **پاسخ به تیکت #%d**\n\nلطفاً پاسخ خود را بنویسید:", ticketID))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleTicketClose(chatID int64, ticketID uint) {
+	var ticket models.SupportTicket
+	err := s.db.Where("id = ?", ticketID).First(&ticket).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تیکت یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	if ticket.Status == "closed" {
+		msg := tgbotapi.NewMessage(chatID, "❌ این تیکت قبلاً بسته شده است")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update ticket status to closed
+	err = s.db.Model(&ticket).Update("status", "closed").Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در بستن تیکت")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Load user info for notification
+	var user models.User
+	s.db.Where("id = ?", ticket.UserID).First(&user)
+
+	successMsg := fmt.Sprintf("✅ **تیکت بسته شد**\n\n"+
+		"📋 شناسه تیکت: #%d\n"+
+		"👤 کاربر: %s %s (%s)\n"+
+		"📝 عنوان: %s\n\n"+
+		"🔒 وضعیت: بسته شده توسط ادمین",
+		ticket.ID, user.FirstName, user.LastName, user.Phone, ticket.Title)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Optionally, you could send a notification to the user here
+	// via Telegram if they have connected their Telegram account
+}
+
+func (s *TelegramService) handleTicketResponse(chatID int64, ticketID uint, responseText string) {
+	responseText = strings.TrimSpace(responseText)
+	if responseText == "" {
+		msg := tgbotapi.NewMessage(chatID, "❌ پاسخ نمی‌تواند خالی باشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Load ticket
+	var ticket models.SupportTicket
+	err := s.db.Preload("User").Where("id = ?", ticketID).First(&ticket).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تیکت یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	if ticket.Status == "closed" {
+		msg := tgbotapi.NewMessage(chatID, "❌ این تیکت بسته شده و امکان پاسخ وجود ندارد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Create admin message
+	ticketMessage := models.SupportTicketMessage{
+		TicketID: ticketID,
+		Message:  responseText,
+		IsAdmin:  true,
+		SenderID: nil, // Admin message, no user sender
+	}
+
+	err = s.db.Create(&ticketMessage).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در ارسال پاسخ")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update ticket status to in_progress
+	s.db.Model(&ticket).Update("status", "in_progress")
+
+	successMsg := fmt.Sprintf("✅ **پاسخ ارسال شد**\n\n"+
+		"📋 تیکت #%d\n"+
+		"👤 کاربر: %s %s\n"+
+		"📝 عنوان: %s\n\n"+
+		"💬 **پاسخ شما:**\n%s\n\n"+
+		"📊 وضعیت تیکت: در حال بررسی",
+		ticket.ID, ticket.User.FirstName, ticket.User.LastName, ticket.Title, responseText)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show main menu
+	s.showMainMenu(chatID)
 }
