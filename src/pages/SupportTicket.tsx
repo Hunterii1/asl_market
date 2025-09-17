@@ -288,35 +288,53 @@ const SupportTicket = () => {
 
   if (selectedTicket) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <HeaderAuth />
-        <div className="container mx-auto px-4 py-6 space-y-6 animate-fade-in">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedTicket(null)}
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              بازگشت
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">تیکت #{selectedTicket.id}</h1>
-              <p className="text-muted-foreground">{selectedTicket.title}</p>
+        
+        {/* Chat Header - Sticky */}
+        <div className="sticky top-[73px] z-40 bg-background/95 backdrop-blur-sm border-b border-border">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTicket(null)}
+                  className="flex items-center gap-2"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">بازگشت</span>
+                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    #{selectedTicket.id}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h1 className="text-lg font-bold text-foreground truncate">{selectedTicket.title}</h1>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Badge className={`${getStatusColor(selectedTicket.status)} text-xs px-2 py-0`}>
+                        {getStatusText(selectedTicket.status)}
+                      </Badge>
+                      <Badge className={`${getPriorityColor(selectedTicket.priority)} text-xs px-2 py-0`}>
+                        {getPriorityText(selectedTicket.priority)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {selectedTicket.status !== "closed" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseTicket}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <Lock className="w-4 h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">بستن</span>
+                </Button>
+              )}
             </div>
           </div>
-          {selectedTicket.status !== "closed" && (
-            <Button
-              variant="outline"
-              onClick={handleCloseTicket}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Lock className="w-4 h-4 mr-2" />
-              بستن تیکت
-            </Button>
-          )}
         </div>
 
         {/* Ticket Info */}
@@ -347,73 +365,131 @@ const SupportTicket = () => {
           </CardContent>
         </Card>
 
-        {/* Messages */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              مکالمه
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {selectedTicket.messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.is_admin ? 'justify-end' : 'justify-start'}`}
-                >
+        {/* Chat Messages - Flex grow to fill space */}
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto">
+            <div className="container mx-auto px-4 py-4">
+              {/* Messages */}
+              <div className="space-y-4">
+                {selectedTicket.messages.map((message, index) => (
                   <div
-                    className={`max-w-[70%] p-4 rounded-lg ${
-                      message.is_admin
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.is_admin ? 'justify-start' : 'justify-end'} animate-fade-in`}
+                    style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      {message.is_admin ? (
-                        <span className="text-xs font-medium">پشتیبانی</span>
-                      ) : (
-                        <span className="text-xs font-medium">
-                          {selectedTicket.user.first_name} {selectedTicket.user.last_name}
-                        </span>
+                    <div className={`flex items-start gap-3 max-w-[85%] sm:max-w-[70%]`}>
+                      {message.is_admin && (
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <MessageSquare className="w-4 h-4 text-white" />
+                        </div>
                       )}
-                      <span className="text-xs opacity-70">
-                        {formatDate(message.created_at)}
-                      </span>
+                      
+                      <div
+                        className={`relative p-4 rounded-2xl shadow-sm ${
+                          message.is_admin
+                            ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-tr-md'
+                            : 'bg-white dark:bg-gray-800 border border-border rounded-tl-md'
+                        }`}
+                      >
+                        {/* Message header */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`text-xs font-medium ${
+                            message.is_admin ? 'text-blue-100' : 'text-muted-foreground'
+                          }`}>
+                            {message.is_admin ? '🛡️ پشتیبانی اصل مارکت' : `👤 ${selectedTicket.user.first_name} ${selectedTicket.user.last_name}`}
+                          </span>
+                          <span className={`text-xs ${
+                            message.is_admin ? 'text-blue-200' : 'text-muted-foreground'
+                          }`}>
+                            {formatDate(message.created_at)}
+                          </span>
+                        </div>
+                        
+                        {/* Message content */}
+                        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                          message.is_admin ? 'text-white' : 'text-foreground'
+                        }`}>
+                          {message.message}
+                        </p>
+                        
+                        {/* Message tail */}
+                        <div className={`absolute bottom-0 ${
+                          message.is_admin 
+                            ? 'right-0 translate-x-2 border-l-8 border-l-transparent border-t-8 border-t-blue-500' 
+                            : 'left-0 -translate-x-2 border-r-8 border-r-transparent border-t-8 border-t-white dark:border-t-gray-800'
+                        }`}></div>
+                      </div>
+                      
+                      {!message.is_admin && (
+                        <div className="w-8 h-8 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center flex-shrink-0 text-white text-xs font-bold">
+                          {selectedTicket.user.first_name.charAt(0)}{selectedTicket.user.last_name.charAt(0)}
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
                   </div>
-                </div>
-              ))}
+                ))}
+                
+                {selectedTicket.messages.length === 0 && (
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">هنوز پیامی وجود ندارد</h3>
+                    <p className="text-muted-foreground">اولین پیام خود را ارسال کنید</p>
+                  </div>
+                )}
+              </div>
             </div>
-
-            {selectedTicket.status !== "closed" && (
-              <>
-                <Separator className="my-4" />
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="پیام خود را بنویسید..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    className="flex-1"
-                    rows={3}
-                  />
+          </div>
+          
+          {/* Message Input - Sticky bottom */}
+          {selectedTicket.status !== "closed" && (
+            <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t border-border">
+              <div className="container mx-auto px-4 py-4">
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1 relative">
+                    <Textarea
+                      placeholder="پیام خود را بنویسید..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      className="resize-none border-2 border-border rounded-2xl bg-background focus:border-blue-500 transition-colors pr-4 pl-12"
+                      rows={1}
+                      style={{ minHeight: '44px', maxHeight: '120px' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                    />
+                    <div className="absolute left-3 bottom-3 text-xs text-muted-foreground">
+                      Enter برای ارسال
+                    </div>
+                  </div>
                   <Button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim() || submitting}
-                    className="self-end"
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl w-12 h-12 p-0 shadow-lg"
                   >
                     {submitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Send className="w-4 h-4" />
+                      <Send className="w-5 h-5" />
                     )}
                   </Button>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+              </div>
+            </div>
+          )}
+          
+          {selectedTicket.status === "closed" && (
+            <div className="bg-gray-50 dark:bg-gray-900/50 border-t border-border">
+              <div className="container mx-auto px-4 py-6 text-center">
+                <Lock className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
+                <h3 className="text-lg font-semibold mb-2">تیکت بسته شده</h3>
+                <p className="text-muted-foreground">این تیکت بسته شده و امکان ارسال پیام جدید وجود ندارد</p>
+              </div>
+            </div>
+          )}
+        </div>
         </div>
       </div>
     );
@@ -462,14 +538,6 @@ const SupportTicket = () => {
                 >
                   <Plus className="w-5 h-5 mr-2" />
                   ایجاد تیکت جدید
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl px-6 py-4"
-                  onClick={() => {/* Add FAQ or help functionality */}}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  راهنما
                 </Button>
               </div>
             </div>
