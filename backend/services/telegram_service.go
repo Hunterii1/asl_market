@@ -4294,31 +4294,77 @@ func (s *TelegramService) showSupportTicketDetails(chatID int64, ticketID uint) 
 	message.WriteString(fmt.Sprintf("📄 **توضیحات:**\n%s\n\n", ticket.Description))
 
 	if len(ticket.Messages) > 0 {
-		message.WriteString(fmt.Sprintf("💬 **پیام‌ها (%d):**\n", len(ticket.Messages)))
-		for i, msg := range ticket.Messages {
-			sender := "👤 کاربر"
+		// Count admin and user messages
+		adminMsgCount := 0
+		userMsgCount := 0
+		for _, msg := range ticket.Messages {
 			if msg.IsAdmin {
-				sender = "🛡️ پشتیبانی"
+				adminMsgCount++
+			} else {
+				userMsgCount++
 			}
-			message.WriteString(fmt.Sprintf("%d. %s - %s\n", i+1, sender, msg.CreatedAt.Format("2006/01/02 15:04")))
-			message.WriteString(fmt.Sprintf("   %s\n\n", msg.Message))
+		}
+
+		message.WriteString(fmt.Sprintf("💬 **مکالمه (%d پیام):**\n", len(ticket.Messages)))
+		message.WriteString(fmt.Sprintf("   🛡️ پشتیبانی: %d پیام | 👤 کاربر: %d پیام\n\n", adminMsgCount, userMsgCount))
+
+		for i, msg := range ticket.Messages {
+			if msg.IsAdmin {
+				message.WriteString(fmt.Sprintf("🛡️ **پشتیبانی** - %s\n", msg.CreatedAt.Format("2006/01/02 15:04")))
+			} else {
+				message.WriteString(fmt.Sprintf("👤 **کاربر** - %s\n", msg.CreatedAt.Format("2006/01/02 15:04")))
+			}
+			message.WriteString(fmt.Sprintf("📝 %s\n\n", msg.Message))
+		}
+
+		// Show last message info
+		if len(ticket.Messages) > 0 {
+			lastMsg := ticket.Messages[len(ticket.Messages)-1]
+			lastSender := "👤 کاربر"
+			if lastMsg.IsAdmin {
+				lastSender = "🛡️ پشتیبانی"
+			}
+			message.WriteString(fmt.Sprintf("🕐 **آخرین پیام:** %s - %s\n\n", lastSender, lastMsg.CreatedAt.Format("2006/01/02 15:04")))
 		}
 	} else {
-		message.WriteString("💬 **پیام‌ها:** هیچ پیامی وجود ندارد\n\n")
+		message.WriteString("💬 **مکالمه:** هیچ پیامی وجود ندارد\n\n")
 	}
 
 	// Action buttons based on status
 	var keyboard tgbotapi.ReplyKeyboardMarkup
-	if ticket.Status == "open" || ticket.Status == "in_progress" {
-		keyboard = tgbotapi.NewReplyKeyboard(
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(fmt.Sprintf("/respond_ticket_%d", ticket.ID)),
-				tgbotapi.NewKeyboardButton(fmt.Sprintf("/close_ticket_%d", ticket.ID)),
-			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton(MENU_BACK),
-			),
-		)
+	if ticket.Status == "open" || ticket.Status == "in_progress" || ticket.Status == "waiting_response" {
+		// Check if there are any admin messages
+		hasAdminResponse := false
+		for _, msg := range ticket.Messages {
+			if msg.IsAdmin {
+				hasAdminResponse = true
+				break
+			}
+		}
+
+		// If no admin response yet, or status is not waiting_response, show respond button
+		if !hasAdminResponse || ticket.Status != "waiting_response" {
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/respond_ticket_%d", ticket.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/close_ticket_%d", ticket.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		} else {
+			// If admin has responded and waiting for user, show limited options
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/respond_ticket_%d", ticket.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/close_ticket_%d", ticket.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		}
 	} else {
 		keyboard = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
@@ -4444,8 +4490,8 @@ func (s *TelegramService) handleTicketResponse(chatID int64, ticketID uint, resp
 		return
 	}
 
-	// Update ticket status to in_progress
-	s.db.Model(&ticket).Update("status", "in_progress")
+	// Update ticket status to waiting_response (admin responded, waiting for user)
+	s.db.Model(&ticket).Update("status", "waiting_response")
 
 	successMsg := fmt.Sprintf("✅ **پاسخ ارسال شد**\n\n"+
 		"📋 تیکت #%d\n"+

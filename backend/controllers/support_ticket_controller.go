@@ -270,9 +270,19 @@ func (stc *SupportTicketController) AddMessage(c *gin.Context) {
 		return
 	}
 
-	// Update ticket status and timestamp
+	// Update ticket status and timestamp based on current status
+	var newStatus string
+	switch ticket.Status {
+	case "open":
+		newStatus = "open" // Keep as open for first user message
+	case "waiting_response":
+		newStatus = "in_progress" // User responded, now admin needs to respond
+	default:
+		newStatus = "in_progress" // Default to in_progress for user messages
+	}
+
 	db.Model(&ticket).Updates(map[string]interface{}{
-		"status":     "waiting_response",
+		"status":     newStatus,
 		"updated_at": db.NowFunc(),
 	})
 
