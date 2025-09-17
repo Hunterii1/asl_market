@@ -18,7 +18,8 @@ import {
   LogOut, 
   Settings, 
   Bell,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, type LicenseStatus } from "@/services/api";
@@ -151,6 +152,18 @@ const HeaderAuth = () => {
               </Badge>
             )}
             
+            {/* Support Ticket Button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
+              onClick={() => navigate('/support')}
+              title="پشتیبانی"
+            >
+              <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+              <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">پشتیبانی</span>
+            </Button>
+
             {/* Notifications - hidden on mobile when authenticated */}
             <Button variant="ghost" size="sm" className="relative hidden sm:flex">
               <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />

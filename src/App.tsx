@@ -32,6 +32,7 @@ import ApprovedVisitors from "./pages/ApprovedVisitors";
 import LicenseInfoPage from "./pages/LicenseInfoPage";
 
 import SubmitProduct from "./pages/SubmitProduct";
+import SupportTicket from "./pages/SupportTicket";
 
 
 const queryClient = new QueryClient();
@@ -151,6 +152,11 @@ const App = () => (
               <Route path="/license-info" element={
                 <ProtectedRoute>
                   <LicenseInfoPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/support" element={
+                <ProtectedRoute>
+                  <SupportTicket />
                 </ProtectedRoute>
               } />
               

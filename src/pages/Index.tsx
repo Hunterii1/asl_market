@@ -41,6 +41,7 @@ import AslPay from "./AslPay";
 import AslAI from "./AslAI";
 import AslAvailable from "./AslAvailable";
 import ProductsResearch from "./ProductsResearch";
+import SupportTicket from "./SupportTicket";
 import MarketingPopup from "@/components/MarketingPopup";
 
 const Index = () => {
@@ -65,11 +66,12 @@ const Index = () => {
     { id: "aslexpress", label: "ارسال", englishLabel: "ASL EXPRESS", icon: Truck },
     { id: "aslai", label: "هوش مصنوعی", englishLabel: "ASL AI", icon: Bot },
     { id: "aslavailable", label: "کالاهای موجود", englishLabel: "ASL AVAILABLE", icon: Package },
+    { id: "support", label: "پشتیبانی", englishLabel: "SUPPORT", icon: MessageSquare },
   ];
 
   const handleSectionClick = async (sectionId: string, sectionLabel: string) => {
     // Features that require authentication
-    const protectedFeatures = ["asllearn", "aslsupplier", "aslexpress", "aslvisit", "aslpay", "aslai", "aslavailable"];
+    const protectedFeatures = ["asllearn", "aslsupplier", "aslexpress", "aslvisit", "aslpay", "aslai", "aslavailable", "support"];
     
     if (protectedFeatures.includes(sectionId) && !isAuthenticated) {
       setSelectedFeature(sectionLabel);
@@ -126,6 +128,8 @@ const Index = () => {
         return isAuthenticated ? <AslAI /> : <DashboardSection />;
       case "aslavailable":
         return isAuthenticated ? <AslAvailable /> : <DashboardSection />;
+      case "support":
+        return isAuthenticated ? <SupportTicket /> : <DashboardSection />;
       default:
         return <DashboardSection />;
     }

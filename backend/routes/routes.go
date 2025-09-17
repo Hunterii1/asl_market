@@ -18,6 +18,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	withdrawalController := controllers.NewWithdrawalController(models.GetDB())
 	upgradeController := controllers.NewUpgradeController(telegramService)
 	spotPlayerController := controllers.NewSpotPlayerController()
+	supportTicketController := controllers.NewSupportTicketController()
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -192,6 +193,13 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// SpotPlayer routes
 		protected.POST("/spotplayer/generate-license", spotPlayerController.GenerateSpotPlayerLicense)
 		protected.GET("/spotplayer/license", spotPlayerController.GetSpotPlayerLicense)
+
+		// Support Ticket routes
+		protected.POST("/support/tickets", supportTicketController.CreateTicket)
+		protected.GET("/support/tickets", supportTicketController.GetUserTickets)
+		protected.GET("/support/tickets/:id", supportTicketController.GetTicket)
+		protected.POST("/support/tickets/:id/messages", supportTicketController.AddMessage)
+		protected.POST("/support/tickets/:id/close", supportTicketController.CloseTicket)
 
 		// License-protected routes
 		licensed := protected.Group("/")

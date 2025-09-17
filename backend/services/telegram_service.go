@@ -98,6 +98,15 @@ const (
 	MENU_ACTIVE_MARKETING_POPUPS = "✅ پاپ‌اپ‌های فعال"
 	MENU_MARKETING_POPUP_STATS   = "📊 آمار پاپ‌اپ‌ها"
 
+	// Support ticket management sub-menus
+	MENU_SUPPORT_TICKETS     = "🎫 مدیریت تیکت‌های پشتیبانی"
+	MENU_OPEN_TICKETS        = "📬 تیکت‌های باز"
+	MENU_IN_PROGRESS_TICKETS = "🔄 تیکت‌های در حال بررسی"
+	MENU_WAITING_TICKETS     = "⏳ منتظر پاسخ کاربر"
+	MENU_CLOSED_TICKETS      = "✅ تیکت‌های بسته شده"
+	MENU_ALL_TICKETS         = "📋 همه تیکت‌ها"
+	MENU_TICKET_STATS        = "📊 آمار تیکت‌ها"
+
 	// Available products management sub-menus
 	MENU_AVAILABLE_PRODUCTS       = "📦 مدیریت کالاهای موجود"
 	MENU_ADD_AVAILABLE_PRODUCT    = "➕ اضافه کردن کالا"
@@ -202,11 +211,113 @@ func (t *TelegramService) NotifyUpgradeResult(userID uint, approved bool, adminN
 	}
 }
 
+// Support Ticket Notifications
+func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, user *models.User) {
+	priorityEmoji := map[string]string{
+		"low":    "🟢",
+		"medium": "🟡",
+		"high":   "🟠",
+		"urgent": "🔴",
+	}
+
+	categoryEmoji := map[string]string{
+		"general":   "📝",
+		"technical": "🔧",
+		"billing":   "💰",
+		"license":   "🔑",
+		"other":     "❓",
+	}
+
+	message := fmt.Sprintf(
+		"🎫 **تیکت پشتیبانی جدید**\n\n"+
+			"📋 **شناسه تیکت:** #%d\n"+
+			"👤 **کاربر:** %s (%s)\n"+
+			"📧 **ایمیل:** %s\n"+
+			"📱 **موبایل:** %s\n\n"+
+			"📝 **عنوان:** %s\n"+
+			"📄 **توضیحات:** %s\n\n"+
+			"%s **اولویت:** %s\n"+
+			"%s **دسته‌بندی:** %s\n\n"+
+			"🔗 **لینک تیکت:** /ticket_%d\n\n"+
+			"💡 **اقدام لازم:** لطفاً به تیکت پاسخ دهید.",
+		ticket.ID,
+		user.Name(), user.Mobile(),
+		user.Email,
+		user.Phone,
+		ticket.Title,
+		truncateText(ticket.Description, 200),
+		priorityEmoji[ticket.Priority], strings.Title(ticket.Priority),
+		categoryEmoji[ticket.Category], strings.Title(ticket.Category),
+		ticket.ID,
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
+}
+
+func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user *models.User, message *models.SupportTicketMessage) {
+	messageEmoji := "💬"
+	if message.IsAdmin {
+		messageEmoji = "👨‍💼"
+	}
+
+	messageText := fmt.Sprintf(
+		"%s **پیام جدید در تیکت**\n\n"+
+			"📋 **شناسه تیکت:** #%d\n"+
+			"👤 **کاربر:** %s (%s)\n\n"+
+			"💬 **پیام:** %s\n\n"+
+			"🔗 **لینک تیکت:** /ticket_%d",
+		messageEmoji,
+		ticket.ID,
+		user.Name(), user.Mobile(),
+		truncateText(message.Message, 300),
+		ticket.ID,
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, messageText)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
+}
+
+func (t *TelegramService) NotifyTicketClosed(ticket *models.SupportTicket, user *models.User) {
+	message := fmt.Sprintf(
+		"🔒 **تیکت بسته شد**\n\n"+
+			"📋 **شناسه تیکت:** #%d\n"+
+			"👤 **کاربر:** %s (%s)\n"+
+			"📝 **عنوان:** %s\n\n"+
+			"✅ **وضعیت:** بسته شده توسط کاربر",
+		ticket.ID,
+		user.Name(), user.Mobile(),
+		ticket.Title,
+	)
+
+	// Send to all admins
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
+}
+
 func getDefaultIfEmpty(value, defaultValue string) string {
 	if strings.TrimSpace(value) == "" {
 		return defaultValue
 	}
 	return value
+}
+
+func truncateText(text string, maxLength int) string {
+	if len(text) <= maxLength {
+		return text
+	}
+	return text[:maxLength] + "..."
 }
 
 // Pagination structure for user management
@@ -313,6 +424,7 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_TRAINING),
+			tgbotapi.NewKeyboardButton(MENU_SUPPORT_TICKETS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
@@ -443,6 +555,20 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showActiveMarketingPopups(message.Chat.ID)
 	case MENU_MARKETING_POPUP_STATS:
 		s.showMarketingPopupsStats(message.Chat.ID)
+	case MENU_SUPPORT_TICKETS:
+		s.showSupportTicketsMenu(message.Chat.ID)
+	case MENU_OPEN_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "open")
+	case MENU_IN_PROGRESS_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "in_progress")
+	case MENU_WAITING_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "waiting_response")
+	case MENU_CLOSED_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "closed")
+	case MENU_ALL_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "all")
+	case MENU_TICKET_STATS:
+		s.showSupportTicketsStats(message.Chat.ID)
 	case MENU_AVAILABLE_PRODUCTS:
 		s.showAvailableProductsMenu(message.Chat.ID)
 	case MENU_ADD_AVAILABLE_PRODUCT:
@@ -725,6 +851,10 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_LICENSES),
 					tgbotapi.NewKeyboardButton(MENU_WITHDRAWALS),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_TRAINING),
+					tgbotapi.NewKeyboardButton(MENU_SUPPORT_TICKETS),
 				),
 				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_SUPPLIERS),
@@ -3801,4 +3931,267 @@ func (s *TelegramService) executeAvailableProductDelete(chatID int64, productID 
 	msg := tgbotapi.NewMessage(chatID, successMsg)
 	msg.ParseMode = "Markdown"
 	s.bot.Send(msg)
+}
+
+// Support Ticket Management Functions
+
+func (s *TelegramService) showSupportTicketsMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_OPEN_TICKETS),
+			tgbotapi.NewKeyboardButton(MENU_IN_PROGRESS_TICKETS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_WAITING_TICKETS),
+			tgbotapi.NewKeyboardButton(MENU_CLOSED_TICKETS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ALL_TICKETS),
+			tgbotapi.NewKeyboardButton(MENU_TICKET_STATS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID,
+		"🎫 **مدیریت تیکت‌های پشتیبانی**\n\n"+
+			"با استفاده از این بخش می‌توانید:\n\n"+
+			"📬 **تیکت‌های باز**: مشاهده تیکت‌های جدید\n"+
+			"🔄 **در حال بررسی**: تیکت‌هایی که در دست بررسی هستند\n"+
+			"⏳ **منتظر پاسخ**: تیکت‌هایی که منتظر پاسخ کاربر هستند\n"+
+			"✅ **بسته شده**: تیکت‌های حل شده\n"+
+			"📋 **همه تیکت‌ها**: مشاهده تمام تیکت‌ها\n"+
+			"📊 **آمار تیکت‌ها**: نمایش آمار کلی\n\n"+
+			"لطفا گزینه مورد نظر خود را انتخاب کنید:")
+
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
+	var tickets []models.SupportTicket
+	query := s.db.Preload("User").Preload("Messages")
+
+	// Apply status filter
+	switch status {
+	case "open":
+		query = query.Where("status = ?", "open")
+	case "in_progress":
+		query = query.Where("status = ?", "in_progress")
+	case "waiting_response":
+		query = query.Where("status = ?", "waiting_response")
+	case "closed":
+		query = query.Where("status = ?", "closed")
+	case "all":
+		// No filter, show all tickets
+	default:
+		query = query.Where("status = ?", "open")
+	}
+
+	query.Order("created_at DESC").Limit(10).Find(&tickets)
+
+	if len(tickets) == 0 {
+		statusText := s.getTicketStatusText(status)
+		msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ هیچ تیکت %s یافت نشد.", statusText))
+		s.bot.Send(msg)
+		return
+	}
+
+	var message strings.Builder
+	statusText := s.getTicketStatusText(status)
+	message.WriteString(fmt.Sprintf("🎫 **تیکت‌های %s** (نمایش ۱۰ تیکت اخیر)\n\n", statusText))
+
+	for i, ticket := range tickets {
+		priorityIcon := s.getPriorityIcon(ticket.Priority)
+		categoryIcon := s.getCategoryIcon(ticket.Category)
+
+		message.WriteString(fmt.Sprintf("%d. %s %s **%s**\n",
+			i+1, priorityIcon, categoryIcon, ticket.Title))
+		message.WriteString(fmt.Sprintf("   👤 کاربر: %s %s\n",
+			ticket.User.FirstName, ticket.User.LastName))
+		message.WriteString(fmt.Sprintf("   📱 تلفن: %s\n", ticket.User.Phone))
+		message.WriteString(fmt.Sprintf("   📅 تاریخ: %s\n",
+			ticket.CreatedAt.Format("2006/01/02 15:04")))
+		message.WriteString(fmt.Sprintf("   💬 پیام‌ها: %d\n", len(ticket.Messages)))
+		message.WriteString(fmt.Sprintf("   🎯 دسته: %s | اولویت: %s\n",
+			s.getCategoryName(ticket.Category), s.getPriorityName(ticket.Priority)))
+
+		// Add action buttons for open tickets
+		if ticket.Status == "open" {
+			message.WriteString(fmt.Sprintf("   🔗 دستورات: /view_ticket_%d /respond_ticket_%d /close_ticket_%d\n",
+				ticket.ID, ticket.ID, ticket.ID))
+		} else {
+			message.WriteString(fmt.Sprintf("   🔗 مشاهده: /view_ticket_%d\n", ticket.ID))
+		}
+		message.WriteString("\n")
+	}
+
+	// Create back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showSupportTicketsStats(chatID int64) {
+	var openTickets, inProgressTickets, waitingTickets, closedTickets, totalTickets int64
+
+	// Get ticket counts by status
+	s.db.Model(&models.SupportTicket{}).Where("status = ?", "open").Count(&openTickets)
+	s.db.Model(&models.SupportTicket{}).Where("status = ?", "in_progress").Count(&inProgressTickets)
+	s.db.Model(&models.SupportTicket{}).Where("status = ?", "waiting_response").Count(&waitingTickets)
+	s.db.Model(&models.SupportTicket{}).Where("status = ?", "closed").Count(&closedTickets)
+	s.db.Model(&models.SupportTicket{}).Count(&totalTickets)
+
+	// Get priority stats
+	var lowPriority, mediumPriority, highPriority, urgentPriority int64
+	s.db.Model(&models.SupportTicket{}).Where("priority = ? AND status != ?", "low", "closed").Count(&lowPriority)
+	s.db.Model(&models.SupportTicket{}).Where("priority = ? AND status != ?", "medium", "closed").Count(&mediumPriority)
+	s.db.Model(&models.SupportTicket{}).Where("priority = ? AND status != ?", "high", "closed").Count(&highPriority)
+	s.db.Model(&models.SupportTicket{}).Where("priority = ? AND status != ?", "urgent", "closed").Count(&urgentPriority)
+
+	// Get category stats
+	var technicalTickets, billingTickets, licenseTickets, generalTickets int64
+	s.db.Model(&models.SupportTicket{}).Where("category = ? AND status != ?", "technical", "closed").Count(&technicalTickets)
+	s.db.Model(&models.SupportTicket{}).Where("category = ? AND status != ?", "billing", "closed").Count(&billingTickets)
+	s.db.Model(&models.SupportTicket{}).Where("category = ? AND status != ?", "license", "closed").Count(&licenseTickets)
+	s.db.Model(&models.SupportTicket{}).Where("category = ? AND status != ?", "general", "closed").Count(&generalTickets)
+
+	// Get latest ticket
+	var latestTicket models.SupportTicket
+	s.db.Preload("User").Order("created_at DESC").First(&latestTicket)
+
+	message := fmt.Sprintf(
+		"📊 **آمار تیکت‌های پشتیبانی**\n\n"+
+			"📈 **آمار کلی:**\n"+
+			"🎫 کل تیکت‌ها: **%d**\n"+
+			"📬 باز: **%d**\n"+
+			"🔄 در حال بررسی: **%d**\n"+
+			"⏳ منتظر پاسخ: **%d**\n"+
+			"✅ بسته شده: **%d**\n\n"+
+			"🎯 **بر اساس اولویت (فعال):**\n"+
+			"🔴 فوری: **%d**\n"+
+			"🟠 بالا: **%d**\n"+
+			"🟡 متوسط: **%d**\n"+
+			"🟢 پایین: **%d**\n\n"+
+			"📂 **بر اساس دسته‌بندی (فعال):**\n"+
+			"🔧 فنی: **%d**\n"+
+			"💰 مالی: **%d**\n"+
+			"🔑 لایسنس: **%d**\n"+
+			"📝 عمومی: **%d**\n\n",
+		totalTickets, openTickets, inProgressTickets, waitingTickets, closedTickets,
+		urgentPriority, highPriority, mediumPriority, lowPriority,
+		technicalTickets, billingTickets, licenseTickets, generalTickets,
+	)
+
+	if latestTicket.ID > 0 {
+		message += fmt.Sprintf(
+			"🆕 **آخرین تیکت:**\n"+
+				"📝 عنوان: %s\n"+
+				"👤 کاربر: %s %s\n"+
+				"📅 تاریخ: %s\n",
+			latestTicket.Title,
+			latestTicket.User.FirstName, latestTicket.User.LastName,
+			latestTicket.CreatedAt.Format("2006/01/02 15:04"),
+		)
+	}
+
+	// Create back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// Helper functions for support tickets
+
+func (s *TelegramService) getTicketStatusText(status string) string {
+	switch status {
+	case "open":
+		return "باز"
+	case "in_progress":
+		return "در حال بررسی"
+	case "waiting_response":
+		return "منتظر پاسخ کاربر"
+	case "closed":
+		return "بسته شده"
+	case "all":
+		return "همه"
+	default:
+		return "باز"
+	}
+}
+
+func (s *TelegramService) getPriorityIcon(priority string) string {
+	switch priority {
+	case "urgent":
+		return "🔴"
+	case "high":
+		return "🟠"
+	case "medium":
+		return "🟡"
+	case "low":
+		return "🟢"
+	default:
+		return "🟡"
+	}
+}
+
+func (s *TelegramService) getPriorityName(priority string) string {
+	switch priority {
+	case "urgent":
+		return "فوری"
+	case "high":
+		return "بالا"
+	case "medium":
+		return "متوسط"
+	case "low":
+		return "پایین"
+	default:
+		return "متوسط"
+	}
+}
+
+func (s *TelegramService) getCategoryIcon(category string) string {
+	switch category {
+	case "technical":
+		return "🔧"
+	case "billing":
+		return "💰"
+	case "license":
+		return "🔑"
+	case "general":
+		return "📝"
+	default:
+		return "📝"
+	}
+}
+
+func (s *TelegramService) getCategoryName(category string) string {
+	switch category {
+	case "technical":
+		return "فنی"
+	case "billing":
+		return "مالی"
+	case "license":
+		return "لایسنس"
+	case "general":
+		return "عمومی"
+	default:
+		return "عمومی"
+	}
 }

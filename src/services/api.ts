@@ -1106,6 +1106,68 @@ class ApiService {
       },
     });
   }
+
+  // Support Ticket API methods
+  async createSupportTicket(data: {
+    title: string;
+    description: string;
+    priority: string;
+    category: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/support/tickets`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSupportTickets(params: {
+    page?: number;
+    per_page?: number;
+    status?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.status) queryParams.append('status', params.status);
+
+    return this.makeRequest(`${API_BASE_URL}/support/tickets?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getSupportTicket(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/support/tickets/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async addTicketMessage(id: number, data: { message: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/support/tickets/${id}/messages`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async closeSupportTicket(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/support/tickets/${id}/close`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();
