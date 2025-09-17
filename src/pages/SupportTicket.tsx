@@ -97,7 +97,7 @@ const SupportTicket = () => {
       });
       
       if (response.success) {
-        setTickets(response.data.tickets);
+        setTickets(response.data.tickets || []);
         setTotalPages(response.data.pagination.total_pages);
       }
     } catch (error) {
@@ -616,7 +616,7 @@ const SupportTicket = () => {
                         {formatDate(ticket.created_at)}
                       </span>
                       <span>{getCategoryText(ticket.category)}</span>
-                      <span>{ticket.messages.length} پیام</span>
+                      <span>{ticket.messages?.length || 0} پیام</span>
                     </div>
                   </div>
                   <Eye className="w-5 h-5 text-muted-foreground" />

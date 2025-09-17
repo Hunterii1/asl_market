@@ -143,7 +143,7 @@ func (stc *SupportTicketController) GetUserTickets(c *gin.Context) {
 		return
 	}
 
-	var responseTickets []models.TicketResponse
+	responseTickets := make([]models.TicketResponse, 0)
 	for _, ticket := range tickets {
 		responseTickets = append(responseTickets, stc.formatTicketResponse(&ticket))
 	}
