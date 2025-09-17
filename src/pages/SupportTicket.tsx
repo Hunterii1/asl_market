@@ -423,40 +423,78 @@ const SupportTicket = () => {
     <div className="min-h-screen">
       <HeaderAuth />
       <div className="container mx-auto px-4 py-6 space-y-6 animate-fade-in">
-        {/* Header */}
-        <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-blue-200/40 dark:bg-blue-500/20 rounded-3xl flex items-center justify-center">
-                <MessageSquare className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+        {/* Welcome Header */}
+        <Card className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-blue-100/50 to-indigo-100/30 dark:from-blue-950/50 dark:via-blue-900/30 dark:to-indigo-950/20 border-blue-200/50 dark:border-blue-800/30 rounded-3xl">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          <CardContent className="relative p-8">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+              <div className="flex items-center gap-6">
+                <div className="relative">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl flex items-center justify-center shadow-lg">
+                    <MessageSquare className="w-10 h-10 text-white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-900 to-indigo-800 dark:from-blue-100 dark:to-indigo-200 bg-clip-text text-transparent">
+                    مرکز پشتیبانی اصل مارکت
+                  </h1>
+                  <p className="text-blue-700 dark:text-blue-300 text-lg">
+                    تیم پشتیبانی ما ۲۴/۷ آماده کمک به شماست
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-blue-600 dark:text-blue-400">
+                    <span className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      آنلاین
+                    </span>
+                    <span>پاسخگویی سریع</span>
+                    <span>پشتیبانی تخصصی</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">پشتیبانی</h2>
-                <p className="text-blue-600 dark:text-blue-300">تیکت‌های پشتیبانی و ارتباط با تیم فنی</p>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  onClick={() => setShowCreateForm(true)}
+                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-2xl px-8 py-4 shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] font-semibold"
+                >
+                  <Plus className="w-5 h-5 mr-2" />
+                  ایجاد تیکت جدید
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-2xl px-6 py-4"
+                  onClick={() => {/* Add FAQ or help functionality */}}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  راهنما
+                </Button>
               </div>
             </div>
-            <Button
-              onClick={() => setShowCreateForm(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              تیکت جدید
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
       {/* Create Ticket Form */}
       {showCreateForm && (
-        <Card>
-          <CardHeader>
+        <Card className="border-2 border-blue-200/50 dark:border-blue-800/50 bg-gradient-to-br from-blue-50/30 to-blue-100/30 dark:from-blue-900/10 dark:to-blue-800/10">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>ایجاد تیکت جدید</CardTitle>
+              <CardTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">ایجاد تیکت جدید</h2>
+                  <p className="text-sm text-muted-foreground font-normal">مشکل یا سوال خود را با ما در میان بگذارید</p>
+                </div>
+              </CardTitle>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowCreateForm(false)}
+                className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 rounded-xl"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -587,17 +625,38 @@ const SupportTicket = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : tickets.length === 0 ? (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <MessageSquare className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">تیکتی یافت نشد</h3>
-            <p className="text-muted-foreground mb-4">
-              هنوز هیچ تیکت پشتیبانی ایجاد نکرده‌اید
+        <Card className="border-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-900/10">
+          <CardContent className="p-12 text-center">
+            <div className="relative mb-6">
+              <div className="w-24 h-24 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/50 dark:to-blue-800/50 rounded-3xl flex items-center justify-center">
+                <MessageSquare className="w-12 h-12 text-blue-500 dark:text-blue-400" />
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <Plus className="w-4 h-4 text-white" />
+              </div>
+            </div>
+            <h3 className="text-2xl font-bold text-blue-900 dark:text-blue-100 mb-3">
+              هنوز تیکتی ندارید
+            </h3>
+            <p className="text-blue-700 dark:text-blue-300 mb-6 max-w-md mx-auto leading-relaxed">
+              اولین تیکت پشتیبانی خود را ایجاد کنید و از خدمات پشتیبانی ۲۴/۷ ما بهره‌مند شوید
             </p>
-            <Button onClick={() => setShowCreateForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              اولین تیکت را ایجاد کنید
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={() => setShowCreateForm(true)}
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02]"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                ایجاد اولین تیکت
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-6 py-3 rounded-2xl"
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                مشاهده راهنما
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
