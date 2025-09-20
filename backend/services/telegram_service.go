@@ -18,6 +18,9 @@ import (
 // Define admin IDs as a slice
 var ADMIN_IDS = []int64{76599340, 276043481, 110435852}
 
+// Define support-only admin ID (limited access to support tickets only)
+var SUPPORT_ADMIN_ID = int64(8095823308)
+
 const ASL_PLATFORM_LICENSE = "ASL-PLATFORM-2024"
 
 // Helper function to check if a user is admin
@@ -28,6 +31,16 @@ func isAdmin(userID int64) bool {
 		}
 	}
 	return false
+}
+
+// Helper function to check if a user is support admin (limited access)
+func isSupportAdmin(userID int64) bool {
+	return userID == SUPPORT_ADMIN_ID
+}
+
+// Helper function to check if a user has any admin access (full or support)
+func hasAdminAccess(userID int64) bool {
+	return isAdmin(userID) || isSupportAdmin(userID)
 }
 
 // Menu constants
@@ -257,6 +270,11 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 		msg.ParseMode = "Markdown"
 		t.bot.Send(msg)
 	}
+
+	// Also send to support admin
+	msg := tgbotapi.NewMessage(SUPPORT_ADMIN_ID, message)
+	msg.ParseMode = "Markdown"
+	t.bot.Send(msg)
 }
 
 func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user *models.User, message *models.SupportTicketMessage) {
@@ -289,6 +307,11 @@ func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user
 		msg.ParseMode = "Markdown"
 		t.bot.Send(msg)
 	}
+
+	// Also send to support admin
+	msg := tgbotapi.NewMessage(SUPPORT_ADMIN_ID, messageText)
+	msg.ParseMode = "Markdown"
+	t.bot.Send(msg)
 }
 
 func (t *TelegramService) NotifyNewTicket(ticket *models.SupportTicket, user *models.User) {
@@ -408,7 +431,7 @@ func (s *TelegramService) startBot() {
 	for update := range updates {
 		// Handle callback queries (button clicks)
 		if update.CallbackQuery != nil {
-			if !isAdmin(update.CallbackQuery.From.ID) {
+			if !hasAdminAccess(update.CallbackQuery.From.ID) {
 				callback := tgbotapi.NewCallback(update.CallbackQuery.ID, "شما دسترسی به این بات را ندارید.")
 				s.bot.Request(callback)
 				continue
@@ -422,8 +445,8 @@ func (s *TelegramService) startBot() {
 			continue
 		}
 
-		// Only process messages from admins
-		if !isAdmin(update.Message.From.ID) {
+		// Only process messages from admins (full or support)
+		if !hasAdminAccess(update.Message.From.ID) {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "شما دسترسی به این بات را ندارید.")
 			s.bot.Send(msg)
 			continue
@@ -447,6 +470,13 @@ func (s *TelegramService) startBot() {
 }
 
 func (s *TelegramService) showMainMenu(chatID int64) {
+	// Check if user is support admin (limited access)
+	if isSupportAdmin(chatID) {
+		s.showSupportAdminMenu(chatID)
+		return
+	}
+
+	// Full admin menu
 	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_USERS),
@@ -490,7 +520,82 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 	s.bot.Send(msg)
 }
 
+// Support admin menu (limited access - only support tickets)
+func (s *TelegramService) showSupportAdminMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SUPPORT_TICKETS),
+		),
+	)
+	keyboard.ResizeKeyboard = true
+
+	msg := tgbotapi.NewMessage(chatID, "🎫 **پنل مدیریت تیکت‌های پشتیبانی**\n\n"+
+		"خوش آمدید! شما به عنوان ادمین پشتیبانی دسترسی محدود به مدیریت تیکت‌های پشتیبانی دارید.\n\n"+
+		"✅ **دسترسی‌های شما:**\n"+
+		"🎫 مشاهده و مدیریت تیکت‌های پشتیبانی\n"+
+		"💬 پاسخ‌دهی به تیکت‌ها\n"+
+		"📊 آمار تیکت‌ها\n\n"+
+		"لطفاً گزینه مورد نظر خود را انتخاب کنید:")
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// Handle messages for support admin (limited access)
+func (s *TelegramService) handleSupportAdminMessage(message *tgbotapi.Message) {
+	switch message.Text {
+	case MENU_SUPPORT_TICKETS:
+		s.showSupportTicketsMenu(message.Chat.ID)
+	case MENU_OPEN_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "open")
+	case MENU_IN_PROGRESS_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "in_progress")
+	case MENU_WAITING_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "waiting_response")
+	case MENU_CLOSED_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "closed")
+	case MENU_ALL_TICKETS:
+		s.showSupportTicketsList(message.Chat.ID, "all")
+	case MENU_TICKET_STATS:
+		s.showSupportTicketsStats(message.Chat.ID)
+	case MENU_BACK:
+		s.showSupportAdminMenu(message.Chat.ID)
+	default:
+		// Check for support ticket command patterns
+		if s.handleSupportTicketCommands(message.Chat.ID, message.Text) {
+			return
+		}
+
+		// Check if waiting for input
+		sessionMutex.Lock()
+		sessionState, exists := sessionStates[message.Chat.ID]
+		sessionMutex.Unlock()
+
+		if exists && sessionState.WaitingForInput != "" {
+			if strings.HasPrefix(sessionState.WaitingForInput, "ticket_response_") {
+				ticketID := sessionState.Data["ticket_id"].(uint)
+				s.handleTicketResponse(message.Chat.ID, ticketID, message.Text)
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+				return
+			}
+		}
+
+		// Unknown command for support admin
+		msg := tgbotapi.NewMessage(message.Chat.ID, "❌ دستور نامعتبر. لطفاً از منوی پشتیبانی استفاده کنید.")
+		s.bot.Send(msg)
+	}
+}
+
 func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
+	// Check if user is support admin and restrict access
+	if isSupportAdmin(message.Chat.ID) {
+		s.handleSupportAdminMessage(message)
+		return
+	}
+
 	switch message.Text {
 	case MENU_USERS:
 		s.showUserManagementMenu(message.Chat.ID)
