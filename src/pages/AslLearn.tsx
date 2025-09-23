@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import {
   BookOpen,
   Play,
@@ -35,13 +36,27 @@ const AslLearn = () => {
   const [spotPlayerLicense, setSpotPlayerLicense] = useState<any>(null);
   const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
   const [isLoadingLicense, setIsLoadingLicense] = useState(true);
+  const [licenseInfo, setLicenseInfo] = useState<any>(null);
   const { toast } = useToast();
+  const { licenseStatus } = useAuth();
 
-  // Load SpotPlayer license on component mount
+  // Load license information and SpotPlayer license on component mount
   useEffect(() => {
-    const loadSpotPlayerLicense = async () => {
+    const loadData = async () => {
       try {
         setIsLoadingLicense(true);
+        
+        // Load license information
+        if (licenseStatus?.is_approved) {
+          try {
+            const licenseResponse = await apiService.getLicenseInfo();
+            setLicenseInfo(licenseResponse);
+          } catch (error) {
+            console.error('Error loading license info:', error);
+          }
+        }
+        
+        // Load SpotPlayer license
         const response = await apiService.getSpotPlayerLicense();
         if (response.success) {
           setSpotPlayerLicense(response.data);
@@ -54,8 +69,8 @@ const AslLearn = () => {
       }
     };
 
-    loadSpotPlayerLicense();
-  }, []);
+    loadData();
+  }, [licenseStatus]);
 
   const handleGenerateLicense = async () => {
     try {
@@ -109,6 +124,9 @@ const AslLearn = () => {
       return 'نامشخص';
     }
   };
+
+  // Check if user has plus4 license
+  const isPlus4License = licenseInfo?.type === 'plus4';
 
   return (
     <LicenseGate>
@@ -417,6 +435,29 @@ const AslLearn = () => {
                     <li>از لینک دانلود برای دریافت فایل استفاده کنید</li>
                     <li>حالا می‌توانید به محتوای آموزشی دسترسی داشته باشید</li>
                   </ol>
+                </div>
+              </div>
+            ) : isPlus4License ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertTriangle className="w-8 h-8 text-orange-500 dark:text-orange-400" />
+                </div>
+                <h4 className="text-lg font-semibold text-foreground mb-2">لایسنس SpotPlayer</h4>
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 mb-6 border border-orange-200 dark:border-orange-800">
+                  <p className="text-orange-800 dark:text-orange-200 mb-3">
+                    کاربران با لایسنس 4 ماهه نمی‌توانند لایسنس SpotPlayer جدید درخواست کنند
+                  </p>
+                  <p className="text-orange-700 dark:text-orange-300 text-sm">
+                    لطفاً از لایسنس SpotPlayer قبلی که برای شما ارسال شده است استفاده کنید
+                  </p>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                  <h5 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">راهنمای دسترسی:</h5>
+                  <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 text-right">
+                    <li>• لایسنس SpotPlayer قبلی خود را از پیام‌های تلگرام دریافت کنید</li>
+                    <li>• در صورت عدم دسترسی، با پشتیبانی تماس بگیرید</li>
+                    <li>• آی دی پشتیبانی: <span className="font-mono font-bold">incoming_center</span></li>
+                  </ul>
                 </div>
               </div>
             ) : (

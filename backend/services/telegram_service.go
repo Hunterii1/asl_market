@@ -3044,6 +3044,9 @@ func (s *TelegramService) handleGenerateLicenses(chatID int64, count int, licens
 	if licenseType == "pro" {
 		licenseTypeName = "پرو"
 		duration = "30 ماه"
+	} else if licenseType == "plus4" {
+		licenseTypeName = "پلاس 4 ماهه"
+		duration = "4 ماه"
 	}
 
 	successMsg := fmt.Sprintf("✅ **%d لایسنس %s (%s) با موفقیت تولید شد!**\n\n", count, licenseTypeName, duration)

@@ -11,6 +11,9 @@ func (s *TelegramService) showLicenseTypeSelection(chatID int64) {
 			tgbotapi.NewInlineKeyboardButtonData("🔑 پلاس (12 ماه)", "license_type_plus"),
 			tgbotapi.NewInlineKeyboardButtonData("💎 پرو (30 ماه)", "license_type_pro"),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("⭐ پلاس 4 ماهه", "license_type_plus4"),
+		),
 	)
 
 	message := "🔑 **انتخاب نوع لایسنس**\n\n" +
@@ -21,6 +24,10 @@ func (s *TelegramService) showLicenseTypeSelection(chatID int64) {
 		"🔸 **پرو (Pro)**: مدت زمان 30 ماه\n" +
 		"   • مشاهده ویزیتور: 3 نفر در روز\n" +
 		"   • مشاهده تأمین‌کننده: 6 نفر در روز\n\n" +
+		"🔸 **پلاس 4 ماهه**: مدت زمان 4 ماه\n" +
+		"   • مشاهده ویزیتور: 3 نفر در روز\n" +
+		"   • مشاهده تأمین‌کننده: 3 نفر در روز\n" +
+		"   • عدم امکان درخواست لایسنس SpotPlayer جدید\n\n" +
 		"لطفا نوع لایسنس مورد نظر را انتخاب کنید:"
 
 	msg := tgbotapi.NewMessage(chatID, message)
@@ -45,6 +52,8 @@ func (s *TelegramService) handleLicenseTypeSelection(chatID int64, licenseType s
 	licenseTypeName := "پلاس (12 ماه)"
 	if licenseType == "pro" {
 		licenseTypeName = "پرو (30 ماه)"
+	} else if licenseType == "plus4" {
+		licenseTypeName = "پلاس 4 ماهه"
 	}
 
 	message := "➕ **تولید لایسنس " + licenseTypeName + "**\n\n" +

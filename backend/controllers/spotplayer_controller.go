@@ -36,6 +36,16 @@ func (sc *SpotPlayerController) GenerateSpotPlayerLicense(c *gin.Context) {
 		return
 	}
 
+	// Check if user has plus4 license (which blocks SpotPlayer generation)
+	license, err := models.GetUserLicense(models.GetDB(), userID)
+	if err == nil && license.Type == "plus4" {
+		c.JSON(http.StatusForbidden, gin.H{
+			"success": false,
+			"message": "کاربران با لایسنس 4 ماهه نمی‌توانند لایسنس SpotPlayer جدید درخواست کنند. لطفاً از لایسنس SpotPlayer قبلی که برای شما ارسال شده است استفاده کنید.",
+		})
+		return
+	}
+
 	// Check if user already has a SpotPlayer license
 	var existingLicense models.SpotPlayerLicense
 	result := models.GetDB().Where("user_id = ?", userID).First(&existingLicense)

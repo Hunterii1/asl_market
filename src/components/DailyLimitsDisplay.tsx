@@ -97,6 +97,9 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
     if (type === 'pro') {
       return <Badge className="bg-gradient-to-r from-purple-500 to-blue-500">💎 پرو</Badge>;
     }
+    if (type === 'plus4') {
+      return <Badge className="bg-gradient-to-r from-orange-500 to-yellow-500">⭐ پلاس 4 ماهه</Badge>;
+    }
     return <Badge variant="secondary">🔑 پلاس</Badge>;
   };
 

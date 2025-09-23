@@ -13,7 +13,7 @@ import (
 type License struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
 	Code        string         `json:"code" gorm:"uniqueIndex;size:32;not null"`
-	Type        string         `json:"type" gorm:"size:10;not null;default:'plus'"` // 'pro' or 'plus'
+	Type        string         `json:"type" gorm:"size:10;not null;default:'plus'"` // 'pro', 'plus', or 'plus4'
 	Duration    int            `json:"duration" gorm:"not null;default:12"`         // Duration in months
 	IsUsed      bool           `json:"is_used" gorm:"default:false"`
 	UsedBy      *uint          `json:"used_by" gorm:"index"`
@@ -45,7 +45,7 @@ type LicenseVerifyResponse struct {
 // LicenseGenerateRequest represents the request to generate licenses
 type LicenseGenerateRequest struct {
 	Count int    `json:"count" binding:"required,min=1,max=100"`
-	Type  string `json:"type" binding:"required,oneof=pro plus"`
+	Type  string `json:"type" binding:"required,oneof=pro plus plus4"`
 }
 
 // LicenseGenerateResponse represents the response after generating licenses
@@ -124,6 +124,8 @@ func GenerateLicenses(db *gorm.DB, count int, licenseType string, adminID uint) 
 		duration := 12 // default for plus
 		if licenseType == "pro" {
 			duration = 30
+		} else if licenseType == "plus4" {
+			duration = 4
 		}
 
 		license := License{

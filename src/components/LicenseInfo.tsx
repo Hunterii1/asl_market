@@ -229,6 +229,7 @@ export function LicenseInfo() {
   };
 
   const canUpgrade = licenseInfo?.type === 'plus' && !upgradeRequests.some((req: any) => req.status === 'pending');
+  const isPlus4License = licenseInfo?.type === 'plus4';
 
   return (
     <Card>
@@ -270,7 +271,10 @@ export function LicenseInfo() {
               <div>
                 <p className="text-sm font-medium">نوع لایسنس</p>
                 <Badge variant={licenseInfo.type === 'pro' ? 'default' : 'secondary'} className="mt-1">
-                  {licenseInfo.type === 'pro' ? '💎 پرو' : '🔑 پلاس'} ({licenseInfo.type === 'pro' ? 30 : 12} ماه)
+                  {licenseInfo.type === 'pro' ? '💎 پرو' : 
+                   licenseInfo.type === 'plus4' ? '⭐ پلاس 4 ماهه' : '🔑 پلاس'} 
+                  ({licenseInfo.type === 'pro' ? 30 : 
+                    licenseInfo.type === 'plus4' ? 4 : 12} ماه)
                 </Badge>
               </div>
             </div>
@@ -403,6 +407,26 @@ export function LicenseInfo() {
                   </AlertDescription>
                 </Alert>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Plus4 License Special Message */}
+        {isPlus4License && (
+          <Card className="border-dashed border-orange-300 bg-orange-50/50 dark:bg-orange-950/20">
+            <CardContent className="pt-4">
+              <div className="flex items-center gap-3 mb-3">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <div>
+                  <h4 className="font-medium text-orange-900 dark:text-orange-100">لایسنس SpotPlayer</h4>
+                  <p className="text-xs text-orange-700 dark:text-orange-300">
+                    کاربران با لایسنس 4 ماهه نمی‌توانند لایسنس SpotPlayer جدید درخواست کنند
+                  </p>
+                  <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+                    لطفاً از لایسنس SpotPlayer قبلی که برای شما ارسال شده است استفاده کنید
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
