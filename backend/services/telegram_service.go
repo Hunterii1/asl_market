@@ -770,6 +770,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
 	case "🔙 بازگشت به منو اصلی":
 		s.showMainMenu(message.Chat.ID)
+	case "🔙 بازگشت به منو نوتیفیکیشن‌ها":
+		s.showNotificationMenu(message.Chat.ID)
 	default:
 		// Check session state for input handling
 		sessionMutex.RLock()
@@ -4940,8 +4942,17 @@ func (s *TelegramService) showNotificationHistory(chatID int64) {
 		msg := tgbotapi.NewMessage(chatID, "📋 **تاریخچه نوتیفیکیشن‌ها**\n\n"+
 			"هیچ نوتیفیکیشنی ارسال نشده است.")
 		msg.ParseMode = "Markdown"
+
+		// Add back button
+		keyboard := tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("🔙 بازگشت به منو نوتیفیکیشن‌ها"),
+			),
+		)
+		keyboard.ResizeKeyboard = true
+		msg.ReplyMarkup = keyboard
+
 		s.bot.Send(msg)
-		s.showNotificationMenu(chatID)
 		return
 	}
 
@@ -4995,10 +5006,17 @@ func (s *TelegramService) showNotificationHistory(chatID int64) {
 
 	msg := tgbotapi.NewMessage(chatID, message.String())
 	msg.ParseMode = "Markdown"
-	s.bot.Send(msg)
 
-	// Show notification menu again
-	s.showNotificationMenu(chatID)
+	// Add back button
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("🔙 بازگشت به منو نوتیفیکیشن‌ها"),
+		),
+	)
+	keyboard.ResizeKeyboard = true
+	msg.ReplyMarkup = keyboard
+
+	s.bot.Send(msg)
 }
 
 // handleNotificationCallback handles notification-related callback queries
