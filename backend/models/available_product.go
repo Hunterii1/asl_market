@@ -465,3 +465,149 @@ func GetHotDealsAvailableProducts(db *gorm.DB, limit int) ([]AvailableProduct, e
 		Find(&products).Error
 	return products, err
 }
+
+// GetUserAvailableProducts retrieves products added by a specific user
+func GetUserAvailableProducts(db *gorm.DB, userID uint, page, perPage int) ([]AvailableProduct, int64, error) {
+	var products []AvailableProduct
+	var total int64
+
+	query := db.Model(&AvailableProduct{}).Where("added_by_id = ?", userID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&products).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return products, total, nil
+}
+
+// GetUserAvailableProduct retrieves a single product by ID and user ID
+func GetUserAvailableProduct(db *gorm.DB, productID, userID uint) (*AvailableProduct, error) {
+	var product AvailableProduct
+	err := db.Where("id = ? AND added_by_id = ?", productID, userID).First(&product).Error
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+// UpdateUserAvailableProduct updates a product by user ID
+func UpdateUserAvailableProduct(db *gorm.DB, productID, userID uint, req UpdateAvailableProductRequest) (*AvailableProduct, error) {
+	var product AvailableProduct
+	if err := db.Where("id = ? AND added_by_id = ?", productID, userID).First(&product).Error; err != nil {
+		return nil, err
+	}
+
+	// Update fields if provided
+	updates := map[string]interface{}{}
+	if req.ProductName != "" {
+		updates["product_name"] = req.ProductName
+	}
+	if req.Category != "" {
+		updates["category"] = req.Category
+	}
+	if req.Subcategory != "" {
+		updates["subcategory"] = req.Subcategory
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
+	}
+	if req.WholesalePrice != "" {
+		updates["wholesale_price"] = req.WholesalePrice
+	}
+	if req.RetailPrice != "" {
+		updates["retail_price"] = req.RetailPrice
+	}
+	if req.ExportPrice != "" {
+		updates["export_price"] = req.ExportPrice
+	}
+	if req.Currency != "" {
+		updates["currency"] = req.Currency
+	}
+	if req.AvailableQuantity >= 0 {
+		updates["available_quantity"] = req.AvailableQuantity
+	}
+	if req.MinOrderQuantity > 0 {
+		updates["min_order_quantity"] = req.MinOrderQuantity
+	}
+	if req.MaxOrderQuantity > 0 {
+		updates["max_order_quantity"] = req.MaxOrderQuantity
+	}
+	if req.Unit != "" {
+		updates["unit"] = req.Unit
+	}
+	if req.Brand != "" {
+		updates["brand"] = req.Brand
+	}
+	if req.Model != "" {
+		updates["model"] = req.Model
+	}
+	if req.Origin != "" {
+		updates["origin"] = req.Origin
+	}
+	if req.Quality != "" {
+		updates["quality"] = req.Quality
+	}
+	if req.PackagingType != "" {
+		updates["packaging_type"] = req.PackagingType
+	}
+	if req.Weight != "" {
+		updates["weight"] = req.Weight
+	}
+	if req.Dimensions != "" {
+		updates["dimensions"] = req.Dimensions
+	}
+	if req.ShippingCost != "" {
+		updates["shipping_cost"] = req.ShippingCost
+	}
+	if req.Location != "" {
+		updates["location"] = req.Location
+	}
+	if req.ContactPhone != "" {
+		updates["contact_phone"] = req.ContactPhone
+	}
+	if req.ContactEmail != "" {
+		updates["contact_email"] = req.ContactEmail
+	}
+	if req.ContactWhatsapp != "" {
+		updates["contact_whatsapp"] = req.ContactWhatsapp
+	}
+	updates["can_export"] = req.CanExport
+	updates["requires_license"] = req.RequiresLicense
+	if req.LicenseType != "" {
+		updates["license_type"] = req.LicenseType
+	}
+	if req.ExportCountries != "" {
+		updates["export_countries"] = req.ExportCountries
+	}
+	if req.ImageURLs != "" {
+		updates["image_urls"] = req.ImageURLs
+	}
+	if req.VideoURL != "" {
+		updates["video_url"] = req.VideoURL
+	}
+	if req.CatalogURL != "" {
+		updates["catalog_url"] = req.CatalogURL
+	}
+	if req.Tags != "" {
+		updates["tags"] = req.Tags
+	}
+	if req.Notes != "" {
+		updates["notes"] = req.Notes
+	}
+
+	if err := db.Model(&product).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+
+	return &product, nil
+}
+
+// DeleteUserAvailableProduct deletes a product by user ID
+func DeleteUserAvailableProduct(db *gorm.DB, productID, userID uint) error {
+	return db.Where("id = ? AND added_by_id = ?", productID, userID).Delete(&AvailableProduct{}).Error
+}

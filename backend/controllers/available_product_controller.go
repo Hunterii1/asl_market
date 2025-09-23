@@ -284,6 +284,233 @@ func DeleteAvailableProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
 }
 
+// GetUserAvailableProducts retrieves products added by the current user
+func GetUserAvailableProducts(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+	user := c.MustGet("user").(models.User)
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+
+	products, total, err := models.GetUserAvailableProducts(db, user.ID, page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve user products"})
+		return
+	}
+
+	// Convert to response format
+	var responseProducts []models.AvailableProductResponse
+	for _, product := range products {
+		response := models.AvailableProductResponse{
+			ID:                product.ID,
+			AddedByID:         product.AddedByID,
+			ProductName:       product.ProductName,
+			Category:          product.Category,
+			Subcategory:       product.Subcategory,
+			Description:       product.Description,
+			WholesalePrice:    product.WholesalePrice,
+			RetailPrice:       product.RetailPrice,
+			ExportPrice:       product.ExportPrice,
+			Currency:          product.Currency,
+			AvailableQuantity: product.AvailableQuantity,
+			MinOrderQuantity:  product.MinOrderQuantity,
+			MaxOrderQuantity:  product.MaxOrderQuantity,
+			Unit:              product.Unit,
+			Brand:             product.Brand,
+			Model:             product.Model,
+			Origin:            product.Origin,
+			Quality:           product.Quality,
+			PackagingType:     product.PackagingType,
+			Weight:            product.Weight,
+			Dimensions:        product.Dimensions,
+			ShippingCost:      product.ShippingCost,
+			Location:          product.Location,
+			ContactPhone:      product.ContactPhone,
+			ContactEmail:      product.ContactEmail,
+			ContactWhatsapp:   product.ContactWhatsapp,
+			CanExport:         product.CanExport,
+			RequiresLicense:   product.RequiresLicense,
+			LicenseType:       product.LicenseType,
+			ExportCountries:   product.ExportCountries,
+			ImageURLs:         product.ImageURLs,
+			VideoURL:          product.VideoURL,
+			CatalogURL:        product.CatalogURL,
+			Status:            product.Status,
+			IsFeatured:        product.IsFeatured,
+			IsHotDeal:         product.IsHotDeal,
+			Tags:              product.Tags,
+			Notes:             product.Notes,
+			CreatedAt:         product.CreatedAt,
+			UpdatedAt:         product.UpdatedAt,
+		}
+		responseProducts = append(responseProducts, response)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"products": responseProducts,
+		"pagination": gin.H{
+			"page":        page,
+			"per_page":    perPage,
+			"total":       total,
+			"total_pages": (total + int64(perPage) - 1) / int64(perPage),
+		},
+	})
+}
+
+// GetUserAvailableProduct retrieves a single product by the current user
+func GetUserAvailableProduct(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+	user := c.MustGet("user").(models.User)
+
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	product, err := models.GetUserAvailableProduct(db, uint(productID), user.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	// Convert to response format
+	response := models.AvailableProductResponse{
+		ID:                product.ID,
+		AddedByID:         product.AddedByID,
+		ProductName:       product.ProductName,
+		Category:          product.Category,
+		Subcategory:       product.Subcategory,
+		Description:       product.Description,
+		WholesalePrice:    product.WholesalePrice,
+		RetailPrice:       product.RetailPrice,
+		ExportPrice:       product.ExportPrice,
+		Currency:          product.Currency,
+		AvailableQuantity: product.AvailableQuantity,
+		MinOrderQuantity:  product.MinOrderQuantity,
+		MaxOrderQuantity:  product.MaxOrderQuantity,
+		Unit:              product.Unit,
+		Brand:             product.Brand,
+		Model:             product.Model,
+		Origin:            product.Origin,
+		Quality:           product.Quality,
+		PackagingType:     product.PackagingType,
+		Weight:            product.Weight,
+		Dimensions:        product.Dimensions,
+		ShippingCost:      product.ShippingCost,
+		Location:          product.Location,
+		ContactPhone:      product.ContactPhone,
+		ContactEmail:      product.ContactEmail,
+		ContactWhatsapp:   product.ContactWhatsapp,
+		CanExport:         product.CanExport,
+		RequiresLicense:   product.RequiresLicense,
+		LicenseType:       product.LicenseType,
+		ExportCountries:   product.ExportCountries,
+		ImageURLs:         product.ImageURLs,
+		VideoURL:          product.VideoURL,
+		CatalogURL:        product.CatalogURL,
+		Status:            product.Status,
+		IsFeatured:        product.IsFeatured,
+		IsHotDeal:         product.IsHotDeal,
+		Tags:              product.Tags,
+		Notes:             product.Notes,
+		CreatedAt:         product.CreatedAt,
+		UpdatedAt:         product.UpdatedAt,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// UpdateUserAvailableProduct updates a product by the current user
+func UpdateUserAvailableProduct(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+	user := c.MustGet("user").(models.User)
+
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	var req models.UpdateAvailableProductRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	product, err := models.UpdateUserAvailableProduct(db, uint(productID), user.ID, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update product"})
+		return
+	}
+
+	// Convert to response format
+	response := models.AvailableProductResponse{
+		ID:                product.ID,
+		AddedByID:         product.AddedByID,
+		ProductName:       product.ProductName,
+		Category:          product.Category,
+		Subcategory:       product.Subcategory,
+		Description:       product.Description,
+		WholesalePrice:    product.WholesalePrice,
+		RetailPrice:       product.RetailPrice,
+		ExportPrice:       product.ExportPrice,
+		Currency:          product.Currency,
+		AvailableQuantity: product.AvailableQuantity,
+		MinOrderQuantity:  product.MinOrderQuantity,
+		MaxOrderQuantity:  product.MaxOrderQuantity,
+		Unit:              product.Unit,
+		Brand:             product.Brand,
+		Model:             product.Model,
+		Origin:            product.Origin,
+		Quality:           product.Quality,
+		PackagingType:     product.PackagingType,
+		Weight:            product.Weight,
+		Dimensions:        product.Dimensions,
+		ShippingCost:      product.ShippingCost,
+		Location:          product.Location,
+		ContactPhone:      product.ContactPhone,
+		ContactEmail:      product.ContactEmail,
+		ContactWhatsapp:   product.ContactWhatsapp,
+		CanExport:         product.CanExport,
+		RequiresLicense:   product.RequiresLicense,
+		LicenseType:       product.LicenseType,
+		ExportCountries:   product.ExportCountries,
+		ImageURLs:         product.ImageURLs,
+		VideoURL:          product.VideoURL,
+		CatalogURL:        product.CatalogURL,
+		Status:            product.Status,
+		IsFeatured:        product.IsFeatured,
+		IsHotDeal:         product.IsHotDeal,
+		Tags:              product.Tags,
+		Notes:             product.Notes,
+		CreatedAt:         product.CreatedAt,
+		UpdatedAt:         product.UpdatedAt,
+	}
+
+	c.JSON(http.StatusOK, response)
+}
+
+// DeleteUserAvailableProduct deletes a product by the current user
+func DeleteUserAvailableProduct(c *gin.Context) {
+	db := c.MustGet("db").(*gorm.DB)
+	user := c.MustGet("user").(models.User)
+
+	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	err = models.DeleteUserAvailableProduct(db, uint(productID), user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete product"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Product deleted successfully"})
+}
+
 // UpdateAvailableProductStatus updates the status of an available product (Admin only)
 func UpdateAvailableProductStatus(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)

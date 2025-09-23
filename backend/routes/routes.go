@@ -177,6 +177,12 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/available-products/hot-deals", controllers.GetHotDealsAvailableProducts)
 		protected.GET("/available-products/:id", controllers.GetAvailableProduct)
 
+		// User product management routes
+		protected.GET("/my-products", controllers.GetUserAvailableProducts)
+		protected.GET("/my-products/:id", controllers.GetUserAvailableProduct)
+		protected.PUT("/my-products/:id", controllers.UpdateUserAvailableProduct)
+		protected.DELETE("/my-products/:id", controllers.DeleteUserAvailableProduct)
+
 		// Admin available products management routes
 		protected.POST("/admin/available-products", controllers.CreateAvailableProduct)
 		protected.PUT("/admin/available-products/:id", controllers.UpdateAvailableProduct)

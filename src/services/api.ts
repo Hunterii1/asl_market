@@ -294,16 +294,6 @@ class ApiService {
     return this.handleResponse(response);
   }
 
-  async getUserProducts() {
-    const response = await fetch(`${API_BASE_URL}/my-products`, {
-      method: 'GET',
-      headers: {
-        ...this.getAuthHeaders(),
-      },
-    });
-
-    return this.handleResponse(response);
-  }
 
   // AI Chat methods
   async sendChatMessage(request: ChatRequest): Promise<ChatResponse> {
@@ -762,6 +752,51 @@ class ApiService {
         ...this.getAuthHeaders(),
       },
       body: JSON.stringify(data),
+    });
+  }
+
+  // User Product Management API methods
+  async getUserProducts(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/my-products?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getUserProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/my-products/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateUserProduct(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/my-products/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUserProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/my-products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
     });
   }
 

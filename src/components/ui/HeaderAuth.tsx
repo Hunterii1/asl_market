@@ -19,7 +19,8 @@ import {
   Settings, 
   Bell,
   Shield,
-  MessageSquare
+  MessageSquare,
+  Package
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, type LicenseStatus } from "@/services/api";
@@ -161,6 +162,18 @@ const HeaderAuth = () => {
               </Badge>
             )}
             
+            {/* My Products Button */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
+              onClick={() => navigate('/my-products')}
+              title="محصولات من"
+            >
+              <Package className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+              <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">محصولات من</span>
+            </Button>
+
             {/* Support Ticket Button */}
             <Button 
               variant="ghost" 

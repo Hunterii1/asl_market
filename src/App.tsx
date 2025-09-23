@@ -32,6 +32,7 @@ import ApprovedVisitors from "./pages/ApprovedVisitors";
 import LicenseInfoPage from "./pages/LicenseInfoPage";
 
 import SubmitProduct from "./pages/SubmitProduct";
+import MyProducts from "./pages/MyProducts";
 import SupportTicket from "./pages/SupportTicket";
 
 
@@ -88,6 +89,11 @@ const App = () => (
                 <Route path="/submit-product" element={
                   <ProtectedRoute>
                     <SubmitProduct />
+                  </ProtectedRoute>
+                } />
+                <Route path="/my-products" element={
+                  <ProtectedRoute>
+                    <MyProducts />
                   </ProtectedRoute>
                 } />
                 

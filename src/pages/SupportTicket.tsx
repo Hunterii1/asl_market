@@ -517,7 +517,7 @@ const SupportTicket = () => {
                     مرکز پشتیبانی اصل مارکت
                   </h1>
                   <p className="text-blue-700 dark:text-blue-300 text-lg">
-                    تیم پشتیبانی ما ۲۴/۷ آماده کمک به شماست
+                    تیم پشتیبانی ما در ساعات اداری در روزهای غیر تعطیل در خدمت شماست
                   </p>
                   <div className="flex items-center gap-4 text-sm text-blue-600 dark:text-blue-400">
                     <span className="flex items-center gap-2">
@@ -706,7 +706,7 @@ const SupportTicket = () => {
               هنوز تیکتی ندارید
             </h3>
             <p className="text-blue-700 dark:text-blue-300 mb-6 max-w-md mx-auto leading-relaxed">
-              اولین تیکت پشتیبانی خود را ایجاد کنید و از خدمات پشتیبانی ۲۴/۷ ما بهره‌مند شوید
+              اولین تیکت پشتیبانی خود را ایجاد کنید و از خدمات پشتیبانی ما در ساعات اداری بهره‌مند شوید
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button 

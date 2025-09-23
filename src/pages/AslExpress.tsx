@@ -422,7 +422,7 @@ const AslExpress = () => {
         
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۲۴/۷</div>
+            <div className="text-2xl font-bold text-foreground">ساعات اداری</div>
             <p className="text-sm text-muted-foreground">پشتیبانی</p>
           </CardContent>
         </Card>
