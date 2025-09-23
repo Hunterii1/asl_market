@@ -177,12 +177,6 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/available-products/hot-deals", controllers.GetHotDealsAvailableProducts)
 		protected.GET("/available-products/:id", controllers.GetAvailableProduct)
 
-		// User product management routes
-		protected.GET("/my-products", controllers.GetUserAvailableProducts)
-		protected.GET("/my-products/:id", controllers.GetUserAvailableProduct)
-		protected.PUT("/my-products/:id", controllers.UpdateUserAvailableProduct)
-		protected.DELETE("/my-products/:id", controllers.DeleteUserAvailableProduct)
-
 		// Admin available products management routes
 		protected.POST("/admin/available-products", controllers.CreateAvailableProduct)
 		protected.PUT("/admin/available-products/:id", controllers.UpdateAvailableProduct)
@@ -213,7 +207,10 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		{
 			// User-specific data
 			licensed.GET("/my-orders", getMyOrders)
-			licensed.GET("/my-products", getMyProducts)
+			licensed.GET("/my-products", controllers.GetUserAvailableProducts)
+			licensed.GET("/my-products/:id", controllers.GetUserAvailableProduct)
+			licensed.PUT("/my-products/:id", controllers.UpdateUserAvailableProduct)
+			licensed.DELETE("/my-products/:id", controllers.DeleteUserAvailableProduct)
 			licensed.POST("/orders", createOrder)
 			licensed.PUT("/profile", updateProfile)
 
@@ -332,15 +329,6 @@ func getMyOrders(c *gin.Context) {
 		"message": "User orders",
 		"user_id": userID,
 		"orders":  []gin.H{},
-	})
-}
-
-func getMyProducts(c *gin.Context) {
-	userID := c.GetUint("user_id")
-	c.JSON(http.StatusOK, gin.H{
-		"message":  "User products",
-		"user_id":  userID,
-		"products": []gin.H{},
 	})
 }
 
