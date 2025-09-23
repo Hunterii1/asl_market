@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { apiService } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 
 interface Notification {
   id: number;
@@ -195,8 +196,9 @@ const Notifications = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="max-w-4xl mx-auto pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <HeaderAuth />
+      <div className="max-w-4xl mx-auto pt-20 p-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">

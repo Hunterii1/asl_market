@@ -762,6 +762,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showNotificationMenu(message.Chat.ID)
 	case MENU_SEND_NOTIFICATION:
 		s.promptSendNotification(message.Chat.ID)
+	case MENU_NOTIFICATION_HISTORY:
+		s.showNotificationHistory(message.Chat.ID)
 	case MENU_NOTIFICATION_STATS:
 		s.showNotificationStats(message.Chat.ID)
 	case MENU_SETTINGS:
@@ -4920,6 +4922,82 @@ func (s *TelegramService) createNotification(chatID int64, data map[string]inter
 	s.bot.Send(msg)
 
 	// Show notification menu
+	s.showNotificationMenu(chatID)
+}
+
+// showNotificationHistory shows notification history for admin
+func (s *TelegramService) showNotificationHistory(chatID int64) {
+	// Get recent notifications (last 20)
+	var notifications []models.Notification
+	err := s.db.Preload("CreatedBy").Order("created_at DESC").Limit(20).Find(&notifications).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت تاریخچه نوتیفیکیشن‌ها")
+		s.bot.Send(msg)
+		return
+	}
+
+	if len(notifications) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "📋 **تاریخچه نوتیفیکیشن‌ها**\n\n"+
+			"هیچ نوتیفیکیشنی ارسال نشده است.")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		s.showNotificationMenu(chatID)
+		return
+	}
+
+	var message strings.Builder
+	message.WriteString("📋 **تاریخچه نوتیفیکیشن‌ها** (آخرین ۲۰ مورد)\n\n")
+
+	for i, notification := range notifications {
+		// Get type and priority emojis
+		typeEmoji := "ℹ️"
+		switch notification.Type {
+		case "success":
+			typeEmoji = "✅"
+		case "warning":
+			typeEmoji = "⚠️"
+		case "error":
+			typeEmoji = "❌"
+		}
+
+		priorityEmoji := "🟡"
+		switch notification.Priority {
+		case "urgent":
+			priorityEmoji = "🔴"
+		case "high":
+			priorityEmoji = "🟠"
+		case "low":
+			priorityEmoji = "🟢"
+		}
+
+		// Target info
+		target := "همه کاربران"
+		if notification.UserID != nil {
+			target = fmt.Sprintf("کاربر #%d", *notification.UserID)
+		}
+
+		// Status
+		status := "✅ فعال"
+		if !notification.IsActive {
+			status = "❌ غیرفعال"
+		}
+
+		message.WriteString(fmt.Sprintf("%d. %s %s **%s**\n",
+			i+1, typeEmoji, priorityEmoji, notification.Title))
+		message.WriteString(fmt.Sprintf("   📝 %s\n", notification.Message))
+		message.WriteString(fmt.Sprintf("   👤 ارسال‌کننده: %s %s\n",
+			notification.CreatedBy.FirstName, notification.CreatedBy.LastName))
+		message.WriteString(fmt.Sprintf("   🎯 مخاطب: %s\n", target))
+		message.WriteString(fmt.Sprintf("   📊 وضعیت: %s\n", status))
+		message.WriteString(fmt.Sprintf("   📅 تاریخ: %s\n\n",
+			notification.CreatedAt.Format("2006/01/02 15:04")))
+	}
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show notification menu again
 	s.showNotificationMenu(chatID)
 }
 
