@@ -449,6 +449,112 @@ const AslLearn = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Resources Section */}
+        <Card className="bg-gradient-to-r from-purple-100/40 to-purple-200/40 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200/70 dark:border-purple-700/50 rounded-3xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 bg-purple-200/40 dark:bg-purple-500/20 rounded-2xl flex items-center justify-center">
+                <FileText className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-foreground">منابع و مستندات</h3>
+                <p className="text-purple-600 dark:text-purple-300">فایل‌های کمکی و راهنماهای تکمیلی</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* CRM Template */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/50 hover:border-purple-400/50 dark:hover:border-purple-500/50 transition-colors">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-sm">قالب CRM</h4>
+                    <p className="text-xs text-muted-foreground">Excel Template</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  قالب آماده برای مدیریت مشتریان و فروش
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full rounded-lg"
+                  onClick={() => window.open('/CRM_Template_ASL_Market.xlsx', '_blank')}
+                >
+                  <Download className="w-4 h-4 ml-2" />
+                  دانلود
+                </Button>
+              </div>
+
+              {/* Mega Prompt */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/50 hover:border-purple-400/50 dark:hover:border-purple-500/50 transition-colors">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-sm">مگا پرامپت</h4>
+                    <p className="text-xs text-muted-foreground">Word Document</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  راهنمای کامل استفاده از هوش مصنوعی
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full rounded-lg"
+                  onClick={() => window.open('/mega prompt ASL MARKET.docx', '_blank')}
+                >
+                  <Download className="w-4 h-4 ml-2" />
+                  دانلود
+                </Button>
+              </div>
+
+              {/* Script */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-purple-200/50 dark:border-purple-700/50 hover:border-purple-400/50 dark:hover:border-purple-500/50 transition-colors">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-foreground text-sm">اسکریپت</h4>
+                    <p className="text-xs text-muted-foreground">Word Document</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">
+                  اسکپریت کامل پلتفرم اصل مارکت
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full rounded-lg"
+                  onClick={() => window.open('/Script ASL MARKET.docx', '_blank')}
+                >
+                  <Download className="w-4 h-4 ml-2" />
+                  دانلود
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-4 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+              <div className="flex items-start gap-2">
+                <Info className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">راهنمای استفاده از فایل‌ها:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                    <li>قالب CRM برای مدیریت مشتریان و فروش استفاده می‌شود</li>
+                    <li>مگا پرامپت راهنمای کامل استفاده از هوش مصنوعی است</li>
+                    <li>اسکریپت کامل پلتفرم اصل مارکت می‌باشد</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </LicenseGate>
   );
