@@ -606,7 +606,15 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		return
 	}
 
-	switch message.Text {
+	// Trim whitespace and normalize text
+	text := strings.TrimSpace(message.Text)
+
+	// Debug log
+	fmt.Printf("Received message: '%s'\n", text)
+	fmt.Printf("MENU_NOTIFICATION_HISTORY constant: '%s'\n", MENU_NOTIFICATION_HISTORY)
+	fmt.Printf("Are they equal? %t\n", text == MENU_NOTIFICATION_HISTORY)
+
+	switch text {
 	case MENU_USERS:
 		s.showUserManagementMenu(message.Chat.ID)
 	case MENU_ALL_USERS:
@@ -773,6 +781,10 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case "🔙 بازگشت به منو نوتیفیکیشن‌ها":
 		s.showNotificationMenu(message.Chat.ID)
 	default:
+		// Debug: Send received text back to user
+		debugMsg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Debug: Received text: '%s'", text))
+		s.bot.Send(debugMsg)
+
 		// Check session state for input handling
 		sessionMutex.RLock()
 		state, exists := sessionStates[message.Chat.ID]
