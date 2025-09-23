@@ -12,6 +12,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useNavigate } from "react-router-dom";
 import { 
   User, 
@@ -20,15 +25,36 @@ import {
   Bell,
   Shield,
   MessageSquare,
-  Package
+  Package,
+  Check,
+  X,
+  AlertCircle,
+  Info,
+  CheckCircle,
+  AlertTriangle
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, type LicenseStatus } from "@/services/api";
+
+interface Notification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  priority: string;
+  is_read: boolean;
+  action_url?: string;
+  action_text?: string;
+  created_at: string;
+}
 
 const HeaderAuth = () => {
   const { user, isAuthenticated, logout, isLoading, licenseStatus: authLicenseStatus } = useAuth();
   const navigate = useNavigate();
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -46,7 +72,22 @@ const HeaderAuth = () => {
     if (isAuthenticated && !authLicenseStatus) {
       checkLicenseStatus();
     }
+    if (isAuthenticated) {
+      fetchNotifications();
+      fetchUnreadCount();
+    }
   }, [isAuthenticated, authLicenseStatus]);
+
+  // Fetch notifications every 30 seconds
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const checkLicenseStatus = async () => {
     try {
@@ -54,6 +95,81 @@ const HeaderAuth = () => {
       setLicenseStatus(status);
     } catch (error) {
       console.error('Error checking license status:', error);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+      const response = await apiService.getNotifications({ page: 1, per_page: 10 });
+      setNotifications(response.notifications || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await apiService.getUnreadNotificationCount();
+      setUnreadCount(response.count || 0);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: number) => {
+    try {
+      await apiService.markNotificationAsRead(notificationId);
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId ? { ...notif, is_read: true } : notif
+        )
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await apiService.markAllNotificationsAsRead();
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, is_read: true }))
+      );
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'success':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'warning':
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Info className="w-4 h-4 text-blue-500" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent':
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'normal':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'low':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      default:
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
     }
   };
 
@@ -186,13 +302,111 @@ const HeaderAuth = () => {
               <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">پشتیبانی</span>
             </Button>
 
-            {/* Notifications - hidden on mobile when authenticated */}
-            <Button variant="ghost" size="sm" className="relative hidden sm:flex">
-              <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-              <Badge className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 text-xs bg-orange-500 text-white rounded-full p-0 flex items-center justify-center">
-                3
-              </Badge>
-            </Button>
+            {/* Notifications */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className="relative hidden sm:flex">
+                  <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 text-xs bg-orange-500 text-white rounded-full p-0 flex items-center justify-center">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-0" align="end">
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-foreground">نوتیفیکیشن‌ها</h3>
+                    {unreadCount > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={markAllAsRead}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        همه را خوانده شده علامت‌گذاری کن
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {notificationsLoading ? (
+                    <div className="p-4 text-center text-muted-foreground">
+                      در حال بارگذاری...
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="p-4 text-center text-muted-foreground">
+                      هیچ نوتیفیکیشنی وجود ندارد
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`p-4 border-b border-border hover:bg-muted/50 cursor-pointer ${
+                          !notification.is_read ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
+                        }`}
+                        onClick={() => {
+                          if (!notification.is_read) {
+                            markNotificationAsRead(notification.id);
+                          }
+                          if (notification.action_url) {
+                            navigate(notification.action_url);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex-shrink-0 mt-1">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-medium text-sm text-foreground truncate">
+                                {notification.title}
+                              </h4>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${getPriorityColor(notification.priority)}`}
+                              >
+                                {notification.priority}
+                              </Badge>
+                              {!notification.is_read && (
+                                <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(notification.created_at).toLocaleDateString('fa-IR')}
+                              </span>
+                              {notification.action_text && (
+                                <span className="text-xs text-blue-600 dark:text-blue-400">
+                                  {notification.action_text}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {notifications.length > 0 && (
+                  <div className="p-2 border-t border-border">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => navigate('/notifications')}
+                    >
+                      مشاهده همه نوتیفیکیشن‌ها
+                    </Button>
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
 
             {/* User Menu */}
             <DropdownMenu>

@@ -1203,6 +1203,118 @@ class ApiService {
       },
     });
   }
+
+  // Notification API methods
+  async getNotifications(params: {
+    page?: number;
+    per_page?: number;
+    unread_only?: boolean;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.unread_only) queryParams.append('unread_only', params.unread_only.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/notifications?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getNotification(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/notifications/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async markNotificationAsRead(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/notifications/${id}/read`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async markAllNotificationsAsRead(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/notifications/read-all`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getUnreadNotificationCount(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/notifications/unread-count`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Admin notification methods
+  async createNotification(data: {
+    title: string;
+    message: string;
+    type?: string;
+    priority?: string;
+    user_id?: number;
+    expires_at?: string;
+    action_url?: string;
+    action_text?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/notifications`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateNotification(id: number, data: {
+    title?: string;
+    message?: string;
+    type?: string;
+    priority?: string;
+    is_active?: boolean;
+    expires_at?: string;
+    action_url?: string;
+    action_text?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/notifications/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteNotification(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/notifications/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getNotificationStats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/notifications/stats`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();

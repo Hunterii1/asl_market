@@ -188,6 +188,12 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/training/videos", controllers.CreateTrainingVideo)
 		protected.PUT("/admin/training/videos/:id", controllers.UpdateTrainingVideo)
 		protected.DELETE("/admin/training/videos/:id", controllers.DeleteTrainingVideo)
+
+		// Admin notification management routes
+		protected.POST("/admin/notifications", controllers.CreateNotification)
+		protected.PUT("/admin/notifications/:id", controllers.UpdateNotification)
+		protected.DELETE("/admin/notifications/:id", controllers.DeleteNotification)
+		protected.GET("/admin/notifications/stats", controllers.GetNotificationStats)
 		protected.POST("/admin/training/categories", controllers.CreateTrainingCategory)
 
 		// SpotPlayer routes
@@ -200,6 +206,13 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/support/tickets/:id", supportTicketController.GetTicket)
 		protected.POST("/support/tickets/:id/messages", supportTicketController.AddMessage)
 		protected.POST("/support/tickets/:id/close", supportTicketController.CloseTicket)
+
+		// Notification routes
+		protected.GET("/notifications", controllers.GetUserNotifications)
+		protected.GET("/notifications/:id", controllers.GetNotification)
+		protected.POST("/notifications/:id/read", controllers.MarkNotificationAsRead)
+		protected.POST("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
+		protected.GET("/notifications/unread-count", controllers.GetUnreadNotificationCount)
 
 		// License-protected routes
 		licensed := protected.Group("/")

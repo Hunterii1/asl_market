@@ -33,6 +33,7 @@ import LicenseInfoPage from "./pages/LicenseInfoPage";
 
 import SubmitProduct from "./pages/SubmitProduct";
 import MyProducts from "./pages/MyProducts";
+import Notifications from "./pages/Notifications";
 import SupportTicket from "./pages/SupportTicket";
 
 
@@ -94,6 +95,11 @@ const App = () => (
                 <Route path="/my-products" element={
                   <ProtectedRoute>
                     <MyProducts />
+                  </ProtectedRoute>
+                } />
+                <Route path="/notifications" element={
+                  <ProtectedRoute>
+                    <Notifications />
                   </ProtectedRoute>
                 } />
                 

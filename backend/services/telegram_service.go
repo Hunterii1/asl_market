@@ -54,6 +54,12 @@ const (
 	MENU_GENERATE      = "➕ تولید لایسنس"
 	MENU_LIST_LICENSES = "📋 لیست لایسنس‌ها"
 	MENU_SETTINGS      = "⚙️ تنظیمات"
+	MENU_NOTIFICATIONS = "🔔 مدیریت نوتیفیکیشن‌ها"
+
+	// Notification management sub-menus
+	MENU_SEND_NOTIFICATION    = "📤 ارسال نوتیفیکیشن"
+	MENU_NOTIFICATION_HISTORY = "📋 تاریخچه نوتیفیکیشن‌ها"
+	MENU_NOTIFICATION_STATS   = "📊 آمار نوتیفیکیشن‌ها"
 
 	// User management sub-menus
 	MENU_ALL_USERS        = "📄 همه کاربران"
@@ -394,6 +400,7 @@ var paginationMutex = sync.RWMutex{}
 type SessionState struct {
 	ChatID          int64
 	WaitingForInput string                 // "license_count", "search_query", "supplier_action", "reject_reason", etc.
+	State           string                 // "waiting_notification_title", "waiting_notification_message", etc.
 	Data            map[string]interface{} // Additional session data
 }
 
@@ -507,6 +514,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SEARCH),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_NOTIFICATIONS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
@@ -748,6 +758,12 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showLicenseTypeSelection(message.Chat.ID)
 	case MENU_LIST_LICENSES:
 		s.showLicensesList(message.Chat.ID, 1)
+	case MENU_NOTIFICATIONS:
+		s.showNotificationMenu(message.Chat.ID)
+	case MENU_SEND_NOTIFICATION:
+		s.promptSendNotification(message.Chat.ID)
+	case MENU_NOTIFICATION_STATS:
+		s.showNotificationStats(message.Chat.ID)
 	case MENU_SETTINGS:
 		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
 	case "🔙 بازگشت به منو اصلی":
@@ -765,6 +781,9 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				return
 			case strings.HasPrefix(state.WaitingForInput, "awaiting_upgrade_rejection_note_"):
 				s.handleUpgradeRejectionNote(message, state)
+				return
+			case state.State == "waiting_notification_title" || state.State == "waiting_notification_message" || state.State == "waiting_notification_priority" || state.State == "waiting_notification_user_id":
+				s.handleNotificationInput(message.Chat.ID, message.Text)
 				return
 			case state.WaitingForInput == "withdrawal_account":
 				withdrawalID := state.Data["withdrawal_id"].(string)
@@ -1554,6 +1573,12 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 	// Handle withdrawal callbacks
 	if strings.Contains(data, "withdrawal") {
 		s.handleWithdrawalCallback(query)
+		return
+	}
+
+	// Handle notification callbacks
+	if strings.Contains(data, "notif_") {
+		s.handleNotificationCallback(query)
 		return
 	}
 
@@ -4668,4 +4693,442 @@ func (s *TelegramService) handleTicketResponse(chatID int64, ticketID uint, resp
 
 	// Show main menu
 	s.showMainMenu(chatID)
+}
+
+// showNotificationMenu shows the notification management menu
+func (s *TelegramService) showNotificationMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SEND_NOTIFICATION),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_NOTIFICATION_HISTORY),
+			tgbotapi.NewKeyboardButton(MENU_NOTIFICATION_STATS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton("🔙 بازگشت به منو اصلی"),
+		),
+	)
+	keyboard.ResizeKeyboard = true
+
+	msg := tgbotapi.NewMessage(chatID, "🔔 **مدیریت نوتیفیکیشن‌ها**\n\nلطفا یکی از گزینه‌های زیر را انتخاب کنید:")
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// showNotificationStats shows notification statistics
+func (s *TelegramService) showNotificationStats(chatID int64) {
+	// Get notification stats from database
+	var stats struct {
+		Total  int64 `json:"total"`
+		Active int64 `json:"active"`
+		Unread int64 `json:"unread"`
+	}
+
+	// Count total notifications
+	s.db.Model(&models.Notification{}).Count(&stats.Total)
+
+	// Count active notifications
+	s.db.Model(&models.Notification{}).Where("is_active = ?", true).Count(&stats.Active)
+
+	// Count unread notifications
+	s.db.Model(&models.Notification{}).Where("is_active = ? AND is_read = ?", true, false).Count(&stats.Unread)
+
+	// Get notifications by type
+	var typeStats []struct {
+		Type  string `json:"type"`
+		Count int64  `json:"count"`
+	}
+	s.db.Model(&models.Notification{}).Select("type, count(*) as count").Group("type").Find(&typeStats)
+
+	// Format type stats
+	typeStatsText := ""
+	for _, stat := range typeStats {
+		typeStatsText += fmt.Sprintf("• %s: %d\n", stat.Type, stat.Count)
+	}
+
+	statsText := fmt.Sprintf("📊 **آمار نوتیفیکیشن‌ها**\n\n"+
+		"📈 **آمار کلی:**\n"+
+		"• کل نوتیفیکیشن‌ها: %d\n"+
+		"• نوتیفیکیشن‌های فعال: %d\n"+
+		"• نوتیفیکیشن‌های خوانده نشده: %d\n\n"+
+		"📋 **توزیع بر اساس نوع:**\n%s",
+		stats.Total, stats.Active, stats.Unread, typeStatsText)
+
+	msg := tgbotapi.NewMessage(chatID, statsText)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show notification menu again
+	s.showNotificationMenu(chatID)
+}
+
+// promptSendNotification prompts admin to send a notification
+func (s *TelegramService) promptSendNotification(chatID int64) {
+	// Set session state
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		State: "waiting_notification_title",
+		Data:  make(map[string]interface{}),
+	}
+	sessionMutex.Unlock()
+
+	msg := tgbotapi.NewMessage(chatID, "📤 **ارسال نوتیفیکیشن جدید**\n\n"+
+		"لطفا عنوان نوتیفیکیشن را ارسال کنید:")
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// handleNotificationInput handles notification input from admin
+func (s *TelegramService) handleNotificationInput(chatID int64, text string) {
+	sessionMutex.RLock()
+	state, exists := sessionStates[chatID]
+	sessionMutex.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	switch state.State {
+	case "waiting_notification_title":
+		// Store title and ask for message
+		state.Data["title"] = text
+		state.State = "waiting_notification_message"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID, "✅ عنوان ذخیره شد\n\n"+
+			"لطفا متن نوتیفیکیشن را ارسال کنید:")
+		s.bot.Send(msg)
+
+	case "waiting_notification_message":
+		// Store message and ask for type
+		state.Data["message"] = text
+		state.State = "waiting_notification_type"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("ℹ️ اطلاعات", "notif_type_info"),
+				tgbotapi.NewInlineKeyboardButtonData("✅ موفقیت", "notif_type_success"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("⚠️ هشدار", "notif_type_warning"),
+				tgbotapi.NewInlineKeyboardButtonData("❌ خطا", "notif_type_error"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ متن ذخیره شد\n\n"+
+			"لطفا نوع نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "waiting_notification_priority":
+		// Store priority and ask for target
+		state.Data["priority"] = text
+		state.State = "waiting_notification_target"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌐 همه کاربران", "notif_target_all"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👤 کاربر خاص", "notif_target_user"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ اولویت ذخیره شد\n\n"+
+			"لطفا مخاطب نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "waiting_notification_user_id":
+		// Store user ID and create notification
+		userID, err := strconv.ParseUint(text, 10, 64)
+		if err != nil {
+			msg := tgbotapi.NewMessage(chatID, "❌ شناسه کاربر نامعتبر است. لطفا عدد صحیح وارد کنید:")
+			s.bot.Send(msg)
+			return
+		}
+
+		state.Data["user_id"] = userID
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		s.createNotification(chatID, state.Data)
+	}
+}
+
+// createNotification creates a notification based on collected data
+func (s *TelegramService) createNotification(chatID int64, data map[string]interface{}) {
+	// Get admin user ID (assuming first admin)
+	adminID := uint(1) // You might want to get this from the database
+
+	// Prepare notification data
+	notificationData := models.CreateNotificationRequest{
+		Title:    data["title"].(string),
+		Message:  data["message"].(string),
+		Type:     data["type"].(string),
+		Priority: data["priority"].(string),
+	}
+
+	// Set user ID if specified
+	if userID, exists := data["user_id"]; exists {
+		userIDUint := uint(userID.(uint64))
+		notificationData.UserID = &userIDUint
+	}
+
+	// Create notification
+	notification, err := models.CreateNotification(s.db, adminID, notificationData)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در ایجاد نوتیفیکیشن: "+err.Error())
+		s.bot.Send(msg)
+		return
+	}
+
+	// Clear session state
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	// Send success message
+	targetText := "همه کاربران"
+	if notification.UserID != nil {
+		targetText = fmt.Sprintf("کاربر #%d", *notification.UserID)
+	}
+
+	successMsg := fmt.Sprintf("✅ **نوتیفیکیشن با موفقیت ارسال شد**\n\n"+
+		"📋 **جزئیات:**\n"+
+		"• شناسه: #%d\n"+
+		"• عنوان: %s\n"+
+		"• نوع: %s\n"+
+		"• اولویت: %s\n"+
+		"• مخاطب: %s\n\n"+
+		"📱 نوتیفیکیشن در header کاربران نمایش داده خواهد شد.",
+		notification.ID, notification.Title, notification.Type, notification.Priority, targetText)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Show notification menu
+	s.showNotificationMenu(chatID)
+}
+
+// handleNotificationCallback handles notification-related callback queries
+func (s *TelegramService) handleNotificationCallback(query *tgbotapi.CallbackQuery) {
+	data := query.Data
+	chatID := query.Message.Chat.ID
+
+	// Send acknowledgment
+	callback := tgbotapi.NewCallback(query.ID, "")
+	s.bot.Request(callback)
+
+	sessionMutex.RLock()
+	state, exists := sessionStates[chatID]
+	sessionMutex.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	switch data {
+	case "notif_type_info":
+		state.Data["type"] = "info"
+		state.State = "waiting_notification_priority"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔴 فوری", "notif_priority_urgent"),
+				tgbotapi.NewInlineKeyboardButtonData("🟠 بالا", "notif_priority_high"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🟡 متوسط", "notif_priority_normal"),
+				tgbotapi.NewInlineKeyboardButtonData("🟢 پایین", "notif_priority_low"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ نوع اطلاعات انتخاب شد\n\n"+
+			"لطفا اولویت نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_type_success":
+		state.Data["type"] = "success"
+		state.State = "waiting_notification_priority"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔴 فوری", "notif_priority_urgent"),
+				tgbotapi.NewInlineKeyboardButtonData("🟠 بالا", "notif_priority_high"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🟡 متوسط", "notif_priority_normal"),
+				tgbotapi.NewInlineKeyboardButtonData("🟢 پایین", "notif_priority_low"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ نوع موفقیت انتخاب شد\n\n"+
+			"لطفا اولویت نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_type_warning":
+		state.Data["type"] = "warning"
+		state.State = "waiting_notification_priority"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔴 فوری", "notif_priority_urgent"),
+				tgbotapi.NewInlineKeyboardButtonData("🟠 بالا", "notif_priority_high"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🟡 متوسط", "notif_priority_normal"),
+				tgbotapi.NewInlineKeyboardButtonData("🟢 پایین", "notif_priority_low"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ نوع هشدار انتخاب شد\n\n"+
+			"لطفا اولویت نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_type_error":
+		state.Data["type"] = "error"
+		state.State = "waiting_notification_priority"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🔴 فوری", "notif_priority_urgent"),
+				tgbotapi.NewInlineKeyboardButtonData("🟠 بالا", "notif_priority_high"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🟡 متوسط", "notif_priority_normal"),
+				tgbotapi.NewInlineKeyboardButtonData("🟢 پایین", "notif_priority_low"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ نوع خطا انتخاب شد\n\n"+
+			"لطفا اولویت نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_priority_urgent":
+		state.Data["priority"] = "urgent"
+		state.State = "waiting_notification_target"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌐 همه کاربران", "notif_target_all"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👤 کاربر خاص", "notif_target_user"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ اولویت فوری انتخاب شد\n\n"+
+			"لطفا مخاطب نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_priority_high":
+		state.Data["priority"] = "high"
+		state.State = "waiting_notification_target"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌐 همه کاربران", "notif_target_all"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👤 کاربر خاص", "notif_target_user"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ اولویت بالا انتخاب شد\n\n"+
+			"لطفا مخاطب نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_priority_normal":
+		state.Data["priority"] = "normal"
+		state.State = "waiting_notification_target"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌐 همه کاربران", "notif_target_all"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👤 کاربر خاص", "notif_target_user"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ اولویت متوسط انتخاب شد\n\n"+
+			"لطفا مخاطب نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_priority_low":
+		state.Data["priority"] = "low"
+		state.State = "waiting_notification_target"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		keyboard := tgbotapi.NewInlineKeyboardMarkup(
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("🌐 همه کاربران", "notif_target_all"),
+			),
+			tgbotapi.NewInlineKeyboardRow(
+				tgbotapi.NewInlineKeyboardButtonData("👤 کاربر خاص", "notif_target_user"),
+			),
+		)
+
+		msg := tgbotapi.NewMessage(chatID, "✅ اولویت پایین انتخاب شد\n\n"+
+			"لطفا مخاطب نوتیفیکیشن را انتخاب کنید:")
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+
+	case "notif_target_all":
+		// Send to all users - no user_id needed
+		s.createNotification(chatID, state.Data)
+
+	case "notif_target_user":
+		state.State = "waiting_notification_user_id"
+		sessionMutex.Lock()
+		sessionStates[chatID] = state
+		sessionMutex.Unlock()
+
+		msg := tgbotapi.NewMessage(chatID, "✅ کاربر خاص انتخاب شد\n\n"+
+			"لطفا شناسه کاربر (User ID) را وارد کنید:")
+		s.bot.Send(msg)
+	}
 }
