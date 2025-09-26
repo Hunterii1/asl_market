@@ -217,7 +217,7 @@ const AslLearn = () => {
                     <div className="flex items-start gap-2">
                       <span className="text-purple-600 dark:text-purple-400 text-lg">🆘</span>
                       <div className="flex-1">
-                        <p className="text-foreground mb-2">در صورت نیاز به راهنمایی بیشتر با پشتیبانی تماس بگیرید 👇</p>
+                        <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
                         <a 
                           href="https://t.me/incoming_center" 
                           target="_blank" 
@@ -321,7 +321,7 @@ const AslLearn = () => {
                     <div className="flex items-start gap-2">
                       <span className="text-green-600 dark:text-green-400 text-lg">❇️</span>
                       <div className="flex-1">
-                        <p className="text-foreground mb-2">آی دی تلگرام پشتیبانی جهت هر گونه مشکل دسترسی به آموزش ها 👇</p>
+                        <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
                         <a 
                           href="https://t.me/incoming_center" 
                           target="_blank" 
