@@ -44,28 +44,39 @@ interface RegistrationData {
 const RegistrationStatus: React.FC = () => {
   const [searchParams] = useSearchParams();
   const [registrationData, setRegistrationData] = useState<RegistrationData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedType, setSelectedType] = useState<'supplier' | 'visitor' | null>(null);
+  const [mobile, setMobile] = useState('');
+  const [showForm, setShowForm] = useState(false);
 
-  const mobile = searchParams.get('mobile');
-  const type = searchParams.get('type') as 'supplier' | 'visitor';
+  const urlMobile = searchParams.get('mobile');
+  const urlType = searchParams.get('type') as 'supplier' | 'visitor';
 
   useEffect(() => {
-    if (mobile && type) {
-      fetchRegistrationStatus();
-    } else {
-      setError('لینک نامعتبر است. لطفاً از طریق لینک صحیح وارد شوید.');
-      setLoading(false);
+    // If URL has parameters, use them directly
+    if (urlMobile && urlType) {
+      setMobile(urlMobile);
+      setSelectedType(urlType);
+      setShowForm(true);
+      fetchRegistrationStatus(urlMobile, urlType);
     }
-  }, [mobile, type]);
+  }, [urlMobile, urlType]);
 
-  const fetchRegistrationStatus = async () => {
+  const fetchRegistrationStatus = async (mobileParam?: string, typeParam?: 'supplier' | 'visitor') => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/backend/api/v1/public/registration-status?mobile=${mobile}&type=${type}`, {
+      const mobileToUse = mobileParam || mobile;
+      const typeToUse = typeParam || selectedType;
+      
+      if (!mobileToUse || !typeToUse) {
+        throw new Error('اطلاعات ناقص است');
+      }
+      
+      const response = await fetch(`/backend/api/v1/public/registration-status?mobile=${mobileToUse}&type=${typeToUse}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -94,6 +105,18 @@ const RegistrationStatus: React.FC = () => {
     setRefreshing(true);
     await fetchRegistrationStatus();
     setRefreshing(false);
+  };
+
+  const handleTypeSelection = (type: 'supplier' | 'visitor') => {
+    setSelectedType(type);
+    setShowForm(true);
+  };
+
+  const handleMobileSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mobile && selectedType) {
+      fetchRegistrationStatus(mobile, selectedType);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -141,6 +164,101 @@ const RegistrationStatus: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  // Type selection page
+  if (!showForm && !urlMobile && !urlType) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <HeaderAuth />
+        <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl font-bold">بررسی وضعیت ثبت‌نام</CardTitle>
+              <p className="text-muted-foreground">ابتدا نوع کاربری خود را انتخاب کنید</p>
+            </CardHeader>
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-blue-500"
+                  onClick={() => handleTypeSelection('supplier')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <Building className="w-12 h-12 mx-auto mb-4 text-blue-500" />
+                    <h3 className="text-lg font-semibold mb-2">تأمین‌کننده</h3>
+                    <p className="text-sm text-muted-foreground">
+                      برای بررسی وضعیت ثبت‌نام تأمین‌کننده
+                    </p>
+                  </CardContent>
+                </Card>
+                
+                <Card 
+                  className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-green-500"
+                  onClick={() => handleTypeSelection('visitor')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <Globe className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                    <h3 className="text-lg font-semibold mb-2">ویزیتور</h3>
+                    <p className="text-sm text-muted-foreground">
+                      برای بررسی وضعیت ثبت‌نام ویزیتور
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Mobile input form
+  if (showForm && selectedType && !mobile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <HeaderAuth />
+        <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
+          <Card className="max-w-md mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl font-bold">
+                {selectedType === 'supplier' ? 'بررسی وضعیت تأمین‌کننده' : 'بررسی وضعیت ویزیتور'}
+              </CardTitle>
+              <p className="text-muted-foreground">شماره موبایل خود را وارد کنید</p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <form onSubmit={handleMobileSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">شماره موبایل</label>
+                  <input
+                    type="tel"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="09123456789"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  بررسی وضعیت
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    setShowForm(false);
+                    setSelectedType(null);
+                    setMobile('');
+                  }}
+                >
+                  بازگشت
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

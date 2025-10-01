@@ -41,6 +41,7 @@ const PublicSupplierRegistration = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const [formData, setFormData] = useState({
     // Personal & Contact Information
     full_name: "",
@@ -144,11 +145,11 @@ const PublicSupplierRegistration = () => {
       });
 
       if (response.ok) {
+        setRegistrationSuccess(true);
         toast({
           title: "ثبت‌نام موفق",
           description: "درخواست شما با موفقیت ثبت شد. پس از تأیید ادمین، اطلاعات شما در پلتفرم نمایش داده خواهد شد.",
         });
-        navigate('/');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || 'خطا در ثبت‌نام');
@@ -557,6 +558,45 @@ const PublicSupplierRegistration = () => {
       </div>
     </div>
   ), [formData.products]);
+
+  // Success page
+  if (registrationSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <HeaderAuth />
+        <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="p-8 text-center">
+              <CheckCircle className="w-20 h-20 mx-auto text-green-500 mb-6" />
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                ثبت‌نام با موفقیت انجام شد!
+              </h1>
+              <p className="text-muted-foreground mb-6">
+                درخواست ثبت‌نام تأمین‌کننده شما با موفقیت ارسال شد. 
+                تیم ما درخواست شما را بررسی کرده و در صورت تأیید، 
+                اطلاعات شما در پلتفرم نمایش داده خواهد شد.
+              </p>
+              <div className="space-y-4">
+                <Button 
+                  onClick={() => navigate('/public/registration-status')}
+                  className="w-full"
+                >
+                  بررسی وضعیت ثبت‌نام
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate('/')}
+                  className="w-full"
+                >
+                  بازگشت به صفحه اصلی
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
