@@ -87,21 +87,11 @@ const PublicSupplierRegistration = () => {
     "زاهدان", "رشت", "کرمان", "یزد", "همدان", "اردبیل", "بندرعباس", "اسلام‌شهر", "زنجان", "کاشان"
   ];
 
-  const handleInputChange = (field: string, value: any) => {
+  const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleInputChangeWithDelay = (field: string, value: any) => {
-    // Use a timeout to debounce the input changes
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        [field]: value
-      }));
-    }, 0);
   };
 
   const handleProductChange = (index: number, field: string, value: any) => {
@@ -221,13 +211,7 @@ const PublicSupplierRegistration = () => {
           <Input
             id="full_name"
             value={formData.full_name}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFormData(prev => ({
-                ...prev,
-                full_name: value
-              }));
-            }}
+            onChange={(e) => updateFormData('full_name', e.target.value)}
             placeholder="نام و نام خانوادگی خود را وارد کنید"
             required
             className="text-right"
@@ -241,13 +225,7 @@ const PublicSupplierRegistration = () => {
           <Input
             id="mobile"
             value={formData.mobile}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFormData(prev => ({
-                ...prev,
-                mobile: value
-              }));
-            }}
+            onChange={(e) => updateFormData('mobile', e.target.value)}
             placeholder="09123456789"
             required
             className="text-right"
@@ -260,9 +238,8 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="brand_name">نام برند</Label>
           <Input
             id="brand_name"
-            key="brand_name"
             value={formData.brand_name}
-            onChange={(e) => handleInputChange('brand_name', e.target.value)}
+            onChange={(e) => updateFormData('brand_name', e.target.value)}
             placeholder="نام برند یا شرکت شما"
             className="text-right"
             dir="rtl"
@@ -272,7 +249,7 @@ const PublicSupplierRegistration = () => {
 
         <div className="space-y-2">
           <Label htmlFor="city">شهر *</Label>
-          <Select value={formData.city} onValueChange={(value) => handleInputChange('city', value)}>
+          <Select value={formData.city} onValueChange={(value) => updateFormData('city', value)}>
             <SelectTrigger className="text-right">
               <SelectValue placeholder="شهر خود را انتخاب کنید" />
             </SelectTrigger>
@@ -290,9 +267,8 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="address">آدرس کامل *</Label>
           <Textarea
             id="address"
-            key="address"
             value={formData.address}
-            onChange={(e) => handleInputChange('address', e.target.value)}
+            onChange={(e) => updateFormData('address', e.target.value)}
             placeholder="آدرس کامل محل کار یا تولید خود را وارد کنید"
             required
             className="text-right"
@@ -306,9 +282,8 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="image_url">لینک تصویر</Label>
           <Input
             id="image_url"
-            key="image_url"
             value={formData.image_url}
-            onChange={(e) => handleInputChange('image_url', e.target.value)}
+            onChange={(e) => updateFormData('image_url', e.target.value)}
             placeholder="https://example.com/image.jpg"
             className="text-right"
             dir="ltr"
@@ -332,7 +307,7 @@ const PublicSupplierRegistration = () => {
           <Checkbox
             id="has_registered_business"
             checked={formData.has_registered_business}
-            onCheckedChange={(checked) => handleInputChange('has_registered_business', checked)}
+            onCheckedChange={(checked) => updateFormData('has_registered_business', checked)}
           />
           <Label htmlFor="has_registered_business">کسب‌وکار ثبت شده دارم</Label>
         </div>
@@ -342,9 +317,8 @@ const PublicSupplierRegistration = () => {
             <Label htmlFor="business_registration_num">شماره ثبت کسب‌وکار</Label>
               <Input
                 id="business_registration_num"
-                key="business_registration_num"
                 value={formData.business_registration_num}
-                onChange={(e) => handleInputChange('business_registration_num', e.target.value)}
+                onChange={(e) => updateFormData('business_registration_num', e.target.value)}
                 placeholder="شماره ثبت کسب‌وکار خود را وارد کنید"
                 className="text-right"
                 dir="ltr"
@@ -357,7 +331,7 @@ const PublicSupplierRegistration = () => {
           <Checkbox
             id="has_export_experience"
             checked={formData.has_export_experience}
-            onCheckedChange={(checked) => handleInputChange('has_export_experience', checked)}
+            onCheckedChange={(checked) => updateFormData('has_export_experience', checked)}
           />
           <Label htmlFor="has_export_experience">تجربه صادرات دارم</Label>
         </div>
@@ -367,9 +341,8 @@ const PublicSupplierRegistration = () => {
             <Label htmlFor="export_price">قیمت صادرات</Label>
               <Textarea
                 id="export_price"
-                key="export_price"
                 value={formData.export_price}
-                onChange={(e) => handleInputChange('export_price', e.target.value)}
+                onChange={(e) => updateFormData('export_price', e.target.value)}
                 placeholder="اطلاعات مربوط به قیمت‌گذاری صادرات خود را وارد کنید"
                 className="text-right"
                 dir="rtl"
@@ -383,7 +356,7 @@ const PublicSupplierRegistration = () => {
           <Checkbox
             id="can_produce_private_label"
             checked={formData.can_produce_private_label}
-            onCheckedChange={(checked) => handleInputChange('can_produce_private_label', checked)}
+            onCheckedChange={(checked) => updateFormData('can_produce_private_label', checked)}
           />
           <Label htmlFor="can_produce_private_label">قابلیت تولید برند اختصاصی دارم</Label>
         </div>
@@ -404,9 +377,8 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="wholesale_min_price">حداقل قیمت عمده‌فروشی *</Label>
           <Input
             id="wholesale_min_price"
-            key="wholesale_min_price"
             value={formData.wholesale_min_price}
-            onChange={(e) => handleInputChange('wholesale_min_price', e.target.value)}
+            onChange={(e) => updateFormData('wholesale_min_price', e.target.value)}
             placeholder="مثال: 100000 تومان"
             required
             className="text-right"
@@ -419,9 +391,8 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="wholesale_high_volume_price">قیمت عمده‌فروشی حجم بالا</Label>
           <Input
             id="wholesale_high_volume_price"
-            key="wholesale_high_volume_price"
             value={formData.wholesale_high_volume_price}
-            onChange={(e) => handleInputChange('wholesale_high_volume_price', e.target.value)}
+            onChange={(e) => updateFormData('wholesale_high_volume_price', e.target.value)}
             placeholder="مثال: 80000 تومان"
             className="text-right"
             dir="rtl"
@@ -462,7 +433,6 @@ const PublicSupplierRegistration = () => {
               <div className="space-y-2">
                 <Label>نام محصول *</Label>
                 <Input
-                  key={`product_name_${index}`}
                   value={product.product_name}
                   onChange={(e) => handleProductChange(index, 'product_name', e.target.value)}
                   placeholder="نام محصول را وارد کنید"
@@ -495,7 +465,6 @@ const PublicSupplierRegistration = () => {
               <div className="md:col-span-2 space-y-2">
                 <Label>توضیحات محصول *</Label>
                 <Textarea
-                  key={`product_description_${index}`}
                   value={product.description}
                   onChange={(e) => handleProductChange(index, 'description', e.target.value)}
                   placeholder="توضیحات کامل محصول را وارد کنید"
@@ -510,7 +479,6 @@ const PublicSupplierRegistration = () => {
               <div className="space-y-2">
                 <Label>حداقل تولید ماهانه *</Label>
                 <Input
-                  key={`product_production_${index}`}
                   value={product.monthly_production_min}
                   onChange={(e) => handleProductChange(index, 'monthly_production_min', e.target.value)}
                   placeholder="مثال: 1000 کیلوگرم"

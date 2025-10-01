@@ -93,7 +93,7 @@ const PublicVisitorRegistration = () => {
     "بانک سینا", "بانک پارسیان", "بانک اقتصاد نوین", "بانک پاسارگاد", "بانک کارآفرین"
   ];
 
-  const handleInputChange = (field: string, value: any) => {
+  const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -181,13 +181,7 @@ const PublicVisitorRegistration = () => {
           <Input
             id="full_name"
             value={formData.full_name}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFormData(prev => ({
-                ...prev,
-                full_name: value
-              }));
-            }}
+            onChange={(e) => updateFormData('full_name', e.target.value)}
             placeholder="نام و نام خانوادگی خود را وارد کنید"
             required
             className="text-right"
@@ -201,13 +195,7 @@ const PublicVisitorRegistration = () => {
           <Input
             id="national_id"
             value={formData.national_id}
-            onChange={(e) => {
-              const value = e.target.value;
-              setFormData(prev => ({
-                ...prev,
-                national_id: value
-              }));
-            }}
+            onChange={(e) => updateFormData('national_id', e.target.value)}
             placeholder="1234567890"
             required
             className="text-right"
@@ -221,9 +209,8 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="passport_number">شماره پاسپورت</Label>
           <Input
             id="passport_number"
-            key="passport_number"
             value={formData.passport_number}
-            onChange={(e) => handleInputChange('passport_number', e.target.value)}
+            onChange={(e) => updateFormData('passport_number', e.target.value)}
             placeholder="شماره پاسپورت خود را وارد کنید"
             className="text-right"
             dir="ltr"
@@ -235,10 +222,9 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="birth_date">تاریخ تولد *</Label>
           <Input
             id="birth_date"
-            key="birth_date"
             type="date"
             value={formData.birth_date}
-            onChange={(e) => handleInputChange('birth_date', e.target.value)}
+            onChange={(e) => updateFormData('birth_date', e.target.value)}
             required
             className="text-right"
             autoComplete="off"
@@ -249,9 +235,8 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="mobile">شماره موبایل *</Label>
           <Input
             id="mobile"
-            key="mobile"
             value={formData.mobile}
-            onChange={(e) => handleInputChange('mobile', e.target.value)}
+            onChange={(e) => updateFormData('mobile', e.target.value)}
             placeholder="09123456789"
             required
             className="text-right"
@@ -265,10 +250,11 @@ const PublicVisitorRegistration = () => {
           <Input
             id="whatsapp_number"
             value={formData.whatsapp_number}
-            onChange={(e) => handleInputChange('whatsapp_number', e.target.value)}
+            onChange={(e) => updateFormData('whatsapp_number', e.target.value)}
             placeholder="09123456789"
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
 
@@ -278,10 +264,11 @@ const PublicVisitorRegistration = () => {
             id="email"
             type="email"
             value={formData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
+            onChange={(e) => updateFormData('email', e.target.value)}
             placeholder="example@email.com"
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
       </div>
@@ -302,7 +289,7 @@ const PublicVisitorRegistration = () => {
           <Textarea
             id="residence_address"
             value={formData.residence_address}
-            onChange={(e) => handleInputChange('residence_address', e.target.value)}
+            onChange={(e) => updateFormData('residence_address', e.target.value)}
             placeholder="آدرس کامل محل سکونت خود را وارد کنید"
             required
             className="text-right"
@@ -316,7 +303,7 @@ const PublicVisitorRegistration = () => {
           <Input
             id="city_province"
             value={formData.city_province}
-            onChange={(e) => handleInputChange('city_province', e.target.value)}
+            onChange={(e) => updateFormData('city_province', e.target.value)}
             placeholder="شهر و استان محل سکونت"
             required
             className="text-right"
@@ -329,7 +316,7 @@ const PublicVisitorRegistration = () => {
           <Textarea
             id="destination_cities"
             value={formData.destination_cities}
-            onChange={(e) => handleInputChange('destination_cities', e.target.value)}
+            onChange={(e) => updateFormData('destination_cities', e.target.value)}
             placeholder="شهرهایی که قصد سفر به آن‌ها را دارید (مثال: دبی، ابوظبی، ریاض)"
             required
             className="text-right"
@@ -342,7 +329,7 @@ const PublicVisitorRegistration = () => {
           <Checkbox
             id="has_local_contact"
             checked={formData.has_local_contact}
-            onCheckedChange={(checked) => handleInputChange('has_local_contact', checked)}
+            onCheckedChange={(checked) => updateFormData('has_local_contact', checked)}
           />
           <Label htmlFor="has_local_contact">آشنای محلی در کشورهای مقصد دارم</Label>
         </div>
@@ -353,7 +340,7 @@ const PublicVisitorRegistration = () => {
             <Textarea
               id="local_contact_details"
               value={formData.local_contact_details}
-              onChange={(e) => handleInputChange('local_contact_details', e.target.value)}
+              onChange={(e) => updateFormData('local_contact_details', e.target.value)}
               placeholder="اطلاعات مربوط به آشنایان محلی خود را وارد کنید"
               className="text-right"
               dir="rtl"
@@ -379,7 +366,7 @@ const PublicVisitorRegistration = () => {
           <Input
             id="bank_account_iban"
             value={formData.bank_account_iban}
-            onChange={(e) => handleInputChange('bank_account_iban', e.target.value)}
+            onChange={(e) => updateFormData('bank_account_iban', e.target.value)}
             placeholder="IR123456789012345678901234"
             required
             className="text-right"
@@ -390,7 +377,7 @@ const PublicVisitorRegistration = () => {
 
         <div className="space-y-2">
           <Label htmlFor="bank_name">نام بانک *</Label>
-          <Select value={formData.bank_name} onValueChange={(value) => handleInputChange('bank_name', value)}>
+          <Select value={formData.bank_name} onValueChange={(value) => updateFormData('bank_name', value)}>
             <SelectTrigger className="text-right">
               <SelectValue placeholder="نام بانک خود را انتخاب کنید" />
             </SelectTrigger>
@@ -409,7 +396,7 @@ const PublicVisitorRegistration = () => {
           <Input
             id="account_holder_name"
             value={formData.account_holder_name}
-            onChange={(e) => handleInputChange('account_holder_name', e.target.value)}
+            onChange={(e) => updateFormData('account_holder_name', e.target.value)}
             placeholder="نام صاحب حساب (در صورت متفاوت بودن با نام شما)"
             className="text-right"
             dir="rtl"
@@ -432,7 +419,7 @@ const PublicVisitorRegistration = () => {
           <Checkbox
             id="has_marketing_experience"
             checked={formData.has_marketing_experience}
-            onCheckedChange={(checked) => handleInputChange('has_marketing_experience', checked)}
+            onCheckedChange={(checked) => updateFormData('has_marketing_experience', checked)}
           />
           <Label htmlFor="has_marketing_experience">تجربه بازاریابی دارم</Label>
         </div>
@@ -443,7 +430,7 @@ const PublicVisitorRegistration = () => {
             <Textarea
               id="marketing_experience_desc"
               value={formData.marketing_experience_desc}
-              onChange={(e) => handleInputChange('marketing_experience_desc', e.target.value)}
+              onChange={(e) => updateFormData('marketing_experience_desc', e.target.value)}
               placeholder="تجربه بازاریابی خود را شرح دهید"
               className="text-right"
               dir="rtl"
@@ -454,7 +441,7 @@ const PublicVisitorRegistration = () => {
 
         <div className="space-y-2">
           <Label htmlFor="language_level">سطح زبان عربی *</Label>
-          <Select value={formData.language_level} onValueChange={(value) => handleInputChange('language_level', value)}>
+          <Select value={formData.language_level} onValueChange={(value) => updateFormData('language_level', value)}>
             <SelectTrigger className="text-right">
               <SelectValue placeholder="سطح زبان عربی خود را انتخاب کنید" />
             </SelectTrigger>
@@ -473,7 +460,7 @@ const PublicVisitorRegistration = () => {
           <Textarea
             id="special_skills"
             value={formData.special_skills}
-            onChange={(e) => handleInputChange('special_skills', e.target.value)}
+            onChange={(e) => updateFormData('special_skills', e.target.value)}
             placeholder="مهارت‌های ویژه خود را وارد کنید (مثال: فروش، مشاوره، ترجمه)"
             className="text-right"
             dir="rtl"
@@ -498,7 +485,7 @@ const PublicVisitorRegistration = () => {
             <Checkbox
               id="agrees_to_use_approved_products"
               checked={formData.agrees_to_use_approved_products}
-              onCheckedChange={(checked) => handleInputChange('agrees_to_use_approved_products', checked)}
+              onCheckedChange={(checked) => updateFormData('agrees_to_use_approved_products', checked)}
               className="mt-1"
             />
             <Label htmlFor="agrees_to_use_approved_products" className="text-sm">
@@ -510,7 +497,7 @@ const PublicVisitorRegistration = () => {
             <Checkbox
               id="agrees_to_violation_consequences"
               checked={formData.agrees_to_violation_consequences}
-              onCheckedChange={(checked) => handleInputChange('agrees_to_violation_consequences', checked)}
+              onCheckedChange={(checked) => updateFormData('agrees_to_violation_consequences', checked)}
               className="mt-1"
             />
             <Label htmlFor="agrees_to_violation_consequences" className="text-sm">
@@ -522,7 +509,7 @@ const PublicVisitorRegistration = () => {
             <Checkbox
               id="agrees_to_submit_reports"
               checked={formData.agrees_to_submit_reports}
-              onCheckedChange={(checked) => handleInputChange('agrees_to_submit_reports', checked)}
+              onCheckedChange={(checked) => updateFormData('agrees_to_submit_reports', checked)}
               className="mt-1"
             />
             <Label htmlFor="agrees_to_submit_reports" className="text-sm">
@@ -537,7 +524,7 @@ const PublicVisitorRegistration = () => {
             <Input
               id="digital_signature"
               value={formData.digital_signature}
-              onChange={(e) => handleInputChange('digital_signature', e.target.value)}
+              onChange={(e) => updateFormData('digital_signature', e.target.value)}
               placeholder="نام و نام خانوادگی خود را به عنوان امضا وارد کنید"
               required
               className="text-right"
@@ -551,7 +538,7 @@ const PublicVisitorRegistration = () => {
               id="signature_date"
               type="date"
               value={formData.signature_date}
-              onChange={(e) => handleInputChange('signature_date', e.target.value)}
+              onChange={(e) => updateFormData('signature_date', e.target.value)}
               required
               className="text-right"
             />
