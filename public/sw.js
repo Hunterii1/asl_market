@@ -41,12 +41,12 @@ self.addEventListener('fetch', function(event) {
         if (response) {
           return response;
         }
-        return fetch(event.request);
-      }
-      .catch(function() {
-        // If fetch fails, return cached offline page or fallback
-        return caches.match('/');
-      }))
+        return fetch(event.request)
+          .catch(function() {
+            // If fetch fails, return cached offline page or fallback
+            return caches.match('/');
+          });
+      })
   );
 });
 
