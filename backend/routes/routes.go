@@ -19,6 +19,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	upgradeController := controllers.NewUpgradeController(telegramService)
 	spotPlayerController := controllers.NewSpotPlayerController()
 	supportTicketController := controllers.NewSupportTicketController()
+	publicRegistrationController := controllers.NewPublicRegistrationController(models.GetDB())
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -42,14 +43,22 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		auth.POST("/reset-password", authController.ResetPassword)
 	}
 
+	// Public registration routes (no authentication required)
+	public := v1.Group("/public")
+	{
+		public.POST("/supplier/register", publicRegistrationController.RegisterPublicSupplier)
+		public.POST("/visitor/register", publicRegistrationController.RegisterPublicVisitor)
+		public.GET("/registration-status", publicRegistrationController.GetRegistrationStatus)
+	}
+
 	// Public routes with optional authentication
-	public := v1.Group("/")
-	public.Use(middleware.OptionalAuthMiddleware())
+	publicOptional := v1.Group("/")
+	publicOptional.Use(middleware.OptionalAuthMiddleware())
 	{
 		// These routes can be accessed without authentication
 		// but will include user info if authenticated
-		public.GET("/dashboard/stats", getDashboardStats)
-		public.GET("/products", getProducts)
+		publicOptional.GET("/dashboard/stats", getDashboardStats)
+		publicOptional.GET("/products", getProducts)
 	}
 
 	// Protected routes (authentication required)

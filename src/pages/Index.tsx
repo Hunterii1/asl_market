@@ -28,7 +28,10 @@ import {
   CreditCard,
   Truck,
   Bot,
-  Palette
+  Palette,
+  Building,
+  Globe,
+  ExternalLink
 } from "lucide-react";
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
@@ -171,6 +174,55 @@ const Index = () => {
             );
           })}
         </div>
+
+        {/* Public Registration Section */}
+        {!isAuthenticated && (
+          <Card className="mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
+            <CardContent className="p-6">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-foreground mb-2">ثبت‌نام سریع</h2>
+                <p className="text-muted-foreground">بدون نیاز به لایسنس، مستقیماً در پلتفرم عضو شوید</p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-4">
+                <Button
+                  asChild
+                  className="h-20 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <a href="/public/supplier-registration" className="flex items-center justify-center gap-3">
+                    <Building className="w-8 h-8" />
+                    <div className="text-right">
+                      <div className="font-bold text-lg">ثبت‌نام تأمین‌کننده</div>
+                      <div className="text-sm opacity-90">برای تولیدکنندگان ایرانی</div>
+                    </div>
+                    <ExternalLink className="w-5 h-5" />
+                  </a>
+                </Button>
+
+                <Button
+                  asChild
+                  className="h-20 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <a href="/public/visitor-registration" className="flex items-center justify-center gap-3">
+                    <Globe className="w-8 h-8" />
+                    <div className="text-right">
+                      <div className="font-bold text-lg">ثبت‌نام ویزیتور</div>
+                      <div className="text-sm opacity-90">برای نمایندگان در کشورهای عربی</div>
+                    </div>
+                    <ExternalLink className="w-5 h-5" />
+                  </a>
+                </Button>
+              </div>
+
+              <div className="mt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  پس از ثبت‌نام، درخواست شما توسط ادمین بررسی شده و در صورت تأیید، 
+                  اطلاعات شما در پلتفرم نمایش داده خواهد شد.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Dynamic Content */}
         <div className="animate-fade-in">

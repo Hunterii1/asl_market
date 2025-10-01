@@ -30,6 +30,9 @@ import VisitorRegistration from "./pages/VisitorRegistration";
 import VisitorStatus from "./pages/VisitorStatus";
 import ApprovedVisitors from "./pages/ApprovedVisitors";
 import LicenseInfoPage from "./pages/LicenseInfoPage";
+import PublicSupplierRegistration from "./pages/PublicSupplierRegistration";
+import PublicVisitorRegistration from "./pages/PublicVisitorRegistration";
+import RegistrationStatus from "./pages/RegistrationStatus";
 
 import SubmitProduct from "./pages/SubmitProduct";
 import MyProducts from "./pages/MyProducts";
@@ -56,6 +59,11 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/" element={<Index />} />
+              
+              {/* Public registration routes (no authentication required) */}
+        <Route path="/public/supplier-registration" element={<PublicSupplierRegistration />} />
+        <Route path="/public/visitor-registration" element={<PublicVisitorRegistration />} />
+        <Route path="/public/registration-status" element={<RegistrationStatus />} />
 
               {/* Supplier routes */}
               <Route path="/supplier-registration" element={
