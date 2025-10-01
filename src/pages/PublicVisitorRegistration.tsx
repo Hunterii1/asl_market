@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -167,7 +167,7 @@ const PublicVisitorRegistration = () => {
     </div>
   );
 
-  const Step1 = () => (
+  const Step1 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Users className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -273,9 +273,9 @@ const PublicVisitorRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.full_name, formData.national_id, formData.passport_number, formData.birth_date, formData.mobile, formData.whatsapp_number, formData.email]);
 
-  const Step2 = () => (
+  const Step2 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <MapPin className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -350,9 +350,9 @@ const PublicVisitorRegistration = () => {
         )}
       </div>
     </div>
-  );
+  ), [formData.residence_address, formData.city_province, formData.destination_cities, formData.has_local_contact, formData.local_contact_details]);
 
-  const Step3 = () => (
+  const Step3 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <CreditCard className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -404,9 +404,9 @@ const PublicVisitorRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.bank_account_iban, formData.bank_name, formData.account_holder_name]);
 
-  const Step4 = () => (
+  const Step4 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Briefcase className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -469,9 +469,9 @@ const PublicVisitorRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.has_marketing_experience, formData.marketing_experience_desc, formData.language_level, formData.special_skills]);
 
-  const Step5 = () => (
+  const Step5 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <FileText className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -553,7 +553,7 @@ const PublicVisitorRegistration = () => {
         </Alert>
       </div>
     </div>
-  );
+  ), [formData.agrees_to_use_approved_products, formData.agrees_to_violation_consequences, formData.agrees_to_submit_reports, formData.digital_signature, formData.signature_date]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -573,11 +573,11 @@ const PublicVisitorRegistration = () => {
 
           <CardContent className="p-4 sm:p-8">
             <form onSubmit={handleSubmit}>
-              {currentStep === 1 && <Step1 />}
-              {currentStep === 2 && <Step2 />}
-              {currentStep === 3 && <Step3 />}
-              {currentStep === 4 && <Step4 />}
-              {currentStep === 5 && <Step5 />}
+              {currentStep === 1 && Step1}
+              {currentStep === 2 && Step2}
+              {currentStep === 3 && Step3}
+              {currentStep === 4 && Step4}
+              {currentStep === 5 && Step5}
 
               <div className="flex justify-between mt-8">
                 <Button

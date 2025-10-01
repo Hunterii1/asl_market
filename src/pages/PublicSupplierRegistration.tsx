@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -197,7 +197,7 @@ const PublicSupplierRegistration = () => {
     </div>
   );
 
-  const Step1 = () => (
+  const Step1 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Building className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -292,9 +292,9 @@ const PublicSupplierRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.full_name, formData.mobile, formData.brand_name, formData.city, formData.address, formData.image_url]);
 
-  const Step2 = () => (
+  const Step2 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <FileText className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -362,9 +362,9 @@ const PublicSupplierRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.has_registered_business, formData.business_registration_num, formData.has_export_experience, formData.export_price, formData.can_produce_private_label]);
 
-  const Step3 = () => (
+  const Step3 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <DollarSign className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -401,9 +401,9 @@ const PublicSupplierRegistration = () => {
         </div>
       </div>
     </div>
-  );
+  ), [formData.wholesale_min_price, formData.wholesale_high_volume_price]);
 
-  const Step4 = () => (
+  const Step4 = useMemo(() => (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <Package className="w-16 h-16 mx-auto text-blue-500 mb-4" />
@@ -556,7 +556,7 @@ const PublicSupplierRegistration = () => {
         </Button>
       </div>
     </div>
-  );
+  ), [formData.products]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -576,10 +576,10 @@ const PublicSupplierRegistration = () => {
 
           <CardContent className="p-4 sm:p-8">
             <form onSubmit={handleSubmit}>
-              {currentStep === 1 && <Step1 />}
-              {currentStep === 2 && <Step2 />}
-              {currentStep === 3 && <Step3 />}
-              {currentStep === 4 && <Step4 />}
+              {currentStep === 1 && Step1}
+              {currentStep === 2 && Step2}
+              {currentStep === 3 && Step3}
+              {currentStep === 4 && Step4}
 
               <div className="flex justify-between mt-8">
                 <Button
