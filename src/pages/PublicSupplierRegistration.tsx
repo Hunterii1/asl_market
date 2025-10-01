@@ -447,7 +447,17 @@ const PublicSupplierRegistration = () => {
                 <Label>نوع محصول *</Label>
                 <Select 
                   value={product.product_type} 
-                  onValueChange={(value) => handleProductChange(index, 'product_type', value)}
+                  onValueChange={(value) => {
+                    const newProducts = [...formData.products];
+                    newProducts[index] = {
+                      ...newProducts[index],
+                      product_type: value
+                    };
+                    setFormData(prev => ({
+                      ...prev,
+                      products: newProducts
+                    }));
+                  }}
                 >
                   <SelectTrigger className="text-right">
                     <SelectValue placeholder="نوع محصول را انتخاب کنید" />
@@ -493,7 +503,17 @@ const PublicSupplierRegistration = () => {
                 <div className="flex items-center space-x-2 space-x-reverse">
                   <Checkbox
                     checked={product.needs_export_license}
-                    onCheckedChange={(checked) => handleProductChange(index, 'needs_export_license', checked)}
+                    onCheckedChange={(checked) => {
+                      const newProducts = [...formData.products];
+                      newProducts[index] = {
+                        ...newProducts[index],
+                        needs_export_license: checked as boolean
+                      };
+                      setFormData(prev => ({
+                        ...prev,
+                        products: newProducts
+                      }));
+                    }}
                   />
                   <Label>نیاز به مجوز صادرات دارد</Label>
                 </div>
@@ -504,7 +524,17 @@ const PublicSupplierRegistration = () => {
                   <Label>نوع مجوز مورد نیاز</Label>
                   <Input
                     value={product.required_license_type}
-                    onChange={(e) => handleProductChange(index, 'required_license_type', e.target.value)}
+                    onChange={(e) => {
+                      const newProducts = [...formData.products];
+                      newProducts[index] = {
+                        ...newProducts[index],
+                        required_license_type: e.target.value
+                      };
+                      setFormData(prev => ({
+                        ...prev,
+                        products: newProducts
+                      }));
+                    }}
                     placeholder="نوع مجوز مورد نیاز را وارد کنید"
                     className="text-right"
                     dir="rtl"

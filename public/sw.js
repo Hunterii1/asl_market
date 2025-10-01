@@ -1,13 +1,13 @@
-const CACHE_NAME = 'asl-market-v1';
+const CACHE_NAME = 'asl-market-v2';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/LOGO.png',
   '/logo-192.png',
   '/logo-512.png',
   '/apple-touch-icon.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/favicon.ico',
+  '/favicon.png'
 ];
 
 self.addEventListener('install', function(event) {
@@ -16,7 +16,11 @@ self.addEventListener('install', function(event) {
     caches.open(CACHE_NAME)
       .then(function(cache) {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache).catch(function(error) {
+          console.log('Cache addAll failed:', error);
+          // Continue with installation even if some files fail to cache
+          return Promise.resolve();
+        });
       })
   );
 });
