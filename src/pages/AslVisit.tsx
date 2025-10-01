@@ -21,7 +21,8 @@ import {
   Briefcase,
   Award,
   Lock,
-  Home
+  Home,
+  Plane
 } from "lucide-react";
 
 const AslVisit = () => {
@@ -194,47 +195,84 @@ const AslVisit = () => {
                 </div>
 
                 {/* آدرس و محل سکونت - دوم */}
-                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-                  <MapPin className="w-4 h-4" />
-                  <span className="truncate">{visitor.residence_address}</span>
+                <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+                  <MapPin className="w-4 h-4 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="block font-medium text-foreground mb-1">آدرس محل سکونت:</span>
+                    <span className="block">{visitor.residence_address}</span>
+                  </div>
                 </div>
 
                 {/* شهر/استان - سوم */}
                 <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
                   <Home className="w-4 h-4" />
-                  {visitor.city_province}
+                  <span className="font-medium text-foreground">شهر/استان:</span>
+                  <span>{visitor.city_province}</span>
                 </div>
 
-                <div className="space-y-2 mb-4">
+                {/* شهرهای مقصد */}
+                <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+                  <Plane className="w-4 h-4 mt-0.5" />
+                  <div className="flex-1">
+                    <span className="block font-medium text-foreground mb-1">شهرهای مقصد:</span>
+                    <span className="block">{visitor.destination_cities}</span>
+                  </div>
+                </div>
+
+                {/* آشنای محلی */}
+                {visitor.has_local_contact && (
+                  <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+                    <User className="w-4 h-4 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="block font-medium text-foreground mb-1">آشنای محلی:</span>
+                      <span className="block text-green-400">بله</span>
+                      {visitor.local_contact_details && (
+                        <span className="block text-xs mt-1">{visitor.local_contact_details}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+
+                {/* تجربه و مهارت‌ها */}
+                <div className="space-y-3 mb-4">
                   {visitor.has_marketing_experience && (
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <Briefcase className="w-4 h-4" />
-                      دارای تجربه بازاریابی
+                    <div className="flex items-start gap-2 text-muted-foreground text-sm">
+                      <Briefcase className="w-4 h-4 mt-0.5" />
+                      <div className="flex-1">
+                        <span className="block font-medium text-foreground">تجربه بازاریابی:</span>
+                        <span className="block text-green-400">دارد</span>
+                        {visitor.marketing_experience_desc && (
+                          <span className="block text-xs mt-1">{visitor.marketing_experience_desc}</span>
+                        )}
+                      </div>
                     </div>
                   )}
 
                   <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Languages className="w-4 h-4" />
-                    {getLanguageText(visitor.language_level)}
+                    <span className="font-medium text-foreground">سطح زبان:</span>
+                    <span>{getLanguageText(visitor.language_level)}</span>
                   </div>
+
+                  {visitor.special_skills && (
+                    <div className="flex items-start gap-2 text-muted-foreground text-sm">
+                      <Star className="w-4 h-4 mt-0.5" />
+                      <div className="flex-1">
+                        <span className="block font-medium text-foreground mb-2">مهارت‌های ویژه:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {visitor.special_skills.split('، ').map((skill, index) => (
+                            <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
+                              {skill.trim()}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {visitor.marketing_experience_desc && (
-                  <p className="text-muted-foreground text-sm mb-4">{visitor.marketing_experience_desc}</p>
-                )}
 
-                {visitor.special_skills && (
-                  <div className="mb-4">
-                    <span className="text-muted-foreground text-sm block mb-2">مهارت‌ها:</span>
-                    <div className="flex flex-wrap gap-1">
-                      {visitor.special_skills.split('، ').map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-muted text-muted-foreground rounded-xl text-xs">
-                          {skill.trim()}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Contact Information (Hidden) */}
                 <div className="space-y-2 mb-4">

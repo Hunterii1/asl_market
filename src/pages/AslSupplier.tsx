@@ -25,7 +25,8 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  Plus
+  Plus,
+  Building
 } from "lucide-react";
 
 const AslSupplier = () => {
@@ -239,41 +240,71 @@ const AslSupplier = () => {
               </div>
 
               {/* آدرس - دوم */}
-              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
-                <MapPin className="w-4 h-4" />
-                <span className="truncate">{supplier.address}</span>
+              <div className="flex items-start gap-2 text-muted-foreground text-sm mb-3">
+                <MapPin className="w-4 h-4 mt-0.5" />
+                <div className="flex-1">
+                  <span className="block font-medium text-foreground mb-1">آدرس:</span>
+                  <span className="block">{supplier.address}</span>
+                </div>
               </div>
 
-              {/* نام تامین‌کننده - سوم */}
+              {/* شهر - سوم */}
+              <div className="flex items-center gap-2 text-muted-foreground text-sm mb-3">
+                <Building className="w-4 h-4" />
+                <span className="font-medium text-foreground">شهر:</span>
+                <span>{supplier.city}</span>
+              </div>
+
+              {/* نام تامین‌کننده - چهارم */}
               <div className="mb-3">
                 <span className="text-sm font-medium text-foreground">{supplier.brand_name || supplier.full_name}</span>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Package className="w-4 h-4" />
-                  {supplier.products?.length || 0} محصول
-                </div>
-
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <Clock className="w-4 h-4" />
-                  عضو جدید
-                </div>
-                
-                {supplier.has_export_experience && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Star className="w-4 h-4" />
-                    دارای تجربه صادرات
+              {/* اطلاعات کسب‌وکار */}
+              <div className="bg-muted/30 rounded-2xl p-4 mb-4">
+                <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <Building className="w-4 h-4" />
+                  اطلاعات کسب‌وکار
+                </h5>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4" />
+                    <span className="text-muted-foreground">تعداد محصولات:</span>
+                    <span className="text-foreground">{supplier.products?.length || 0}</span>
                   </div>
-                )}
-
-                {supplier.can_produce_private_label && (
-                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                    <Users className="w-4 h-4" />
-                    تولید برند اختصاصی
+                  
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-muted-foreground">وضعیت عضویت:</span>
+                    <span className="text-foreground">عضو جدید</span>
                   </div>
-                )}
+                  
+                  {supplier.has_registered_business && (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-muted-foreground">کسب‌وکار ثبت شده:</span>
+                      <span className="text-green-400">بله</span>
+                    </div>
+                  )}
+                  
+                  {supplier.has_export_experience && (
+                    <div className="flex items-center gap-2">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                      <span className="text-muted-foreground">تجربه صادرات:</span>
+                      <span className="text-yellow-400">دارد</span>
+                    </div>
+                  )}
+
+                  {supplier.can_produce_private_label && (
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-blue-400" />
+                      <span className="text-muted-foreground">تولید برند اختصاصی:</span>
+                      <span className="text-blue-400">قابل انجام</span>
+                    </div>
+                  )}
+                </div>
               </div>
+
 
               {/* محصولات */}
               <div className="mb-4">
