@@ -50,6 +50,7 @@ const RegistrationStatus: React.FC = () => {
   const [selectedType, setSelectedType] = useState<'supplier' | 'visitor' | null>(null);
   const [mobile, setMobile] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [showMobileForm, setShowMobileForm] = useState(false);
 
   const urlMobile = searchParams.get('mobile');
   const urlType = searchParams.get('type') as 'supplier' | 'visitor';
@@ -92,7 +93,11 @@ const RegistrationStatus: React.FC = () => {
       if (data.success) {
         setRegistrationData(data.data);
       } else {
-        setError(data.message || 'خطا در دریافت اطلاعات');
+        if (data.message && data.message.includes('یافت نشد')) {
+          setError('درخواست ثبت‌نام با این شماره موبایل یافت نشد. لطفاً شماره موبایل صحیح را وارد کنید.');
+        } else {
+          setError(data.message || 'خطا در دریافت اطلاعات');
+        }
       }
     } catch (err) {
       setError('خطا در ارتباط با سرور');
@@ -110,11 +115,18 @@ const RegistrationStatus: React.FC = () => {
   const handleTypeSelection = (type: 'supplier' | 'visitor') => {
     setSelectedType(type);
     setShowForm(true);
+    setShowMobileForm(true);
   };
 
   const handleMobileSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (mobile && selectedType) {
+      // Validate mobile number format
+      const mobileRegex = /^09\d{9}$/;
+      if (!mobileRegex.test(mobile)) {
+        setError('شماره موبایل باید با 09 شروع شده و 11 رقم باشد');
+        return;
+      }
       fetchRegistrationStatus(mobile, selectedType);
     }
   };
@@ -212,7 +224,7 @@ const RegistrationStatus: React.FC = () => {
   }
 
   // Mobile input form
-  if (showForm && selectedType && !mobile) {
+  if (showForm && selectedType && showMobileForm && !registrationData && !loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <HeaderAuth />
@@ -231,11 +243,20 @@ const RegistrationStatus: React.FC = () => {
                   <input
                     type="tel"
                     value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, ''); // Only allow digits
+                      if (value.length <= 11) {
+                        setMobile(value);
+                      }
+                    }}
                     placeholder="09123456789"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    maxLength={11}
                     required
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    شماره موبایل باید با 09 شروع شده و 11 رقم باشد
+                  </p>
                 </div>
                 <Button type="submit" className="w-full">
                   بررسی وضعیت
@@ -246,8 +267,10 @@ const RegistrationStatus: React.FC = () => {
                   className="w-full"
                   onClick={() => {
                     setShowForm(false);
+                    setShowMobileForm(false);
                     setSelectedType(null);
                     setMobile('');
+                    setError(null);
                   }}
                 >
                   بازگشت
@@ -281,10 +304,23 @@ const RegistrationStatus: React.FC = () => {
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-500" />
             <h2 className="text-xl font-bold mb-2">خطا</h2>
             <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => window.location.href = '/'} variant="outline">
-              <ArrowLeft className="w-4 h-4 ml-2" />
-              بازگشت به صفحه اصلی
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  setError(null);
+                  setMobile('');
+                  setShowForm(false);
+                  setSelectedType(null);
+                }} 
+                className="w-full"
+              >
+                تلاش مجدد
+              </Button>
+              <Button onClick={() => window.location.href = '/'} variant="outline" className="w-full">
+                <ArrowLeft className="w-4 h-4 ml-2" />
+                بازگشت به صفحه اصلی
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

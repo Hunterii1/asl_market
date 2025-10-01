@@ -1,4 +1,4 @@
-const CACHE_NAME = 'asl-market-v2';
+const CACHE_NAME = 'asl-market-v3';
 const urlsToCache = [
   '/',
   '/LOGO.png',
@@ -41,6 +41,7 @@ self.addEventListener('fetch', function(event) {
         if (response) {
           return response;
         }
+        // Cache miss - fetch from network
         return fetch(event.request)
           .catch(function() {
             // If fetch fails, return cached offline page or fallback
@@ -63,4 +64,4 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
-}); 
+});
