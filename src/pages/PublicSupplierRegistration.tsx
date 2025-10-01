@@ -94,6 +94,16 @@ const PublicSupplierRegistration = () => {
     }));
   };
 
+  const handleInputChangeWithDelay = (field: string, value: any) => {
+    // Use a timeout to debounce the input changes
+    setTimeout(() => {
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }, 0);
+  };
+
   const handleProductChange = (index: number, field: string, value: any) => {
     const newProducts = [...formData.products];
     newProducts[index] = {
@@ -177,19 +187,19 @@ const PublicSupplierRegistration = () => {
   };
 
   const StepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
+    <div className="flex items-center justify-center mb-6 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
       {[1, 2, 3, 4].map((step) => (
         <div key={step} className="flex items-center">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
+          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium transition-all duration-300 ${
             step <= currentStep 
-              ? "bg-blue-500 text-white" 
-              : "bg-gray-200 text-gray-500"
+              ? "bg-blue-500 text-white shadow-lg" 
+              : "bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
           }`}>
             {step}
           </div>
           {step < 4 && (
-            <div className={`w-16 h-1 mx-2 ${
-              step < currentStep ? "bg-blue-500" : "bg-gray-200"
+            <div className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 transition-all duration-300 ${
+              step < currentStep ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-600"
             }`} />
           )}
         </div>
@@ -210,9 +220,14 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="full_name">نام و نام خانوادگی *</Label>
           <Input
             id="full_name"
-            key="full_name"
             value={formData.full_name}
-            onChange={(e) => handleInputChange('full_name', e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormData(prev => ({
+                ...prev,
+                full_name: value
+              }));
+            }}
             placeholder="نام و نام خانوادگی خود را وارد کنید"
             required
             className="text-right"
@@ -225,9 +240,14 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="mobile">شماره موبایل *</Label>
           <Input
             id="mobile"
-            key="mobile"
             value={formData.mobile}
-            onChange={(e) => handleInputChange('mobile', e.target.value)}
+            onChange={(e) => {
+              const value = e.target.value;
+              setFormData(prev => ({
+                ...prev,
+                mobile: value
+              }));
+            }}
             placeholder="09123456789"
             required
             className="text-right"
@@ -544,6 +564,7 @@ const PublicSupplierRegistration = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <HeaderAuth />
       <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
+        <StepIndicator />
         <Card className="shadow-2xl">
           <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
             <CardTitle className="text-2xl sm:text-3xl font-bold flex items-center justify-center gap-3">
@@ -556,8 +577,6 @@ const PublicSupplierRegistration = () => {
           </CardHeader>
 
           <CardContent className="p-4 sm:p-8">
-            <StepIndicator />
-
             <form onSubmit={handleSubmit}>
               {currentStep === 1 && <Step1 />}
               {currentStep === 2 && <Step2 />}
