@@ -10,13 +10,11 @@ import {
   Target, 
   Search, 
   TrendingUp, 
- 
+  
   DollarSign,
   BarChart3,
-  Eye,
   Star,
   Package,
-  ArrowUpRight,
   Filter,
   RefreshCw
 } from "lucide-react";
@@ -306,22 +304,6 @@ const ProductsResearch = () => {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  className="flex-1 bg-blue-500 hover:bg-blue-600 rounded-2xl"
-                >
-                  <Eye className="w-4 h-4 ml-2" />
-                  مطالعه کامل
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
-                >
-                  <ArrowUpRight className="w-4 h-4" />
-                </Button>
-              </div>
             </CardContent>
           </Card>
         ))}

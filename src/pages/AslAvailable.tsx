@@ -14,15 +14,18 @@ import {
   Star, 
   MapPin, 
   User,
-  Eye,
-  ShoppingCart,
   Percent,
   CheckCircle,
   Clock,
   AlertTriangle,
   TrendingUp,
   DollarSign,
-  ExternalLink
+  ExternalLink,
+  Phone,
+  Mail,
+  MessageCircle,
+  Weight,
+  Globe
 } from "lucide-react";
 
 interface AvailableProduct {
@@ -310,36 +313,70 @@ const AslAvailable = () => {
         {filteredItems.map((item) => (
           <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
             <CardContent className="p-0">
-              <div className="relative">
-                <img
-                  src={item.image_urls?.split(',')[0] || "/placeholder-product.jpg"}
-                  alt={item.product_name}
-                  className="w-full h-48 object-cover rounded-t-3xl"
-                />
-                <div className="absolute top-4 right-4">
-                  {item.is_featured && (
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
-                      برجسته
-                    </Badge>
-                  )}
+              {item.image_urls && item.image_urls.trim() && item.image_urls.split(',')[0].trim() ? (
+                <div className="relative">
+                  <img
+                    src={item.image_urls.split(',')[0].trim()}
+                    alt={item.product_name}
+                    className="w-full h-48 object-cover rounded-t-3xl"
+                    onError={(e) => {
+                      // Hide image if it fails to load
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute top-4 right-4">
+                    {item.is_featured && (
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                        برجسته
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    {item.sale_type === 'wholesale' ? (
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                        فروش عمده
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
+                        فروش تکی
+                      </Badge>
+                    )}
+                    {item.is_hot_deal && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
+                        تخفیف ویژه
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-                <div className="absolute top-4 left-4 flex flex-col gap-2">
-                  {item.sale_type === 'wholesale' ? (
-                    <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
-                      فروش عمده
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
-                      فروش تکی
-                    </Badge>
-                  )}
-                  {item.is_hot_deal && (
-                    <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
-                      تخفیف ویژه
-                    </Badge>
-                  )}
+              ) : (
+                // Show badges even without image
+                <div className="relative bg-muted/20 rounded-t-3xl h-32 flex items-center justify-center">
+                  <Package className="w-16 h-16 text-muted-foreground" />
+                  <div className="absolute top-4 right-4">
+                    {item.is_featured && (
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                        برجسته
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="absolute top-4 left-4 flex flex-col gap-2">
+                    {item.sale_type === 'wholesale' ? (
+                      <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-full">
+                        فروش عمده
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-full">
+                        فروش تکی
+                      </Badge>
+                    )}
+                    {item.is_hot_deal && (
+                      <Badge className="bg-red-500/20 text-red-400 border-red-500/30 rounded-full">
+                        تخفیف ویژه
+                      </Badge>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="p-6">
                 <h4 className="font-bold text-foreground mb-2 group-hover:text-green-600 dark:group-hover:text-green-300 transition-colors">
@@ -377,7 +414,8 @@ const AslAvailable = () => {
                   )}
                 </div>
 
-                <div className="space-y-2 mb-4">
+                {/* Product Details */}
+                <div className="space-y-3 mb-4">
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-muted-foreground" />
                     <span className="text-muted-foreground">مکان:</span>
@@ -399,25 +437,88 @@ const AslAvailable = () => {
                       <span className="text-foreground">{item.brand}</span>
                     </div>
                   )}
+
+                  {item.origin && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">مبدا:</span>
+                      <span className="text-foreground">{item.origin}</span>
+                    </div>
+                  )}
+
+                  {item.packaging_type && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">نوع بسته‌بندی:</span>
+                      <span className="text-foreground">{item.packaging_type}</span>
+                    </div>
+                  )}
+
+                  {item.weight && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Weight className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">وزن:</span>
+                      <span className="text-foreground">{item.weight}</span>
+                    </div>
+                  )}
+
+                  {item.min_order_quantity && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">حداقل سفارش:</span>
+                      <span className="text-foreground">{item.min_order_quantity} {item.unit}</span>
+                    </div>
+                  )}
+
+                  {item.export_countries && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">کشورهای صادراتی:</span>
+                      <span className="text-foreground">{item.export_countries}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex gap-2">
-                  <Button 
-                    size="sm" 
-                    className="flex-1 bg-green-500 hover:bg-green-600 rounded-2xl"
-                  >
-                    <ShoppingCart className="w-4 h-4 ml-2" />
-                    شروع فروش
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
-                  >
-                    <Eye className="w-4 h-4 ml-2" />
-                    جزئیات
-                  </Button>
-                </div>
+                {/* Contact Information */}
+                {(item.contact_phone || item.contact_email || item.contact_whatsapp) && (
+                  <div className="bg-muted/30 rounded-2xl p-4 mb-4">
+                    <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <User className="w-4 h-4" />
+                      اطلاعات تماس
+                    </h5>
+                    <div className="space-y-2">
+                      {item.contact_phone && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">تلفن:</span>
+                          <span className="text-foreground font-mono">{item.contact_phone}</span>
+                        </div>
+                      )}
+                      {item.contact_email && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">ایمیل:</span>
+                          <span className="text-foreground font-mono">{item.contact_email}</span>
+                        </div>
+                      )}
+                      {item.contact_whatsapp && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">واتساپ:</span>
+                          <span className="text-foreground font-mono">{item.contact_whatsapp}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Additional Notes */}
+                {item.notes && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
+                    <h5 className="font-semibold text-blue-400 mb-2">یادداشت‌ها</h5>
+                    <p className="text-sm text-foreground">{item.notes}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
