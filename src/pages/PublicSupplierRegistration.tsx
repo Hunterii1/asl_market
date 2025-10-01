@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 import { 
   Building, 
   Package, 
@@ -209,12 +210,14 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="full_name">نام و نام خانوادگی *</Label>
           <Input
             id="full_name"
+            key="full_name"
             value={formData.full_name}
             onChange={(e) => handleInputChange('full_name', e.target.value)}
             placeholder="نام و نام خانوادگی خود را وارد کنید"
             required
             className="text-right"
             dir="rtl"
+            autoComplete="off"
           />
         </div>
 
@@ -222,12 +225,14 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="mobile">شماره موبایل *</Label>
           <Input
             id="mobile"
+            key="mobile"
             value={formData.mobile}
             onChange={(e) => handleInputChange('mobile', e.target.value)}
             placeholder="09123456789"
             required
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
 
@@ -235,11 +240,13 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="brand_name">نام برند</Label>
           <Input
             id="brand_name"
+            key="brand_name"
             value={formData.brand_name}
             onChange={(e) => handleInputChange('brand_name', e.target.value)}
             placeholder="نام برند یا شرکت شما"
             className="text-right"
             dir="rtl"
+            autoComplete="off"
           />
         </div>
 
@@ -263,6 +270,7 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="address">آدرس کامل *</Label>
           <Textarea
             id="address"
+            key="address"
             value={formData.address}
             onChange={(e) => handleInputChange('address', e.target.value)}
             placeholder="آدرس کامل محل کار یا تولید خود را وارد کنید"
@@ -270,6 +278,7 @@ const PublicSupplierRegistration = () => {
             className="text-right"
             dir="rtl"
             rows={3}
+            autoComplete="off"
           />
         </div>
 
@@ -277,11 +286,13 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="image_url">لینک تصویر</Label>
           <Input
             id="image_url"
+            key="image_url"
             value={formData.image_url}
             onChange={(e) => handleInputChange('image_url', e.target.value)}
             placeholder="https://example.com/image.jpg"
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
       </div>
@@ -309,14 +320,16 @@ const PublicSupplierRegistration = () => {
         {formData.has_registered_business && (
           <div className="space-y-2">
             <Label htmlFor="business_registration_num">شماره ثبت کسب‌وکار</Label>
-            <Input
-              id="business_registration_num"
-              value={formData.business_registration_num}
-              onChange={(e) => handleInputChange('business_registration_num', e.target.value)}
-              placeholder="شماره ثبت کسب‌وکار خود را وارد کنید"
-              className="text-right"
-              dir="ltr"
-            />
+              <Input
+                id="business_registration_num"
+                key="business_registration_num"
+                value={formData.business_registration_num}
+                onChange={(e) => handleInputChange('business_registration_num', e.target.value)}
+                placeholder="شماره ثبت کسب‌وکار خود را وارد کنید"
+                className="text-right"
+                dir="ltr"
+                autoComplete="off"
+              />
           </div>
         )}
 
@@ -332,15 +345,17 @@ const PublicSupplierRegistration = () => {
         {formData.has_export_experience && (
           <div className="space-y-2">
             <Label htmlFor="export_price">قیمت صادرات</Label>
-            <Textarea
-              id="export_price"
-              value={formData.export_price}
-              onChange={(e) => handleInputChange('export_price', e.target.value)}
-              placeholder="اطلاعات مربوط به قیمت‌گذاری صادرات خود را وارد کنید"
-              className="text-right"
-              dir="rtl"
-              rows={3}
-            />
+              <Textarea
+                id="export_price"
+                key="export_price"
+                value={formData.export_price}
+                onChange={(e) => handleInputChange('export_price', e.target.value)}
+                placeholder="اطلاعات مربوط به قیمت‌گذاری صادرات خود را وارد کنید"
+                className="text-right"
+                dir="rtl"
+                rows={3}
+                autoComplete="off"
+              />
           </div>
         )}
 
@@ -369,12 +384,14 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="wholesale_min_price">حداقل قیمت عمده‌فروشی *</Label>
           <Input
             id="wholesale_min_price"
+            key="wholesale_min_price"
             value={formData.wholesale_min_price}
             onChange={(e) => handleInputChange('wholesale_min_price', e.target.value)}
             placeholder="مثال: 100000 تومان"
             required
             className="text-right"
             dir="rtl"
+            autoComplete="off"
           />
         </div>
 
@@ -382,11 +399,13 @@ const PublicSupplierRegistration = () => {
           <Label htmlFor="wholesale_high_volume_price">قیمت عمده‌فروشی حجم بالا</Label>
           <Input
             id="wholesale_high_volume_price"
+            key="wholesale_high_volume_price"
             value={formData.wholesale_high_volume_price}
             onChange={(e) => handleInputChange('wholesale_high_volume_price', e.target.value)}
             placeholder="مثال: 80000 تومان"
             className="text-right"
             dir="rtl"
+            autoComplete="off"
           />
         </div>
       </div>
@@ -423,12 +442,14 @@ const PublicSupplierRegistration = () => {
               <div className="space-y-2">
                 <Label>نام محصول *</Label>
                 <Input
+                  key={`product_name_${index}`}
                   value={product.product_name}
                   onChange={(e) => handleProductChange(index, 'product_name', e.target.value)}
                   placeholder="نام محصول را وارد کنید"
                   required
                   className="text-right"
                   dir="rtl"
+                  autoComplete="off"
                 />
               </div>
 
@@ -454,6 +475,7 @@ const PublicSupplierRegistration = () => {
               <div className="md:col-span-2 space-y-2">
                 <Label>توضیحات محصول *</Label>
                 <Textarea
+                  key={`product_description_${index}`}
                   value={product.description}
                   onChange={(e) => handleProductChange(index, 'description', e.target.value)}
                   placeholder="توضیحات کامل محصول را وارد کنید"
@@ -461,18 +483,21 @@ const PublicSupplierRegistration = () => {
                   className="text-right"
                   dir="rtl"
                   rows={3}
+                  autoComplete="off"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>حداقل تولید ماهانه *</Label>
                 <Input
+                  key={`product_production_${index}`}
                   value={product.monthly_production_min}
                   onChange={(e) => handleProductChange(index, 'monthly_production_min', e.target.value)}
                   placeholder="مثال: 1000 کیلوگرم"
                   required
                   className="text-right"
                   dir="rtl"
+                  autoComplete="off"
                 />
               </div>
 
@@ -516,20 +541,21 @@ const PublicSupplierRegistration = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <HeaderAuth />
+      <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
         <Card className="shadow-2xl">
           <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="text-3xl font-bold flex items-center justify-center gap-3">
-              <Building className="w-8 h-8" />
+            <CardTitle className="text-2xl sm:text-3xl font-bold flex items-center justify-center gap-3">
+              <Building className="w-6 h-6 sm:w-8 sm:h-8" />
               ثبت‌نام تأمین‌کننده
             </CardTitle>
-            <p className="text-blue-100 mt-2">
+            <p className="text-blue-100 mt-2 text-sm sm:text-base">
               در شبکه تأمین‌کنندگان اصل مارکت عضو شوید
             </p>
           </CardHeader>
 
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <StepIndicator />
 
             <form onSubmit={handleSubmit}>

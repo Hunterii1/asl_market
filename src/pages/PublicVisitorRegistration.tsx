@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 import { 
   Users, 
   MapPin, 
@@ -179,12 +180,14 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="full_name">نام و نام خانوادگی *</Label>
           <Input
             id="full_name"
+            key="full_name"
             value={formData.full_name}
             onChange={(e) => handleInputChange('full_name', e.target.value)}
             placeholder="نام و نام خانوادگی خود را وارد کنید"
             required
             className="text-right"
             dir="rtl"
+            autoComplete="off"
           />
         </div>
 
@@ -192,6 +195,7 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="national_id">کد ملی *</Label>
           <Input
             id="national_id"
+            key="national_id"
             value={formData.national_id}
             onChange={(e) => handleInputChange('national_id', e.target.value)}
             placeholder="1234567890"
@@ -199,6 +203,7 @@ const PublicVisitorRegistration = () => {
             className="text-right"
             dir="ltr"
             maxLength={10}
+            autoComplete="off"
           />
         </div>
 
@@ -206,11 +211,13 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="passport_number">شماره پاسپورت</Label>
           <Input
             id="passport_number"
+            key="passport_number"
             value={formData.passport_number}
             onChange={(e) => handleInputChange('passport_number', e.target.value)}
             placeholder="شماره پاسپورت خود را وارد کنید"
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
 
@@ -218,11 +225,13 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="birth_date">تاریخ تولد *</Label>
           <Input
             id="birth_date"
+            key="birth_date"
             type="date"
             value={formData.birth_date}
             onChange={(e) => handleInputChange('birth_date', e.target.value)}
             required
             className="text-right"
+            autoComplete="off"
           />
         </div>
 
@@ -230,12 +239,14 @@ const PublicVisitorRegistration = () => {
           <Label htmlFor="mobile">شماره موبایل *</Label>
           <Input
             id="mobile"
+            key="mobile"
             value={formData.mobile}
             onChange={(e) => handleInputChange('mobile', e.target.value)}
             placeholder="09123456789"
             required
             className="text-right"
             dir="ltr"
+            autoComplete="off"
           />
         </div>
 
@@ -548,20 +559,21 @@ const PublicVisitorRegistration = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <HeaderAuth />
+      <div className="container mx-auto px-2 sm:px-4 max-w-4xl py-4 sm:py-8">
         <Card className="shadow-2xl">
           <CardHeader className="text-center bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-t-lg">
-            <CardTitle className="text-3xl font-bold flex items-center justify-center gap-3">
-              <Users className="w-8 h-8" />
+            <CardTitle className="text-2xl sm:text-3xl font-bold flex items-center justify-center gap-3">
+              <Users className="w-6 h-6 sm:w-8 sm:h-8" />
               ثبت‌نام ویزیتور
             </CardTitle>
-            <p className="text-blue-100 mt-2">
+            <p className="text-blue-100 mt-2 text-sm sm:text-base">
               در شبکه ویزیتورهای اصل مارکت عضو شوید
             </p>
           </CardHeader>
 
-          <CardContent className="p-8">
+          <CardContent className="p-4 sm:p-8">
             <StepIndicator />
 
             <form onSubmit={handleSubmit}>
