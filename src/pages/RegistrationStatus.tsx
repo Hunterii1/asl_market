@@ -65,7 +65,7 @@ const RegistrationStatus: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/v1/public/registration-status?mobile=${mobile}&type=${type}`, {
+      const response = await fetch(`/backend/api/v1/public/registration-status?mobile=${mobile}&type=${type}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
