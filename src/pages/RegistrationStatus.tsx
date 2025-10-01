@@ -250,7 +250,7 @@ const RegistrationStatus: React.FC = () => {
                       }
                     }}
                     placeholder="09123456789"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white dark:text-white dark:bg-gray-800"
                     maxLength={11}
                     required
                   />
