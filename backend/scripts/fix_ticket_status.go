@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func main() {
+func main55555() {
 	// Database connection
 	dsn := "asl_user:asl_password_2024@tcp(localhost:3306)/asl_market?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
