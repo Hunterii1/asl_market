@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 import { errorHandler } from "@/utils/errorHandler";
+import { COUNTRIES } from "@/constants/countries";
 import { 
   CreditCard, 
   DollarSign, 
@@ -18,14 +19,7 @@ interface WithdrawalFormProps {
   onSuccess: () => void;
 }
 
-const countries = [
-  { code: "AE", name: "امارات متحده عربی", flag: "🇦🇪", currency: "AED" },
-  { code: "SA", name: "عربستان سعودی", flag: "🇸🇦", currency: "SAR" },
-  { code: "KW", name: "کویت", flag: "🇰🇼", currency: "KWD" },
-  { code: "QA", name: "قطر", flag: "🇶🇦", currency: "QAR" },
-  { code: "BH", name: "بحرین", flag: "🇧🇭", currency: "BHD" },
-  { code: "OM", name: "عمان", flag: "🇴🇲", currency: "OMR" }
-];
+const countries = COUNTRIES;
 
 export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { WithdrawalForm } from "@/components/WithdrawalForm";
 import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
+import { COUNTRIES } from "@/constants/countries";
 import { 
   CreditCard, 
   DollarSign, 
@@ -30,14 +31,7 @@ const AslPay = () => {
   const [withdrawalRequests, setWithdrawalRequests] = useState([]);
   const [stats, setStats] = useState(null);
 
-  const countries = [
-    { code: "AE", name: "امارات متحده عربی", flag: "🇦🇪", currency: "AED" },
-    { code: "SA", name: "عربستان سعودی", flag: "🇸🇦", currency: "SAR" },
-    { code: "KW", name: "کویت", flag: "🇰🇼", currency: "KWD" },
-    { code: "QA", name: "قطر", flag: "🇶🇦", currency: "QAR" },
-    { code: "BH", name: "بحرین", flag: "🇧🇭", currency: "BHD" },
-    { code: "OM", name: "عمان", flag: "🇴🇲", currency: "OMR" }
-  ];
+  const countries = COUNTRIES;
 
 
 

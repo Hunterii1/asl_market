@@ -26,8 +26,8 @@ func (wc *WithdrawalController) CreateWithdrawalRequest(c *gin.Context) {
 
 	var req struct {
 		Amount         float64 `json:"amount" binding:"required,gt=0"`
-		Currency       string  `json:"currency" binding:"required,oneof=USD AED SAR KWD QAR BHD OMR"`
-		SourceCountry  string  `json:"source_country" binding:"required,oneof=AE SA KW QA BH OM"`
+		Currency       string  `json:"currency" binding:"required,oneof=USD AED SAR KWD QAR BHD OMR IQD"`
+		SourceCountry  string  `json:"source_country" binding:"required,oneof=AE SA KW QA BH OM IQ"`
 		BankCardNumber string  `json:"bank_card_number" binding:"required"`
 		CardHolderName string  `json:"card_holder_name" binding:"required"`
 		ShebaNumber    string  `json:"sheba_number" binding:"required"`
