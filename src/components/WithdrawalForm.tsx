@@ -132,6 +132,7 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
                 <SelectItem value="QAR" className="text-foreground">ریال قطر (QAR)</SelectItem>
                 <SelectItem value="BHD" className="text-foreground">دینار بحرین (BHD)</SelectItem>
                 <SelectItem value="OMR" className="text-foreground">ریال عمان (OMR)</SelectItem>
+                <SelectItem value="IQD" className="text-foreground">دینار عراق (IQD)</SelectItem>
               </SelectContent>
             </Select>
           </div>
