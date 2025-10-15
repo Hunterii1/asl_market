@@ -40,6 +40,29 @@ const AslLearn = () => {
   const { toast } = useToast();
   const { licenseStatus } = useAuth();
 
+  // Function to handle file download with fallback
+  const handleFileDownload = (fileName: string, displayName: string) => {
+    // Try API endpoint first
+    const apiUrl = `/api/static/${fileName}`;
+    const publicUrl = `/${fileName}`;
+    
+    // Create a test request to check if API works
+    fetch(apiUrl, { method: 'HEAD' })
+      .then(response => {
+        if (response.ok) {
+          // API works, use API endpoint
+          window.open(apiUrl, '_blank');
+        } else {
+          // API doesn't work, fallback to public directory
+          window.open(publicUrl, '_blank');
+        }
+      })
+      .catch(() => {
+        // Network error, fallback to public directory
+        window.open(publicUrl, '_blank');
+      });
+  };
+
   // Load license information and SpotPlayer license on component mount
   useEffect(() => {
     const loadData = async () => {
@@ -523,7 +546,7 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => window.open('/CRM_Template_ASL_Market.xlsx', '_blank')}
+                  onClick={() => handleFileDownload('CRM_Template_ASL_Market.xlsx', 'قالب CRM')}
                 >
                   <Download className="w-4 h-4 ml-2" />
                   دانلود
@@ -548,7 +571,7 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => window.open('/mega prompt ASL MARKET.docx', '_blank')}
+                  onClick={() => handleFileDownload('mega prompt ASL MARKET.docx', 'مگا پرامپت')}
                 >
                   <Download className="w-4 h-4 ml-2" />
                   دانلود
@@ -573,7 +596,7 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => window.open('/Script ASL MARKET.docx', '_blank')}
+                  onClick={() => handleFileDownload('Script ASL MARKET.docx', 'اسکریپت')}
                 >
                   <Download className="w-4 h-4 ml-2" />
                   دانلود

@@ -36,6 +36,10 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		})
 	})
 
+	// Static files routes
+	router.GET("/api/static/:filename", controllers.ServeStaticFile)
+	router.GET("/api/files", controllers.GetAvailableFiles)
+
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	// Add database middleware to all v1 routes
