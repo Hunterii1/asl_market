@@ -1,0 +1,85 @@
+# OpenAI Monitor Configuration File
+
+# Monitor Settings
+monitor:
+  enabled: true
+  check_interval: "6h"  # Check every 6 hours
+  alert_threshold: 2.5  # Alert when usage reaches $2.50
+  critical_level: 3.0   # Critical level at $3.00
+  reset_threshold: 2.0  # Reset alert flag when below $2.00
+  
+  # API Settings
+  api_timeout: "30s"
+  retry_attempts: 3
+  retry_delay: "5s"
+  
+  # Alert Settings
+  alert_cooldown: "24h"  # Don't send alerts more than once per day
+  test_mode: false       # Set to true for testing without real alerts
+  
+  # Admin Settings
+  admin_telegram_ids:
+    - 76599340
+    - 276043481
+    - 110435852
+  
+  # Notification Settings
+  enable_telegram: true
+  enable_email: false
+  enable_sms: false
+  
+  # Logging
+  log_level: "info"
+  log_usage_checks: true
+  log_alerts: true
+
+# OpenAI API Settings
+openai:
+  api_key: "${OPENAI_API_KEY}"
+  api_url: "https://api.openai.com/v1/chat/completions"
+  model: "gpt-3.5-turbo"
+  max_tokens: 1000
+  temperature: 0.7
+  
+  # Usage API
+  usage_api_url: "https://api.openai.com/v1/usage"
+  billing_api_url: "https://api.openai.com/v1/billing"
+
+# Telegram Settings
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  admin_ids:
+    - 76599340
+    - 276043481
+    - 110435852
+  
+  # Message Templates
+  alert_message: |
+    🚨 **هشدار شارژ OpenAI**
+    
+    💰 **شارژ فعلی**: ${{.Usage}}
+    ⚠️ **وضعیت**: نزدیک به $3.00
+    🕐 **زمان**: {{.Time}}
+    
+    📝 **توصیه**: لطفاً حساب OpenAI را شارژ کنید تا سرویس هوش مصنوعی قطع نشود.
+    
+    🔗 **لینک مدیریت**: https://platform.openai.com/account/billing
+
+  test_message: |
+    🧪 **تست هشدار OpenAI**
+    
+    این یک پیام تست برای بررسی عملکرد سیستم هشدار است.
+    
+    ✅ **وضعیت**: سیستم هشدار فعال است
+    🕐 **زمان**: {{.Time}}
+
+# Database Settings
+database:
+  host: "localhost"
+  port: 3306
+  user: "asl_user"
+  password: "asl_password_2024"
+  name: "asl_market"
+  charset: "utf8mb4"
+  parse_time: true
+  loc: "Local"

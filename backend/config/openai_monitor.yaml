@@ -1,0 +1,32 @@
+# OpenAI Monitor Configuration
+openai_monitor:
+  # Monitoring settings
+  check_interval: "6h"  # Check every 6 hours
+  alert_threshold: 2.5  # Alert when usage reaches $2.50
+  critical_level: 3.0   # Critical level at $3.00
+  reset_threshold: 2.0  # Reset alert flag when below $2.00
+  
+  # API settings
+  api_timeout: "30s"
+  retry_attempts: 3
+  retry_delay: "5s"
+  
+  # Alert settings
+  alert_cooldown: "24h"  # Don't send alerts more than once per day
+  test_mode: false       # Set to true for testing without real alerts
+  
+  # Admin settings
+  admin_telegram_ids:
+    - 76599340
+    - 276043481
+    - 110435852
+  
+  # Notification settings
+  enable_telegram: true
+  enable_email: false
+  enable_sms: false
+  
+  # Logging
+  log_level: "info"
+  log_usage_checks: true
+  log_alerts: true

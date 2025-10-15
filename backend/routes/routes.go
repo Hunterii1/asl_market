@@ -21,6 +21,13 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	supportTicketController := controllers.NewSupportTicketController()
 	publicRegistrationController := controllers.NewPublicRegistrationController(models.GetDB())
 
+	// Initialize OpenAI monitor
+	openaiMonitor := services.NewOpenAIMonitor(telegramService)
+	openaiMonitorController := controllers.NewOpenAIMonitorController(openaiMonitor)
+
+	// Start OpenAI monitoring in background
+	go openaiMonitor.StartMonitoring()
+
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -204,6 +211,11 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.DELETE("/admin/notifications/:id", controllers.DeleteNotification)
 		protected.GET("/admin/notifications/stats", controllers.GetNotificationStats)
 		protected.POST("/admin/training/categories", controllers.CreateTrainingCategory)
+
+		// OpenAI Monitor routes (Admin only)
+		protected.GET("/admin/openai/usage", openaiMonitorController.GetUsageStats)
+		protected.POST("/admin/openai/check", openaiMonitorController.CheckUsage)
+		protected.POST("/admin/openai/test-alert", openaiMonitorController.SendTestAlert)
 
 		// SpotPlayer routes
 		protected.POST("/spotplayer/generate-license", spotPlayerController.GenerateSpotPlayerLicense)
