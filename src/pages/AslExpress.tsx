@@ -45,21 +45,21 @@ const AslExpress = () => {
 
   return (
     <LicenseGate>
-      <div className="space-y-6 animate-fade-in transition-colors duration-300">
-        {/* Header */}
-        <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-3xl flex items-center justify-center">
-                <Truck className="w-8 h-8 text-green-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">اصل اکسپرس</h2>
-                <p className="text-green-600 dark:text-green-300">شرکت‌های همکار ارسال بین‌المللی</p>
-              </div>
+    <div className="space-y-6 animate-fade-in transition-colors duration-300">
+      {/* Header */}
+      <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-3xl flex items-center justify-center">
+              <Truck className="w-8 h-8 text-green-400" />
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">اصل اکسپرس</h2>
+                <p className="text-green-600 dark:text-green-300">شرکت‌های همکار ارسال بین‌المللی</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
         {/* Main Content */}
         <Card className="bg-card/80 border-border rounded-3xl">
@@ -78,32 +78,32 @@ const AslExpress = () => {
                       {index + 1}
                     </span>
                   </div>
-                  <div>
+            <div>
                     <h3 className="text-lg font-bold text-foreground">{company.name}</h3>
                     <p className="text-muted-foreground text-sm">{company.services}</p>
-                  </div>
-                </div>
+              </div>
+            </div>
 
                 {/* Contact Information */}
                 <div className="bg-muted/30 rounded-2xl p-4 space-y-3">
                   {company.contacts.map((contact, contactIndex) => (
                     <div key={contactIndex} className="flex items-center gap-3">
                       <Phone className="w-4 h-4 text-green-400 flex-shrink-0" />
-                      <div className="flex-1">
+                        <div className="flex-1">
                         {contact.name && (
                           <div className="text-foreground font-medium text-sm">{contact.name}</div>
                         )}
                         <div className="text-muted-foreground font-mono text-sm">{contact.phone}</div>
+                        </div>
                       </div>
-                    </div>
                   ))}
-                </div>
+            </div>
 
                 {/* Separator */}
                 {index < shippingCompanies.length - 1 && (
                   <div className="border-t border-border/50"></div>
                 )}
-              </div>
+            </div>
             ))}
           </CardContent>
         </Card>
@@ -114,16 +114,16 @@ const AslExpress = () => {
             <div className="text-center space-y-3">
               <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto">
                 <Building className="w-6 h-6 text-blue-400" />
-              </div>
+                  </div>
               <h3 className="text-foreground font-bold">راهنمای تماس</h3>
-              <p className="text-muted-foreground text-sm">
+                <p className="text-muted-foreground text-sm">
                 برای کسب اطلاعات بیشتر در مورد خدمات ارسال، هزینه‌ها و شرایط، 
                 با شماره‌های ارائه شده تماس حاصل فرمایید.
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </div>
+            </CardContent>
+          </Card>
+    </div>
     </LicenseGate>
   );
 };

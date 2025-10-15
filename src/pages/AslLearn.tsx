@@ -34,33 +34,65 @@ import { LicenseGate } from '@/components/LicenseGate';
 
 const AslLearn = () => {
   const [spotPlayerLicense, setSpotPlayerLicense] = useState<any>(null);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const { toast } = useToast();
   const [isGeneratingLicense, setIsGeneratingLicense] = useState(false);
   const [isLoadingLicense, setIsLoadingLicense] = useState(true);
   const [licenseInfo, setLicenseInfo] = useState<any>(null);
-  const { toast } = useToast();
   const { licenseStatus } = useAuth();
 
-  // Function to handle file download with fallback
-  const handleFileDownload = (fileName: string, displayName: string) => {
-    // Try API endpoint first
-    const apiUrl = `/api/static/${fileName}`;
-    const publicUrl = `/${fileName}`;
+  // Handle file download with error handling
+  const handleDownload = async (fileName: string, displayName: string) => {
+    setDownloadingFile(fileName);
     
-    // Create a test request to check if API works
-    fetch(apiUrl, { method: 'HEAD' })
-      .then(response => {
-        if (response.ok) {
-          // API works, use API endpoint
-          window.open(apiUrl, '_blank');
+    try {
+      // Try to fetch the file
+      const response = await fetch(`/${fileName}`);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          toast({
+            title: "فایل یافت نشد",
+            description: `فایل ${displayName} در حال حاضر در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.`,
+            variant: "destructive"
+          });
         } else {
-          // API doesn't work, fallback to public directory
-          window.open(publicUrl, '_blank');
+          toast({
+            title: "خطا در دانلود",
+            description: `خطا در دانلود فایل ${displayName}. لطفاً دوباره تلاش کنید.`,
+            variant: "destructive"
+          });
         }
-      })
-      .catch(() => {
-        // Network error, fallback to public directory
-        window.open(publicUrl, '_blank');
+        return;
+      }
+
+      // Create blob and download
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "دانلود موفق",
+        description: `فایل ${displayName} با موفقیت دانلود شد.`,
+        variant: "default"
       });
+
+    } catch (error) {
+      console.error('Download error:', error);
+      toast({
+        title: "خطا در دانلود",
+        description: `خطا در دانلود فایل ${displayName}. لطفاً اتصال اینترنت خود را بررسی کنید.`,
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingFile(null);
+    }
   };
 
   // Load license information and SpotPlayer license on component mount
@@ -546,10 +578,15 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => handleFileDownload('CRM_Template_ASL_Market.xlsx', 'قالب CRM')}
+                  onClick={() => handleDownload('CRM_Template_ASL_Market.xlsx', 'قالب CRM')}
+                  disabled={downloadingFile === 'CRM_Template_ASL_Market.xlsx'}
                 >
-                  <Download className="w-4 h-4 ml-2" />
-                  دانلود
+                  {downloadingFile === 'CRM_Template_ASL_Market.xlsx' ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 ml-2" />
+                  )}
+                  {downloadingFile === 'CRM_Template_ASL_Market.xlsx' ? 'در حال دانلود...' : 'دانلود'}
                 </Button>
               </div>
 
@@ -571,10 +608,15 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => handleFileDownload('mega prompt ASL MARKET.docx', 'مگا پرامپت')}
+                  onClick={() => handleDownload('mega prompt ASL MARKET.docx', 'مگا پرامپت')}
+                  disabled={downloadingFile === 'mega prompt ASL MARKET.docx'}
                 >
-                  <Download className="w-4 h-4 ml-2" />
-                  دانلود
+                  {downloadingFile === 'mega prompt ASL MARKET.docx' ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 ml-2" />
+                  )}
+                  {downloadingFile === 'mega prompt ASL MARKET.docx' ? 'در حال دانلود...' : 'دانلود'}
                 </Button>
               </div>
 
@@ -596,10 +638,15 @@ const AslLearn = () => {
                   size="sm"
                   variant="outline"
                   className="w-full rounded-lg"
-                  onClick={() => handleFileDownload('Script ASL MARKET.docx', 'اسکریپت')}
+                  onClick={() => handleDownload('Script ASL MARKET.docx', 'اسکریپت')}
+                  disabled={downloadingFile === 'Script ASL MARKET.docx'}
                 >
-                  <Download className="w-4 h-4 ml-2" />
-                  دانلود
+                  {downloadingFile === 'Script ASL MARKET.docx' ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 ml-2" />
+                  )}
+                  {downloadingFile === 'Script ASL MARKET.docx' ? 'در حال دانلود...' : 'دانلود'}
                 </Button>
               </div>
             </div>
@@ -614,6 +661,40 @@ const AslLearn = () => {
                     <li>مگا پرامپت راهنمای کامل استفاده از هوش مصنوعی است</li>
                     <li>اسکریپت کامل پلتفرم اصل مارکت می‌باشد</li>
                   </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Notice about file availability */}
+            <div className="mt-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700/50 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-foreground mb-1">توجه:</h4>
+                  <p className="text-sm text-muted-foreground">
+                    فایل‌های ضمیمه در حال حاضر در حال آماده‌سازی هستند. در صورت عدم دسترسی، 
+                    لطفاً با پشتیبانی تماس بگیرید یا از طریق تلگرام درخواست کنید.
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => window.open('https://t.me/aslmarket_support', '_blank')}
+                    >
+                      <Phone className="w-3 h-3 ml-1" />
+                      پشتیبانی تلگرام
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs"
+                      onClick={() => window.open('mailto:support@asllmarket.com', '_blank')}
+                    >
+                      <Mail className="w-3 h-3 ml-1" />
+                      ایمیل پشتیبانی
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
