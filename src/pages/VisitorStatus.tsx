@@ -23,7 +23,8 @@ import {
   FileText,
   AlertCircle,
   Plane,
-  Home
+  Home,
+  Edit
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '@/services/api';
@@ -184,7 +185,18 @@ export default function VisitorStatus() {
                   اطلاعات و وضعیت درخواست ویزیتوری شما
                 </p>
               </div>
-              {getStatusBadge(visitorData.status)}
+              <div className="flex items-center gap-2">
+                {getStatusBadge(visitorData.status)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/edit-visitor')}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  ویرایش
+                </Button>
+              </div>
             </div>
           </CardHeader>
         </Card>

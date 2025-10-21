@@ -237,6 +237,21 @@ class ApiService {
     return data.data;
   }
 
+  async updateProfile(profileData: {
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/profile`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(profileData),
+    });
+  }
+
   // Public routes
   async getDashboardStats() {
     const response = await fetch(`${API_BASE_URL}/dashboard/stats`, {
@@ -410,6 +425,16 @@ class ApiService {
     });
   }
 
+  async updateSupplier(supplierData: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/supplier/update`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(supplierData),
+    });
+  }
+
   async getSupplierStatus(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/supplier/status`, {
       method: 'GET',
@@ -432,6 +457,16 @@ class ApiService {
   async registerVisitor(visitorData: any): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/visitor/register`, {
       method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(visitorData),
+    });
+  }
+
+  async updateVisitor(visitorData: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor/update`, {
+      method: 'PUT',
       headers: {
         ...this.getAuthHeaders(),
       },

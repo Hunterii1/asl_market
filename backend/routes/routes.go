@@ -74,6 +74,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	{
 		// User routes
 		protected.GET("/me", authController.Me)
+		protected.PUT("/profile", authController.UpdateProfile)
 
 		// Progress tracking routes
 		protected.GET("/progress", controllers.GetUserProgress)
@@ -117,6 +118,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 		// Supplier routes
 		protected.POST("/supplier/register", controllers.RegisterSupplier)
+		protected.PUT("/supplier/update", controllers.UpdateMySupplier)
 		protected.GET("/supplier/status", controllers.GetMySupplierStatus)
 		protected.GET("/suppliers", controllers.GetApprovedSuppliers)
 
@@ -127,6 +129,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 		// Visitor routes
 		protected.POST("/visitor/register", controllers.RegisterVisitor)
+		protected.PUT("/visitor/update", controllers.UpdateMyVisitor)
 		protected.GET("/visitor/status", controllers.GetMyVisitorStatus)
 		protected.GET("/visitors", controllers.GetApprovedVisitors)
 		protected.GET("/debug/visitor/:id", controllers.GetVisitorByID)
@@ -246,7 +249,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 			licensed.PUT("/my-products/:id", controllers.UpdateUserAvailableProduct)
 			licensed.DELETE("/my-products/:id", controllers.DeleteUserAvailableProduct)
 			licensed.POST("/orders", createOrder)
-			licensed.PUT("/profile", updateProfile)
+			// Profile update is now handled in protected routes above
 
 			// AI Chat routes
 			licensed.POST("/ai/chat", controllers.Chat)

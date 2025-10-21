@@ -297,3 +297,89 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 		"success": true,
 	})
 }
+
+// UpdateProfile allows user to update their profile information
+func (ac *AuthController) UpdateProfile(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	var req struct {
+		FirstName string `json:"first_name" binding:"required,min=2,max=100"`
+		LastName  string `json:"last_name" binding:"required,min=2,max=100"`
+		Email     string `json:"email" binding:"omitempty,email"`
+		Phone     string `json:"phone" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "اطلاعات ارسالی نامعتبر است",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Check if phone number is already taken by another user
+	var existingUser models.User
+	if err := ac.DB.Where("phone = ? AND id != ?", req.Phone, userIDUint).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "شماره موبایل قبلاً توسط کاربر دیگری استفاده شده است",
+		})
+		return
+	}
+
+	// Check if email is already taken by another user (if email is provided)
+	if req.Email != "" {
+		if err := ac.DB.Where("email = ? AND id != ?", req.Email, userIDUint).First(&existingUser).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "ایمیل قبلاً توسط کاربر دیگری استفاده شده است",
+			})
+			return
+		}
+	}
+
+	// Update user information
+	updates := map[string]interface{}{
+		"first_name": req.FirstName,
+		"last_name":  req.LastName,
+		"phone":      req.Phone,
+	}
+
+	// Only update email if provided
+	if req.Email != "" {
+		updates["email"] = req.Email
+	}
+
+	err := ac.DB.Model(&models.User{}).Where("id = ?", userIDUint).Updates(updates).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در به‌روزرسانی پروفایل",
+		})
+		return
+	}
+
+	// Get updated user
+	var updatedUser models.User
+	if err := ac.DB.First(&updatedUser, userIDUint).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در دریافت اطلاعات به‌روزرسانی شده",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "پروفایل با موفقیت به‌روزرسانی شد",
+		"user": models.UserResponse{
+			ID:        updatedUser.ID,
+			FirstName: updatedUser.FirstName,
+			LastName:  updatedUser.LastName,
+			Email:     updatedUser.Email,
+			Phone:     updatedUser.Phone,
+			IsActive:  updatedUser.IsActive,
+			CreatedAt: updatedUser.CreatedAt,
+		},
+	})
+}

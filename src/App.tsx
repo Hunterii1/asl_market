@@ -38,6 +38,9 @@ import SubmitProduct from "./pages/SubmitProduct";
 import MyProducts from "./pages/MyProducts";
 import Notifications from "./pages/Notifications";
 import SupportTicket from "./pages/SupportTicket";
+import EditProfile from "./pages/EditProfile";
+import EditVisitor from "./pages/EditVisitor";
+import EditSupplier from "./pages/EditSupplier";
 
 
 const queryClient = new QueryClient();
@@ -108,6 +111,21 @@ const App = () => (
                 <Route path="/notifications" element={
                   <ProtectedRoute>
                     <Notifications />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-profile" element={
+                  <ProtectedRoute>
+                    <EditProfile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-visitor" element={
+                  <ProtectedRoute>
+                    <EditVisitor />
+                  </ProtectedRoute>
+                } />
+                <Route path="/edit-supplier" element={
+                  <ProtectedRoute>
+                    <EditSupplier />
                   </ProtectedRoute>
                 } />
                 

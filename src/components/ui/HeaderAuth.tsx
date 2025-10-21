@@ -440,15 +440,13 @@ const HeaderAuth = () => {
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator className="bg-border" />
-                {/* Profile and Settings temporarily commented out */}
-                {/* <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
+                <DropdownMenuItem 
+                  className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                  onClick={() => navigate('/edit-profile')}
+                >
                   <User className="w-4 h-4 ml-2" />
-                  پروفایل
+                  ویرایش پروفایل
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-foreground hover:bg-muted rounded-xl cursor-pointer">
-                  <Settings className="w-4 h-4 ml-2" />
-                  تنظیمات
-                </DropdownMenuItem> */}
                 {currentLicenseStatus?.is_approved && (
                   <DropdownMenuItem 
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"

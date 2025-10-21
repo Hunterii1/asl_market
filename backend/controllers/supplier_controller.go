@@ -314,3 +314,119 @@ func RejectSupplier(c *gin.Context) {
 		"message": "تأمین‌کننده رد شد",
 	})
 }
+
+// UpdateMySupplier allows user to update their own supplier information
+func UpdateMySupplier(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Get current supplier
+	supplier, err := models.GetSupplierByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "اطلاعات تأمین‌کننده یافت نشد"})
+		return
+	}
+
+	var req models.SupplierRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	// Validate required fields
+	if req.FullName == "" || req.Mobile == "" || req.City == "" ||
+		req.Address == "" || req.WholesaleMinPrice == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا تمام فیلدهای الزامی را پر کنید"})
+		return
+	}
+
+	if len(req.Products) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "حداقل یک محصول باید معرفی کنید"})
+		return
+	}
+
+	// Start transaction
+	tx := models.GetDB().Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در شروع تراکنش"})
+		return
+	}
+
+	// Update supplier information
+	updates := map[string]interface{}{
+		"full_name":                   req.FullName,
+		"mobile":                      req.Mobile,
+		"brand_name":                  req.BrandName,
+		"image_url":                   req.ImageURL,
+		"city":                        req.City,
+		"address":                     req.Address,
+		"has_registered_business":     req.HasRegisteredBusiness,
+		"business_registration_num":   req.BusinessRegistrationNum,
+		"has_export_experience":       req.HasExportExperience,
+		"export_price":                req.ExportPrice,
+		"wholesale_min_price":         req.WholesaleMinPrice,
+		"wholesale_high_volume_price": req.WholesaleHighVolumePrice,
+		"can_produce_private_label":   req.CanProducePrivateLabel,
+		"status":                      "pending", // Reset to pending after update
+		"admin_notes":                 "",        // Clear admin notes
+		"approved_at":                 nil,       // Clear approval
+		"approved_by":                 nil,       // Clear approver
+	}
+
+	err = tx.Model(&models.Supplier{}).Where("id = ?", supplier.ID).Updates(updates).Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی اطلاعات تأمین‌کننده"})
+		return
+	}
+
+	// Delete existing products
+	err = tx.Where("supplier_id = ?", supplier.ID).Delete(&models.SupplierProduct{}).Error
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف محصولات قبلی"})
+		return
+	}
+
+	// Create new products
+	for _, productReq := range req.Products {
+		product := models.SupplierProduct{
+			SupplierID:           supplier.ID,
+			ProductName:          productReq.ProductName,
+			ProductType:          productReq.ProductType,
+			Description:          productReq.Description,
+			NeedsExportLicense:   productReq.NeedsExportLicense,
+			RequiredLicenseType:  productReq.RequiredLicenseType,
+			MonthlyProductionMin: productReq.MonthlyProductionMin,
+		}
+
+		if err := tx.Create(&product).Error; err != nil {
+			tx.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد محصولات جدید"})
+			return
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در تأیید تراکنش"})
+		return
+	}
+
+	// Get updated supplier
+	updatedSupplier, err := models.GetSupplierByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات به‌روزرسانی شده"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "اطلاعات تأمین‌کننده با موفقیت به‌روزرسانی شد. پس از بررسی مجدد توسط تیم ما، وضعیت شما اعلام خواهد شد.",
+		"supplier": updatedSupplier,
+	})
+}

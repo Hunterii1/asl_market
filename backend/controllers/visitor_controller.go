@@ -485,3 +485,107 @@ func UpdateVisitorStatus(c *gin.Context) {
 		"message": "وضعیت ویزیتور با موفقیت به‌روزرسانی شد",
 	})
 }
+
+// UpdateMyVisitor allows user to update their own visitor information
+func UpdateMyVisitor(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Get current visitor
+	visitor, err := models.GetVisitorByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "اطلاعات ویزیتور یافت نشد"})
+		return
+	}
+
+	var req models.VisitorRegistrationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	// Validate required fields
+	if req.FullName == "" || req.NationalID == "" || req.BirthDate == "" ||
+		req.Mobile == "" || req.ResidenceAddress == "" || req.CityProvince == "" ||
+		req.DestinationCities == "" || req.BankAccountIBAN == "" || req.BankName == "" ||
+		req.LanguageLevel == "" || req.DigitalSignature == "" || req.SignatureDate == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا تمام فیلدهای الزامی را پر کنید"})
+		return
+	}
+
+	// Validate language level
+	validLanguageLevels := []string{"excellent", "good", "weak", "none"}
+	languageLevelValid := false
+	for _, level := range validLanguageLevels {
+		if req.LanguageLevel == level {
+			languageLevelValid = true
+			break
+		}
+	}
+	if !languageLevelValid {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "سطح زبان انتخاب شده نامعتبر است"})
+		return
+	}
+
+	// Validate agreements
+	if !req.AgreesToUseApprovedProducts || !req.AgreesToViolationConsequences ||
+		!req.AgreesToSubmitReports {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا تمام توافق‌نامه‌ها را بپذیرید"})
+		return
+	}
+
+	// Update visitor information
+	updates := map[string]interface{}{
+		"full_name":                        req.FullName,
+		"national_id":                      req.NationalID,
+		"passport_number":                  req.PassportNumber,
+		"birth_date":                       req.BirthDate,
+		"mobile":                           req.Mobile,
+		"whatsapp_number":                  req.WhatsappNumber,
+		"email":                            req.Email,
+		"residence_address":                req.ResidenceAddress,
+		"city_province":                    req.CityProvince,
+		"destination_cities":               req.DestinationCities,
+		"has_local_contact":                req.HasLocalContact,
+		"local_contact_details":            req.LocalContactDetails,
+		"bank_account_iban":                req.BankAccountIBAN,
+		"bank_name":                        req.BankName,
+		"account_holder_name":              req.AccountHolderName,
+		"has_marketing_experience":         req.HasMarketingExperience,
+		"marketing_experience_desc":        req.MarketingExperienceDesc,
+		"language_level":                   req.LanguageLevel,
+		"special_skills":                   req.SpecialSkills,
+		"agrees_to_use_approved_products":  req.AgreesToUseApprovedProducts,
+		"agrees_to_violation_consequences": req.AgreesToViolationConsequences,
+		"agrees_to_submit_reports":         req.AgreesToSubmitReports,
+		"digital_signature":                req.DigitalSignature,
+		"signature_date":                   req.SignatureDate,
+		"status":                           "pending", // Reset to pending after update
+		"admin_notes":                      "",        // Clear admin notes
+		"approved_at":                      nil,       // Clear approval
+		"approved_by":                      nil,       // Clear approver
+	}
+
+	err = models.GetDB().Model(&models.Visitor{}).Where("id = ?", visitor.ID).Updates(updates).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی اطلاعات ویزیتور"})
+		return
+	}
+
+	// Get updated visitor
+	updatedVisitor, err := models.GetVisitorByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات به‌روزرسانی شده"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "اطلاعات ویزیتور با موفقیت به‌روزرسانی شد. پس از بررسی مجدد توسط تیم ما، وضعیت شما اعلام خواهد شد.",
+		"visitor": updatedVisitor,
+	})
+}

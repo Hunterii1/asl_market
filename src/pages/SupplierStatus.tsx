@@ -17,7 +17,8 @@ import {
   XCircle,
   AlertTriangle,
   Plus,
-  Info
+  Info,
+  Edit
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 
@@ -185,7 +186,18 @@ export default function SupplierStatus() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>وضعیت تأمین‌کننده</CardTitle>
-              {getStatusBadge(supplierData!.status)}
+              <div className="flex items-center gap-2">
+                {getStatusBadge(supplierData!.status)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/edit-supplier')}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  ویرایش
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
