@@ -118,15 +118,85 @@ export default function VisitorRegistration() {
     }));
   };
 
+  // List of Iranian cities to validate against
+  const iranianCities = [
+    "تهران", "مشهد", "اصفهان", "شیراز", "تبریز", "کرج", "اهواز", "قم", 
+    "کرمانشاه", "ارومیه", "یزد", "زاهدان", "رشت", "کرمان", "همدان", 
+    "اردبیل", "بندرعباس", "اسلامشهر", "زنجان", "سنندج", "یاسوج", 
+    "بوشهر", "بیرجند", "شهرکرد", "گرگان", "ساری", "اراک", "بابل", 
+    "قزوین", "خرمآباد", "سمنان", "کاشان", "گلستان", "سیستان", 
+    "بلوچستان", "کهگیلویه", "بویراحمد", "ایران", "جمهوری اسلامی"
+  ];
+
+  const isIranianLocation = (location: string) => {
+    return iranianCities.some(city => 
+      location.toLowerCase().includes(city.toLowerCase())
+    );
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
         return !!(formData.full_name && formData.national_id && formData.birth_date && formData.mobile);
       case 2:
-        return !!(formData.residence_address && formData.city_province && formData.destination_cities);
+        // Validate city/province format and location
+        if (!formData.residence_address || !formData.city_province || !formData.destination_cities) {
+          return false;
+        }
+        
+        // Check if city/province contains space (City Country format)
+        if (!formData.city_province.includes(' ')) {
+          toast({
+            title: "فرمت نادرست",
+            description: "لطفا شهر و کشور را به فرمت صحیح وارد کنید (مثل: مسقط عمان)",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Check if destination cities contain space
+        if (!formData.destination_cities.includes(' ')) {
+          toast({
+            title: "فرمت نادرست",
+            description: "لطفا شهرهای مقصد را به فرمت صحیح وارد کنید (مثل: مسقط عمان، دبی امارات)",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Check if location is Iranian
+        if (isIranianLocation(formData.city_province)) {
+          toast({
+            title: "مکان نامعتبر",
+            description: "ویزیتورها باید ساکن کشورهای عربی باشند، نه ایران",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        // Check if destination is Iranian
+        if (isIranianLocation(formData.destination_cities)) {
+          toast({
+            title: "مقصد نامعتبر",
+            description: "شهرهای مقصد باید خارج از ایران باشد",
+            variant: "destructive",
+          });
+          return false;
+        }
+        
+        return true;
       case 3:
         return !!(formData.bank_account_iban && formData.bank_name);
       case 4:
+        // Validate WhatsApp number is required
+        if (!formData.whatsapp_number) {
+          toast({
+            title: "شماره واتساپ الزامی",
+            description: "شماره واتساپ برای ارتباط الزامی است",
+            variant: "destructive",
+          });
+          return false;
+        }
         return !!(formData.language_level);
       case 5:
         return !!(formData.agrees_to_use_approved_products && 
@@ -248,12 +318,13 @@ export default function VisitorRegistration() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="whatsapp_number">شماره واتساپ</Label>
+                <Label htmlFor="whatsapp_number">شماره واتساپ *</Label>
                 <Input
                   id="whatsapp_number"
                   value={formData.whatsapp_number}
                   onChange={(e) => updateFormData('whatsapp_number', e.target.value)}
-                  placeholder="+98901234567"
+                  placeholder="+971501234567 (مثال: شماره امارات)"
+                  required
                 />
               </div>
               
@@ -292,24 +363,30 @@ export default function VisitorRegistration() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="city_province">شهر/استان *</Label>
+                <Label htmlFor="city_province">شهر و کشور محل سکونت *</Label>
                 <Input
                   id="city_province"
                   value={formData.city_province}
                   onChange={(e) => updateFormData('city_province', e.target.value)}
-                  placeholder="شهر و استان محل سکونت"
+                  placeholder="مسقط عمان (مثال: شهر کشور)"
                 />
+                <p className="text-sm text-muted-foreground">
+                  لطفا شهر و کشور را به فرمت صحیح وارد کنید (مثل: مسقط عمان، دبی امارات)
+                </p>
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="destination_cities">شهر یا شهرهای مقصد برای ویزیت *</Label>
+                <Label htmlFor="destination_cities">شهرهای مقصد برای ویزیت *</Label>
                 <Textarea
                   id="destination_cities"
                   value={formData.destination_cities}
                   onChange={(e) => updateFormData('destination_cities', e.target.value)}
-                  placeholder="شهرهای مقصد برای ویزیت و بازاریابی"
+                  placeholder="مسقط عمان، دبی امارات، ریاض عربستان (مثال: شهر کشور، شهر کشور)"
                   rows={3}
                 />
+                <p className="text-sm text-muted-foreground">
+                  لطفا شهرهای مقصد را به فرمت صحیح وارد کنید (مثل: مسقط عمان، دبی امارات)
+                </p>
               </div>
               
               <div className="space-y-4">
@@ -563,6 +640,21 @@ export default function VisitorRegistration() {
           <p className="text-center text-muted-foreground">
             لطفاً تمام بخش‌ها را با دقت و صداقت پر کنید. اطلاعات شما صرفاً برای اهداف کاری و قانونی در چارچوب پلتفرم ASL MARKET استفاده می‌شود.
           </p>
+          
+          {/* Important Notice Alert */}
+          <Alert className="mt-4 border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong className="block mb-2">⚠️ توجه مهم - شرایط ثبت‌نام ویزیتور:</strong>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li><strong>مکان سکونت:</strong> ویزیتورها باید ساکن کشورهای عربی باشند، نه ایران</li>
+                <li><strong>شهرهای مقصد:</strong> باید خارج از ایران باشد (مثل: دبی امارات، مسقط عمان)</li>
+                <li><strong>فرمت آدرس:</strong> حتماً "شهر کشور" بنویسید (مثال: مسقط عمان، ریاض عربستان)</li>
+                <li><strong>شماره واتساپ:</strong> برای ارتباط الزامی است (مثال: +971501234567)</li>
+                <li><strong>شهرهای ایرانی ممنوع:</strong> تهران، مشهد، اصفهان، شیراز و... قابل قبول نیست</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
         </CardHeader>
         
         <CardContent>
