@@ -74,8 +74,8 @@ export default function EditProfile() {
       // Refresh user data
       await refreshUserData();
       
-      // Navigate back to dashboard
-      navigate('/dashboard');
+      // Navigate back to home page
+      navigate('/');
       
     } catch (error: any) {
       console.error('Error updating profile:', error);
@@ -110,11 +110,11 @@ export default function EditProfile() {
           <div className="mb-6">
             <Button
               variant="ghost"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
               className="mb-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              بازگشت به داشبورد
+              بازگشت به صفحه اصلی
             </Button>
             
             <h1 className="text-3xl font-bold text-gray-900">ویرایش پروفایل</h1>
@@ -207,7 +207,7 @@ export default function EditProfile() {
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate('/')}
                     disabled={saving}
                   >
                     انصراف
