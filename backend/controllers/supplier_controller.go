@@ -430,3 +430,29 @@ func UpdateMySupplier(c *gin.Context) {
 		"supplier": updatedSupplier,
 	})
 }
+
+// DeleteMySupplier allows user to delete their own supplier registration
+func DeleteMySupplier(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Delete supplier (this will check ownership automatically in the model function)
+	err := models.DeleteSupplierByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		if err.Error() == "record not found" || err.Error() == "gorm.ErrRecordNotFound" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "اطلاعات تأمین‌کننده یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف اطلاعات تأمین‌کننده"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "اطلاعات تأمین‌کننده با موفقیت حذف شد",
+	})
+}

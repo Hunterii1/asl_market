@@ -119,6 +119,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// Supplier routes
 		protected.POST("/supplier/register", controllers.RegisterSupplier)
 		protected.PUT("/supplier/update", controllers.UpdateMySupplier)
+		protected.DELETE("/supplier/delete", controllers.DeleteMySupplier)
 		protected.GET("/supplier/status", controllers.GetMySupplierStatus)
 		protected.GET("/suppliers", controllers.GetApprovedSuppliers)
 
@@ -130,6 +131,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// Visitor routes
 		protected.POST("/visitor/register", controllers.RegisterVisitor)
 		protected.PUT("/visitor/update", controllers.UpdateMyVisitor)
+		protected.DELETE("/visitor/delete", controllers.DeleteMyVisitor)
 		protected.GET("/visitor/status", controllers.GetMyVisitorStatus)
 		protected.GET("/visitors", controllers.GetApprovedVisitors)
 		protected.GET("/debug/visitor/:id", controllers.GetVisitorByID)

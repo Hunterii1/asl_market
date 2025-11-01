@@ -220,3 +220,16 @@ func RejectVisitor(db *gorm.DB, visitorID uint, adminID uint, notes string) erro
 		"approved_by": adminID,
 	}).Error
 }
+
+// DeleteVisitorByUserID deletes a visitor that belongs to a specific user
+// This function ensures only the owner can delete their own visitor registration
+func DeleteVisitorByUserID(db *gorm.DB, userID uint) error {
+	// First check if visitor exists and belongs to this user
+	var visitor Visitor
+	if err := db.Where("user_id = ?", userID).First(&visitor).Error; err != nil {
+		return err
+	}
+
+	// Delete the visitor (soft delete with GORM)
+	return db.Delete(&visitor).Error
+}

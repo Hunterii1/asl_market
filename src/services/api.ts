@@ -435,6 +435,15 @@ class ApiService {
     });
   }
 
+  async deleteSupplier(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/supplier/delete`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
   async getSupplierStatus(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/supplier/status`, {
       method: 'GET',
@@ -471,6 +480,15 @@ class ApiService {
         ...this.getAuthHeaders(),
       },
       body: JSON.stringify(visitorData),
+    });
+  }
+
+  async deleteVisitor(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor/delete`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
     });
   }
 

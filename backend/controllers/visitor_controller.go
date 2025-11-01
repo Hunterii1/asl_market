@@ -589,3 +589,29 @@ func UpdateMyVisitor(c *gin.Context) {
 		"visitor": updatedVisitor,
 	})
 }
+
+// DeleteMyVisitor allows user to delete their own visitor registration
+func DeleteMyVisitor(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Delete visitor (this will check ownership automatically in the model function)
+	err := models.DeleteVisitorByUserID(models.GetDB(), userIDUint)
+	if err != nil {
+		if err.Error() == "record not found" || err.Error() == "gorm.ErrRecordNotFound" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "اطلاعات ویزیتور یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف اطلاعات ویزیتور"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "اطلاعات ویزیتور با موفقیت حذف شد",
+	})
+}

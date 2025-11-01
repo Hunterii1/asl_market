@@ -248,3 +248,34 @@ func RejectSupplier(db *gorm.DB, supplierID uint, adminID uint, notes string) er
 		"approved_by": adminID,
 	}).Error
 }
+
+// DeleteSupplierByUserID deletes a supplier that belongs to a specific user
+// This function ensures only the owner can delete their own supplier registration
+func DeleteSupplierByUserID(db *gorm.DB, userID uint) error {
+	// First check if supplier exists and belongs to this user
+	var supplier Supplier
+	if err := db.Preload("Products").Where("user_id = ?", userID).First(&supplier).Error; err != nil {
+		return err
+	}
+
+	// Start transaction to delete supplier and related products
+	tx := db.Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+
+	// Delete related products first (due to foreign key constraints)
+	if err := tx.Where("supplier_id = ?", supplier.ID).Delete(&SupplierProduct{}).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Delete supplier
+	if err := tx.Delete(&supplier).Error; err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	// Commit transaction
+	return tx.Commit().Error
+}
