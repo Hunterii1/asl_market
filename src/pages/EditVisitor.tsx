@@ -776,7 +776,7 @@ export default function EditVisitor() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
       <HeaderAuth />
       
       <div className="container mx-auto px-4 py-8">
@@ -785,68 +785,89 @@ export default function EditVisitor() {
             <Button
               variant="ghost"
               onClick={() => navigate('/visitor-status')}
-              className="mb-4"
+              className="mb-4 hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               بازگشت به وضعیت ویزیتور
             </Button>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">ویرایش اطلاعات ویزیتور</h1>
-                <p className="text-gray-600 mt-2">
-                  اطلاعات ویزیتور خود را به‌روزرسانی کنید
-                </p>
-              </div>
-              
-              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={deleting || saving || loading}
-                    className="flex items-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    حذف ویزیتور
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>حذف اطلاعات ویزیتور</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      آیا مطمئن هستید که می‌خواهید اطلاعات ویزیتور خود را حذف کنید؟
-                      <br />
-                      <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
-                      <br />
-                      تمام اطلاعات ویزیتور شما از سیستم حذف خواهد شد.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      {deleting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                          در حال حذف...
-                        </>
-                      ) : (
-                        'حذف'
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">ویرایش اطلاعات ویزیتور</h1>
+                    <p className="text-muted-foreground mt-2">
+                      اطلاعات ویزیتور خود را به‌روزرسانی کنید
+                    </p>
+                  </div>
+                  
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={deleting || saving || loading}
+                        className="flex items-center gap-2 rounded-xl"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        حذف ویزیتور
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-2xl border-border">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+                          </div>
+                          <AlertDialogTitle className="text-2xl text-foreground">حذف اطلاعات ویزیتور</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-base pt-4 space-y-3">
+                          <p className="text-foreground">
+                            آیا مطمئن هستید که می‌خواهید اطلاعات ویزیتور خود را حذف کنید؟
+                          </p>
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                              <div className="space-y-1">
+                                <p className="font-semibold text-red-800 dark:text-red-300">این عمل قابل بازگشت نیست</p>
+                                <p className="text-sm text-red-700 dark:text-red-400">
+                                  تمام اطلاعات ویزیتور شما از سیستم حذف خواهد شد و دیگر قادر به دسترسی به این اطلاعات نخواهید بود.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel disabled={deleting} className="rounded-xl">انصراف</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={deleting}
+                          className="bg-red-600 hover:bg-red-700 text-white rounded-xl gap-2"
+                        >
+                          {deleting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              در حال حذف...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              حذف
+                            </>
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardHeader>
+            </Card>
             
             {/* Important Notice Alert */}
-            <Alert className="mt-4 border-amber-200 bg-amber-50">
-              <AlertTriangle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
+            <Alert className="mt-4 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20 rounded-xl">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-amber-800 dark:text-amber-200">
                 <strong className="block mb-2">⚠️ توجه مهم - شرایط ویزیتور:</strong>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li><strong>مکان سکونت:</strong> ویزیتورها باید ساکن کشورهای عربی باشند، نه ایران</li>
@@ -859,10 +880,10 @@ export default function EditVisitor() {
             </Alert>
           </div>
 
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-border">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-t-lg">
               <div className="flex items-center justify-between">
-                <CardTitle>مرحله {currentStep} از 3</CardTitle>
+                <CardTitle className="text-foreground">مرحله {currentStep} از 3</CardTitle>
                 <div className="flex space-x-2">
                   {[1, 2, 3].map((step) => (
                     <div

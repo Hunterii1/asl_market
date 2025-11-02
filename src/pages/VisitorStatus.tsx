@@ -244,31 +244,48 @@ export default function VisitorStatus() {
                       حذف
                     </Button>
                   </AlertDialogTrigger>
-                  <AlertDialogContent>
+                  <AlertDialogContent className="rounded-2xl border-border">
                     <AlertDialogHeader>
-                      <AlertDialogTitle>حذف اطلاعات ویزیتور</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        آیا مطمئن هستید که می‌خواهید اطلاعات ویزیتور خود را حذف کنید؟
-                        <br />
-                        <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
-                        <br />
-                        تمام اطلاعات ویزیتور شما از سیستم حذف خواهد شد.
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                          <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <AlertDialogTitle className="text-2xl text-foreground">حذف اطلاعات ویزیتور</AlertDialogTitle>
+                      </div>
+                      <AlertDialogDescription className="text-base pt-4 space-y-3">
+                        <p className="text-foreground">
+                          آیا مطمئن هستید که می‌خواهید اطلاعات ویزیتور خود را حذف کنید؟
+                        </p>
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                            <div className="space-y-1">
+                              <p className="font-semibold text-red-800 dark:text-red-300">این عمل قابل بازگشت نیست</p>
+                              <p className="text-sm text-red-700 dark:text-red-400">
+                                تمام اطلاعات ویزیتور شما از سیستم حذف خواهد شد و دیگر قادر به دسترسی به این اطلاعات نخواهید بود.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
+                    <AlertDialogFooter className="gap-2">
+                      <AlertDialogCancel disabled={deleting} className="rounded-xl">انصراف</AlertDialogCancel>
                       <AlertDialogAction
                         onClick={handleDelete}
                         disabled={deleting}
-                        className="bg-red-600 hover:bg-red-700 text-white"
+                        className="bg-red-600 hover:bg-red-700 text-white rounded-xl gap-2"
                       >
                         {deleting ? (
                           <>
-                            <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
                             در حال حذف...
                           </>
                         ) : (
-                          'حذف'
+                          <>
+                            <Trash2 className="h-4 w-4" />
+                            حذف
+                          </>
                         )}
                       </AlertDialogAction>
                     </AlertDialogFooter>

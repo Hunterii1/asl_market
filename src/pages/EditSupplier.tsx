@@ -616,7 +616,7 @@ export default function EditSupplier() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
       <HeaderAuth />
       
       <div className="container mx-auto px-4 py-8">
@@ -625,69 +625,90 @@ export default function EditSupplier() {
             <Button
               variant="ghost"
               onClick={() => navigate('/supplier-status')}
-              className="mb-4"
+              className="mb-4 hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               بازگشت به وضعیت تأمین‌کننده
             </Button>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">ویرایش اطلاعات تأمین‌کننده</h1>
-                <p className="text-gray-600 mt-2">
-                  اطلاعات تأمین‌کننده خود را به‌روزرسانی کنید
-                </p>
-              </div>
-              
-              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    disabled={deleting || saving || loading}
-                    className="flex items-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    حذف تأمین‌کننده
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
-                      <br />
-                      <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
-                      <br />
-                      تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      className="bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      {deleting ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                          در حال حذف...
-                        </>
-                      ) : (
-                        'حذف'
-                      )}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">ویرایش اطلاعات تأمین‌کننده</h1>
+                    <p className="text-muted-foreground mt-2">
+                      اطلاعات تأمین‌کننده خود را به‌روزرسانی کنید
+                    </p>
+                  </div>
+                  
+                  <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        disabled={deleting || saving || loading}
+                        className="flex items-center gap-2 rounded-xl"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        حذف تأمین‌کننده
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-2xl border-border">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+                          </div>
+                          <AlertDialogTitle className="text-2xl text-foreground">حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-base pt-4 space-y-3">
+                          <p className="text-foreground">
+                            آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
+                          </p>
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                            <div className="flex items-start gap-2">
+                              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                              <div className="space-y-1">
+                                <p className="font-semibold text-red-800 dark:text-red-300">این عمل قابل بازگشت نیست</p>
+                                <p className="text-sm text-red-700 dark:text-red-400">
+                                  تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد و دیگر قادر به دسترسی به این اطلاعات نخواهید بود.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel disabled={deleting} className="rounded-xl">انصراف</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDelete}
+                          disabled={deleting}
+                          className="bg-red-600 hover:bg-red-700 text-white rounded-xl gap-2"
+                        >
+                          {deleting ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              در حال حذف...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-4 w-4" />
+                              حذف
+                            </>
+                          )}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </CardHeader>
+            </Card>
           </div>
 
-          <Card>
-            <CardHeader>
+          <Card className="shadow-lg border-border">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-t-lg">
               <div className="flex items-center justify-between">
-                <CardTitle>مرحله {currentStep} از 2</CardTitle>
+                <CardTitle className="text-foreground">مرحله {currentStep} از 2</CardTitle>
                 <div className="flex space-x-2">
                   {[1, 2].map((step) => (
                     <div
