@@ -200,10 +200,35 @@ func (s *TelegramService) handleAddAdminInput(chatID int64, message *tgbotapi.Me
 
 		state.Data["username"] = username
 
-		// Get all data
-		telegramID := state.Data["telegram_id"].(int64)
-		firstName := state.Data["first_name"].(string)
-		isFullAdmin := state.Data["admin_type"].(bool)
+		// Get all data with safe type assertion
+		telegramID, ok := state.Data["telegram_id"].(int64)
+		if !ok {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت اطلاعات. لطفا دوباره امتحان کنید.")
+			s.bot.Send(msg)
+			sessionMutex.Lock()
+			delete(sessionStates, chatID)
+			sessionMutex.Unlock()
+			return
+		}
+
+		firstName, ok := state.Data["first_name"].(string)
+		if !ok {
+			msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت اطلاعات. لطفا دوباره امتحان کنید.")
+			s.bot.Send(msg)
+			sessionMutex.Lock()
+			delete(sessionStates, chatID)
+			sessionMutex.Unlock()
+			return
+		}
+
+		isFullAdmin, ok := state.Data["admin_type"].(bool)
+		if !ok {
+			// Default to support admin if type assertion fails
+			isFullAdmin = false
+		}
+
+		// Debug log
+		fmt.Printf("DEBUG: Adding admin - TelegramID=%d, FirstName=%s, IsFullAdmin=%v (type: %T)\n", telegramID, firstName, isFullAdmin, state.Data["admin_type"])
 
 		// Add admin to database
 		admin, err := models.AddAdmin(
@@ -213,7 +238,7 @@ func (s *TelegramService) handleAddAdminInput(chatID int64, message *tgbotapi.Me
 			username,
 			isFullAdmin,
 			chatID,
-			fmt.Sprintf("اضافه شده از طریق ربات تلگرام"),
+			"اضافه شده از طریق ربات تلگرام",
 		)
 
 		if err != nil {

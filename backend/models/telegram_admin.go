@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -12,7 +13,7 @@ type TelegramAdmin struct {
 	TelegramID  int64          `json:"telegram_id" gorm:"uniqueIndex;not null"`
 	FirstName   string         `json:"first_name" gorm:"size:100"`
 	Username    string         `json:"username" gorm:"size:100"`
-	IsFullAdmin bool           `json:"is_full_admin" gorm:"default:true"` // true = full admin, false = support admin
+	IsFullAdmin bool           `json:"is_full_admin" gorm:"default:false"` // true = full admin, false = support admin
 	IsActive    bool           `json:"is_active" gorm:"default:true"`
 	AddedBy     *uint          `json:"added_by"` // Telegram ID of admin who added this admin
 	Notes       string         `json:"notes" gorm:"type:text"`
@@ -74,7 +75,7 @@ func AddAdmin(db *gorm.DB, telegramID int64, firstName, username string, isFullA
 		// Update existing admin (restore if soft deleted)
 		existing.FirstName = firstName
 		existing.Username = username
-		existing.IsFullAdmin = isFullAdmin
+		existing.IsFullAdmin = isFullAdmin // Explicitly set, don't rely on default
 		existing.IsActive = true
 		existing.DeletedAt = gorm.DeletedAt{} // Restore if soft deleted
 		if notes != "" {
@@ -82,6 +83,10 @@ func AddAdmin(db *gorm.DB, telegramID int64, firstName, username string, isFullA
 		}
 		addedByUint := uint(addedBy)
 		existing.AddedBy = &addedByUint
+
+		// Debug: Log the value being set
+		fmt.Printf("DEBUG: Updating admin with TelegramID=%d, IsFullAdmin=%v\n", telegramID, isFullAdmin)
+
 		if err := db.Unscoped().Save(&existing).Error; err != nil {
 			return nil, err
 		}
@@ -94,11 +99,14 @@ func AddAdmin(db *gorm.DB, telegramID int64, firstName, username string, isFullA
 		TelegramID:  telegramID,
 		FirstName:   firstName,
 		Username:    username,
-		IsFullAdmin: isFullAdmin,
+		IsFullAdmin: isFullAdmin, // Explicitly set the value
 		IsActive:    true,
 		AddedBy:     &addedByUint,
 		Notes:       notes,
 	}
+
+	// Debug: Log the value being set
+	fmt.Printf("DEBUG: Creating admin with TelegramID=%d, IsFullAdmin=%v\n", telegramID, isFullAdmin)
 
 	if err := db.Create(&admin).Error; err != nil {
 		return nil, err
