@@ -653,24 +653,26 @@ export default function EditSupplier() {
                         حذف تأمین‌کننده
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-2xl border-border">
+                    <AlertDialogContent className="rounded-2xl border-border bg-background shadow-2xl max-w-md">
                       <AlertDialogHeader>
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                            <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/40 dark:to-red-800/40 flex items-center justify-center shadow-lg">
+                            <Trash2 className="h-7 w-7 text-red-600 dark:text-red-400" />
                           </div>
-                          <AlertDialogTitle className="text-2xl text-foreground">حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
+                          <AlertDialogTitle className="text-2xl font-bold text-foreground">حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
                         </div>
-                        <AlertDialogDescription className="text-base pt-4 space-y-3">
-                          <p className="text-foreground">
+                        <AlertDialogDescription className="text-base pt-2 space-y-4">
+                          <p className="text-foreground leading-relaxed">
                             آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
                           </p>
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                            <div className="flex items-start gap-2">
-                              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
-                              <div className="space-y-1">
-                                <p className="font-semibold text-red-800 dark:text-red-300">این عمل قابل بازگشت نیست</p>
-                                <p className="text-sm text-red-700 dark:text-red-400">
+                          <div className="bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/30 dark:to-orange-900/30 border-2 border-red-200 dark:border-red-800 rounded-xl p-4 shadow-inner">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 mt-0.5">
+                                <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                              </div>
+                              <div className="space-y-2">
+                                <p className="font-bold text-lg text-red-800 dark:text-red-300">این عمل قابل بازگشت نیست</p>
+                                <p className="text-sm leading-relaxed text-red-700 dark:text-red-400">
                                   تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد و دیگر قادر به دسترسی به این اطلاعات نخواهید بود.
                                 </p>
                               </div>
@@ -678,12 +680,12 @@ export default function EditSupplier() {
                           </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel disabled={deleting} className="rounded-xl">انصراف</AlertDialogCancel>
+                      <AlertDialogFooter className="gap-3 mt-6">
+                        <AlertDialogCancel disabled={deleting} className="rounded-xl px-6">انصراف</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={handleDelete}
                           disabled={deleting}
-                          className="bg-red-600 hover:bg-red-700 text-white rounded-xl gap-2"
+                          className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl gap-2 px-6 shadow-lg"
                         >
                           {deleting ? (
                             <>
