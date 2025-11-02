@@ -5,6 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { 
   Loader2, 
   CheckCircle, 
@@ -24,7 +35,8 @@ import {
   AlertCircle,
   Plane,
   Home,
-  Edit
+  Edit,
+  Trash2
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '@/services/api';
@@ -98,6 +110,8 @@ export default function VisitorStatus() {
   const [loading, setLoading] = useState(true);
   const [visitorData, setVisitorData] = useState<VisitorData | null>(null);
   const [hasVisitor, setHasVisitor] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchVisitorStatus = async () => {
@@ -136,6 +150,28 @@ export default function VisitorStatus() {
 
     fetchVisitorStatus();
   }, [toast]);
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await apiService.deleteVisitor();
+      toast({
+        title: "موفق",
+        description: "اطلاعات ویزیتور شما با موفقیت حذف شد",
+      });
+      navigate('/visitor-status');
+      window.location.reload(); // Reload to show the "no visitor" state
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در حذف اطلاعات ویزیتور",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -196,6 +232,48 @@ export default function VisitorStatus() {
                   <Edit className="h-4 w-4" />
                   ویرایش
                 </Button>
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleting}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      حذف
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>حذف اطلاعات ویزیتور</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        آیا مطمئن هستید که می‌خواهید اطلاعات ویزیتور خود را حذف کنید؟
+                        <br />
+                        <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
+                        <br />
+                        تمام اطلاعات ویزیتور شما از سیستم حذف خواهد شد.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {deleting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                            در حال حذف...
+                          </>
+                        ) : (
+                          'حذف'
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CardHeader>

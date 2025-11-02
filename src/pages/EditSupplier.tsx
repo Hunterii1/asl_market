@@ -631,10 +631,57 @@ export default function EditSupplier() {
               بازگشت به وضعیت تأمین‌کننده
             </Button>
             
-            <h1 className="text-3xl font-bold text-gray-900">ویرایش اطلاعات تأمین‌کننده</h1>
-            <p className="text-gray-600 mt-2">
-              اطلاعات تأمین‌کننده خود را به‌روزرسانی کنید
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">ویرایش اطلاعات تأمین‌کننده</h1>
+                <p className="text-gray-600 mt-2">
+                  اطلاعات تأمین‌کننده خود را به‌روزرسانی کنید
+                </p>
+              </div>
+              
+              <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={deleting || saving || loading}
+                    className="flex items-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    حذف تأمین‌کننده
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
+                      <br />
+                      <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
+                      <br />
+                      تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                      {deleting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                          در حال حذف...
+                        </>
+                      ) : (
+                        'حذف'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
 
           <Card>
@@ -662,61 +709,14 @@ export default function EditSupplier() {
               {currentStep === 2 && renderStep2()}
 
               <div className="flex justify-between pt-6">
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={prevStep}
-                    disabled={currentStep === 1}
-                  >
-                    قبلی
-                  </Button>
-                  
-                  {currentStep === 2 && (
-                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          disabled={deleting || saving}
-                          className="flex items-center gap-2"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          حذف تأمین‌کننده
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
-                            <br />
-                            <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
-                            <br />
-                            تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDelete}
-                            disabled={deleting}
-                            className="bg-red-600 hover:bg-red-700 text-white"
-                          >
-                            {deleting ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin ml-2" />
-                                در حال حذف...
-                              </>
-                            ) : (
-                              'حذف'
-                            )}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                >
+                  قبلی
+                </Button>
 
                 {currentStep < 2 ? (
                   <Button onClick={nextStep}>

@@ -6,6 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { 
   User,
   Phone,
@@ -18,7 +30,9 @@ import {
   AlertTriangle,
   Plus,
   Info,
-  Edit
+  Edit,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 
@@ -45,9 +59,12 @@ interface SupplierData {
 export default function SupplierStatus() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [hasSupplier, setHasSupplier] = useState(false);
   const [supplierData, setSupplierData] = useState<SupplierData | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   useEffect(() => {
     checkSupplierStatus();
@@ -65,6 +82,28 @@ export default function SupplierStatus() {
       setHasSupplier(false);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await apiService.deleteSupplier();
+      toast({
+        title: "موفق",
+        description: "اطلاعات تأمین‌کننده شما با موفقیت حذف شد",
+      });
+      navigate('/supplier-status');
+      window.location.reload(); // Reload to show the "no supplier" state
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در حذف اطلاعات تأمین‌کننده",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -197,6 +236,48 @@ export default function SupplierStatus() {
                   <Edit className="h-4 w-4" />
                   ویرایش
                 </Button>
+                <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={deleting}
+                      className="flex items-center gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      حذف
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>حذف اطلاعات تأمین‌کننده</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        آیا مطمئن هستید که می‌خواهید اطلاعات تأمین‌کننده خود را حذف کنید؟
+                        <br />
+                        <strong className="text-red-600">این عمل قابل بازگشت نیست.</strong>
+                        <br />
+                        تمام اطلاعات تأمین‌کننده و محصولات مرتبط از سیستم حذف خواهد شد.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={deleting}>انصراف</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {deleting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                            در حال حذف...
+                          </>
+                        ) : (
+                          'حذف'
+                        )}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           </CardHeader>

@@ -31,7 +31,10 @@ import {
   AlertCircle,
   Info,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  UserCheck,
+  Building
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, type LicenseStatus } from "@/services/api";
@@ -55,6 +58,8 @@ const HeaderAuth = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [hasVisitor, setHasVisitor] = useState(false);
+  const [hasSupplier, setHasSupplier] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -75,8 +80,33 @@ const HeaderAuth = () => {
     if (isAuthenticated) {
       fetchNotifications();
       fetchUnreadCount();
+      checkVisitorSupplierStatus();
     }
   }, [isAuthenticated, authLicenseStatus]);
+
+  const checkVisitorSupplierStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      // Check visitor status
+      try {
+        const visitorStatus = await apiService.getMyVisitorStatus();
+        setHasVisitor(visitorStatus.has_visitor || false);
+      } catch (error) {
+        setHasVisitor(false);
+      }
+
+      // Check supplier status
+      try {
+        const supplierStatus = await apiService.getSupplierStatus();
+        setHasSupplier(supplierStatus.has_supplier || false);
+      } catch (error) {
+        setHasSupplier(false);
+      }
+    } catch (error) {
+      console.error('Error checking visitor/supplier status:', error);
+    }
+  };
 
   // Fetch notifications every 30 seconds
   useEffect(() => {
@@ -447,6 +477,29 @@ const HeaderAuth = () => {
                   <User className="w-4 h-4 ml-2" />
                   ویرایش پروفایل
                 </DropdownMenuItem>
+                
+                {/* Visitor Status */}
+                {hasVisitor && (
+                  <DropdownMenuItem 
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    onClick={() => navigate('/visitor-status')}
+                  >
+                    <UserCheck className="w-4 h-4 ml-2" />
+                    وضعیت ویزیتور
+                  </DropdownMenuItem>
+                )}
+
+                {/* Supplier Status */}
+                {hasSupplier && (
+                  <DropdownMenuItem 
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    onClick={() => navigate('/supplier-status')}
+                  >
+                    <Building className="w-4 h-4 ml-2" />
+                    وضعیت تأمین‌کننده
+                  </DropdownMenuItem>
+                )}
+
                 {currentLicenseStatus?.is_approved && (
                   <DropdownMenuItem 
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
