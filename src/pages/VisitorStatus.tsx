@@ -41,6 +41,7 @@ import {
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 
 interface VisitorData {
   id: number;
@@ -175,42 +176,50 @@ export default function VisitorStatus() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardContent className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin" />
-            <span className="mr-2">در حال بارگذاری...</span>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Card>
+            <CardContent className="flex justify-center items-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="mr-2">در حال بارگذاری...</span>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   if (!hasVisitor || !visitorData) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">وضعیت ویزیتور</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto" />
-            <h3 className="text-lg font-semibold">شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید</h3>
-            <p className="text-muted-foreground">
-              برای شروع فعالیت ویزیتوری، لطفا ابتدا ثبت‌نام کنید.
-            </p>
-            <Button asChild>
-              <Link to="/visitor-registration">ثبت‌نام ویزیتور</Link>
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-center">وضعیت ویزیتور</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto" />
+              <h3 className="text-lg font-semibold">شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید</h3>
+              <p className="text-muted-foreground">
+                برای شروع فعالیت ویزیتوری، لطفا ابتدا ثبت‌نام کنید.
+              </p>
+              <Button asChild>
+                <Link to="/visitor-registration">ثبت‌نام ویزیتور</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="space-y-6">
+    <>
+      <HeaderAuth />
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="space-y-6">
         {/* Header */}
         <Card>
           <CardHeader>
@@ -549,7 +558,8 @@ export default function VisitorStatus() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

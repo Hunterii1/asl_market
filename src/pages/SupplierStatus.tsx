@@ -35,6 +35,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { apiService } from '@/services/api';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 
 interface SupplierData {
   id: number;
@@ -162,64 +163,75 @@ export default function SupplierStatus() {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            برای مشاهده وضعیت تأمین‌کننده، ابتدا وارد حساب کاربری خود شوید.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <>
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-8">
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              برای مشاهده وضعیت تأمین‌کننده، ابتدا وارد حساب کاربری خود شوید.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </>
     );
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-2">در حال بارگذاری...</span>
+      <>
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-2">در حال بارگذاری...</span>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!hasSupplier) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle>ثبت‌نام به عنوان تأمین‌کننده</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                شما هنوز به عنوان تأمین‌کننده ثبت‌نام نکرده‌اید.
-              </AlertDescription>
-            </Alert>
-            
-            <div className="space-y-3">
-              <p className="text-muted-foreground">
-                با ثبت‌نام به عنوان تأمین‌کننده در ASL MARKET، محصولات خود را به کاربران معرفی کنید.
-              </p>
+      <>
+        <HeaderAuth />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader className="text-center">
+              <CardTitle>ثبت‌نام به عنوان تأمین‌کننده</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center space-y-4">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  شما هنوز به عنوان تأمین‌کننده ثبت‌نام نکرده‌اید.
+                </AlertDescription>
+              </Alert>
               
-              <Button onClick={() => navigate('/supplier-registration')} className="w-full">
-                <Plus className="w-4 h-4 mr-2" />
-                شروع ثبت‌نام تأمین‌کننده
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              <div className="space-y-3">
+                <p className="text-muted-foreground">
+                  با ثبت‌نام به عنوان تأمین‌کننده در ASL MARKET، محصولات خود را به کاربران معرفی کنید.
+                </p>
+                
+                <Button onClick={() => navigate('/supplier-registration')} className="w-full">
+                  <Plus className="w-4 h-4 mr-2" />
+                  شروع ثبت‌نام تأمین‌کننده
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   const statusInfo = getStatusMessage(supplierData!.status);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <>
+      <HeaderAuth />
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
         {/* Status Overview */}
         <Card>
           <CardHeader>
@@ -460,7 +472,8 @@ export default function SupplierStatus() {
             </CardContent>
           </Card>
         )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
