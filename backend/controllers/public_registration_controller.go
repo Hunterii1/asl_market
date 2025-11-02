@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
@@ -229,6 +230,27 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 			"details": err.Error(),
 		})
 		return
+	}
+
+	// STRICT VALIDATION: Only Arabic countries allowed, NO Iranian locations
+	// Flexible format: accepts any separator (space, comma, dash, etc.)
+	if !validateArabicLocation(req.CityProvince, "شهر و کشور محل سکونت") {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "شهر و کشور محل سکونت باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+		return
+	}
+
+	// Validate destination cities (split by comma, dash, space, or any separator and check each)
+	destinations := strings.FieldsFunc(req.DestinationCities, func(r rune) bool {
+		return r == ',' || r == '،' || r == '-' || r == '–' || r == ' ' || r == '\n'
+	})
+	for _, dest := range destinations {
+		dest = strings.TrimSpace(dest)
+		if dest != "" {
+			if !validateArabicLocation(dest, "شهرهای مقصد") {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "شهرهای مقصد باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+				return
+			}
+		}
 	}
 
 	// Create a temporary user for the visitor

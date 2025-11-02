@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"asl-market-backend/models"
@@ -64,6 +65,27 @@ func RegisterVisitor(c *gin.Context) {
 	if !req.AgreesToUseApprovedProducts || !req.AgreesToViolationConsequences || !req.AgreesToSubmitReports {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "تایید تمام موارد قوانین همکاری الزامی است"})
 		return
+	}
+
+	// STRICT VALIDATION: Only Arabic countries allowed, NO Iranian locations
+	// Flexible format: accepts any separator (space, comma, dash, etc.)
+	if !validateArabicLocation(req.CityProvince, "شهر و کشور محل سکونت") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شهر و کشور محل سکونت باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+		return
+	}
+
+	// Validate destination cities (split by comma, dash, space, or any separator and check each)
+	destinations := strings.FieldsFunc(req.DestinationCities, func(r rune) bool {
+		return r == ',' || r == '،' || r == '-' || r == '–' || r == ' ' || r == '\n'
+	})
+	for _, dest := range destinations {
+		dest = strings.TrimSpace(dest)
+		if dest != "" {
+			if !validateArabicLocation(dest, "شهرهای مقصد") {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "شهرهای مقصد باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+				return
+			}
+		}
 	}
 
 	// Create visitor
@@ -537,6 +559,27 @@ func UpdateMyVisitor(c *gin.Context) {
 		!req.AgreesToSubmitReports {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا تمام توافق‌نامه‌ها را بپذیرید"})
 		return
+	}
+
+	// STRICT VALIDATION: Only Arabic countries allowed, NO Iranian locations
+	// Flexible format: accepts any separator (space, comma, dash, etc.)
+	if !validateArabicLocation(req.CityProvince, "شهر و کشور محل سکونت") {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شهر و کشور محل سکونت باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+		return
+	}
+
+	// Validate destination cities (split by comma, dash, or any separator and check each)
+	destinations := strings.FieldsFunc(req.DestinationCities, func(r rune) bool {
+		return r == ',' || r == '،' || r == '-' || r == '–' || r == ' ' || r == '\n'
+	})
+	for _, dest := range destinations {
+		dest = strings.TrimSpace(dest)
+		if dest != "" {
+			if !validateArabicLocation(dest, "شهرهای مقصد") {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "شهرهای مقصد باید از کشورهای عربی باشد. ویزیتورهای ایرانی پذیرفته نمی‌شوند."})
+				return
+			}
+		}
 	}
 
 	// Update visitor information

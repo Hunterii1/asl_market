@@ -118,20 +118,65 @@ export default function VisitorRegistration() {
     }));
   };
 
-  // List of Iranian cities to validate against
-  const iranianCities = [
+  // List of Arabic countries (only these are allowed)
+  const arabicCountries = [
+    "عمان", "امارات", "امارات متحده عربی", "عربستان", "عربستان سعودی", "سعودی",
+    "کویت", "قطر", "بحرین", "یمن", "اردن", "سوریه", "لبنان", 
+    "عراق", "فلسطین", "مصر", "لیبی", "تونس", "الجزایر", "مراکش", "سودان"
+  ];
+
+  // List of Iranian cities and terms to validate against (not allowed)
+  const iranianTerms = [
     "تهران", "مشهد", "اصفهان", "شیراز", "تبریز", "کرج", "اهواز", "قم", 
     "کرمانشاه", "ارومیه", "یزد", "زاهدان", "رشت", "کرمان", "همدان", 
     "اردبیل", "بندرعباس", "اسلامشهر", "زنجان", "سنندج", "یاسوج", 
     "بوشهر", "بیرجند", "شهرکرد", "گرگان", "ساری", "اراک", "بابل", 
     "قزوین", "خرمآباد", "سمنان", "کاشان", "گلستان", "سیستان", 
-    "بلوچستان", "کهگیلویه", "بویراحمد", "ایران", "جمهوری اسلامی"
+    "بلوچستان", "کهگیلویه", "بویراحمد", "ایران", "جمهوری اسلامی", 
+    "ایرانی", "تهرانی", "مشهدی", "اصفهانی"
   ];
 
+  // Check if location contains Iranian terms (not allowed)
   const isIranianLocation = (location: string) => {
-    return iranianCities.some(city => 
-      location.toLowerCase().includes(city.toLowerCase())
+    const locationLower = location.toLowerCase();
+    return iranianTerms.some(term => 
+      locationLower.includes(term.toLowerCase())
     );
+  };
+
+  // Check if location contains only Arabic countries (allowed)
+  const isArabicCountry = (location: string) => {
+    const locationLower = location.toLowerCase();
+    return arabicCountries.some(country => 
+      locationLower.includes(country.toLowerCase())
+    );
+  };
+
+  // Validate that location is Arabic and not Iranian
+  const validateArabicLocation = (location: string, fieldName: string): boolean => {
+    const locationLower = location.toLowerCase().trim();
+    
+    // Check if Iranian (strict - reject immediately)
+    if (isIranianLocation(location)) {
+      toast({
+        title: "مکان نامعتبر",
+        description: `${fieldName} نمی‌تواند شامل شهرها یا کشورهای ایرانی باشد. ویزیتورها باید فقط از کشورهای عربی باشند.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    // Check if contains Arabic country
+    if (!isArabicCountry(location)) {
+      toast({
+        title: "مکان نامعتبر",
+        description: `${fieldName} باید از کشورهای عربی باشد (مثل: مسقط عمان، دبی امارات، ریاض عربستان). ویزیتورهای ایرانی پذیرفته نمی‌شوند.`,
+        variant: "destructive",
+      });
+      return false;
+    }
+    
+    return true;
   };
 
   const validateStep = (step: number): boolean => {
@@ -139,49 +184,23 @@ export default function VisitorRegistration() {
       case 1:
         return !!(formData.full_name && formData.national_id && formData.birth_date && formData.mobile);
       case 2:
-        // Validate city/province format and location
+        // Validate city/province location (flexible format - any separator)
         if (!formData.residence_address || !formData.city_province || !formData.destination_cities) {
           return false;
         }
         
-        // Check if city/province contains space (City Country format)
-        if (!formData.city_province.includes(' ')) {
-          toast({
-            title: "فرمت نادرست",
-            description: "لطفا شهر و کشور را به فرمت صحیح وارد کنید (مثل: مسقط عمان)",
-            variant: "destructive",
-          });
+        // STRICT VALIDATION: Only Arabic countries allowed, NO Iranian locations
+        // Flexible format: accepts any separator (space, comma, dash, etc.)
+        if (!validateArabicLocation(formData.city_province, "شهر و کشور محل سکونت")) {
           return false;
         }
         
-        // Check if destination cities contain space
-        if (!formData.destination_cities.includes(' ')) {
-          toast({
-            title: "فرمت نادرست",
-            description: "لطفا شهرهای مقصد را به فرمت صحیح وارد کنید (مثل: مسقط عمان، دبی امارات)",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        // Check if location is Iranian
-        if (isIranianLocation(formData.city_province)) {
-          toast({
-            title: "مکان نامعتبر",
-            description: "ویزیتورها باید ساکن کشورهای عربی باشند، نه ایران",
-            variant: "destructive",
-          });
-          return false;
-        }
-        
-        // Check if destination is Iranian
-        if (isIranianLocation(formData.destination_cities)) {
-          toast({
-            title: "مقصد نامعتبر",
-            description: "شهرهای مقصد باید خارج از ایران باشد",
-            variant: "destructive",
-          });
-          return false;
+        // Validate destination cities (split by comma, dash, space, or any separator)
+        const destinations = formData.destination_cities.split(/[،,\-\s]+/).map(d => d.trim()).filter(d => d);
+        for (const dest of destinations) {
+          if (!validateArabicLocation(dest, "شهرهای مقصد")) {
+            return false;
+          }
         }
         
         return true;
