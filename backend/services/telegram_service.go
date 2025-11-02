@@ -16,26 +16,49 @@ import (
 )
 
 // Define admin IDs as a slice
-var ADMIN_IDS = []int64{76599340, 276043481, 110435852, 276043481}
+var ADMIN_IDS = []int64{76599340, 276043481, 110435852}
 
-// Define support-only admin ID (limited access to support tickets only)
-var SUPPORT_ADMIN_ID = int64(8095823308)
+// Define support-only admin IDs (limited access to support tickets only)
+var SUPPORT_ADMIN_IDS = []int64{8095823308}
 
 const ASL_PLATFORM_LICENSE = "ASL-PLATFORM-2024"
 
-// Helper function to check if a user is admin
+// Helper function to check if a user is admin (checks both static list and database)
 func isAdmin(userID int64) bool {
+	// First check static list
 	for _, adminID := range ADMIN_IDS {
 		if userID == adminID {
 			return true
 		}
 	}
+
+	// Then check database
+	if models.CheckIfAdmin(models.GetDB(), userID, true) {
+		return true
+	}
+
 	return false
 }
 
-// Helper function to check if a user is support admin (limited access)
+// Helper function to check if a user is support admin (checks both static list and database)
 func isSupportAdmin(userID int64) bool {
-	return userID == SUPPORT_ADMIN_ID
+	// First check static list
+	for _, supportAdminID := range SUPPORT_ADMIN_IDS {
+		if userID == supportAdminID {
+			return true
+		}
+	}
+
+	// Then check database for support admins
+	if models.CheckIfAdmin(models.GetDB(), userID, false) {
+		// Make sure it's not a full admin
+		var admin models.TelegramAdmin
+		if err := models.GetDB().Where("telegram_id = ? AND is_active = ? AND is_full_admin = ?", userID, true, false).First(&admin).Error; err == nil {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Helper function to check if a user has any admin access (full or support)
@@ -140,6 +163,14 @@ const (
 	MENU_EDIT_VISITOR    = "✏️ ویرایش"
 	MENU_DELETE_VISITOR  = "🗑️ حذف"
 	MENU_VIEW_VISITOR    = "👁️ جزئیات"
+
+	// Admin management sub-menus
+	MENU_ADMIN_MANAGEMENT  = "👑 مدیریت ادمین‌ها"
+	MENU_ADD_ADMIN         = "➕ اضافه کردن ادمین"
+	MENU_REMOVE_ADMIN      = "🗑️ حذف ادمین"
+	MENU_LIST_ADMINS       = "📋 لیست ادمین‌ها"
+	MENU_ADD_FULL_ADMIN    = "👑 اضافه کردن ادمین کل"
+	MENU_ADD_SUPPORT_ADMIN = "🎫 اضافه کردن ادمین پشتیبانی"
 
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
@@ -277,10 +308,12 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 		t.bot.Send(msg)
 	}
 
-	// Also send to support admin
-	msg := tgbotapi.NewMessage(SUPPORT_ADMIN_ID, message)
-	msg.ParseMode = "Markdown"
-	t.bot.Send(msg)
+	// Send to all support admins
+	for _, supportAdminID := range SUPPORT_ADMIN_IDS {
+		msg := tgbotapi.NewMessage(supportAdminID, message)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
 }
 
 func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user *models.User, message *models.SupportTicketMessage) {
@@ -314,10 +347,12 @@ func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user
 		t.bot.Send(msg)
 	}
 
-	// Also send to support admin
-	msg := tgbotapi.NewMessage(SUPPORT_ADMIN_ID, messageText)
-	msg.ParseMode = "Markdown"
-	t.bot.Send(msg)
+	// Send to all support admins
+	for _, supportAdminID := range SUPPORT_ADMIN_IDS {
+		msg := tgbotapi.NewMessage(supportAdminID, messageText)
+		msg.ParseMode = "Markdown"
+		t.bot.Send(msg)
+	}
 }
 
 func (t *TelegramService) NotifyNewTicket(ticket *models.SupportTicket, user *models.User) {
@@ -519,6 +554,7 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_NOTIFICATIONS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ADMIN_MANAGEMENT),
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 		),
 	)
@@ -774,6 +810,18 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showNotificationHistory(message.Chat.ID)
 	case MENU_NOTIFICATION_STATS:
 		s.showNotificationStats(message.Chat.ID)
+	case MENU_ADMIN_MANAGEMENT:
+		s.showAdminManagementMenu(message.Chat.ID)
+	case MENU_ADD_ADMIN:
+		s.showAddAdminTypeMenu(message.Chat.ID)
+	case MENU_ADD_FULL_ADMIN:
+		s.promptAddAdmin(message.Chat.ID, true)
+	case MENU_ADD_SUPPORT_ADMIN:
+		s.promptAddAdmin(message.Chat.ID, false)
+	case MENU_LIST_ADMINS:
+		s.showAdminsList(message.Chat.ID)
+	case MENU_REMOVE_ADMIN:
+		s.promptRemoveAdmin(message.Chat.ID)
 	case MENU_SETTINGS:
 		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
 	case "🔙 بازگشت به منو اصلی":
@@ -879,6 +927,12 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
 				sessionMutex.Unlock()
+				return
+			case state.WaitingForInput == "admin_telegram_id" || state.WaitingForInput == "admin_first_name" || state.WaitingForInput == "admin_username":
+				s.handleAddAdminInput(message.Chat.ID, message)
+				return
+			case state.WaitingForInput == "remove_admin_id":
+				s.handleRemoveAdmin(message.Chat.ID, message.Text)
 				return
 			case state.WaitingForInput == "license_count":
 				if count, err := strconv.Atoi(message.Text); err == nil && count > 0 && count <= 100 {
