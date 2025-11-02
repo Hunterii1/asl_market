@@ -16,7 +16,7 @@ import (
 )
 
 // Define admin IDs as a slice
-var ADMIN_IDS = []int64{76599340, 276043481, 110435852}
+var ADMIN_IDS = []int64{76599340, 276043481, 110435852, 276043481}
 
 // Define support-only admin ID (limited access to support tickets only)
 var SUPPORT_ADMIN_ID = int64(8095823308)

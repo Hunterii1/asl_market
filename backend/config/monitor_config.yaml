@@ -19,6 +19,7 @@ monitor:
   
   # Admin Settings
   admin_telegram_ids:
+    - 276043481
     - 76599340
     - 276043481
     - 110435852
@@ -49,6 +50,7 @@ openai:
 telegram:
   bot_token: "${TELEGRAM_BOT_TOKEN}"
   admin_ids:
+    - 276043481
     - 76599340
     - 276043481
     - 110435852

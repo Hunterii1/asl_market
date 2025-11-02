@@ -17,6 +17,7 @@ openai_monitor:
   
   # Admin settings
   admin_telegram_ids:
+    - 276043481
     - 76599340
     - 276043481
     - 110435852
