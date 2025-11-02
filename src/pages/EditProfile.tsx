@@ -132,6 +132,7 @@ export default function EditProfile() {
                 </div>
               </CardHeader>
             </Card>
+          </div>
 
           <Card className="shadow-lg border-border">
             <CardHeader>
