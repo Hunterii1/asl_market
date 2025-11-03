@@ -1460,10 +1460,43 @@ func (s *TelegramService) showUsersList(chatID int64, filterType string, page in
 
 	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
 
-	msg := tgbotapi.NewMessage(chatID, message.String())
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	s.bot.Send(msg)
+	messageText := message.String()
+
+	// Check message length and split if needed (Telegram limit: 4096 characters)
+	const maxMessageLength = 4000 // Leave some margin
+	messages := splitLongMessage(messageText, maxMessageLength)
+
+	// Send first message with keyboard
+	if len(messages) > 0 {
+		msg := tgbotapi.NewMessage(chatID, messages[0])
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send users list message (filter: %s, page: %d): %v", filterType, page, err)
+			log.Printf("DEBUG: Message length: %d chars", len(messages[0]))
+			// Try sending as plain text without markdown
+			msg2 := tgbotapi.NewMessage(chatID, messages[0])
+			msg2.ReplyMarkup = keyboard
+			if _, err2 := s.bot.Send(msg2); err2 != nil {
+				log.Printf("ERROR: Failed to send as plain text too: %v", err2)
+				// Send error message to user
+				errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال لیست کاربران\n\nفیلتر: %s\nصفحه: %d", filterName, page))
+				s.bot.Send(errorMsg)
+			}
+		}
+
+		// Send remaining parts if any (without keyboard)
+		for i := 1; i < len(messages); i++ {
+			msg := tgbotapi.NewMessage(chatID, messages[i])
+			msg.ParseMode = "Markdown"
+			if _, err := s.bot.Send(msg); err != nil {
+				log.Printf("ERROR: Failed to send users list part %d: %v", i+1, err)
+				// Try as plain text
+				msg2 := tgbotapi.NewMessage(chatID, messages[i])
+				s.bot.Send(msg2)
+			}
+		}
+	}
 }
 
 // Handle pagination for user list, supplier list, and visitor list
