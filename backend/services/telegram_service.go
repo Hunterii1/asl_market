@@ -3,6 +3,8 @@ package services
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -12,6 +14,7 @@ import (
 	"asl-market-backend/utils"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 )
 
@@ -172,6 +175,14 @@ const (
 	MENU_ADD_FULL_ADMIN    = "👑 اضافه کردن ادمین کل"
 	MENU_ADD_SUPPORT_ADMIN = "🎫 اضافه کردن ادمین پشتیبانی"
 
+	// Excel Export sub-menus
+	MENU_EXCEL_EXPORT           = "📊 خروجی اکسل"
+	MENU_EXCEL_EXPORT_SUPPLIERS = "📊 خروجی اکسل تأمین‌کننده‌ها"
+	MENU_EXCEL_EXPORT_VISITORS  = "📊 خروجی اکسل ویزیتورها"
+	MENU_EXCEL_EXPORT_AVAILABLE = "📊 خروجی اکسل کالاهای موجود"
+	MENU_EXCEL_EXPORT_RESEARCH  = "📊 خروجی اکسل محصولات تحقیقی"
+	MENU_EXCEL_EXPORT_USERS     = "📊 خروجی اکسل تمامی کاربران"
+
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
 	MENU_NEXT_PAGE = "➡️ صفحه بعد"
@@ -263,6 +274,11 @@ func (t *TelegramService) NotifyUpgradeResult(userID uint, approved bool, adminN
 
 // Support Ticket Notifications
 func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, user *models.User) {
+	// Skip notification if ticket ID is 0 (dummy ticket for supplier/visitor registration)
+	if ticket.ID == 0 {
+		return
+	}
+
 	priorityEmoji := map[string]string{
 		"low":    "🟢",
 		"medium": "🟡",
@@ -659,6 +675,9 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_NOTIFICATIONS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_ADMIN_MANAGEMENT),
 			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 		),
@@ -933,6 +952,18 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.promptRemoveAdmin(message.Chat.ID)
 	case MENU_SETTINGS:
 		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
+	case MENU_EXCEL_EXPORT:
+		s.showExcelExportMenu(message.Chat.ID)
+	case MENU_EXCEL_EXPORT_SUPPLIERS:
+		s.exportSuppliersToExcel(message.Chat.ID)
+	case MENU_EXCEL_EXPORT_VISITORS:
+		s.exportVisitorsToExcel(message.Chat.ID)
+	case MENU_EXCEL_EXPORT_AVAILABLE:
+		s.exportAvailableProductsToExcel(message.Chat.ID)
+	case MENU_EXCEL_EXPORT_RESEARCH:
+		s.exportResearchProductsToExcel(message.Chat.ID)
+	case MENU_EXCEL_EXPORT_USERS:
+		s.exportUsersToExcel(message.Chat.ID)
 	case "🔙 بازگشت به منو اصلی":
 		s.showMainMenu(message.Chat.ID)
 	case "🔙 بازگشت به منو نوتیفیکیشن‌ها":
@@ -5712,4 +5743,398 @@ func (s *TelegramService) handleNotificationCallback(query *tgbotapi.CallbackQue
 			"لطفا شناسه کاربر (User ID) را وارد کنید:")
 		s.bot.Send(msg)
 	}
+}
+
+// ========== Excel Export Functions ==========
+
+// showExcelExportMenu shows the Excel export menu
+func (s *TelegramService) showExcelExportMenu(chatID int64) {
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT_SUPPLIERS),
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT_VISITORS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT_AVAILABLE),
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT_RESEARCH),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT_USERS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+	keyboard.ResizeKeyboard = true
+
+	message := "📊 **خروجی اکسل**\n\n" +
+		"از این بخش می‌توانید خروجی اکسل موارد زیر را دریافت کنید:\n\n" +
+		"🏪 **تأمین‌کننده‌ها:** شامل تمام اطلاعات تأمین‌کنندگان\n" +
+		"🚶‍♂️ **ویزیتورها:** شامل تمام اطلاعات ویزیتورها\n" +
+		"📦 **کالاهای موجود:** شامل تمام کالاهای موجود\n" +
+		"🔬 **محصولات تحقیقی:** شامل تمام محصولات تحقیقی\n" +
+		"👥 **کاربران:** شامل تمام کاربران سیستم\n\n" +
+		"💡 **نکته:** فایل اکسل شامل تمام اطلاعات موجود در سیستم است."
+
+	msg := tgbotapi.NewMessage(chatID, message)
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+// exportSuppliersToExcel generates and sends Excel file for suppliers
+func (s *TelegramService) exportSuppliersToExcel(chatID int64) {
+	// Send loading message
+	s.bot.Send(tgbotapi.NewMessage(chatID, "⏳ در حال تولید فایل اکسل تأمین‌کننده‌ها..."))
+
+	// Fetch all suppliers with their user and products
+	var suppliers []models.Supplier
+	if err := s.db.Preload("User").Preload("Products").Find(&suppliers).Error; err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در دریافت اطلاعات: %v", err)))
+		return
+	}
+
+	// Create Excel file
+	f := excelize.NewFile()
+	sheetName := "تأمین‌کنندگان"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Set headers
+	headers := []string{
+		"شناسه", "نام", "شماره تماس", "نام برند", "شهر", "آدرس",
+		"کسب‌وکار ثبت‌شده", "شماره ثبت", "سابقه صادرات", "قیمت صادرات",
+		"قیمت عمده", "قیمت عمده حجم بالا", "قابلیت برچسب خصوصی",
+		"وضعیت", "یادداشت ادمین", "تاریخ تأیید", "تاریخ ایجاد",
+	}
+	for i, header := range headers {
+		cell := fmt.Sprintf("%c1", 'A'+i)
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// Set data rows
+	for rowIdx, supplier := range suppliers {
+		row := rowIdx + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), supplier.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), supplier.FullName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), supplier.Mobile)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), supplier.BrandName)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), supplier.City)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), supplier.Address)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), boolToPersian(supplier.HasRegisteredBusiness))
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), supplier.BusinessRegistrationNum)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), boolToPersian(supplier.HasExportExperience))
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), supplier.ExportPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), supplier.WholesaleMinPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), supplier.WholesaleHighVolumePrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), boolToPersian(supplier.CanProducePrivateLabel))
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), supplier.Status)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), supplier.AdminNotes)
+		if supplier.ApprovedAt != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), supplier.ApprovedAt.Format("2006-01-02 15:04:05"))
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), supplier.CreatedAt.Format("2006-01-02 15:04:05"))
+
+	}
+
+	// Create products sheet if any supplier has products
+	hasProducts := false
+	for _, supplier := range suppliers {
+		if len(supplier.Products) > 0 {
+			hasProducts = true
+			break
+		}
+	}
+
+	if hasProducts {
+		f.NewSheet("محصولات")
+		productHeaders := []string{"شناسه تأمین‌کننده", "نام تأمین‌کننده", "شماره تماس", "نام محصول", "نوع محصول", "توضیحات", "نیاز به مجوز", "نوع مجوز", "حداقل تولید ماهانه"}
+		for i, header := range productHeaders {
+			f.SetCellValue("محصولات", fmt.Sprintf("%c1", 'A'+i), header)
+		}
+
+		productRow := 2
+		for _, supplier := range suppliers {
+			for _, product := range supplier.Products {
+				f.SetCellValue("محصولات", fmt.Sprintf("A%d", productRow), supplier.ID)
+				f.SetCellValue("محصولات", fmt.Sprintf("B%d", productRow), supplier.FullName)
+				f.SetCellValue("محصولات", fmt.Sprintf("C%d", productRow), supplier.Mobile)
+				f.SetCellValue("محصولات", fmt.Sprintf("D%d", productRow), product.ProductName)
+				f.SetCellValue("محصولات", fmt.Sprintf("E%d", productRow), product.ProductType)
+				f.SetCellValue("محصولات", fmt.Sprintf("F%d", productRow), product.Description)
+				f.SetCellValue("محصولات", fmt.Sprintf("G%d", productRow), boolToPersian(product.NeedsExportLicense))
+				f.SetCellValue("محصولات", fmt.Sprintf("H%d", productRow), product.RequiredLicenseType)
+				f.SetCellValue("محصولات", fmt.Sprintf("I%d", productRow), product.MonthlyProductionMin)
+				productRow++
+			}
+		}
+	}
+
+	// Save and send file
+	s.sendExcelFile(chatID, f, "تأمین‌کننده‌ها", fmt.Sprintf("تعداد: %d", len(suppliers)))
+}
+
+// exportVisitorsToExcel generates and sends Excel file for visitors
+func (s *TelegramService) exportVisitorsToExcel(chatID int64) {
+	s.bot.Send(tgbotapi.NewMessage(chatID, "⏳ در حال تولید فایل اکسل ویزیتورها..."))
+
+	var visitors []models.Visitor
+	if err := s.db.Preload("User").Find(&visitors).Error; err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در دریافت اطلاعات: %v", err)))
+		return
+	}
+
+	f := excelize.NewFile()
+	sheetName := "ویزیتورها"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{
+		"شناسه", "نام", "شماره تماس", "کد ملی", "شماره پاسپورت", "تاریخ تولد",
+		"شماره واتساپ", "ایمیل", "آدرس محل سکونت", "شهر و استان", "شهرهای مقصد",
+		"تماس محلی", "جزئیات تماس محلی", "شماره حساب IBAN", "نام بانک", "نام صاحب حساب",
+		"تجربه بازاریابی", "توضیحات تجربه", "سطح زبان", "مهارت‌های خاص",
+		"موافقت با محصولات تأییدشده", "موافقت با عواقب تخلف", "وضعیت", "تاریخ ایجاد",
+	}
+	for i, header := range headers {
+		f.SetCellValue(sheetName, fmt.Sprintf("%c1", 'A'+i), header)
+	}
+
+	for rowIdx, visitor := range visitors {
+		row := rowIdx + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), visitor.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), visitor.FullName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), visitor.Mobile)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), visitor.NationalID)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), visitor.PassportNumber)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), visitor.BirthDate)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), visitor.WhatsappNumber)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), visitor.Email)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), visitor.ResidenceAddress)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), visitor.CityProvince)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), visitor.DestinationCities)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), boolToPersian(visitor.HasLocalContact))
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), visitor.LocalContactDetails)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), visitor.BankAccountIBAN)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), visitor.BankName)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), visitor.AccountHolderName)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), boolToPersian(visitor.HasMarketingExperience))
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), visitor.MarketingExperienceDesc)
+		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), visitor.LanguageLevel)
+		f.SetCellValue(sheetName, fmt.Sprintf("T%d", row), visitor.SpecialSkills)
+		f.SetCellValue(sheetName, fmt.Sprintf("U%d", row), boolToPersian(visitor.AgreesToUseApprovedProducts))
+		f.SetCellValue(sheetName, fmt.Sprintf("V%d", row), boolToPersian(visitor.AgreesToViolationConsequences))
+		f.SetCellValue(sheetName, fmt.Sprintf("W%d", row), visitor.Status)
+		f.SetCellValue(sheetName, fmt.Sprintf("X%d", row), visitor.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	s.sendExcelFile(chatID, f, "ویزیتورها", fmt.Sprintf("تعداد: %d", len(visitors)))
+}
+
+// exportAvailableProductsToExcel generates and sends Excel file for available products
+func (s *TelegramService) exportAvailableProductsToExcel(chatID int64) {
+	s.bot.Send(tgbotapi.NewMessage(chatID, "⏳ در حال تولید فایل اکسل کالاهای موجود..."))
+
+	var products []models.AvailableProduct
+	if err := s.db.Preload("AddedBy").Preload("Supplier").Find(&products).Error; err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در دریافت اطلاعات: %v", err)))
+		return
+	}
+
+	f := excelize.NewFile()
+	sheetName := "کالاهای موجود"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{
+		"شناسه", "نام محصول", "دسته‌بندی", "زیردسته", "توضیحات", "نوع فروش",
+		"قیمت عمده", "قیمت خرده", "قیمت صادراتی", "ارز", "موجودی", "حداقل سفارش",
+		"حداکثر سفارش", "واحد", "برند", "مدل", "مبدا", "کیفیت", "نوع بسته‌بندی",
+		"وزن", "ابعاد", "هزینه حمل", "مکان", "تلفن تماس", "ایمیل تماس", "واتساپ تماس",
+		"قابلیت صادرات", "نیاز به مجوز", "نوع مجوز", "کشورهای صادراتی", "وضعیت",
+		"ویژه", "پیشنهاد ویژه", "تگ‌ها", "یادداشت‌ها", "نام افزودن‌کننده", "تلفن افزودن‌کننده",
+		"نام تأمین‌کننده", "تلفن تأمین‌کننده", "تاریخ ایجاد",
+	}
+	for i, header := range headers {
+		f.SetCellValue(sheetName, fmt.Sprintf("%c1", 'A'+i), header)
+	}
+
+	for rowIdx, product := range products {
+		row := rowIdx + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), product.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), product.ProductName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), product.Category)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), product.Subcategory)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), product.Description)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), product.SaleType)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), product.WholesalePrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), product.RetailPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), product.ExportPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), product.Currency)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), product.AvailableQuantity)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), product.MinOrderQuantity)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), product.MaxOrderQuantity)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), product.Unit)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), product.Brand)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), product.Model)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), product.Origin)
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), product.Quality)
+		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), product.PackagingType)
+		f.SetCellValue(sheetName, fmt.Sprintf("T%d", row), product.Weight)
+		f.SetCellValue(sheetName, fmt.Sprintf("U%d", row), product.Dimensions)
+		f.SetCellValue(sheetName, fmt.Sprintf("V%d", row), product.ShippingCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("W%d", row), product.Location)
+		f.SetCellValue(sheetName, fmt.Sprintf("X%d", row), product.ContactPhone)
+		f.SetCellValue(sheetName, fmt.Sprintf("Y%d", row), product.ContactEmail)
+		f.SetCellValue(sheetName, fmt.Sprintf("Z%d", row), product.ContactWhatsapp)
+		f.SetCellValue(sheetName, fmt.Sprintf("AA%d", row), boolToPersian(product.CanExport))
+		f.SetCellValue(sheetName, fmt.Sprintf("AB%d", row), boolToPersian(product.RequiresLicense))
+		f.SetCellValue(sheetName, fmt.Sprintf("AC%d", row), product.LicenseType)
+		f.SetCellValue(sheetName, fmt.Sprintf("AD%d", row), product.ExportCountries)
+		f.SetCellValue(sheetName, fmt.Sprintf("AE%d", row), product.Status)
+		f.SetCellValue(sheetName, fmt.Sprintf("AF%d", row), boolToPersian(product.IsFeatured))
+		f.SetCellValue(sheetName, fmt.Sprintf("AG%d", row), boolToPersian(product.IsHotDeal))
+		f.SetCellValue(sheetName, fmt.Sprintf("AH%d", row), product.Tags)
+		f.SetCellValue(sheetName, fmt.Sprintf("AI%d", row), product.Notes)
+		if product.AddedBy.ID > 0 {
+			f.SetCellValue(sheetName, fmt.Sprintf("AJ%d", row), product.AddedBy.Name())
+			f.SetCellValue(sheetName, fmt.Sprintf("AK%d", row), product.AddedBy.Phone)
+		}
+		if product.Supplier != nil {
+			f.SetCellValue(sheetName, fmt.Sprintf("AL%d", row), product.Supplier.FullName)
+			f.SetCellValue(sheetName, fmt.Sprintf("AM%d", row), product.Supplier.Mobile)
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("AN%d", row), product.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	s.sendExcelFile(chatID, f, "کالاهای موجود", fmt.Sprintf("تعداد: %d", len(products)))
+}
+
+// exportResearchProductsToExcel generates and sends Excel file for research products
+func (s *TelegramService) exportResearchProductsToExcel(chatID int64) {
+	s.bot.Send(tgbotapi.NewMessage(chatID, "⏳ در حال تولید فایل اکسل محصولات تحقیقی..."))
+
+	var products []models.ResearchProduct
+	if err := s.db.Preload("AddedByAdmin").Find(&products).Error; err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در دریافت اطلاعات: %v", err)))
+		return
+	}
+
+	f := excelize.NewFile()
+	sheetName := "محصولات تحقیقی"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{
+		"شناسه", "نام", "کد HS", "دسته‌بندی", "توضیحات", "مقدار صادرات", "مقدار واردات",
+		"تقاضای بازار", "پتانسیل سود", "سطح رقابت", "کشور هدف", "قیمت خرید از ایران",
+		"قیمت فروش در کشور هدف", "واحد پول", "حاشیه سود", "کشورهای هدف", "عوامل فصلی",
+		"مجوزهای مورد نیاز", "استانداردهای کیفی", "وضعیت", "اولویت", "افزودن‌کننده",
+		"تاریخ ایجاد",
+	}
+	for i, header := range headers {
+		f.SetCellValue(sheetName, fmt.Sprintf("%c1", 'A'+i), header)
+	}
+
+	for rowIdx, product := range products {
+		row := rowIdx + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), product.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), product.Name)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), product.HSCode)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), product.Category)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), product.Description)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), product.ExportValue)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), product.ImportValue)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), product.MarketDemand)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), product.ProfitPotential)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), product.CompetitionLevel)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), product.TargetCountry)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), product.IranPurchasePrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), product.TargetCountryPrice)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), product.PriceCurrency)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), product.ProfitMargin)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), product.TargetCountries)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), product.SeasonalFactors)
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), product.RequiredLicenses)
+		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), product.QualityStandards)
+		f.SetCellValue(sheetName, fmt.Sprintf("T%d", row), product.Status)
+		f.SetCellValue(sheetName, fmt.Sprintf("U%d", row), product.Priority)
+		if product.AddedByAdmin.ID > 0 {
+			f.SetCellValue(sheetName, fmt.Sprintf("V%d", row), product.AddedByAdmin.Name())
+		}
+		f.SetCellValue(sheetName, fmt.Sprintf("W%d", row), product.CreatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	s.sendExcelFile(chatID, f, "محصولات تحقیقی", fmt.Sprintf("تعداد: %d", len(products)))
+}
+
+// exportUsersToExcel generates and sends Excel file for all users
+func (s *TelegramService) exportUsersToExcel(chatID int64) {
+	s.bot.Send(tgbotapi.NewMessage(chatID, "⏳ در حال تولید فایل اکسل کاربران..."))
+
+	var users []models.User
+	if err := s.db.Find(&users).Error; err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در دریافت اطلاعات: %v", err)))
+		return
+	}
+
+	f := excelize.NewFile()
+	sheetName := "کاربران"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{
+		"شناسه", "نام", "نام خانوادگی", "نام کامل", "شماره تماس", "ایمیل",
+		"وضعیت فعال", "ادمین", "تاریخ ایجاد", "تاریخ به‌روزرسانی",
+	}
+	for i, header := range headers {
+		f.SetCellValue(sheetName, fmt.Sprintf("%c1", 'A'+i), header)
+	}
+
+	for rowIdx, user := range users {
+		row := rowIdx + 2
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), user.ID)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), user.FirstName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), user.LastName)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), user.Name())
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), user.Phone)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), user.Email)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), boolToPersian(user.IsActive))
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), boolToPersian(user.IsAdmin))
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), user.CreatedAt.Format("2006-01-02 15:04:05"))
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), user.UpdatedAt.Format("2006-01-02 15:04:05"))
+	}
+
+	s.sendExcelFile(chatID, f, "کاربران", fmt.Sprintf("تعداد: %d", len(users)))
+}
+
+// sendExcelFile saves and sends Excel file to Telegram
+func (s *TelegramService) sendExcelFile(chatID int64, f *excelize.File, title, info string) {
+	tempDir := os.TempDir()
+	fileName := fmt.Sprintf("%s_%d.xlsx", strings.ReplaceAll(title, " ", "_"), time.Now().Unix())
+	filePath := filepath.Join(tempDir, fileName)
+
+	if err := f.SaveAs(filePath); err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ذخیره فایل: %v", err)))
+		return
+	}
+
+	document := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(filePath))
+	document.Caption = fmt.Sprintf("📊 **خروجی اکسل %s**\n\n%s\n\n✅ فایل آماده است.", title, info)
+	document.ParseMode = "Markdown"
+
+	if _, err := s.bot.Send(document); err != nil {
+		s.bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال فایل: %v", err)))
+		os.Remove(filePath)
+		return
+	}
+
+	// Clean up temp file after a delay
+	go func() {
+		time.Sleep(5 * time.Minute)
+		os.Remove(filePath)
+	}()
+}
+
+// boolToPersian converts boolean to Persian text
+func boolToPersian(b bool) string {
+	if b {
+		return "بله"
+	}
+	return "خیر"
 }
