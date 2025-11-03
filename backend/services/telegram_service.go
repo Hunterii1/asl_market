@@ -709,6 +709,10 @@ func (s *TelegramService) handleSupportAdminMessage(message *tgbotapi.Message) {
 		s.showSupportTicketsList(message.Chat.ID, "all", 1)
 	case MENU_TICKET_STATS:
 		s.showSupportTicketsStats(message.Chat.ID)
+	case MENU_PREV_PAGE:
+		s.handlePagination(message.Chat.ID, -1)
+	case MENU_NEXT_PAGE:
+		s.handlePagination(message.Chat.ID, 1)
 	case MENU_BACK:
 		s.showSupportAdminMenu(message.Chat.ID)
 	default:
