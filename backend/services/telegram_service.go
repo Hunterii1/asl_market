@@ -427,8 +427,30 @@ type UserPagination struct {
 	SearchQuery string
 }
 
+// Pagination structure for supplier management
+type SupplierPagination struct {
+	ChatID  int64
+	Page    int
+	PerPage int
+	Status  string // "pending", "approved", "rejected", "all"
+}
+
+// Pagination structure for visitor management
+type VisitorPagination struct {
+	ChatID  int64
+	Page    int
+	PerPage int
+	Status  string // "pending", "approved", "rejected", "all"
+}
+
 // Global map to store user pagination state
 var userPaginationStates = make(map[int64]*UserPagination)
+
+// Global map to store supplier pagination state
+var supplierPaginationStates = make(map[int64]*SupplierPagination)
+
+// Global map to store visitor pagination state
+var visitorPaginationStates = make(map[int64]*VisitorPagination)
 var paginationMutex = sync.RWMutex{}
 
 // User session states
@@ -1268,8 +1290,11 @@ func (s *TelegramService) showUserManagementMenu(chatID int64) {
 }
 
 func (s *TelegramService) showUsersList(chatID int64, filterType string, page int) {
-	// Store pagination state
+	// Store pagination state and clear other pagination states
 	paginationMutex.Lock()
+	// Clear other pagination states to avoid conflicts
+	delete(supplierPaginationStates, chatID)
+	delete(visitorPaginationStates, chatID)
 	userPaginationStates[chatID] = &UserPagination{
 		ChatID:     chatID,
 		Page:       page,
@@ -1400,24 +1425,69 @@ func (s *TelegramService) showUsersList(chatID int64, filterType string, page in
 	s.bot.Send(msg)
 }
 
-// Handle pagination for user list
+// Handle pagination for user list, supplier list, and visitor list
 func (s *TelegramService) handlePagination(chatID int64, direction int) {
 	paginationMutex.RLock()
-	state, exists := userPaginationStates[chatID]
+
+	// Check if it's a user pagination
+	var userState *UserPagination
+	var supplierState *SupplierPagination
+	var visitorState *VisitorPagination
+	var isUser, isSupplier, isVisitor bool
+
+	if state, exists := userPaginationStates[chatID]; exists {
+		userState = state
+		isUser = true
+		log.Printf("DEBUG: Found user pagination state for chatID %d, page %d, filter %s", chatID, state.Page, state.FilterType)
+	} else if state, exists := supplierPaginationStates[chatID]; exists {
+		supplierState = state
+		isSupplier = true
+		log.Printf("DEBUG: Found supplier pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
+	} else if state, exists := visitorPaginationStates[chatID]; exists {
+		visitorState = state
+		isVisitor = true
+		log.Printf("DEBUG: Found visitor pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
+	} else {
+		log.Printf("DEBUG: No pagination state found for chatID %d. User states: %d, Supplier states: %d, Visitor states: %d",
+			chatID, len(userPaginationStates), len(supplierPaginationStates), len(visitorPaginationStates))
+	}
+
 	paginationMutex.RUnlock()
 
-	if !exists {
-		msg := tgbotapi.NewMessage(chatID, "❌ وضعیت صفحه‌بندی یافت نشد. لطفا مجدد تلاش کنید.")
-		s.bot.Send(msg)
+	if isUser {
+		newPage := userState.Page + direction
+		if newPage < 1 {
+			newPage = 1
+		}
+		log.Printf("DEBUG: Navigating user list to page %d", newPage)
+		s.showUsersList(chatID, userState.FilterType, newPage)
 		return
 	}
 
-	newPage := state.Page + direction
-	if newPage < 1 {
-		newPage = 1
+	if isSupplier {
+		newPage := supplierState.Page + direction
+		if newPage < 1 {
+			newPage = 1
+		}
+		log.Printf("DEBUG: Navigating supplier list to page %d", newPage)
+		s.showSuppliersList(chatID, supplierState.Status, newPage)
+		return
 	}
 
-	s.showUsersList(chatID, state.FilterType, newPage)
+	if isVisitor {
+		newPage := visitorState.Page + direction
+		if newPage < 1 {
+			newPage = 1
+		}
+		log.Printf("DEBUG: Navigating visitor list to page %d", newPage)
+		s.showVisitorsList(chatID, visitorState.Status, newPage)
+		return
+	}
+
+	// No pagination state found
+	log.Printf("ERROR: No pagination state found for chatID %d after checking all types", chatID)
+	msg := tgbotapi.NewMessage(chatID, "❌ وضعیت صفحه‌بندی یافت نشد. لطفا مجدد تلاش کنید.")
+	s.bot.Send(msg)
 }
 
 // Show comprehensive user statistics
@@ -1982,6 +2052,19 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 
 func (s *TelegramService) showSuppliersList(chatID int64, status string, page int) {
 	const perPage = 5
+
+	// Store pagination state and clear other pagination states
+	paginationMutex.Lock()
+	// Clear other pagination states to avoid conflicts
+	delete(userPaginationStates, chatID)
+	delete(visitorPaginationStates, chatID)
+	supplierPaginationStates[chatID] = &SupplierPagination{
+		ChatID:  chatID,
+		Page:    page,
+		PerPage: perPage,
+		Status:  status,
+	}
+	paginationMutex.Unlock()
 
 	suppliers, total, err := models.GetSuppliersForAdmin(s.db, status, page, perPage)
 	if err != nil {
@@ -3286,6 +3369,20 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 
 func (s *TelegramService) showVisitorsList(chatID int64, status string, page int) {
 	const perPage = 5
+
+	// Store pagination state and clear other pagination states
+	paginationMutex.Lock()
+	// Clear other pagination states to avoid conflicts
+	delete(userPaginationStates, chatID)
+	delete(supplierPaginationStates, chatID)
+	visitorPaginationStates[chatID] = &VisitorPagination{
+		ChatID:  chatID,
+		Page:    page,
+		PerPage: perPage,
+		Status:  status,
+	}
+	log.Printf("DEBUG: Stored visitor pagination state for chatID %d, page %d, status %s", chatID, page, status)
+	paginationMutex.Unlock()
 
 	visitors, total, err := models.GetVisitorsForAdmin(s.db, status, page, perPage)
 	if err != nil {
