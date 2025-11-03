@@ -418,6 +418,47 @@ func truncateText(text string, maxLength int) string {
 	return text[:maxLength] + "..."
 }
 
+// escapeMarkdown escapes special Markdown characters
+func escapeMarkdown(text string) string {
+	// Characters that need to be escaped in Markdown V2: _ * [ ] ( ) ~ ` > # + - = | { } . !
+	// But we're using Markdown (not V2), so we need: _ * [ ] ( ) ~ `
+	escapeChars := []string{"_", "*", "[", "]", "(", ")", "~", "`"}
+	result := text
+	for _, char := range escapeChars {
+		result = strings.ReplaceAll(result, char, "\\"+char)
+	}
+	return result
+}
+
+// splitLongMessage splits a message into multiple parts if it exceeds Telegram's limit (4096 chars)
+func splitLongMessage(text string, maxLen int) []string {
+	if len(text) <= maxLen {
+		return []string{text}
+	}
+
+	var parts []string
+	currentPart := ""
+	lines := strings.Split(text, "\n")
+
+	for _, line := range lines {
+		// If adding this line would exceed the limit, save current part and start new
+		if len(currentPart)+len(line)+1 > maxLen {
+			if currentPart != "" {
+				parts = append(parts, strings.TrimSpace(currentPart))
+			}
+			currentPart = line + "\n"
+		} else {
+			currentPart += line + "\n"
+		}
+	}
+
+	if currentPart != "" {
+		parts = append(parts, strings.TrimSpace(currentPart))
+	}
+
+	return parts
+}
+
 // Pagination structure for user management
 type UserPagination struct {
 	ChatID      int64
@@ -2408,10 +2449,41 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 		),
 	)
 
-	msg := tgbotapi.NewMessage(chatID, details)
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	s.bot.Send(msg)
+	// Check message length and split if needed (Telegram limit: 4096 characters)
+	const maxMessageLength = 4000 // Leave some margin
+	messages := splitLongMessage(details, maxMessageLength)
+
+	// Send first message with keyboard
+	if len(messages) > 0 {
+		msg := tgbotapi.NewMessage(chatID, messages[0])
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send visitor details message (ID %d): %v", visitorID, err)
+			log.Printf("DEBUG: Message length: %d chars", len(messages[0]))
+			// Try sending as plain text without markdown
+			msg2 := tgbotapi.NewMessage(chatID, messages[0])
+			msg2.ReplyMarkup = keyboard
+			if _, err2 := s.bot.Send(msg2); err2 != nil {
+				log.Printf("ERROR: Failed to send as plain text too: %v", err2)
+				// Send error message to user
+				errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال جزئیات ویزیتور #%d\n\nپیام حاوی محتوای نامعتبر است.", visitorID))
+				s.bot.Send(errorMsg)
+			}
+		}
+
+		// Send remaining parts if any (without keyboard)
+		for i := 1; i < len(messages); i++ {
+			msg := tgbotapi.NewMessage(chatID, messages[i])
+			msg.ParseMode = "Markdown"
+			if _, err := s.bot.Send(msg); err != nil {
+				log.Printf("ERROR: Failed to send visitor details part %d: %v", i+1, err)
+				// Try as plain text
+				msg2 := tgbotapi.NewMessage(chatID, messages[i])
+				s.bot.Send(msg2)
+			}
+		}
+	}
 }
 
 func (s *TelegramService) handleVisitorApprove(chatID int64, visitorID uint) {
@@ -2609,10 +2681,43 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 		)
 	}
 
-	msg := tgbotapi.NewMessage(chatID, message.String())
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	s.bot.Send(msg)
+	messageText := message.String()
+
+	// Check message length and split if needed (Telegram limit: 4096 characters)
+	const maxMessageLength = 4000 // Leave some margin
+	messages := splitLongMessage(messageText, maxMessageLength)
+
+	// Send first message with keyboard
+	if len(messages) > 0 {
+		msg := tgbotapi.NewMessage(chatID, messages[0])
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send supplier details message (ID %d): %v", supplierID, err)
+			log.Printf("DEBUG: Message length: %d chars", len(messages[0]))
+			// Try sending as plain text without markdown
+			msg2 := tgbotapi.NewMessage(chatID, messages[0])
+			msg2.ReplyMarkup = keyboard
+			if _, err2 := s.bot.Send(msg2); err2 != nil {
+				log.Printf("ERROR: Failed to send as plain text too: %v", err2)
+				// Send error message to user
+				errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال جزئیات تأمین‌کننده #%d\n\nپیام حاوی محتوای نامعتبر است.", supplierID))
+				s.bot.Send(errorMsg)
+			}
+		}
+
+		// Send remaining parts if any (without keyboard)
+		for i := 1; i < len(messages); i++ {
+			msg := tgbotapi.NewMessage(chatID, messages[i])
+			msg.ParseMode = "Markdown"
+			if _, err := s.bot.Send(msg); err != nil {
+				log.Printf("ERROR: Failed to send supplier details part %d: %v", i+1, err)
+				// Try as plain text
+				msg2 := tgbotapi.NewMessage(chatID, messages[i])
+				s.bot.Send(msg2)
+			}
+		}
+	}
 }
 
 func (s *TelegramService) handleSupplierApprove(chatID int64, supplierID uint) {
