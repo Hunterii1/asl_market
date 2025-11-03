@@ -288,7 +288,7 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 			"📄 **توضیحات:** %s\n\n"+
 			"%s **اولویت:** %s\n"+
 			"%s **دسته‌بندی:** %s\n\n"+
-			"🔗 **لینک تیکت:** /ticket_%d\n\n"+
+			"🔗 **لینک تیکت:** /view_ticket_%d\n\n"+
 			"💡 **اقدام لازم:** لطفاً به تیکت پاسخ دهید.",
 		ticket.ID,
 		user.Name(), user.Mobile(),
@@ -301,18 +301,14 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 		ticket.ID,
 	)
 
-	// Send to all admins
-	for _, adminID := range ADMIN_IDS {
+	// Send to all admins (full admins + support admins from static and database)
+	allAdminIDs := t.getAllAdminIDsForTickets()
+	for _, adminID := range allAdminIDs {
 		msg := tgbotapi.NewMessage(adminID, message)
 		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
-	}
-
-	// Send to all support admins
-	for _, supportAdminID := range SUPPORT_ADMIN_IDS {
-		msg := tgbotapi.NewMessage(supportAdminID, message)
-		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
+		if _, err := t.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send new support ticket notification to admin %d: %v", adminID, err)
+		}
 	}
 }
 
@@ -340,19 +336,48 @@ func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user
 		ticket.ID, ticket.ID,
 	)
 
-	// Send to all admins
-	for _, adminID := range ADMIN_IDS {
+	// Send to all admins (full admins + support admins from static and database)
+	allAdminIDs := t.getAllAdminIDsForTickets()
+	for _, adminID := range allAdminIDs {
 		msg := tgbotapi.NewMessage(adminID, messageText)
 		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
+		if _, err := t.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send ticket message notification to admin %d: %v", adminID, err)
+		}
+	}
+}
+
+// Helper function to get all admin IDs (static + database, both full and support admins)
+func (t *TelegramService) getAllAdminIDsForTickets() []int64 {
+	var allAdminIDs []int64
+
+	// Add static full admins
+	allAdminIDs = append(allAdminIDs, ADMIN_IDS...)
+
+	// Add static support admins
+	allAdminIDs = append(allAdminIDs, SUPPORT_ADMIN_IDS...)
+
+	// Add full admins from database
+	if dbAdmins, err := models.GetFullAdmins(t.db); err == nil {
+		allAdminIDs = append(allAdminIDs, dbAdmins...)
 	}
 
-	// Send to all support admins
-	for _, supportAdminID := range SUPPORT_ADMIN_IDS {
-		msg := tgbotapi.NewMessage(supportAdminID, messageText)
-		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
+	// Add support admins from database
+	if dbSupportAdmins, err := models.GetSupportAdmins(t.db); err == nil {
+		allAdminIDs = append(allAdminIDs, dbSupportAdmins...)
 	}
+
+	// Remove duplicates
+	seen := make(map[int64]bool)
+	var uniqueIDs []int64
+	for _, id := range allAdminIDs {
+		if !seen[id] {
+			seen[id] = true
+			uniqueIDs = append(uniqueIDs, id)
+		}
+	}
+
+	return uniqueIDs
 }
 
 func (t *TelegramService) NotifyNewTicket(ticket *models.SupportTicket, user *models.User) {
@@ -376,11 +401,14 @@ func (t *TelegramService) NotifyNewTicket(ticket *models.SupportTicket, user *mo
 		ticket.ID, ticket.ID,
 	)
 
-	// Send to all admins
-	for _, adminID := range ADMIN_IDS {
+	// Send to all admins (full admins + support admins from static and database)
+	allAdminIDs := t.getAllAdminIDsForTickets()
+	for _, adminID := range allAdminIDs {
 		msg := tgbotapi.NewMessage(adminID, messageText)
 		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
+		if _, err := t.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send ticket notification to admin %d: %v", adminID, err)
+		}
 	}
 }
 
@@ -396,11 +424,14 @@ func (t *TelegramService) NotifyTicketClosed(ticket *models.SupportTicket, user 
 		ticket.Title,
 	)
 
-	// Send to all admins
-	for _, adminID := range ADMIN_IDS {
+	// Send to all admins (full admins + support admins from static and database)
+	allAdminIDs := t.getAllAdminIDsForTickets()
+	for _, adminID := range allAdminIDs {
 		msg := tgbotapi.NewMessage(adminID, message)
 		msg.ParseMode = "Markdown"
-		t.bot.Send(msg)
+		if _, err := t.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send ticket closed notification to admin %d: %v", adminID, err)
+		}
 	}
 }
 
@@ -484,6 +515,14 @@ type VisitorPagination struct {
 	Status  string // "pending", "approved", "rejected", "all"
 }
 
+// Pagination structure for ticket management
+type TicketPagination struct {
+	ChatID  int64
+	Page    int
+	PerPage int
+	Status  string // "open", "in_progress", "waiting_response", "closed", "all"
+}
+
 // Global map to store user pagination state
 var userPaginationStates = make(map[int64]*UserPagination)
 
@@ -492,6 +531,9 @@ var supplierPaginationStates = make(map[int64]*SupplierPagination)
 
 // Global map to store visitor pagination state
 var visitorPaginationStates = make(map[int64]*VisitorPagination)
+
+// Global map to store ticket pagination state
+var ticketPaginationStates = make(map[int64]*TicketPagination)
 var paginationMutex = sync.RWMutex{}
 
 // User session states
@@ -656,15 +698,15 @@ func (s *TelegramService) handleSupportAdminMessage(message *tgbotapi.Message) {
 	case MENU_SUPPORT_TICKETS:
 		s.showSupportTicketsMenu(message.Chat.ID)
 	case MENU_OPEN_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "open")
+		s.showSupportTicketsList(message.Chat.ID, "open", 1)
 	case MENU_IN_PROGRESS_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "in_progress")
+		s.showSupportTicketsList(message.Chat.ID, "in_progress", 1)
 	case MENU_WAITING_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "waiting_response")
+		s.showSupportTicketsList(message.Chat.ID, "waiting_response", 1)
 	case MENU_CLOSED_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "closed")
+		s.showSupportTicketsList(message.Chat.ID, "closed", 1)
 	case MENU_ALL_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "all")
+		s.showSupportTicketsList(message.Chat.ID, "all", 1)
 	case MENU_TICKET_STATS:
 		s.showSupportTicketsStats(message.Chat.ID)
 	case MENU_BACK:
@@ -818,15 +860,15 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case MENU_SUPPORT_TICKETS:
 		s.showSupportTicketsMenu(message.Chat.ID)
 	case MENU_OPEN_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "open")
+		s.showSupportTicketsList(message.Chat.ID, "open", 1)
 	case MENU_IN_PROGRESS_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "in_progress")
+		s.showSupportTicketsList(message.Chat.ID, "in_progress", 1)
 	case MENU_WAITING_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "waiting_response")
+		s.showSupportTicketsList(message.Chat.ID, "waiting_response", 1)
 	case MENU_CLOSED_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "closed")
+		s.showSupportTicketsList(message.Chat.ID, "closed", 1)
 	case MENU_ALL_TICKETS:
-		s.showSupportTicketsList(message.Chat.ID, "all")
+		s.showSupportTicketsList(message.Chat.ID, "all", 1)
 	case MENU_TICKET_STATS:
 		s.showSupportTicketsStats(message.Chat.ID)
 	case MENU_AVAILABLE_PRODUCTS:
@@ -1336,6 +1378,7 @@ func (s *TelegramService) showUsersList(chatID int64, filterType string, page in
 	// Clear other pagination states to avoid conflicts
 	delete(supplierPaginationStates, chatID)
 	delete(visitorPaginationStates, chatID)
+	delete(ticketPaginationStates, chatID)
 	userPaginationStates[chatID] = &UserPagination{
 		ChatID:     chatID,
 		Page:       page,
@@ -1499,7 +1542,7 @@ func (s *TelegramService) showUsersList(chatID int64, filterType string, page in
 	}
 }
 
-// Handle pagination for user list, supplier list, and visitor list
+// Handle pagination for user list, supplier list, visitor list, and ticket list
 func (s *TelegramService) handlePagination(chatID int64, direction int) {
 	paginationMutex.RLock()
 
@@ -1507,7 +1550,8 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 	var userState *UserPagination
 	var supplierState *SupplierPagination
 	var visitorState *VisitorPagination
-	var isUser, isSupplier, isVisitor bool
+	var ticketState *TicketPagination
+	var isUser, isSupplier, isVisitor, isTicket bool
 
 	if state, exists := userPaginationStates[chatID]; exists {
 		userState = state
@@ -1521,9 +1565,13 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 		visitorState = state
 		isVisitor = true
 		log.Printf("DEBUG: Found visitor pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
+	} else if state, exists := ticketPaginationStates[chatID]; exists {
+		ticketState = state
+		isTicket = true
+		log.Printf("DEBUG: Found ticket pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
 	} else {
-		log.Printf("DEBUG: No pagination state found for chatID %d. User states: %d, Supplier states: %d, Visitor states: %d",
-			chatID, len(userPaginationStates), len(supplierPaginationStates), len(visitorPaginationStates))
+		log.Printf("DEBUG: No pagination state found for chatID %d. User states: %d, Supplier states: %d, Visitor states: %d, Ticket states: %d",
+			chatID, len(userPaginationStates), len(supplierPaginationStates), len(visitorPaginationStates), len(ticketPaginationStates))
 	}
 
 	paginationMutex.RUnlock()
@@ -1555,6 +1603,16 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 		}
 		log.Printf("DEBUG: Navigating visitor list to page %d", newPage)
 		s.showVisitorsList(chatID, visitorState.Status, newPage)
+		return
+	}
+
+	if isTicket {
+		newPage := ticketState.Page + direction
+		if newPage < 1 {
+			newPage = 1
+		}
+		log.Printf("DEBUG: Navigating ticket list to page %d", newPage)
+		s.showSupportTicketsList(chatID, ticketState.Status, newPage)
 		return
 	}
 
@@ -2132,6 +2190,7 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 	// Clear other pagination states to avoid conflicts
 	delete(userPaginationStates, chatID)
 	delete(visitorPaginationStates, chatID)
+	delete(ticketPaginationStates, chatID)
 	supplierPaginationStates[chatID] = &SupplierPagination{
 		ChatID:  chatID,
 		Page:    page,
@@ -3513,6 +3572,7 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 	// Clear other pagination states to avoid conflicts
 	delete(userPaginationStates, chatID)
 	delete(supplierPaginationStates, chatID)
+	delete(ticketPaginationStates, chatID)
 	visitorPaginationStates[chatID] = &VisitorPagination{
 		ChatID:  chatID,
 		Page:    page,
@@ -4472,9 +4532,28 @@ func (s *TelegramService) showSupportTicketsMenu(chatID int64) {
 	s.bot.Send(msg)
 }
 
-func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
+func (s *TelegramService) showSupportTicketsList(chatID int64, status string, page int) {
+	const perPage = 10
+
+	// Store pagination state and clear other pagination states
+	paginationMutex.Lock()
+	// Clear other pagination states to avoid conflicts
+	delete(userPaginationStates, chatID)
+	delete(supplierPaginationStates, chatID)
+	delete(visitorPaginationStates, chatID)
+	ticketPaginationStates[chatID] = &TicketPagination{
+		ChatID:  chatID,
+		Page:    page,
+		PerPage: perPage,
+		Status:  status,
+	}
+	paginationMutex.Unlock()
+
+	offset := (page - 1) * perPage
+
 	var tickets []models.SupportTicket
-	query := s.db.Preload("User").Preload("Messages")
+	var total int64
+	query := s.db.Model(&models.SupportTicket{}).Preload("User").Preload("Messages")
 
 	// Apply status filter
 	switch status {
@@ -4492,7 +4571,15 @@ func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
 		query = query.Where("status = ?", "open")
 	}
 
-	query.Order("created_at DESC").Limit(10).Find(&tickets)
+	// Get total count
+	query.Count(&total)
+
+	// Get paginated results
+	if err := query.Order("created_at DESC").Offset(offset).Limit(perPage).Find(&tickets).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست تیکت‌ها")
+		s.bot.Send(msg)
+		return
+	}
 
 	if len(tickets) == 0 {
 		statusText := s.getTicketStatusText(status)
@@ -4501,16 +4588,26 @@ func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
 		return
 	}
 
+	// Calculate pagination info
+	totalPages := (int(total) + perPage - 1) / perPage
+	if totalPages == 0 {
+		totalPages = 1
+	}
+	startItem := offset + 1
+	endItem := offset + len(tickets)
+
 	var message strings.Builder
 	statusText := s.getTicketStatusText(status)
-	message.WriteString(fmt.Sprintf("🎫 **تیکت‌های %s** (نمایش ۱۰ تیکت اخیر)\n\n", statusText))
+	message.WriteString(fmt.Sprintf("🎫 **تیکت‌های %s**\n\n", statusText))
+	message.WriteString(fmt.Sprintf("📊 **آمار**: %d تیکت | صفحه %d از %d\n", total, page, totalPages))
+	message.WriteString(fmt.Sprintf("👀 **نمایش**: %d تا %d\n\n", startItem, endItem))
 
 	for i, ticket := range tickets {
 		priorityIcon := s.getPriorityIcon(ticket.Priority)
 		categoryIcon := s.getCategoryIcon(ticket.Category)
 
 		message.WriteString(fmt.Sprintf("%d. %s %s **%s**\n",
-			i+1, priorityIcon, categoryIcon, ticket.Title))
+			startItem+i, priorityIcon, categoryIcon, ticket.Title))
 		message.WriteString(fmt.Sprintf("   👤 کاربر: %s %s\n",
 			ticket.User.FirstName, ticket.User.LastName))
 		message.WriteString(fmt.Sprintf("   📱 تلفن: %s\n", ticket.User.Phone))
@@ -4522,25 +4619,72 @@ func (s *TelegramService) showSupportTicketsList(chatID int64, status string) {
 
 		// Add action buttons for active tickets
 		if ticket.Status == "open" || ticket.Status == "in_progress" || ticket.Status == "waiting_response" {
-			message.WriteString(fmt.Sprintf("   🔗 دستورات: /view_ticket_%d /respond_ticket_%d /close_ticket_%d\n",
+			message.WriteString(fmt.Sprintf("   🔗 دستورات: /viewticket%d /respondticket%d /closeticket%d\n",
 				ticket.ID, ticket.ID, ticket.ID))
 		} else {
-			message.WriteString(fmt.Sprintf("   🔗 مشاهده: /view_ticket_%d\n", ticket.ID))
+			message.WriteString(fmt.Sprintf("   🔗 مشاهده: /viewticket%d\n", ticket.ID))
 		}
 		message.WriteString("\n")
 	}
 
-	// Create back button
-	keyboard := tgbotapi.NewReplyKeyboard(
-		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(MENU_BACK),
-		),
-	)
+	// Create navigation keyboard
+	var keyboardRows [][]tgbotapi.KeyboardButton
 
-	msg := tgbotapi.NewMessage(chatID, message.String())
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	s.bot.Send(msg)
+	// Navigation row
+	var navRow []tgbotapi.KeyboardButton
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_PREV_PAGE))
+	}
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_NEXT_PAGE))
+	}
+	if len(navRow) > 0 {
+		keyboardRows = append(keyboardRows, navRow)
+	}
+
+	// Back button
+	keyboardRows = append(keyboardRows, []tgbotapi.KeyboardButton{
+		tgbotapi.NewKeyboardButton(MENU_BACK),
+	})
+
+	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
+
+	messageText := message.String()
+
+	// Check message length and split if needed (Telegram limit: 4096 characters)
+	const maxMessageLength = 4000 // Leave some margin
+	messages := splitLongMessage(messageText, maxMessageLength)
+
+	// Send first message with keyboard
+	if len(messages) > 0 {
+		msg := tgbotapi.NewMessage(chatID, messages[0])
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send tickets list message (status: %s, page: %d): %v", status, page, err)
+			log.Printf("DEBUG: Message length: %d chars", len(messages[0]))
+			// Try sending as plain text without markdown
+			msg2 := tgbotapi.NewMessage(chatID, messages[0])
+			msg2.ReplyMarkup = keyboard
+			if _, err2 := s.bot.Send(msg2); err2 != nil {
+				log.Printf("ERROR: Failed to send as plain text too: %v", err2)
+				errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال لیست تیکت‌ها\n\nوضعیت: %s\nصفحه: %d", statusText, page))
+				s.bot.Send(errorMsg)
+			}
+		}
+
+		// Send remaining parts if any (without keyboard)
+		for i := 1; i < len(messages); i++ {
+			msg := tgbotapi.NewMessage(chatID, messages[i])
+			msg.ParseMode = "Markdown"
+			if _, err := s.bot.Send(msg); err != nil {
+				log.Printf("ERROR: Failed to send tickets list part %d: %v", i+1, err)
+				// Try as plain text
+				msg2 := tgbotapi.NewMessage(chatID, messages[i])
+				s.bot.Send(msg2)
+			}
+		}
+	}
 }
 
 func (s *TelegramService) showSupportTicketsStats(chatID int64) {
@@ -4859,10 +5003,43 @@ func (s *TelegramService) showSupportTicketDetails(chatID int64, ticketID uint) 
 		)
 	}
 
-	msg := tgbotapi.NewMessage(chatID, message.String())
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-	s.bot.Send(msg)
+	messageText := message.String()
+
+	// Check message length and split if needed (Telegram limit: 4096 characters)
+	const maxMessageLength = 4000 // Leave some margin
+	messages := splitLongMessage(messageText, maxMessageLength)
+
+	// Send first message with keyboard
+	if len(messages) > 0 {
+		msg := tgbotapi.NewMessage(chatID, messages[0])
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		if _, err := s.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send ticket details message (ID %d): %v", ticketID, err)
+			log.Printf("DEBUG: Message length: %d chars", len(messages[0]))
+			// Try sending as plain text without markdown
+			msg2 := tgbotapi.NewMessage(chatID, messages[0])
+			msg2.ReplyMarkup = keyboard
+			if _, err2 := s.bot.Send(msg2); err2 != nil {
+				log.Printf("ERROR: Failed to send as plain text too: %v", err2)
+				// Send error message to user
+				errorMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❌ خطا در ارسال جزئیات تیکت #%d\n\nپیام حاوی محتوای نامعتبر است.", ticketID))
+				s.bot.Send(errorMsg)
+			}
+		}
+
+		// Send remaining parts if any (without keyboard)
+		for i := 1; i < len(messages); i++ {
+			msg := tgbotapi.NewMessage(chatID, messages[i])
+			msg.ParseMode = "Markdown"
+			if _, err := s.bot.Send(msg); err != nil {
+				log.Printf("ERROR: Failed to send ticket details part %d: %v", i+1, err)
+				// Try as plain text
+				msg2 := tgbotapi.NewMessage(chatID, messages[i])
+				s.bot.Send(msg2)
+			}
+		}
+	}
 }
 
 func (s *TelegramService) promptTicketResponse(chatID int64, ticketID uint) {
