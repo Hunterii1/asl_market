@@ -52,6 +52,12 @@ class ErrorHandler {
         const data = error.response.data;
         errorMessage = this.extractErrorMessage(data);
         statusCode = error.response.status;
+
+        // 🔇 فیلتر کردن خطاهای ثبت‌نام که باید سرکوب شوند
+        if (this.shouldSuppressError(errorMessage, statusCode)) {
+          console.log('⏭️ Suppressing registration reminder error:', errorMessage);
+          return errorMessage; // فقط return می‌کنیم، toast نمایش نمی‌دهیم
+        }
         
         // تشخیص نوع خطا
         if (data.needs_auth || statusCode === 401) {
@@ -113,6 +119,74 @@ class ErrorHandler {
     this.dispatchErrorEvent(errorType, errorMessage, statusCode);
 
     return errorMessage;
+  }
+
+  // بررسی اینکه آیا خطا باید سرکوب شود (برای یادآوری‌های ثبت‌نام)
+  private shouldSuppressError(errorMessage: string, statusCode?: number): boolean {
+    const messageLower = errorMessage.toLowerCase();
+    
+    // ⚠️ فقط خطاهای خاص ثبت‌نام را سرکوب می‌کنیم
+    // بقیه خطاها باید به درستی نمایش داده شوند
+    
+    // 1️⃣ خطاهای دقیق ثبت‌نام (فارسی)
+    const registrationPatternsFA = [
+      'شما هنوز به عنوان ویزیتور ثبت‌نام نکرده',
+      'شما هنوز به عنوان تأمین‌کننده ثبت‌نام نکرده',
+      'شما هنوز به عنوان تامین کننده ثبت نام نکرده',
+      'هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید',
+      'هنوز به عنوان تأمین‌کننده ثبت‌نام نکرده‌اید',
+    ];
+    
+    for (const pattern of registrationPatternsFA) {
+      if (messageLower.includes(pattern.toLowerCase())) {
+        console.log('🔇 Suppressing FA registration error:', errorMessage);
+        return true;
+      }
+    }
+    
+    // 2️⃣ خطاهای دقیق ثبت‌نام (انگلیسی) - فقط با 404
+    if (statusCode === 404) {
+      const registrationPatternsEN = [
+        'visitor not found',
+        'supplier not found',
+        'no visitor registration found',
+        'no supplier registration found',
+        'visitor registration not found',
+        'supplier registration not found',
+      ];
+      
+      for (const pattern of registrationPatternsEN) {
+        if (messageLower === pattern.toLowerCase() || 
+            messageLower.includes(pattern.toLowerCase() + '.') ||
+            messageLower.includes(pattern.toLowerCase() + '!')) {
+          console.log('🔇 Suppressing EN registration error (404):', errorMessage);
+          return true;
+        }
+      }
+    }
+    
+    // 3️⃣ خطاهای Token فقط برای کاربران غیرلاگین
+    const tokenPatterns = [
+      'authorization token is required',
+      'authorization header is required',
+      'missing authorization header',
+      'missing token',
+    ];
+    
+    // بررسی اینکه کاربر لاگین است یا نه
+    const isLoggedIn = localStorage.getItem('token') !== null;
+    
+    if (!isLoggedIn) {
+      for (const pattern of tokenPatterns) {
+        if (messageLower.includes(pattern.toLowerCase())) {
+          console.log('🔇 Suppressing token error for non-logged user:', errorMessage);
+          return true;
+        }
+      }
+    }
+    
+    // 4️⃣ بقیه خطاها را نمایش بده (return false)
+    return false;
   }
 
   // استخراج پیام خطا از response
