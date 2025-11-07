@@ -165,23 +165,37 @@ class ErrorHandler {
       }
     }
     
-    // 3️⃣ خطاهای Token فقط برای کاربران غیرلاگین
-    const tokenPatterns = [
+    // 3️⃣ خطاهای Token - وقتی کاربر به صفحه محافظت شده می‌رود
+    const authHeaderPatterns = [
       'authorization token is required',
       'authorization header is required',
       'missing authorization header',
-      'missing token',
+      'missing authorization',
+      'no authorization header',
+      'auth header required',
+      'authentication header is required',
     ];
     
-    // بررسی اینکه کاربر لاگین است یا نه
-    const isLoggedIn = localStorage.getItem('token') !== null;
+    // سرکوب خطاهای Authorization header (چون کاربر هنوز redirect می‌شود)
+    for (const pattern of authHeaderPatterns) {
+      if (messageLower.includes(pattern.toLowerCase())) {
+        console.log('🔇 Suppressing auth header error (user will be redirected):', errorMessage);
+        return true;
+      }
+    }
     
-    if (!isLoggedIn) {
-      for (const pattern of tokenPatterns) {
-        if (messageLower.includes(pattern.toLowerCase())) {
-          console.log('🔇 Suppressing token error for non-logged user:', errorMessage);
-          return true;
-        }
+    // اگر token فقط expired است (نه missing) و کاربر لاگین بوده، نمایش بده
+    const expiredTokenPatterns = [
+      'token expired',
+      'token invalid',
+      'invalid token',
+      'توکن منقضی',
+    ];
+    
+    for (const pattern of expiredTokenPatterns) {
+      if (messageLower.includes(pattern.toLowerCase())) {
+        // این یکی را نمایش می‌دهیم (return false)
+        return false;
       }
     }
     
