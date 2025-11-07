@@ -258,3 +258,41 @@ input, textarea, [contenteditable="true"], .selectable {
   -ms-user-select: text !important;
   user-select: text !important;
 }
+
+/* Registration Reminder Toast Custom Styling */
+.registration-reminder-toast {
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  animation: toast-slide-in 0.4s ease-out !important;
+}
+
+.registration-reminder-toast button {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 8px !important;
+  padding: 6px 16px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.registration-reminder-toast button:hover {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Reminder animation */
+@keyframes reminder-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.registration-reminder-toast {
+  animation: toast-slide-in 0.4s ease-out, reminder-pulse 2s ease-in-out 2s !important;
+}

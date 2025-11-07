@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useRegistrationReminder } from '@/hooks/useRegistrationReminder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +67,12 @@ export default function SupplierStatus() {
   const [supplierData, setSupplierData] = useState<SupplierData | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // نمایش یادآوری ثبت‌نام (فقط یک بار در روز)
+  useRegistrationReminder({
+    type: 'supplier',
+    shouldShow: !loading && !hasSupplier,
+  });
 
   useEffect(() => {
     checkSupplierStatus();
@@ -196,28 +203,33 @@ export default function SupplierStatus() {
       <>
         <HeaderAuth />
         <div className="container mx-auto px-4 py-8">
-          <Card className="max-w-2xl mx-auto">
+          <Card className="max-w-2xl mx-auto border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <CardHeader className="text-center">
-              <CardTitle>ثبت‌نام به عنوان تأمین‌کننده</CardTitle>
+              <CardTitle className="flex items-center justify-center gap-2">
+                <Info className="h-5 w-5 text-blue-600" />
+                وضعیت تأمین‌کننده
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <Alert>
-                <Info className="h-4 w-4" />
-                <AlertDescription>
-                  شما هنوز به عنوان تأمین‌کننده ثبت‌نام نکرده‌اید.
-                </AlertDescription>
-              </Alert>
-              
-              <div className="space-y-3">
-                <p className="text-muted-foreground">
-                  با ثبت‌نام به عنوان تأمین‌کننده در ASL MARKET، محصولات خود را به کاربران معرفی کنید.
-                </p>
-                
-                <Button onClick={() => navigate('/supplier-registration')} className="w-full">
-                  <Plus className="w-4 h-4 mr-2" />
-                  شروع ثبت‌نام تأمین‌کننده
-                </Button>
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
+                <Package className="h-10 w-10 text-blue-600 dark:text-blue-400" />
               </div>
+              
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                یادآوری: ثبت‌نام به عنوان تأمین‌کننده
+              </h3>
+              
+              <p className="text-blue-700 dark:text-blue-300">
+                با ثبت‌نام به عنوان تأمین‌کننده در ASL MARKET، محصولات خود را به کاربران معرفی کنید و از امکانات پلتفرم استفاده کنید.
+              </p>
+              
+              <Button 
+                onClick={() => navigate('/supplier-registration')} 
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                شروع ثبت‌نام تأمین‌کننده
+              </Button>
             </CardContent>
           </Card>
         </div>

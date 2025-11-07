@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRegistrationReminder } from '@/hooks/useRegistrationReminder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +92,13 @@ export default function EditVisitor() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [visitorData, setVisitorData] = useState<any>(null);
+
+  // نمایش یادآوری ثبت‌نام (فقط یک بار در روز)
+  useRegistrationReminder({
+    type: 'visitor',
+    shouldShow: !loading && !visitorData,
+    onNavigate: () => navigate('/visitor-registration'),
+  });
 
   const [formData, setFormData] = useState<VisitorFormData>({
     full_name: '',
@@ -380,13 +388,25 @@ export default function EditVisitor() {
 
   if (!visitorData) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید.
-          </AlertDescription>
-        </Alert>
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <CardContent className="pt-6">
+            <Alert className="border-blue-300 bg-blue-50/50 dark:bg-blue-900/20">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900 dark:text-blue-100">
+                <span className="font-semibold">یادآوری:</span> برای ویرایش اطلاعات، ابتدا باید به عنوان ویزیتور ثبت‌نام کنید.
+              </AlertDescription>
+            </Alert>
+            <div className="mt-4 flex justify-center">
+              <Button 
+                onClick={() => navigate('/visitor-registration')}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                شروع ثبت‌نام ویزیتور
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

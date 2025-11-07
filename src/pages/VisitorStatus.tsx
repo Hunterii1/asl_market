@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRegistrationReminder } from '@/hooks/useRegistrationReminder';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,8 @@ import {
   Plane,
   Home,
   Edit,
-  Trash2
+  Trash2,
+  Info
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiService } from '@/services/api';
@@ -113,6 +115,12 @@ export default function VisitorStatus() {
   const [hasVisitor, setHasVisitor] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  // نمایش یادآوری ثبت‌نام (فقط یک بار در روز)
+  useRegistrationReminder({
+    type: 'visitor',
+    shouldShow: !loading && !hasVisitor,
+  });
 
   useEffect(() => {
     const fetchVisitorStatus = async () => {
@@ -195,18 +203,27 @@ export default function VisitorStatus() {
       <>
         <HeaderAuth />
         <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <Card>
+          <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <CardHeader>
-              <CardTitle className="text-center">وضعیت ویزیتور</CardTitle>
+              <CardTitle className="text-center flex items-center justify-center gap-2">
+                <Info className="h-5 w-5 text-blue-600" />
+                وضعیت ویزیتور
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-center space-y-4">
-              <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto" />
-              <h3 className="text-lg font-semibold">شما هنوز به عنوان ویزیتور ثبت‌نام نکرده‌اید</h3>
-              <p className="text-muted-foreground">
-                برای شروع فعالیت ویزیتوری، لطفا ابتدا ثبت‌نام کنید.
+              <div className="bg-blue-100 dark:bg-blue-900/30 rounded-full w-20 h-20 flex items-center justify-center mx-auto">
+                <Info className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100">
+                یادآوری: ثبت‌نام به عنوان ویزیتور
+              </h3>
+              <p className="text-blue-700 dark:text-blue-300">
+                برای دسترسی به لیست کامل ویزیتورها و استفاده از امکانات پلتفرم، لطفاً ثبت‌نام کنید.
               </p>
-              <Button asChild>
-                <Link to="/visitor-registration">ثبت‌نام ویزیتور</Link>
+              <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700">
+                <Link to="/visitor-registration">
+                  شروع ثبت‌نام ویزیتور
+                </Link>
               </Button>
             </CardContent>
           </Card>
