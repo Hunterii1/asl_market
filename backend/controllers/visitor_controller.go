@@ -260,6 +260,8 @@ func GetVisitorsForAdmin(c *gin.Context) {
 			Status:                        visitor.Status,
 			AdminNotes:                    visitor.AdminNotes,
 			ApprovedAt:                    visitor.ApprovedAt,
+			IsFeatured:                    visitor.IsFeatured,
+			FeaturedAt:                    visitor.FeaturedAt,
 			CreatedAt:                     visitor.CreatedAt,
 		}
 		response = append(response, visitorResponse)

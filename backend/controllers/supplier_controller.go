@@ -176,6 +176,8 @@ func GetApprovedSuppliers(c *gin.Context) {
 			HasExportExperience:    supplier.HasExportExperience,
 			CanProducePrivateLabel: supplier.CanProducePrivateLabel,
 			ApprovedAt:             supplier.ApprovedAt,
+			IsFeatured:             supplier.IsFeatured,
+			FeaturedAt:             supplier.FeaturedAt,
 			CreatedAt:              supplier.CreatedAt,
 			Products:               productsResponse,
 		})
