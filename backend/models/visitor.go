@@ -57,6 +57,11 @@ type Visitor struct {
 	ApprovedAt *time.Time `json:"approved_at"`
 	ApprovedBy *uint      `json:"approved_by"`
 
+	// Featured status - for highlighting in listings
+	IsFeatured bool       `json:"is_featured" gorm:"default:false"`
+	FeaturedAt *time.Time `json:"featured_at"`
+	FeaturedBy *uint      `json:"featured_by"`
+
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -129,6 +134,8 @@ type VisitorResponse struct {
 	Status                        string     `json:"status"`
 	AdminNotes                    string     `json:"admin_notes"`
 	ApprovedAt                    *time.Time `json:"approved_at"`
+	IsFeatured                    bool       `json:"is_featured"`
+	FeaturedAt                    *time.Time `json:"featured_at"`
 	CreatedAt                     time.Time  `json:"created_at"`
 }
 
@@ -179,7 +186,7 @@ func GetVisitorByUserID(db *gorm.DB, userID uint) (*Visitor, error) {
 
 func GetApprovedVisitors(db *gorm.DB) ([]Visitor, error) {
 	var visitors []Visitor
-	err := db.Preload("User").Where("status = ?", "approved").Find(&visitors).Error
+	err := db.Preload("User").Where("status = ?", "approved").Order("is_featured DESC, created_at DESC").Find(&visitors).Error
 	return visitors, err
 }
 
@@ -189,18 +196,29 @@ func GetVisitorsForAdmin(db *gorm.DB, status string, page, perPage int) ([]Visit
 
 	query := db.Model(&Visitor{}).Preload("User")
 
-	if status != "all" && status != "" {
+	if status == "featured" {
+		query = query.Where("status = ? AND is_featured = ?", "approved", true)
+	} else if status != "all" && status != "" {
 		query = query.Where("status = ?", status)
 	}
 
 	// Get total count
 	query.Count(&total)
 
-	// Get paginated results
+	// Get paginated results with proper ordering
 	offset := (page - 1) * perPage
-	err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&visitors).Error
 
-	return visitors, total, err
+	// Order by featured first, then by creation date
+	if status == "all" || status == "approved" {
+		err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&visitors).Error
+		return visitors, total, err
+	} else if status == "featured" {
+		err := query.Offset(offset).Limit(perPage).Order("featured_at DESC").Find(&visitors).Error
+		return visitors, total, err
+	} else {
+		err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&visitors).Error
+		return visitors, total, err
+	}
 }
 
 func ApproveVisitor(db *gorm.DB, visitorID uint, adminID uint, notes string) error {
@@ -219,6 +237,30 @@ func RejectVisitor(db *gorm.DB, visitorID uint, adminID uint, notes string) erro
 		"admin_notes": notes,
 		"approved_by": adminID,
 	}).Error
+}
+
+// SetVisitorFeatured sets or unsets a visitor as featured
+func SetVisitorFeatured(db *gorm.DB, visitorID uint, adminID uint, featured bool) error {
+	updates := map[string]interface{}{
+		"is_featured": featured,
+		"featured_by": adminID,
+	}
+
+	if featured {
+		now := time.Now()
+		updates["featured_at"] = &now
+	} else {
+		updates["featured_at"] = nil
+	}
+
+	return db.Model(&Visitor{}).Where("id = ?", visitorID).Updates(updates).Error
+}
+
+// GetFeaturedVisitors returns all featured visitors
+func GetFeaturedVisitors(db *gorm.DB) ([]Visitor, error) {
+	var visitors []Visitor
+	err := db.Preload("User").Where("status = ? AND is_featured = ?", "approved", true).Order("featured_at DESC").Find(&visitors).Error
+	return visitors, err
 }
 
 // DeleteVisitorByUserID deletes a visitor that belongs to a specific user

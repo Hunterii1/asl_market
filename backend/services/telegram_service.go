@@ -105,11 +105,14 @@ const (
 	MENU_SUPPLIER_STATS     = "📊 آمار تأمین‌کنندگان"
 
 	// Supplier action buttons
-	MENU_APPROVE_SUPPLIER = "✅ تأیید"
-	MENU_REJECT_SUPPLIER  = "❌ رد"
-	MENU_EDIT_SUPPLIER    = "✏️ ویرایش"
-	MENU_DELETE_SUPPLIER  = "🗑️ حذف"
-	MENU_VIEW_SUPPLIER    = "👁️ جزئیات"
+	MENU_APPROVE_SUPPLIER   = "✅ تأیید"
+	MENU_REJECT_SUPPLIER    = "❌ رد"
+	MENU_EDIT_SUPPLIER      = "✏️ ویرایش"
+	MENU_DELETE_SUPPLIER    = "🗑️ حذف"
+	MENU_VIEW_SUPPLIER      = "👁️ جزئیات"
+	MENU_FEATURE_SUPPLIER   = "⭐ برگزیده"
+	MENU_UNFEATURE_SUPPLIER = "⭐ حذف برگزیده"
+	MENU_FEATURED_SUPPLIERS = "⭐ تأمین‌کنندگان برگزیده"
 
 	// Visitor management sub-menus
 	MENU_VISITORS          = "🚶‍♂️ مدیریت ویزیتورها"
@@ -118,6 +121,9 @@ const (
 	MENU_REJECTED_VISITORS = "❌ ویزیتورهای رد شده"
 	MENU_ALL_VISITORS      = "📋 همه ویزیتورها"
 	MENU_VISITOR_STATS     = "📊 آمار ویزیتورها"
+	MENU_FEATURE_VISITOR   = "⭐ برگزیده"
+	MENU_UNFEATURE_VISITOR = "⭐ حذف برگزیده"
+	MENU_FEATURED_VISITORS = "⭐ ویزیتورهای برگزیده"
 
 	// Withdrawal management
 	MENU_WITHDRAWALS_PENDING    = "⏳ درخواست‌های در انتظار"
@@ -832,6 +838,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSuppliersList(message.Chat.ID, "rejected", 1)
 	case MENU_ALL_SUPPLIERS:
 		s.showSuppliersList(message.Chat.ID, "all", 1)
+	case MENU_FEATURED_SUPPLIERS:
+		s.showFeaturedSuppliersList(message.Chat.ID)
 	case MENU_SUPPLIER_STATS:
 		s.showSupplierStats(message.Chat.ID)
 	case MENU_VISITORS:
@@ -844,6 +852,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showVisitorsList(message.Chat.ID, "rejected", 1)
 	case MENU_ALL_VISITORS:
 		s.showVisitorsList(message.Chat.ID, "all", 1)
+	case MENU_FEATURED_VISITORS:
+		s.showFeaturedVisitorsList(message.Chat.ID)
 	case MENU_VISITOR_STATS:
 		s.showVisitorStats(message.Chat.ID)
 
@@ -2198,7 +2208,10 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_REJECTED_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_FEATURED_SUPPLIERS),
 			tgbotapi.NewKeyboardButton(MENU_ALL_SUPPLIERS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -2209,6 +2222,7 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 			"⏳ **در انتظار**: تأمین‌کنندگان منتظر بررسی\n"+
 			"✅ **تأیید شده**: تأمین‌کنندگان فعال\n"+
 			"❌ **رد شده**: تأمین‌کنندگان رد شده\n"+
+			"⭐ **برگزیده**: تأمین‌کنندگان برگزیده\n"+
 			"📋 **همه**: تمام تأمین‌کنندگان\n"+
 			"📊 **آمار**: آمار کلی تأمین‌کنندگان")
 
@@ -2250,6 +2264,8 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 		filterName = "✅ تأمین‌کنندگان تأیید شده"
 	case "rejected":
 		filterName = "❌ تأمین‌کنندگان رد شده"
+	case "featured":
+		filterName = "⭐ تأمین‌کنندگان برگزیده"
 	default:
 		filterName = "📋 همه تأمین‌کنندگان"
 	}
@@ -2284,19 +2300,26 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 				businessIcon = "🏢"
 			}
 
+			// Featured icon
+			featuredIcon := ""
+			if supplier.IsFeatured {
+				featuredIcon = "⭐"
+			}
+
 			// Load products count
 			var productCount int64
 			s.db.Model(&models.SupplierProduct{}).Where("supplier_id = ?", supplier.ID).Count(&productCount)
 
 			supplierInfo := fmt.Sprintf(
-				"**%d. %s %s**\n"+
+				"**%d. %s%s %s**\n"+
 					"📧 نام: %s\n"+
 					"📱 موبایل: %s\n"+
 					"🏘️ شهر: %s\n"+
 					"📦 تعداد محصولات: %d\n"+
 					"🗓️ تاریخ ثبت‌نام: %s\n"+
-					"%s وضعیت: %s | %s نوع کسب‌وکار\n",
+					"%s وضعیت: %s | %s نوع کسب‌وکار%s\n",
 				startItem+i,
+				featuredIcon,
 				statusIcon,
 				supplier.FullName,
 				supplier.FullName,
@@ -2307,6 +2330,12 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 				statusIcon,
 				supplier.Status,
 				businessIcon,
+				func() string {
+					if supplier.IsFeatured {
+						return " | ⭐ برگزیده"
+					}
+					return ""
+				}(),
 			)
 
 			// Add action buttons
@@ -2315,6 +2344,18 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 					"🔘 عملیات: /view%d | /approve%d | /reject%d\n",
 					supplier.ID, supplier.ID, supplier.ID,
 				)
+			} else if supplier.Status == "approved" {
+				if supplier.IsFeatured {
+					supplierInfo += fmt.Sprintf(
+						"🔧 عملیات: /view%d | /unfeature%d | /edit%d\n",
+						supplier.ID, supplier.ID, supplier.ID,
+					)
+				} else {
+					supplierInfo += fmt.Sprintf(
+						"🔧 عملیات: /view%d | /feature%d | /edit%d\n",
+						supplier.ID, supplier.ID, supplier.ID,
+					)
+				}
 			} else {
 				supplierInfo += fmt.Sprintf(
 					"🔧 عملیات: /view%d | /edit%d | /delete%d\n",
@@ -2419,6 +2460,10 @@ func (s *TelegramService) showSupplierStats(chatID int64) {
 	s.bot.Send(msg)
 }
 
+func (s *TelegramService) showFeaturedSuppliersList(chatID int64) {
+	s.showSuppliersList(chatID, "featured", 1)
+}
+
 // Supplier Command Handlers
 
 func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool {
@@ -2451,6 +2496,18 @@ func (s *TelegramService) handleSupplierCommands(chatID int64, text string) bool
 		supplierIDStr := strings.TrimPrefix(text, "/delete")
 		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
 			s.confirmSupplierDelete(chatID, uint(supplierID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/feature") && len(text) > 8 {
+		supplierIDStr := strings.TrimPrefix(text, "/feature")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.handleSupplierFeature(chatID, uint(supplierID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/unfeature") && len(text) > 10 {
+		supplierIDStr := strings.TrimPrefix(text, "/unfeature")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.handleSupplierUnfeature(chatID, uint(supplierID))
 			return true
 		}
 	}
@@ -2489,6 +2546,18 @@ func (s *TelegramService) handleVisitorCommands(chatID int64, text string) bool 
 		visitorIDStr := strings.TrimPrefix(text, "/vdelete")
 		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
 			s.confirmVisitorDelete(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vfeature") && len(text) > 9 {
+		visitorIDStr := strings.TrimPrefix(text, "/vfeature")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.handleVisitorFeature(chatID, uint(visitorID))
+			return true
+		}
+	} else if strings.HasPrefix(text, "/vunfeature") && len(text) > 11 {
+		visitorIDStr := strings.TrimPrefix(text, "/vunfeature")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.handleVisitorUnfeature(chatID, uint(visitorID))
 			return true
 		}
 	}
@@ -2565,16 +2634,56 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 	}
 	details += fmt.Sprintf("📊 **وضعیت:** %s %s\n", statusEmoji, statusText)
 
-	// Create action buttons
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("✅ تأیید", fmt.Sprintf("vapprove_%d", visitor.ID)),
-			tgbotapi.NewInlineKeyboardButtonData("❌ رد", fmt.Sprintf("vreject_%d", visitor.ID)),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🔙 بازگشت", "vback"),
-		),
-	)
+	// Featured status
+	if visitor.IsFeatured {
+		details += "⭐ **برگزیده:** ✅ بله\n"
+		if visitor.FeaturedAt != nil {
+			details += fmt.Sprintf("⭐ **تاریخ برگزیده:** %s\n", visitor.FeaturedAt.Format("2006/01/02 15:04"))
+		}
+	} else {
+		details += "⭐ **برگزیده:** ❌ خیر\n"
+	}
+
+	// Create action buttons based on status
+	var keyboard tgbotapi.ReplyKeyboardMarkup
+	if visitor.Status == "pending" {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vapprove%d", visitor.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vreject%d", visitor.ID)),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	} else if visitor.Status == "approved" {
+		// Add feature/unfeature buttons for approved visitors
+		if visitor.IsFeatured {
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vunfeature%d", visitor.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		} else {
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vfeature%d", visitor.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		}
+	} else {
+		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(MENU_BACK),
+			),
+		)
+	}
 
 	// Check message length and split if needed (Telegram limit: 4096 characters)
 	const maxMessageLength = 4000 // Leave some margin
@@ -2644,6 +2753,46 @@ func (s *TelegramService) handleVisitorApprove(chatID int64, visitorID uint) {
 
 	// Show updated visitors list
 	s.showVisitorsList(chatID, "pending", 1)
+}
+
+func (s *TelegramService) handleVisitorFeature(chatID int64, visitorID uint) {
+	// Find admin user ID for featuring
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.SetVisitorFeatured(s.db, visitorID, adminID, true)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در برگزیده کردن ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ ویزیتور #%d به عنوان برگزیده انتخاب شد", visitorID))
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleVisitorUnfeature(chatID int64, visitorID uint) {
+	// Find admin user ID for unfeaturing
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.SetVisitorFeatured(s.db, visitorID, adminID, false)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف برگزیده ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ ویزیتور #%d از لیست برگزیده‌ها حذف شد", visitorID))
+	s.bot.Send(msg)
 }
 
 func (s *TelegramService) promptVisitorReject(chatID int64, visitorID uint) {
@@ -2780,6 +2929,14 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 
 	// Status
 	message.WriteString(fmt.Sprintf("**📊 وضعیت:** %s\n", supplier.Status))
+	if supplier.IsFeatured {
+		message.WriteString("**⭐ برگزیده:** ✅ بله\n")
+		if supplier.FeaturedAt != nil {
+			message.WriteString(fmt.Sprintf("**⭐ تاریخ برگزیده:** %s\n", supplier.FeaturedAt.Format("2006/01/02 15:04")))
+		}
+	} else {
+		message.WriteString("**⭐ برگزیده:** ❌ خیر\n")
+	}
 	message.WriteString(fmt.Sprintf("**🗓️ تاریخ ثبت‌نام:** %s\n", supplier.CreatedAt.Format("2006/01/02 15:04")))
 	if supplier.ApprovedAt != nil {
 		message.WriteString(fmt.Sprintf("**✅ تاریخ تأیید:** %s\n", supplier.ApprovedAt.Format("2006/01/02 15:04")))
@@ -2788,7 +2945,7 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 		message.WriteString(fmt.Sprintf("**📝 یادداشت ادمین:** %s\n", supplier.AdminNotes))
 	}
 
-	// Action buttons for pending suppliers
+	// Action buttons for suppliers
 	var keyboard tgbotapi.ReplyKeyboardMarkup
 	if supplier.Status == "pending" {
 		keyboard = tgbotapi.NewReplyKeyboard(
@@ -2800,6 +2957,27 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 				tgbotapi.NewKeyboardButton(MENU_BACK),
 			),
 		)
+	} else if supplier.Status == "approved" {
+		// Add feature/unfeature buttons for approved suppliers
+		if supplier.IsFeatured {
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/unfeature%d", supplier.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		} else {
+			keyboard = tgbotapi.NewReplyKeyboard(
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/feature%d", supplier.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(MENU_BACK),
+				),
+			)
+		}
 	} else {
 		keyboard = tgbotapi.NewReplyKeyboard(
 			tgbotapi.NewKeyboardButtonRow(
@@ -2868,6 +3046,46 @@ func (s *TelegramService) handleSupplierApprove(chatID int64, supplierID uint) {
 
 	// Show pending suppliers list again
 	s.showSuppliersList(chatID, "pending", 1)
+}
+
+func (s *TelegramService) handleSupplierFeature(chatID int64, supplierID uint) {
+	// Find admin user ID for featuring
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.SetSupplierFeatured(s.db, supplierID, adminID, true)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در برگزیده کردن تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ تأمین‌کننده #%d به عنوان برگزیده انتخاب شد", supplierID))
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleSupplierUnfeature(chatID int64, supplierID uint) {
+	// Find admin user ID for unfeaturing
+	adminID, err := s.findOrCreateAdminUser(chatID)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در شناسایی ادمین")
+		s.bot.Send(msg)
+		return
+	}
+
+	err = models.SetSupplierFeatured(s.db, supplierID, adminID, false)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف برگزیده تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ تأمین‌کننده #%d از لیست برگزیده‌ها حذف شد", supplierID))
+	s.bot.Send(msg)
 }
 
 func (s *TelegramService) promptSupplierReject(chatID int64, supplierID uint) {
@@ -3580,7 +3798,10 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_REJECTED_VISITORS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_FEATURED_VISITORS),
 			tgbotapi.NewKeyboardButton(MENU_ALL_VISITORS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -3591,6 +3812,7 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 			"⏳ **در انتظار**: ویزیتورهای منتظر بررسی\n"+
 			"✅ **تأیید شده**: ویزیتورهای فعال\n"+
 			"❌ **رد شده**: ویزیتورهای رد شده\n"+
+			"⭐ **برگزیده**: ویزیتورهای برگزیده\n"+
 			"📋 **همه**: تمام ویزیتورها\n"+
 			"📊 **آمار**: آمار کلی ویزیتورها")
 
@@ -3633,6 +3855,8 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 		filterName = "✅ ویزیتورهای تأیید شده"
 	case "rejected":
 		filterName = "❌ ویزیتورهای رد شده"
+	case "featured":
+		filterName = "⭐ ویزیتورهای برگزیده"
 	default:
 		filterName = "📋 همه ویزیتورها"
 	}
@@ -3674,16 +3898,23 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 				languageIcon = "❌"
 			}
 
+			// Featured icon
+			featuredIcon := ""
+			if visitor.IsFeatured {
+				featuredIcon = "⭐"
+			}
+
 			visitorInfo := fmt.Sprintf(
-				"**%d. %s %s**\n"+
+				"**%d. %s%s %s**\n"+
 					"📧 نام: %s\n"+
 					"📱 موبایل: %s\n"+
 					"🏘️ شهر/استان: %s\n"+
 					"✈️ مقصد: %s\n"+
 					"🌐 زبان: %s %s\n"+
 					"🗓️ تاریخ ثبت‌نام: %s\n"+
-					"%s وضعیت: %s\n",
+					"%s وضعیت: %s%s\n",
 				startItem+i,
+				featuredIcon,
 				statusIcon,
 				visitor.FullName,
 				visitor.FullName,
@@ -3695,6 +3926,12 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 				visitor.CreatedAt.Format("2006/01/02"),
 				statusIcon,
 				visitor.Status,
+				func() string {
+					if visitor.IsFeatured {
+						return " | ⭐ برگزیده"
+					}
+					return ""
+				}(),
 			)
 
 			// Add action buttons
@@ -3703,6 +3940,18 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 					"🔘 عملیات: /vview%d | /vapprove%d | /vreject%d\n",
 					visitor.ID, visitor.ID, visitor.ID,
 				)
+			} else if visitor.Status == "approved" {
+				if visitor.IsFeatured {
+					visitorInfo += fmt.Sprintf(
+						"🔧 عملیات: /vview%d | /vunfeature%d | /vedit%d\n",
+						visitor.ID, visitor.ID, visitor.ID,
+					)
+				} else {
+					visitorInfo += fmt.Sprintf(
+						"🔧 عملیات: /vview%d | /vfeature%d | /vedit%d\n",
+						visitor.ID, visitor.ID, visitor.ID,
+					)
+				}
 			} else {
 				visitorInfo += fmt.Sprintf(
 					"🔧 عملیات: /vview%d | /vedit%d | /vdelete%d\n",
@@ -3741,6 +3990,10 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
+}
+
+func (s *TelegramService) showFeaturedVisitorsList(chatID int64) {
+	s.showVisitorsList(chatID, "featured", 1)
 }
 
 func (s *TelegramService) showVisitorStats(chatID int64) {

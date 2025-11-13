@@ -67,6 +67,8 @@ interface VisitorData {
   status: 'pending' | 'approved' | 'rejected';
   admin_notes: string;
   approved_at: string | null;
+  is_featured: boolean;
+  featured_at: string | null;
   created_at: string;
 }
 
@@ -305,7 +307,12 @@ export default function ApprovedVisitors() {
                   {visitors.map((visitor) => (
                         <TableRow key={visitor.id}>
                           <TableCell className="font-medium">
-                            {visitor.full_name}
+                            <div className="flex items-center gap-2">
+                              {visitor.is_featured && (
+                                <span className="text-yellow-500">⭐</span>
+                              )}
+                              {visitor.full_name}
+                            </div>
                           </TableCell>
                       <TableCell>{visitor.mobile}</TableCell>
                       <TableCell>{visitor.city_province}</TableCell>

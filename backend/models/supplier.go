@@ -38,6 +38,11 @@ type Supplier struct {
 	ApprovedAt *time.Time `json:"approved_at"`
 	ApprovedBy *uint      `json:"approved_by"`
 
+	// Featured status - for highlighting in listings
+	IsFeatured bool       `json:"is_featured" gorm:"default:false"`
+	FeaturedAt *time.Time `json:"featured_at"`
+	FeaturedBy *uint      `json:"featured_by"`
+
 	// Relations
 	Products []SupplierProduct `json:"products" gorm:"foreignKey:SupplierID"`
 
@@ -123,6 +128,8 @@ type SupplierResponse struct {
 	Status                   string                    `json:"status"`
 	AdminNotes               string                    `json:"admin_notes"`
 	ApprovedAt               *time.Time                `json:"approved_at"`
+	IsFeatured               bool                      `json:"is_featured"`
+	FeaturedAt               *time.Time                `json:"featured_at"`
 	CreatedAt                time.Time                 `json:"created_at"`
 	Products                 []SupplierProductResponse `json:"products"`
 }
@@ -207,7 +214,7 @@ func GetSupplierByUserID(db *gorm.DB, userID uint) (*Supplier, error) {
 
 func GetApprovedSuppliers(db *gorm.DB) ([]Supplier, error) {
 	var suppliers []Supplier
-	err := db.Preload("User").Preload("Products").Where("status = ?", "approved").Find(&suppliers).Error
+	err := db.Preload("User").Preload("Products").Where("status = ?", "approved").Order("is_featured DESC, created_at DESC").Find(&suppliers).Error
 	return suppliers, err
 }
 
@@ -217,18 +224,29 @@ func GetSuppliersForAdmin(db *gorm.DB, status string, page, perPage int) ([]Supp
 
 	query := db.Model(&Supplier{}).Preload("User")
 
-	if status != "all" && status != "" {
+	if status == "featured" {
+		query = query.Where("status = ? AND is_featured = ?", "approved", true)
+	} else if status != "all" && status != "" {
 		query = query.Where("status = ?", status)
 	}
 
 	// Get total count
 	query.Count(&total)
 
-	// Get paginated results
+	// Get paginated results with proper ordering
 	offset := (page - 1) * perPage
-	err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&suppliers).Error
 
-	return suppliers, total, err
+	// Order by featured first, then by creation date
+	if status == "all" || status == "approved" {
+		err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&suppliers).Error
+		return suppliers, total, err
+	} else if status == "featured" {
+		err := query.Offset(offset).Limit(perPage).Order("featured_at DESC").Find(&suppliers).Error
+		return suppliers, total, err
+	} else {
+		err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&suppliers).Error
+		return suppliers, total, err
+	}
 }
 
 func ApproveSupplier(db *gorm.DB, supplierID uint, adminID uint, notes string) error {
@@ -247,6 +265,30 @@ func RejectSupplier(db *gorm.DB, supplierID uint, adminID uint, notes string) er
 		"admin_notes": notes,
 		"approved_by": adminID,
 	}).Error
+}
+
+// SetSupplierFeatured sets or unsets a supplier as featured
+func SetSupplierFeatured(db *gorm.DB, supplierID uint, adminID uint, featured bool) error {
+	updates := map[string]interface{}{
+		"is_featured": featured,
+		"featured_by": adminID,
+	}
+
+	if featured {
+		now := time.Now()
+		updates["featured_at"] = &now
+	} else {
+		updates["featured_at"] = nil
+	}
+
+	return db.Model(&Supplier{}).Where("id = ?", supplierID).Updates(updates).Error
+}
+
+// GetFeaturedSuppliers returns all featured suppliers
+func GetFeaturedSuppliers(db *gorm.DB) ([]Supplier, error) {
+	var suppliers []Supplier
+	err := db.Preload("User").Preload("Products").Where("status = ? AND is_featured = ?", "approved", true).Order("featured_at DESC").Find(&suppliers).Error
+	return suppliers, err
 }
 
 // DeleteSupplierByUserID deletes a supplier that belongs to a specific user
