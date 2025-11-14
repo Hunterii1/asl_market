@@ -1371,21 +1371,13 @@ class ApiService {
 
   // Image upload methods
   async uploadImage(formData: FormData, endpoint: string): Promise<any> {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    return this.makeRequest(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        ...this.getAuthHeaders(),
       },
       body: formData,
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw { response: { data: error } };
-    }
-
-    return response.json();
   }
 
   async deleteImage(imagePath: string): Promise<any> {
