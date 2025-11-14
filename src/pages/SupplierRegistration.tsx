@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 import HeaderAuth from '@/components/ui/HeaderAuth';
+import { ImageUpload } from '@/components/ImageUpload';
 
 interface SupplierProduct {
   product_name: string;
@@ -247,19 +248,12 @@ export default function SupplierRegistration() {
           />
         </div>
 
-        <div>
-          <Label htmlFor="image_url">لینک تصویر شخصی یا لوگو</Label>
-          <Input
-            id="image_url"
-            value={formData.image_url}
-            onChange={(e) => updateFormData('image_url', e.target.value)}
-            placeholder="https://example.com/image.jpg"
-            dir="ltr"
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            لینک تصویر شخصی یا لوگو برند خود را وارد کنید
-          </p>
-        </div>
+        <ImageUpload
+          currentImage={formData.image_url}
+          onImageChange={(imageUrl) => updateFormData('image_url', imageUrl)}
+          uploadType="supplier"
+          label="تصویر شخصی یا لوگو برند"
+        />
 
         <div>
           <Label htmlFor="city">شهر / استان محل فعالیت *</Label>

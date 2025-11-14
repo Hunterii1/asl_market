@@ -11,6 +11,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from '@/components/ImageUpload';
 import { 
   Package, 
   ShoppingCart, 
@@ -730,18 +731,12 @@ const SubmitProduct = () => {
                 <CardTitle>اطلاعات تکمیلی</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-muted-foreground">لینک تصاویر</label>
-                  <Input
-                    value={formData.image_urls}
-                    onChange={(e) => handleInputChange('image_urls', e.target.value)}
-                    placeholder="لینک‌های تصاویر را با کاما جدا کنید"
-                    className="rounded-2xl border-border"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    می‌توانید لینک تصاویر آپلود شده در سرویس‌هایی مثل imgur یا Google Drive وارد کنید
-                  </p>
-                </div>
+                <ImageUpload
+                  currentImage={formData.image_urls}
+                  onImageChange={(imageUrl) => handleInputChange('image_urls', imageUrl)}
+                  uploadType="product"
+                  label="تصاویر محصول"
+                />
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">

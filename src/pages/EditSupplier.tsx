@@ -28,6 +28,7 @@ import {
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 import HeaderAuth from '@/components/ui/HeaderAuth';
+import { ImageUpload } from '@/components/ImageUpload';
 
 interface SupplierProduct {
   product_name: string;
@@ -410,16 +411,12 @@ export default function EditSupplier() {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="image_url">لینک تصویر</Label>
-        <Input
-          id="image_url"
-          type="url"
-          value={formData.image_url}
-          onChange={(e) => updateFormData('image_url', e.target.value)}
-          placeholder="لینک تصویر برند یا محصول"
-        />
-      </div>
+      <ImageUpload
+        currentImage={formData.image_url}
+        onImageChange={(imageUrl) => updateFormData('image_url', imageUrl)}
+        uploadType="supplier"
+        label="تصویر شخصی یا لوگو برند"
+      />
 
       <Separator />
 

@@ -13,6 +13,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { ImageUpload } from '@/components/ImageUpload';
 import { 
   Package, 
   Edit, 
@@ -731,14 +732,12 @@ const MyProducts = () => {
 
                 {/* Media URLs */}
                 <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">لینک تصاویر (جدا شده با کاما)</label>
-                    <Input
-                      value={formData.image_urls}
-                      onChange={(e) => handleInputChange('image_urls', e.target.value)}
-                      placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
-                    />
-                  </div>
+                  <ImageUpload
+                    currentImage={formData.image_urls}
+                    onImageChange={(imageUrl) => handleInputChange('image_urls', imageUrl)}
+                    uploadType="product"
+                    label="تصاویر محصول"
+                  />
                   <div>
                     <label className="block text-sm font-medium mb-2">لینک ویدیو</label>
                     <Input

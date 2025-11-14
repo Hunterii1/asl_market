@@ -98,11 +98,22 @@ const AslAvailable = () => {
         setLoading(true);
         setError(null);
         
-        // Load products first
+        // Load products
         try {
-          const productsResponse = await apiService.getAvailableProducts({ page: 1, per_page: 50 });
+          const productsResponse = await apiService.getAvailableProducts();
           console.log('Products response:', productsResponse);
-          setProducts(productsResponse?.products || []);
+          
+          // Handle different response formats
+          let products = [];
+          if (Array.isArray(productsResponse)) {
+            products = productsResponse;
+          } else if (productsResponse?.products && Array.isArray(productsResponse.products)) {
+            products = productsResponse.products;
+          } else if (productsResponse?.data && Array.isArray(productsResponse.data)) {
+            products = productsResponse.data;
+          }
+          
+          setProducts(products);
         } catch (productsErr) {
           console.error('Error loading products:', productsErr);
           setProducts([]);
@@ -168,24 +179,6 @@ const AslAvailable = () => {
     
     return matchesSearch && matchesCategory && matchesLocation;
   });
-
-  const getConditionColor = (condition: string) => {
-    switch (condition) {
-      case "new": return "bg-green-500/20 text-green-400 border-green-500/30";
-      case "sample": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-      case "used": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-      default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-    }
-  };
-
-  const getConditionText = (condition: string) => {
-    switch (condition) {
-      case "new": return "جدید";
-      case "sample": return "نمونه";
-      case "used": return "استفاده شده";
-      default: return "نامشخص";
-    }
-  };
 
   return (
     <LicenseGate>
@@ -311,17 +304,20 @@ const AslAvailable = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredItems.map((item) => (
-          <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
+          <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl overflow-hidden">
             <CardContent className="p-0">
-              {item.image_urls && item.image_urls.trim() && item.image_urls.split(',')[0].trim() ? (
+              {item.image_urls && item.image_urls.trim() ? (
                 <div className="relative">
                   <img
-                    src={item.image_urls.split(',')[0].trim()}
+                    src={item.image_urls.startsWith('/uploads') 
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${item.image_urls}`
+                      : item.image_urls.split(',')[0].trim()
+                    }
                     alt={item.product_name}
-                    className="w-full h-48 object-cover rounded-t-3xl"
+                    className="w-full h-48 object-cover"
                     onError={(e) => {
-                      // Hide image if it fails to load
                       e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.style.display = 'none';
                     }}
                   />
                   <div className="absolute top-4 right-4">
@@ -350,7 +346,7 @@ const AslAvailable = () => {
                 </div>
               ) : (
                 // Show badges even without image
-                <div className="relative bg-muted/20 rounded-t-3xl h-32 flex items-center justify-center">
+                <div className="relative bg-muted/20 h-32 flex items-center justify-center">
                   <Package className="w-16 h-16 text-muted-foreground" />
                   <div className="absolute top-4 right-4">
                     {item.is_featured && (
@@ -437,125 +433,13 @@ const AslAvailable = () => {
                       <span className="text-foreground">{item.brand}</span>
                     </div>
                   )}
-
-                  {item.origin && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Globe className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">مبدا:</span>
-                      <span className="text-foreground">{item.origin}</span>
-                    </div>
-                  )}
-
-                  {item.packaging_type && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Package className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">نوع بسته‌بندی:</span>
-                      <span className="text-foreground">{item.packaging_type}</span>
-                    </div>
-                  )}
-
-                  {item.weight && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Weight className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">وزن:</span>
-                      <span className="text-foreground">{item.weight}</span>
-                    </div>
-                  )}
-
-                  {item.min_order_quantity && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Package className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">حداقل سفارش:</span>
-                      <span className="text-foreground">{item.min_order_quantity} {item.unit}</span>
-                    </div>
-                  )}
-
-                  {item.export_countries && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">کشورهای صادراتی:</span>
-                      <span className="text-foreground">{item.export_countries}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Contact Information */}
-                {(item.contact_phone || item.contact_email || item.contact_whatsapp) && (
-                  <div className="bg-muted/30 rounded-2xl p-4 mb-4">
-                    <h5 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-                      <User className="w-4 h-4" />
-                      اطلاعات تماس
-                    </h5>
-                    <div className="space-y-2">
-                      {item.contact_phone && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Phone className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">تلفن:</span>
-                          <span className="text-foreground font-mono">{item.contact_phone}</span>
-                        </div>
-                      )}
-                      {item.contact_email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">ایمیل:</span>
-                          <span className="text-foreground font-mono">{item.contact_email}</span>
-                        </div>
-                      )}
-                      {item.contact_whatsapp && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <MessageCircle className="w-4 h-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">واتساپ:</span>
-                          <span className="text-foreground font-mono">{item.contact_whatsapp}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Additional Notes */}
-                {item.notes && (
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4">
-                    <h5 className="font-semibold text-blue-400 mb-2">یادداشت‌ها</h5>
-                    <p className="text-sm text-foreground">{item.notes}</p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
         ))}
         </div>
       )}
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-card/80 border-border rounded-3xl">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۴۵</div>
-            <p className="text-sm text-muted-foreground">محصول موجود</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۲۸</div>
-            <p className="text-sm text-muted-foreground">فروشنده فعال</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۱۵%</div>
-            <p className="text-sm text-muted-foreground">میانگین کمیسیون</p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/80 border-border rounded-3xl">
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">$۱۲,۳۴۵</div>
-            <p className="text-sm text-muted-foreground">ارزش کل محصولات</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
     </LicenseGate>
   );

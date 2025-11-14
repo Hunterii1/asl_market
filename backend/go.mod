@@ -7,13 +7,14 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
-
 	github.com/spf13/viper v1.17.0
 	github.com/xuri/excelize/v2 v2.9.1
 	golang.org/x/crypto v0.38.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gorm v1.25.5
 )
+
+require github.com/google/uuid v1.1.2
 
 require (
 	github.com/bytedance/sonic v1.9.1 // indirect

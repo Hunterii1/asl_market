@@ -28,6 +28,9 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	// Start OpenAI monitoring in background
 	go openaiMonitor.StartMonitoring()
 
+	// Serve uploaded files
+	router.Static("/uploads", "./uploads")
+
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
@@ -115,6 +118,12 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/contact/view", contactController.ViewContactInfo)
 		protected.GET("/contact/history", contactController.GetContactHistory)
 		protected.GET("/contact/check/:type/:id", contactController.CheckCanViewContact)
+
+		// Upload routes
+		protected.POST("/upload/supplier-image", controllers.UploadSupplierImage)
+		protected.POST("/upload/product-image", controllers.UploadProductImage)
+		protected.POST("/upload/product-images", controllers.UploadMultipleProductImages)
+		protected.POST("/upload/delete-image", controllers.DeleteImage)
 
 		// Supplier routes
 		protected.POST("/supplier/register", controllers.RegisterSupplier)

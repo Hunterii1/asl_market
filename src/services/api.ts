@@ -1368,6 +1368,35 @@ class ApiService {
       },
     });
   }
+
+  // Image upload methods
+  async uploadImage(formData: FormData, endpoint: string): Promise<any> {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw { response: { data: error } };
+    }
+
+    return response.json();
+  }
+
+  async deleteImage(imagePath: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/upload/delete-image`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ image_path: imagePath }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

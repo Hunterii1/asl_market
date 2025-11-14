@@ -229,15 +229,38 @@ const AslSupplier = () => {
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSuppliers.map((supplier) => (
-          <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group">
-            <CardContent className="p-6">
+          <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group overflow-hidden">
+            <CardContent className="p-0">
+              {/* Supplier Image */}
+              {supplier.image_url && supplier.image_url.trim() ? (
+                <div className="relative">
+                  <img
+                    src={supplier.image_url.startsWith('/uploads') 
+                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${supplier.image_url}`
+                      : supplier.image_url
+                    }
+                    alt={supplier.brand_name || supplier.full_name}
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.style.display = 'none';
+                    }}
+                  />
+                  {supplier.is_featured === true && supplier.hasOwnProperty('is_featured') && (
+                    <div className="absolute top-4 right-4">
+                      <span className="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-full px-3 py-1 text-sm font-medium">
+                        ⭐ برگزیده
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              
+              <div className="p-6">
               {/* نام محصول اصلی - اول */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    {supplier.is_featured === true && supplier.hasOwnProperty('is_featured') && (
-                      <span className="text-yellow-500 text-lg">⭐</span>
-                    )}
                     <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
                       {supplier.products?.[0]?.product_name || supplier.brand_name || supplier.full_name}
                     </h4>
@@ -366,8 +389,9 @@ const AslSupplier = () => {
                   size="sm"
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
         ))}
         </div>
       )}
