@@ -308,7 +308,7 @@ export default function ApprovedVisitors() {
                         <TableRow key={visitor.id}>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
-                              {visitor.is_featured === true && (
+                              {visitor.is_featured === true && visitor.hasOwnProperty('is_featured') && (
                                 <span className="text-yellow-500">⭐</span>
                               )}
                               {visitor.full_name}

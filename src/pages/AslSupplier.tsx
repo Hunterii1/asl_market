@@ -75,9 +75,12 @@ const AslSupplier = () => {
       return matchesSearch;
     })
     .sort((a, b) => {
-      // Featured suppliers first
-      if (a.is_featured === true && b.is_featured !== true) return -1;
-      if (a.is_featured !== true && b.is_featured === true) return 1;
+      // Featured suppliers first (only if property exists)
+      const aFeatured = a.hasOwnProperty('is_featured') && a.is_featured === true;
+      const bFeatured = b.hasOwnProperty('is_featured') && b.is_featured === true;
+      
+      if (aFeatured && !bFeatured) return -1;
+      if (!aFeatured && bFeatured) return 1;
       // Then by creation date (newest first)
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
@@ -232,7 +235,7 @@ const AslSupplier = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    {supplier.is_featured === true && (
+                    {supplier.is_featured === true && supplier.hasOwnProperty('is_featured') && (
                       <span className="text-yellow-500 text-lg">⭐</span>
                     )}
                     <h4 className="font-bold text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-300 transition-colors">
