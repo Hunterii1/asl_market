@@ -55,8 +55,7 @@ func main() {
 	corsConfig.MaxAge = 12 * 60 * 60 // 12 hours
 	router.Use(cors.New(corsConfig))
 
-	// Serve static files (uploaded videos) with proper headers
-	router.Static("/uploads", "./uploads")
+	// Static files are served in routes.go
 
 	// Add video streaming middleware
 	router.Use(func(c *gin.Context) {
