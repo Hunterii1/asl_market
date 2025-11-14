@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"asl-market-backend/utils"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -39,12 +40,18 @@ func UploadSupplierImage(c *gin.Context) {
 
 // UploadProductImage uploads a product image
 func UploadProductImage(c *gin.Context) {
-	// Check if user is authenticated
-	_, exists := c.Get("user_id")
+	// Debug: Check what's in context
+	userID, exists := c.Get("user_id")
 	if !exists {
+		// Debug: Log all context keys
+		keys := c.Keys
+		fmt.Printf("🔍 Upload Debug - Context keys: %+v\n", keys)
+		fmt.Printf("🔍 Upload Debug - Headers: %+v\n", c.Request.Header)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
 		return
 	}
+
+	fmt.Printf("🔍 Upload Debug - User ID: %v\n", userID)
 
 	// Get file from request
 	file, err := c.FormFile("image")
