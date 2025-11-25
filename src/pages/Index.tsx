@@ -45,6 +45,7 @@ import AslAI from "./AslAI";
 import AslAvailable from "./AslAvailable";
 import ProductsResearch from "./ProductsResearch";
 import MarketingPopup from "@/components/MarketingPopup";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -174,6 +175,9 @@ const Index = () => {
             );
           })}
         </div>
+
+        {/* PWA Install Prompt - Only for non-authenticated users */}
+        {!isAuthenticated && <PWAInstallPrompt />}
 
         {/* Public Registration Section */}
         {!isAuthenticated && (

@@ -31,6 +31,7 @@ import {
   Mail
 } from "lucide-react";
 import { LicenseGate } from '@/components/LicenseGate';
+import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 
 const AslLearn = () => {
   const [spotPlayerLicense, setSpotPlayerLicense] = useState<any>(null);
@@ -186,6 +187,9 @@ const AslLearn = () => {
   return (
     <LicenseGate>
       <div className="space-y-6 animate-fade-in">
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt />
+
         {/* Header */}
         <Card className="bg-gradient-to-r from-blue-100/40 to-blue-200/40 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl">
           <CardContent className="p-6">
