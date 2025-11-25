@@ -198,6 +198,25 @@ func GetActiveResearchProducts() ([]ResearchProduct, error) {
 	return products, nil
 }
 
+// GetActiveResearchProductsPaginated returns paginated list of active research products
+func GetActiveResearchProductsPaginated(page, perPage int) ([]ResearchProduct, int64, error) {
+	db := GetDB()
+	var products []ResearchProduct
+	var total int64
+
+	query := db.Model(&ResearchProduct{}).Where("status = ?", "active")
+
+	// Get total count
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	offset := (page - 1) * perPage
+	err := query.Offset(offset).Limit(perPage).Order("priority DESC, created_at DESC").Find(&products).Error
+	return products, total, err
+}
+
 // GetResearchProductByID returns a research product by ID
 func GetResearchProductByID(id uint) (*ResearchProduct, error) {
 	db := GetDB()

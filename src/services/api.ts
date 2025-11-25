@@ -453,8 +453,13 @@ class ApiService {
     });
   }
 
-  async getApprovedSuppliers(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/suppliers`, {
+  async getApprovedSuppliers(params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    const url = `${API_BASE_URL}/suppliers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    return this.makeRequest(url, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
@@ -501,8 +506,13 @@ class ApiService {
     });
   }
 
-  async getApprovedVisitors(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/visitors`, {
+  async getApprovedVisitors(params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    const url = `${API_BASE_URL}/visitors${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    return this.makeRequest(url, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),
@@ -601,8 +611,13 @@ class ApiService {
     });
   }
 
-  async getActiveResearchProducts(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/research-products/active`, {
+  async getActiveResearchProducts(params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    const url = `${API_BASE_URL}/research-products/active${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    return this.makeRequest(url, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),

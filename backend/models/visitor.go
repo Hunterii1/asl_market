@@ -198,6 +198,24 @@ func GetApprovedVisitors(db *gorm.DB) ([]Visitor, error) {
 	return visitors, err
 }
 
+// GetApprovedVisitorsPaginated returns paginated list of approved visitors
+func GetApprovedVisitorsPaginated(db *gorm.DB, page, perPage int) ([]Visitor, int64, error) {
+	var visitors []Visitor
+	var total int64
+
+	query := db.Model(&Visitor{}).Preload("User").Where("status = ?", "approved")
+
+	// Get total count
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	offset := (page - 1) * perPage
+	err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&visitors).Error
+	return visitors, total, err
+}
+
 func GetVisitorsForAdmin(db *gorm.DB, status string, page, perPage int) ([]Visitor, int64, error) {
 	var visitors []Visitor
 	var total int64

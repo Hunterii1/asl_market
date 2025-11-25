@@ -108,7 +108,7 @@ func GetMySupplierStatus(c *gin.Context) {
 	})
 }
 
-// GetApprovedSuppliers returns list of approved suppliers for users with license
+// GetApprovedSuppliers returns list of approved suppliers for users with license (with pagination)
 func GetApprovedSuppliers(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -136,7 +136,19 @@ func GetApprovedSuppliers(c *gin.Context) {
 		return
 	}
 
-	suppliers, err := models.GetApprovedSuppliers(models.GetDB())
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "12"))
+	
+	// Validate pagination
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 12
+	}
+
+	suppliers, total, err := models.GetApprovedSuppliersPaginated(models.GetDB(), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست تأمین‌کنندگان"})
 		return
@@ -183,9 +195,16 @@ func GetApprovedSuppliers(c *gin.Context) {
 		})
 	}
 
+	totalPages := (int(total) + perPage - 1) / perPage
+
 	c.JSON(http.StatusOK, gin.H{
-		"suppliers": suppliersResponse,
-		"total":     len(suppliersResponse),
+		"suppliers":    suppliersResponse,
+		"total":        total,
+		"page":         page,
+		"per_page":     perPage,
+		"total_pages":  totalPages,
+		"has_next":     page < totalPages,
+		"has_previous": page > 1,
 	})
 }
 

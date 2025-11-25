@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/hooks/useAuth';
 import { apiService } from "@/services/api";
+import { Pagination } from "@/components/ui/Pagination";
 import { 
   Users, 
   Star, 
@@ -38,6 +39,9 @@ const AslSupplier = () => {
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [userSupplierStatus, setUserSupplierStatus] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
 
   const productCategories = [
     { id: "all", name: "همه محصولات" },
@@ -48,31 +52,42 @@ const AslSupplier = () => {
     { id: "handicrafts", name: "صنایع دستی" }
   ];
 
-  // Load suppliers data from API
+  // Load suppliers data from API with pagination
   useEffect(() => {
     const loadSuppliersData = async () => {
       try {
         setLoadingSuppliers(true);
-        const response = await apiService.getApprovedSuppliers();
+        const response = await apiService.getApprovedSuppliers({
+          page: currentPage,
+          per_page: itemsPerPage,
+        });
         setApprovedSuppliers(response.suppliers || []);
+        setTotalPages(response.total_pages || 1);
       } catch (error) {
         console.error('Error loading suppliers:', error);
         // Set empty array on error to prevent map error
         setApprovedSuppliers([]);
+        setTotalPages(1);
       } finally {
         setLoadingSuppliers(false);
       }
     };
 
     loadSuppliersData();
-  }, []);
+  }, [currentPage]);
 
+  // Client-side filtering (server handles pagination)
   const filteredSuppliers = approvedSuppliers
     .filter(supplier => {
       const matchesSearch = supplier.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            supplier.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            supplier.city?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesSearch;
+      const matchesProduct = selectedProduct === "all" || 
+        supplier.products?.some((p: any) => {
+          const productName = typeof p === 'string' ? p : p.product_name;
+          return productName?.toLowerCase().includes(selectedProduct.toLowerCase());
+        });
+      return matchesSearch && matchesProduct;
     })
     .sort((a, b) => {
       // Featured suppliers first (only if property exists)
@@ -85,29 +100,18 @@ const AslSupplier = () => {
       return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
     });
 
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedProduct]);
+
 
 
   useEffect(() => {
     if (user) {
-      loadApprovedSuppliers();
       checkUserSupplierStatus();
-  
     }
   }, [user]);
-
-
-
-  const loadApprovedSuppliers = async () => {
-    try {
-      const response = await apiService.getApprovedSuppliers();
-      setApprovedSuppliers(response.suppliers || []);
-    } catch (error) {
-      console.error('Error loading suppliers:', error);
-      // اگر خطا لایسنس باشد، نیازی نیست کاری انجام دهیم زیرا LicenseGate خودکار هندل می‌کند
-    } finally {
-      setLoadingSuppliers(false);
-    }
-  };
 
   const checkUserSupplierStatus = async () => {
     try {
@@ -227,8 +231,9 @@ const AslSupplier = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSuppliers.map((supplier) => (
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSuppliers.map((supplier) => (
           <Card key={supplier.id} className="bg-card/80 border-border hover:border-orange-400/40 transition-all rounded-3xl group overflow-hidden">
             <CardContent className="p-0">
               {/* Supplier Image */}
@@ -392,8 +397,20 @@ const AslSupplier = () => {
             </div>
           </CardContent>
         </Card>
-        ))}
-        </div>
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -166,10 +166,21 @@ func GetMyVisitorStatus(c *gin.Context) {
 	})
 }
 
-// GetApprovedVisitors returns list of approved visitors (for internal use)
+// GetApprovedVisitors returns list of approved visitors with pagination
 func GetApprovedVisitors(c *gin.Context) {
-	// This endpoint might be used for admin purposes or internal communications
-	visitors, err := models.GetApprovedVisitors(models.GetDB())
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "12"))
+
+	// Validate pagination
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 12
+	}
+
+	visitors, total, err := models.GetApprovedVisitorsPaginated(models.GetDB(), page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست ویزیتورها"})
 		return
@@ -178,22 +189,33 @@ func GetApprovedVisitors(c *gin.Context) {
 	var response []models.VisitorResponse
 	for _, visitor := range visitors {
 		visitorResponse := models.VisitorResponse{
-			ID:                visitor.ID,
-			UserID:            visitor.UserID,
-			FullName:          visitor.FullName,
-			Mobile:            visitor.Mobile,
-			CityProvince:      visitor.CityProvince,
-			DestinationCities: visitor.DestinationCities,
-			LanguageLevel:     visitor.LanguageLevel,
-			Status:            visitor.Status,
-			CreatedAt:         visitor.CreatedAt,
+			ID:                 visitor.ID,
+			UserID:             visitor.UserID,
+			FullName:           visitor.FullName,
+			Mobile:             visitor.Mobile,
+			CityProvince:       visitor.CityProvince,
+			DestinationCities:  visitor.DestinationCities,
+			LanguageLevel:      visitor.LanguageLevel,
+			SpecialSkills:      visitor.SpecialSkills,
+			InterestedProducts: visitor.InterestedProducts,
+			Status:             visitor.Status,
+			IsFeatured:         visitor.IsFeatured,
+			FeaturedAt:         visitor.FeaturedAt,
+			CreatedAt:          visitor.CreatedAt,
 		}
 		response = append(response, visitorResponse)
 	}
 
+	totalPages := (int(total) + perPage - 1) / perPage
+
 	c.JSON(http.StatusOK, gin.H{
-		"visitors": response,
-		"count":    len(response),
+		"visitors":     response,
+		"total":        total,
+		"page":         page,
+		"per_page":     perPage,
+		"total_pages":  totalPages,
+		"has_next":     page < totalPages,
+		"has_previous": page > 1,
 	})
 }
 

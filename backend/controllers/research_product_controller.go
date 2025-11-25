@@ -109,15 +109,29 @@ func GetResearchProducts(c *gin.Context) {
 
 // GetActiveResearchProducts godoc
 // @Summary Get active research products for public display
-// @Description Get all active research products without pagination
+// @Description Get active research products with pagination
 // @Tags research-products
 // @Accept json
 // @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(12)
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Router /research-products/active [get]
 func GetActiveResearchProducts(c *gin.Context) {
-	products, err := models.GetActiveResearchProducts()
+	// Parse pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "12"))
+
+	// Validate pagination
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 12
+	}
+
+	products, total, err := models.GetActiveResearchProductsPaginated(page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "خطا در دریافت محصولات تحقیقی",
@@ -156,8 +170,16 @@ func GetActiveResearchProducts(c *gin.Context) {
 		productResponses = append(productResponses, productResponse)
 	}
 
+	totalPages := (int(total) + perPage - 1) / perPage
+
 	c.JSON(http.StatusOK, gin.H{
-		"products": productResponses,
+		"products":     productResponses,
+		"total":        total,
+		"page":         page,
+		"per_page":     perPage,
+		"total_pages":  totalPages,
+		"has_next":     page < totalPages,
+		"has_previous": page > 1,
 	})
 }
 

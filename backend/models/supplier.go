@@ -218,6 +218,24 @@ func GetApprovedSuppliers(db *gorm.DB) ([]Supplier, error) {
 	return suppliers, err
 }
 
+// GetApprovedSuppliersPaginated returns paginated list of approved suppliers
+func GetApprovedSuppliersPaginated(db *gorm.DB, page, perPage int) ([]Supplier, int64, error) {
+	var suppliers []Supplier
+	var total int64
+
+	query := db.Model(&Supplier{}).Preload("User").Preload("Products").Where("status = ?", "approved")
+
+	// Get total count
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Get paginated results
+	offset := (page - 1) * perPage
+	err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&suppliers).Error
+	return suppliers, total, err
+}
+
 func GetSuppliersForAdmin(db *gorm.DB, status string, page, perPage int) ([]Supplier, int64, error) {
 	var suppliers []Supplier
 	var total int64

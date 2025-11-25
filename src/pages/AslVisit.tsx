@@ -7,6 +7,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
 import { Badge } from "@/components/ui/badge";
+import { Pagination } from "@/components/ui/Pagination";
 import { 
   Users, 
   MapPin, 
@@ -30,6 +31,9 @@ const AslVisit = () => {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
 
   const countries = [
     { 
@@ -76,22 +80,28 @@ const AslVisit = () => {
     }
   ];
 
-  // Load visitors data from API
+  // Load visitors data from API with pagination
   useEffect(() => {
     const loadVisitorsData = async () => {
       try {
         setLoading(true);
-        const response = await apiService.getApprovedVisitors();
+        const response = await apiService.getApprovedVisitors({
+          page: currentPage,
+          per_page: itemsPerPage,
+        });
         setVisitors(response.visitors || []);
+        setTotalPages(response.total_pages || 1);
       } catch (error) {
         console.error('Error loading visitors:', error);
+        setVisitors([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
 
     loadVisitorsData();
-  }, []);
+  }, [currentPage]);
 
   // Helper function for language level display
   const getLanguageText = (level: string) => {
@@ -104,9 +114,15 @@ const AslVisit = () => {
     }
   };
 
+  // Client-side filtering for country (server handles pagination)
   const filteredVisitors = selectedCountry 
     ? visitors.filter(visitor => visitor.city_province?.includes(countries.find(c => c.code === selectedCountry)?.name || ''))
     : visitors;
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCountry]);
 
   const VisitorBrowser = () => (
     <div className="space-y-6">
@@ -169,9 +185,20 @@ const AslVisit = () => {
         <div className="text-center py-8">
           <p className="text-muted-foreground">در حال بارگذاری ویزیتورها...</p>
         </div>
+      ) : filteredVisitors.length === 0 ? (
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardContent className="p-8 text-center">
+            <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">هیچ ویزیتوری یافت نشد</h3>
+            <p className="text-muted-foreground">
+              {selectedCountry ? 'برای کشور انتخاب شده ویزیتوری یافت نشد' : 'هنوز ویزیتوری برای نمایش وجود ندارد'}
+            </p>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVisitors.map((visitor) => (
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredVisitors.map((visitor) => (
             <Card key={visitor.id} className="bg-card border-border hover:border-border transition-all rounded-3xl transition-colors duration-300">
               <CardContent className="p-6">
                 {/* نام ویزیتور - اول */}
@@ -310,8 +337,20 @@ const AslVisit = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

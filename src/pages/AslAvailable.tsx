@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
+import { Pagination } from "@/components/ui/Pagination";
 import { 
   Package, 
   Search, 
@@ -90,33 +91,52 @@ const AslAvailable = () => {
   const [categories, setCategoriesData] = useState<string[]>(['زعفران', 'خرما', 'خشکبار', 'صنایع دستی']); // Fallback categories
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
 
-  // Load data from API
+  // Load data from API - load all products for client-side filtering and pagination
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        // Load products
+        // Load products with server-side pagination (much faster!)
         try {
-          const productsResponse = await apiService.getAvailableProducts();
+          const productsResponse = await apiService.getAvailableProducts({
+            page: currentPage,
+            per_page: itemsPerPage,
+            category: selectedCategory !== "all" ? selectedCategory : undefined,
+            status: selectedCondition !== "all" ? selectedCondition : undefined,
+          });
           console.log('Products response:', productsResponse);
           
           // Handle different response formats
           let products = [];
+          let total = 0;
+          let pages = 1;
+          
           if (Array.isArray(productsResponse)) {
             products = productsResponse;
+            total = productsResponse.length;
+            pages = 1;
           } else if (productsResponse?.products && Array.isArray(productsResponse.products)) {
             products = productsResponse.products;
+            total = productsResponse.total || productsResponse.pagination?.total || products.length;
+            pages = productsResponse.total_pages || productsResponse.pagination?.total_pages || Math.ceil(total / itemsPerPage);
           } else if (productsResponse?.data && Array.isArray(productsResponse.data)) {
             products = productsResponse.data;
+            total = productsResponse.total || products.length;
+            pages = productsResponse.total_pages || Math.ceil(total / itemsPerPage);
           }
           
           setProducts(products);
+          setTotalPages(pages);
         } catch (productsErr) {
           console.error('Error loading products:', productsErr);
           setProducts([]);
+          setTotalPages(1);
         }
         
         // Load categories separately
@@ -152,7 +172,7 @@ const AslAvailable = () => {
     };
 
     loadData();
-  }, []);
+  }, [currentPage, selectedCategory, selectedCondition]);
 
   // Static filter options
   const conditions = [
@@ -170,15 +190,20 @@ const AslAvailable = () => {
     { id: "shiraz", name: "شیراز" }
   ];
 
+  // Client-side filtering for search and location (category and condition are handled by server)
   const filteredItems = products.filter(item => {
     const matchesSearch = item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          item.brand?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
     const matchesLocation = selectedLocation === "all" || item.location.includes(selectedLocation);
     
-    return matchesSearch && matchesCategory && matchesLocation;
+    return matchesSearch && matchesLocation;
   });
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, selectedCondition, searchTerm, selectedLocation]);
 
   return (
     <LicenseGate>
@@ -302,8 +327,9 @@ const AslAvailable = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredItems.map((item) => (
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
           <Card key={item.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl overflow-hidden">
             <CardContent className="p-0">
               {item.image_urls && item.image_urls.trim() ? (
@@ -437,8 +463,20 @@ const AslAvailable = () => {
               </div>
             </CardContent>
           </Card>
-        ))}
-        </div>
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
     </LicenseGate>

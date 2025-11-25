@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
+import { Pagination } from "@/components/ui/Pagination";
 import { 
   Target, 
   Search, 
@@ -27,18 +28,25 @@ const ProductsResearch = () => {
     { id: "all", name: "همه دسته‌ها" }
   ]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const itemsPerPage = 12;
 
-  // Load data from API (fetch all active products once)
+  // Load data from API with pagination
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const [productsResponse, categoriesResponse] = await Promise.all([
-          apiService.getActiveResearchProducts(),
+          apiService.getActiveResearchProducts({
+            page: currentPage,
+            per_page: itemsPerPage,
+          }),
           apiService.getResearchProductCategories()
         ]);
 
         setResearchProducts(productsResponse.products || []);
+        setTotalPages(productsResponse.total_pages || 1);
 
         const allCategories = [
           { id: "all", name: "همه دسته‌ها" },
@@ -47,13 +55,15 @@ const ProductsResearch = () => {
         setCategories(allCategories);
       } catch (error) {
         console.error('Error loading research products:', error);
+        setResearchProducts([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, []);
+  }, [currentPage]);
 
   // Helper functions for styling and text conversion
   const getMarketDemandColor = (demand: string) => {
@@ -110,13 +120,18 @@ const ProductsResearch = () => {
     }
   };
 
-  // Local filtering: show all when searchTerm is empty; filter by HS code otherwise
+  // Client-side filtering (server handles pagination)
   const filteredProducts = researchProducts.filter((product: any) => {
     const matchesSearch = !searchTerm 
       || (product.hs_code && String(product.hs_code).toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Reset to page 1 when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCategory]);
 
   if (loading) {
     return (
@@ -198,8 +213,20 @@ const ProductsResearch = () => {
       </Card>
 
       {/* Products Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
+      {filteredProducts.length === 0 ? (
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardContent className="p-8 text-center">
+            <Target className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">هیچ محصول تحقیقی یافت نشد</h3>
+            <p className="text-muted-foreground">
+              {searchTerm || selectedCategory !== "all" ? 'برای جستجوی مورد نظر نتیجه‌ای یافت نشد' : 'هنوز محصول تحقیقی برای نمایش وجود ندارد'}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map((product) => (
           <Card key={product.id} className="bg-card/80 border-border hover:border-border transition-all group rounded-3xl">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
@@ -306,8 +333,21 @@ const ProductsResearch = () => {
 
             </CardContent>
           </Card>
-        ))}
-      </div>
+            ))}
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+        </>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
