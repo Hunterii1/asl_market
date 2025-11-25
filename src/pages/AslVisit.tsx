@@ -105,6 +105,11 @@ const AslVisit = () => {
     loadVisitorsData();
   }, [currentPage]);
 
+  // Helper function to convert numbers to Farsi
+  const toFarsiNumber = (num: number) => {
+    return num.toLocaleString('fa-IR');
+  };
+
   // Helper function for language level display
   const getLanguageText = (level: string) => {
     switch (level) {
@@ -372,6 +377,11 @@ const AslVisit = () => {
               <h2 className="text-2xl font-bold text-foreground">ویزیتورهای اصل مارکت</h2>
               <p className="text-blue-600 dark:text-blue-300">شبکه نمایندگان در کشورهای عربی</p>
             </div>
+            <div className="mr-auto">
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-2xl">
+                {totalItems > 0 ? totalItems : filteredVisitors.length} ویزیتور
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -395,7 +405,7 @@ const AslVisit = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border rounded-3xl transition-colors duration-300">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۳۸</div>
+            <div className="text-2xl font-bold text-foreground">{totalItems > 0 ? toFarsiNumber(totalItems) : '۰'}</div>
             <p className="text-sm text-muted-foreground">ویزیتور فعال</p>
           </CardContent>
         </Card>

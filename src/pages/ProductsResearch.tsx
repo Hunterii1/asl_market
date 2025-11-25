@@ -122,6 +122,11 @@ const ProductsResearch = () => {
     }
   };
 
+  // Helper function to convert numbers to Farsi
+  const toFarsiNumber = (num: number) => {
+    return num.toLocaleString('fa-IR');
+  };
+
   // Client-side filtering (server handles pagination)
   const filteredProducts = researchProducts.filter((product: any) => {
     const matchesSearch = !searchTerm 
@@ -171,7 +176,10 @@ const ProductsResearch = () => {
               <h2 className="text-2xl font-bold text-foreground">محصولات تحقیقی</h2>
               <p className="text-blue-600 dark:text-blue-300">محصولات پیشنهادی بر اساس آمار گمرک و صادرات ایران</p>
             </div>
-            <div className="mr-auto">
+            <div className="mr-auto flex items-center gap-3">
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-2xl">
+                {totalItems > 0 ? toFarsiNumber(totalItems) : filteredProducts.length} محصول
+              </Badge>
               <Button 
                 variant="outline" 
                 className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
@@ -354,7 +362,7 @@ const ProductsResearch = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۲۴</div>
+            <div className="text-2xl font-bold text-foreground">{totalItems > 0 ? toFarsiNumber(totalItems) : '۰'}</div>
             <p className="text-sm text-muted-foreground">محصول تحقیق شده</p>
           </CardContent>
         </Card>

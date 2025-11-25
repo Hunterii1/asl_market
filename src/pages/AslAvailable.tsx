@@ -192,6 +192,11 @@ const AslAvailable = () => {
     { id: "shiraz", name: "شیراز" }
   ];
 
+  // Helper function to convert numbers to Farsi
+  const toFarsiNumber = (num: number) => {
+    return num.toLocaleString('fa-IR');
+  };
+
   // Client-side filtering for search and location (category and condition are handled by server)
   const filteredItems = products.filter(item => {
     const matchesSearch = item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -223,7 +228,7 @@ const AslAvailable = () => {
             </div>
             <div className="mr-auto flex items-center gap-3">
               <Badge className="bg-green-500/20 text-green-400 border-green-500/30 rounded-2xl">
-                {products.length} کالا موجود
+                {totalItems > 0 ? toFarsiNumber(totalItems) : products.length} کالا موجود
               </Badge>
               <Button
                 onClick={() => navigate("/submit-product")}

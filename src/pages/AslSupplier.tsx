@@ -78,6 +78,11 @@ const AslSupplier = () => {
     loadSuppliersData();
   }, [currentPage]);
 
+  // Helper function to convert numbers to Farsi
+  const toFarsiNumber = (num: number) => {
+    return num.toLocaleString('fa-IR');
+  };
+
   // Client-side filtering (server handles pagination)
   const filteredSuppliers = approvedSuppliers
     .filter(supplier => {
@@ -210,7 +215,7 @@ const AslSupplier = () => {
             </div>
             <div className="mr-auto">
               <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-2xl">
-                {filteredSuppliers.length} تأمین‌کننده
+                {totalItems > 0 ? toFarsiNumber(totalItems) : filteredSuppliers.length} تأمین‌کننده
               </Badge>
             </div>
           </div>
@@ -441,14 +446,16 @@ const AslSupplier = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۱۲۴</div>
+            <div className="text-2xl font-bold text-foreground">{totalItems > 0 ? toFarsiNumber(totalItems) : '۰'}</div>
             <p className="text-sm text-muted-foreground">تأمین‌کننده فعال</p>
           </CardContent>
         </Card>
         
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۸۹%</div>
+            <div className="text-2xl font-bold text-foreground">
+              {totalItems > 0 ? '۱۰۰%' : '۰%'}
+            </div>
             <p className="text-sm text-muted-foreground">تأیید شده</p>
           </CardContent>
         </Card>
@@ -462,7 +469,7 @@ const AslSupplier = () => {
         
         <Card className="bg-card/80 border-border rounded-3xl">
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-foreground">۳۴۵</div>
+            <div className="text-2xl font-bold text-foreground">-</div>
             <p className="text-sm text-muted-foreground">محصول موجود</p>
           </CardContent>
         </Card>
