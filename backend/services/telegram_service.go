@@ -988,10 +988,6 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case "🔙 بازگشت به منو نوتیفیکیشن‌ها":
 		s.showNotificationMenu(message.Chat.ID)
 	default:
-		// Debug: Send received text back to user
-		debugMsg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Debug: Received text: '%s'", text))
-		s.bot.Send(debugMsg)
-
 		// Check session state for input handling
 		sessionMutex.RLock()
 		state, exists := sessionStates[message.Chat.ID]
@@ -1120,22 +1116,13 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				sessionMutex.Unlock()
 			case state.WaitingForInput == "search_supplier":
 				s.handleSupplierSearch(message.Chat.ID, message.Text)
-				// Clear session state
-				sessionMutex.Lock()
-				delete(sessionStates, message.Chat.ID)
-				sessionMutex.Unlock()
+				// Don't clear session state here - it's handled in handleSupplierSearch
 			case state.WaitingForInput == "search_visitor":
 				s.handleVisitorSearch(message.Chat.ID, message.Text)
-				// Clear session state
-				sessionMutex.Lock()
-				delete(sessionStates, message.Chat.ID)
-				sessionMutex.Unlock()
+				// Don't clear session state here - it's handled in handleVisitorSearch
 			case state.WaitingForInput == "search_available_product":
 				s.handleAvailableProductSearch(message.Chat.ID, message.Text)
-				// Clear session state
-				sessionMutex.Lock()
-				delete(sessionStates, message.Chat.ID)
-				sessionMutex.Unlock()
+				// Don't clear session state here - it's handled in handleAvailableProductSearch
 			case state.WaitingForInput == "reject_reason":
 				// Process rejection reason
 				sessionMutex.RLock()
@@ -3271,6 +3258,10 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 		msg.ParseMode = "Markdown"
 		msg.ReplyMarkup = keyboard
 		s.bot.Send(msg)
+		// Single result - clear session state
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
 	} else {
 		// Multiple results
 		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(suppliers))
@@ -3291,6 +3282,16 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 		msg := tgbotapi.NewMessage(chatID, text)
 		msg.ParseMode = "Markdown"
 		s.bot.Send(msg)
+
+		// Keep session state active so user can enter ID
+		sessionMutex.Lock()
+		if sessionStates[chatID] == nil {
+			sessionStates[chatID] = &SessionState{
+				ChatID:          chatID,
+				WaitingForInput: "search_supplier",
+			}
+		}
+		sessionMutex.Unlock()
 	}
 }
 
@@ -3378,6 +3379,10 @@ func (s *TelegramService) handleVisitorSearch(chatID int64, query string) {
 		msg.ParseMode = "Markdown"
 		msg.ReplyMarkup = keyboard
 		s.bot.Send(msg)
+		// Single result - clear session state
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
 	} else {
 		// Multiple results
 		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(visitors))
@@ -3398,6 +3403,16 @@ func (s *TelegramService) handleVisitorSearch(chatID int64, query string) {
 		msg := tgbotapi.NewMessage(chatID, text)
 		msg.ParseMode = "Markdown"
 		s.bot.Send(msg)
+
+		// Keep session state active so user can enter ID
+		sessionMutex.Lock()
+		if sessionStates[chatID] == nil {
+			sessionStates[chatID] = &SessionState{
+				ChatID:          chatID,
+				WaitingForInput: "search_visitor",
+			}
+		}
+		sessionMutex.Unlock()
 	}
 }
 
@@ -3485,6 +3500,10 @@ func (s *TelegramService) handleAvailableProductSearch(chatID int64, query strin
 		msg.ParseMode = "Markdown"
 		msg.ReplyMarkup = keyboard
 		s.bot.Send(msg)
+		// Single result - clear session state
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
 	} else {
 		// Multiple results
 		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(products))
@@ -3505,6 +3524,16 @@ func (s *TelegramService) handleAvailableProductSearch(chatID int64, query strin
 		msg := tgbotapi.NewMessage(chatID, text)
 		msg.ParseMode = "Markdown"
 		s.bot.Send(msg)
+
+		// Keep session state active so user can enter ID
+		sessionMutex.Lock()
+		if sessionStates[chatID] == nil {
+			sessionStates[chatID] = &SessionState{
+				ChatID:          chatID,
+				WaitingForInput: "search_available_product",
+			}
+		}
+		sessionMutex.Unlock()
 	}
 }
 
