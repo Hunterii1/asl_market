@@ -113,6 +113,7 @@ const (
 	MENU_FEATURE_SUPPLIER   = "⭐ برگزیده"
 	MENU_UNFEATURE_SUPPLIER = "⭐ حذف برگزیده"
 	MENU_FEATURED_SUPPLIERS = "⭐ تأمین‌کنندگان برگزیده"
+	MENU_SEARCH_SUPPLIER    = "🔍 جستجوی تأمین‌کننده"
 
 	// Visitor management sub-menus
 	MENU_VISITORS          = "🚶‍♂️ مدیریت ویزیتورها"
@@ -124,6 +125,7 @@ const (
 	MENU_FEATURE_VISITOR   = "⭐ برگزیده"
 	MENU_UNFEATURE_VISITOR = "⭐ حذف برگزیده"
 	MENU_FEATURED_VISITORS = "⭐ ویزیتورهای برگزیده"
+	MENU_SEARCH_VISITOR    = "🔍 جستجوی ویزیتور"
 
 	// Withdrawal management
 	MENU_WITHDRAWALS_PENDING    = "⏳ درخواست‌های در انتظار"
@@ -165,6 +167,7 @@ const (
 	MENU_AVAILABLE_PRODUCT_STATS  = "📊 آمار کالاها"
 	MENU_EDIT_AVAILABLE_PRODUCT   = "✏️ ویرایش کالا"
 	MENU_DELETE_AVAILABLE_PRODUCT = "🗑️ حذف کالا"
+	MENU_SEARCH_AVAILABLE_PRODUCT = "🔍 جستجوی کالا"
 
 	// Visitor action buttons
 	MENU_APPROVE_VISITOR = "✅ تأیید"
@@ -840,6 +843,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSuppliersList(message.Chat.ID, "all", 1)
 	case MENU_FEATURED_SUPPLIERS:
 		s.showFeaturedSuppliersList(message.Chat.ID)
+	case MENU_SEARCH_SUPPLIER:
+		s.showSupplierSearchPrompt(message.Chat.ID)
 	case MENU_SUPPLIER_STATS:
 		s.showSupplierStats(message.Chat.ID)
 	case MENU_VISITORS:
@@ -854,6 +859,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showVisitorsList(message.Chat.ID, "all", 1)
 	case MENU_FEATURED_VISITORS:
 		s.showFeaturedVisitorsList(message.Chat.ID)
+	case MENU_SEARCH_VISITOR:
+		s.showVisitorSearchPrompt(message.Chat.ID)
 	case MENU_VISITOR_STATS:
 		s.showVisitorStats(message.Chat.ID)
 
@@ -910,6 +917,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.promptAddAvailableProduct(message.Chat.ID)
 	case MENU_LIST_AVAILABLE_PRODUCTS:
 		s.showAvailableProductsList(message.Chat.ID)
+	case MENU_SEARCH_AVAILABLE_PRODUCT:
+		s.showAvailableProductSearchPrompt(message.Chat.ID)
 	case MENU_AVAILABLE_PRODUCT_STATS:
 		s.showAvailableProductsStats(message.Chat.ID)
 	case MENU_BULK_IMPORT:
@@ -1105,6 +1114,24 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				}
 			case state.WaitingForInput == "search_query":
 				s.handleSearch(message.Chat.ID, message.Text)
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+			case state.WaitingForInput == "search_supplier":
+				s.handleSupplierSearch(message.Chat.ID, message.Text)
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+			case state.WaitingForInput == "search_visitor":
+				s.handleVisitorSearch(message.Chat.ID, message.Text)
+				// Clear session state
+				sessionMutex.Lock()
+				delete(sessionStates, message.Chat.ID)
+				sessionMutex.Unlock()
+			case state.WaitingForInput == "search_available_product":
+				s.handleAvailableProductSearch(message.Chat.ID, message.Text)
 				// Clear session state
 				sessionMutex.Lock()
 				delete(sessionStates, message.Chat.ID)
@@ -1932,6 +1959,74 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle feature/unfeature callbacks from search
+	if strings.HasPrefix(data, "feature_supplier_") {
+		supplierIDStr := strings.TrimPrefix(data, "feature_supplier_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.handleSupplierFeature(chatID, uint(supplierID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ تأمین‌کننده برگزیده شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleSupplierSearch(chatID, supplierIDStr)
+		}
+		return
+	}
+	if strings.HasPrefix(data, "unfeature_supplier_") {
+		supplierIDStr := strings.TrimPrefix(data, "unfeature_supplier_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			s.handleSupplierUnfeature(chatID, uint(supplierID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ برگزیده حذف شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleSupplierSearch(chatID, supplierIDStr)
+		}
+		return
+	}
+	if strings.HasPrefix(data, "feature_visitor_") {
+		visitorIDStr := strings.TrimPrefix(data, "feature_visitor_")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.handleVisitorFeature(chatID, uint(visitorID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ ویزیتور برگزیده شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleVisitorSearch(chatID, visitorIDStr)
+		}
+		return
+	}
+	if strings.HasPrefix(data, "unfeature_visitor_") {
+		visitorIDStr := strings.TrimPrefix(data, "unfeature_visitor_")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			s.handleVisitorUnfeature(chatID, uint(visitorID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ برگزیده حذف شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleVisitorSearch(chatID, visitorIDStr)
+		}
+		return
+	}
+	if strings.HasPrefix(data, "feature_product_") {
+		productIDStr := strings.TrimPrefix(data, "feature_product_")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.handleAvailableProductFeature(chatID, uint(productID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ کالا برگزیده شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleAvailableProductSearch(chatID, productIDStr)
+		}
+		return
+	}
+	if strings.HasPrefix(data, "unfeature_product_") {
+		productIDStr := strings.TrimPrefix(data, "unfeature_product_")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			s.handleAvailableProductUnfeature(chatID, uint(productID))
+			callback := tgbotapi.NewCallback(query.ID, "✅ برگزیده حذف شد")
+			s.bot.Request(callback)
+			// Update message
+			s.handleAvailableProductSearch(chatID, productIDStr)
+		}
+		return
+	}
+
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {
 		filter := strings.TrimPrefix(data, "userlist_")
@@ -2212,6 +2307,7 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_ALL_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SEARCH_SUPPLIER),
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -2224,6 +2320,7 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 			"❌ **رد شده**: تأمین‌کنندگان رد شده\n"+
 			"⭐ **برگزیده**: تأمین‌کنندگان برگزیده\n"+
 			"📋 **همه**: تمام تأمین‌کنندگان\n"+
+			"🔍 **جستجو**: جستجوی تأمین‌کننده برای برگزیده کردن\n"+
 			"📊 **آمار**: آمار کلی تأمین‌کنندگان")
 
 	msg.ParseMode = "Markdown"
@@ -3088,6 +3185,329 @@ func (s *TelegramService) handleSupplierUnfeature(chatID int64, supplierID uint)
 	s.bot.Send(msg)
 }
 
+// Search functions for featured items
+func (s *TelegramService) showSupplierSearchPrompt(chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, "🔍 **جستجوی تأمین‌کننده**\n\n"+
+		"لطفا نام، شماره تماس یا شناسه تأمین‌کننده را وارد کنید:\n\n"+
+		"💡 می‌توانید بر اساس:\n"+
+		"• نام تأمین‌کننده\n"+
+		"• شماره موبایل\n"+
+		"• شناسه (ID)")
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Set session state to wait for search query
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "search_supplier",
+	}
+	sessionMutex.Unlock()
+}
+
+func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
+	var suppliers []models.Supplier
+	query = strings.TrimSpace(query)
+
+	// Try to find by ID first
+	if id, err := strconv.ParseUint(query, 10, 32); err == nil {
+		var supplier models.Supplier
+		if err := s.db.Preload("User").Where("id = ?", id).First(&supplier).Error; err == nil {
+			suppliers = []models.Supplier{supplier}
+		}
+	} else {
+		// Search by name or mobile
+		searchPattern := "%" + query + "%"
+		s.db.Preload("User").Where(
+			"full_name LIKE ? OR mobile LIKE ? OR brand_name LIKE ?",
+			searchPattern, searchPattern, searchPattern,
+		).Limit(10).Find(&suppliers)
+	}
+
+	if len(suppliers) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده‌ای با این مشخصات یافت نشد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show results
+	if len(suppliers) == 1 {
+		// Single result - show details with feature/unfeature button
+		supplier := suppliers[0]
+		text := fmt.Sprintf("🔍 **نتیجه جستجو**\n\n"+
+			"🏪 **تأمین‌کننده #%d**\n"+
+			"👤 **نام:** %s\n"+
+			"📱 **موبایل:** %s\n"+
+			"🏷️ **برند:** %s\n"+
+			"📍 **شهر:** %s\n"+
+			"📊 **وضعیت:** %s\n",
+			supplier.ID, supplier.FullName, supplier.Mobile,
+			getDefaultIfEmpty(supplier.BrandName, "ندارد"),
+			supplier.City, supplier.Status)
+
+		if supplier.IsFeatured {
+			text += "⭐ **برگزیده:** ✅ بله\n"
+		} else {
+			text += "⭐ **برگزیده:** ❌ خیر\n"
+		}
+
+		// Create inline keyboard with feature/unfeature button
+		var keyboard tgbotapi.InlineKeyboardMarkup
+		if supplier.IsFeatured {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_supplier_%d", supplier.ID)),
+				),
+			)
+		} else {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_supplier_%d", supplier.ID)),
+				),
+			)
+		}
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+	} else {
+		// Multiple results
+		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(suppliers))
+		for i, supplier := range suppliers {
+			if i >= 10 {
+				break
+			}
+			featuredIcon := ""
+			if supplier.IsFeatured {
+				featuredIcon = "⭐"
+			}
+			text += fmt.Sprintf("%s **#%d** - %s (%s)\n",
+				featuredIcon, supplier.ID, supplier.FullName, supplier.Mobile)
+		}
+
+		text += "\n💡 برای مشاهده جزئیات و برگزیده کردن، شناسه (ID) را وارد کنید."
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+	}
+}
+
+func (s *TelegramService) showVisitorSearchPrompt(chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, "🔍 **جستجوی ویزیتور**\n\n"+
+		"لطفا نام، شماره تماس یا شناسه ویزیتور را وارد کنید:\n\n"+
+		"💡 می‌توانید بر اساس:\n"+
+		"• نام ویزیتور\n"+
+		"• شماره موبایل\n"+
+		"• شناسه (ID)")
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Set session state to wait for search query
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "search_visitor",
+	}
+	sessionMutex.Unlock()
+}
+
+func (s *TelegramService) handleVisitorSearch(chatID int64, query string) {
+	var visitors []models.Visitor
+	query = strings.TrimSpace(query)
+
+	// Try to find by ID first
+	if id, err := strconv.ParseUint(query, 10, 32); err == nil {
+		var visitor models.Visitor
+		if err := s.db.Preload("User").Where("id = ?", id).First(&visitor).Error; err == nil {
+			visitors = []models.Visitor{visitor}
+		}
+	} else {
+		// Search by name or mobile
+		searchPattern := "%" + query + "%"
+		s.db.Preload("User").Where(
+			"full_name LIKE ? OR mobile LIKE ? OR national_id LIKE ?",
+			searchPattern, searchPattern, searchPattern,
+		).Limit(10).Find(&visitors)
+	}
+
+	if len(visitors) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتوری با این مشخصات یافت نشد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show results
+	if len(visitors) == 1 {
+		// Single result - show details with feature/unfeature button
+		visitor := visitors[0]
+		text := fmt.Sprintf("🔍 **نتیجه جستجو**\n\n"+
+			"🚶‍♂️ **ویزیتور #%d**\n"+
+			"👤 **نام:** %s\n"+
+			"📱 **موبایل:** %s\n"+
+			"🆔 **کد ملی:** %s\n"+
+			"📍 **شهر:** %s\n"+
+			"📊 **وضعیت:** %s\n",
+			visitor.ID, visitor.FullName, visitor.Mobile,
+			visitor.NationalID, visitor.CityProvince, visitor.Status)
+
+		if visitor.IsFeatured {
+			text += "⭐ **برگزیده:** ✅ بله\n"
+		} else {
+			text += "⭐ **برگزیده:** ❌ خیر\n"
+		}
+
+		// Create inline keyboard with feature/unfeature button
+		var keyboard tgbotapi.InlineKeyboardMarkup
+		if visitor.IsFeatured {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_visitor_%d", visitor.ID)),
+				),
+			)
+		} else {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_visitor_%d", visitor.ID)),
+				),
+			)
+		}
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+	} else {
+		// Multiple results
+		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(visitors))
+		for i, visitor := range visitors {
+			if i >= 10 {
+				break
+			}
+			featuredIcon := ""
+			if visitor.IsFeatured {
+				featuredIcon = "⭐"
+			}
+			text += fmt.Sprintf("%s **#%d** - %s (%s)\n",
+				featuredIcon, visitor.ID, visitor.FullName, visitor.Mobile)
+		}
+
+		text += "\n💡 برای مشاهده جزئیات و برگزیده کردن، شناسه (ID) را وارد کنید."
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+	}
+}
+
+func (s *TelegramService) showAvailableProductSearchPrompt(chatID int64) {
+	msg := tgbotapi.NewMessage(chatID, "🔍 **جستجوی کالا**\n\n"+
+		"لطفا نام کالا یا شناسه کالا را وارد کنید:\n\n"+
+		"💡 می‌توانید بر اساس:\n"+
+		"• نام کالا\n"+
+		"• شناسه (ID)")
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+
+	// Set session state to wait for search query
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: "search_available_product",
+	}
+	sessionMutex.Unlock()
+}
+
+func (s *TelegramService) handleAvailableProductSearch(chatID int64, query string) {
+	var products []models.AvailableProduct
+	query = strings.TrimSpace(query)
+
+	// Try to find by ID first
+	if id, err := strconv.ParseUint(query, 10, 32); err == nil {
+		var product models.AvailableProduct
+		if err := s.db.Preload("AddedBy").Where("id = ?", id).First(&product).Error; err == nil {
+			products = []models.AvailableProduct{product}
+		}
+	} else {
+		// Search by product name
+		searchPattern := "%" + query + "%"
+		s.db.Preload("AddedBy").Where(
+			"product_name LIKE ? OR category LIKE ?",
+			searchPattern, searchPattern,
+		).Limit(10).Find(&products)
+	}
+
+	if len(products) == 0 {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالایی با این مشخصات یافت نشد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show results
+	if len(products) == 1 {
+		// Single result - show details with feature/unfeature button
+		product := products[0]
+		text := fmt.Sprintf("🔍 **نتیجه جستجو**\n\n"+
+			"📦 **کالا #%d**\n"+
+			"🏷️ **نام:** %s\n"+
+			"📂 **دسته‌بندی:** %s\n"+
+			"💰 **قیمت:** %s %s\n"+
+			"📍 **موقعیت:** %s\n"+
+			"📊 **وضعیت:** %s\n",
+			product.ID, product.ProductName, product.Category,
+			product.WholesalePrice, product.Currency,
+			product.Location, product.Status)
+
+		if product.IsFeatured {
+			text += "⭐ **برگزیده:** ✅ بله\n"
+		} else {
+			text += "⭐ **برگزیده:** ❌ خیر\n"
+		}
+
+		// Create inline keyboard with feature/unfeature button
+		var keyboard tgbotapi.InlineKeyboardMarkup
+		if product.IsFeatured {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_product_%d", product.ID)),
+				),
+			)
+		} else {
+			keyboard = tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_product_%d", product.ID)),
+				),
+			)
+		}
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		msg.ReplyMarkup = keyboard
+		s.bot.Send(msg)
+	} else {
+		// Multiple results
+		text := fmt.Sprintf("🔍 **نتایج جستجو** (%d نتیجه)\n\n", len(products))
+		for i, product := range products {
+			if i >= 10 {
+				break
+			}
+			featuredIcon := ""
+			if product.IsFeatured {
+				featuredIcon = "⭐"
+			}
+			text += fmt.Sprintf("%s **#%d** - %s (%s)\n",
+				featuredIcon, product.ID, product.ProductName, product.Category)
+		}
+
+		text += "\n💡 برای مشاهده جزئیات و برگزیده کردن، شناسه (ID) را وارد کنید."
+
+		msg := tgbotapi.NewMessage(chatID, text)
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+	}
+}
+
 func (s *TelegramService) promptSupplierReject(chatID int64, supplierID uint) {
 	// Set session state to wait for rejection reason
 	sessionMutex.Lock()
@@ -3802,6 +4222,7 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_ALL_VISITORS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SEARCH_VISITOR),
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -3814,6 +4235,7 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 			"❌ **رد شده**: ویزیتورهای رد شده\n"+
 			"⭐ **برگزیده**: ویزیتورهای برگزیده\n"+
 			"📋 **همه**: تمام ویزیتورها\n"+
+			"🔍 **جستجو**: جستجوی ویزیتور برای برگزیده کردن\n"+
 			"📊 **آمار**: آمار کلی ویزیتورها")
 
 	msg.ParseMode = "Markdown"
@@ -4284,6 +4706,9 @@ func (s *TelegramService) showAvailableProductsMenu(chatID int64) {
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_AVAILABLE_PRODUCT_STATS),
+			tgbotapi.NewKeyboardButton(MENU_SEARCH_AVAILABLE_PRODUCT),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
@@ -4293,7 +4718,8 @@ func (s *TelegramService) showAvailableProductsMenu(chatID int64) {
 			"با استفاده از این بخش می‌توانید:\n\n"+
 			"➕ **اضافه کردن کالا**: افزودن کالای جدید به لیست\n"+
 			"📋 **لیست کالاها**: مشاهده و مدیریت کالاهای موجود\n"+
-			"📊 **آمار کالاها**: نمایش آمار کلی کالاها\n\n"+
+			"📊 **آمار کالاها**: نمایش آمار کلی کالاها\n"+
+			"🔍 **جستجو**: جستجوی کالا برای برگزیده کردن\n\n"+
 			"لطفا گزینه مورد نظر خود را انتخاب کنید:")
 
 	msg.ParseMode = "Markdown"
@@ -4780,6 +5206,46 @@ func (s *TelegramService) executeAvailableProductDelete(chatID int64, productID 
 
 	msg := tgbotapi.NewMessage(chatID, successMsg)
 	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleAvailableProductFeature(chatID int64, productID uint) {
+	var product models.AvailableProduct
+	if err := s.db.Where("id = ?", productID).First(&product).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالا یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update product to featured
+	product.IsFeatured = true
+	if err := s.db.Save(&product).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در برگزیده کردن کالا")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ کالا #%d (%s) به عنوان برگزیده انتخاب شد", productID, product.ProductName))
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleAvailableProductUnfeature(chatID int64, productID uint) {
+	var product models.AvailableProduct
+	if err := s.db.Where("id = ?", productID).First(&product).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالا یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update product to unfeatured
+	product.IsFeatured = false
+	if err := s.db.Save(&product).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در حذف برگزیده کالا")
+		s.bot.Send(msg)
+		return
+	}
+
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("⭐ کالا #%d (%s) از لیست برگزیده‌ها حذف شد", productID, product.ProductName))
 	s.bot.Send(msg)
 }
 
