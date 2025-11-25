@@ -7,7 +7,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
 import { Badge } from "@/components/ui/badge";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { 
   Users, 
   MapPin, 

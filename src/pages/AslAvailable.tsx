@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { 
   Package, 
   Search, 
