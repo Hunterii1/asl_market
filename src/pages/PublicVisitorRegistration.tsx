@@ -63,6 +63,7 @@ const PublicVisitorRegistration = () => {
     marketing_experience_desc: "",
     language_level: "",
     special_skills: "",
+    interested_products: "",
 
     // Commitments and Agreements
     agrees_to_use_approved_products: false,
@@ -553,9 +554,28 @@ const PublicVisitorRegistration = () => {
             rows={3}
           />
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="interested_products">
+            <Star className="inline w-4 h-4 ml-1" />
+            محصولات مورد علاقه یا مدنظر
+          </Label>
+          <Textarea
+            id="interested_products"
+            value={formData.interested_products}
+            onChange={(e) => updateFormData('interested_products', e.target.value)}
+            placeholder="محصولاتی که علاقه دارید یا می‌خواهید در آن‌ها فعالیت کنید (مثال: زعفران، خرما، پسته، فرش، صنایع دستی و...)"
+            className="text-right"
+            dir="rtl"
+            rows={4}
+          />
+          <p className="text-sm text-muted-foreground">
+            محصولاتی که می‌خواهید در آن‌ها فعالیت کنید را وارد کنید. این اطلاعات به تأمین‌کنندگان کمک می‌کند تا با شما ارتباط برقرار کنند.
+          </p>
+        </div>
       </div>
     </div>
-  ), [formData.has_marketing_experience, formData.marketing_experience_desc, formData.language_level, formData.special_skills]);
+  ), [formData.has_marketing_experience, formData.marketing_experience_desc, formData.language_level, formData.special_skills, formData.interested_products]);
 
   const Step5 = useMemo(() => (
     <div className="space-y-6">

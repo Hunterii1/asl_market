@@ -39,6 +39,9 @@ type Visitor struct {
 	LanguageLevel           string `json:"language_level" gorm:"size:50;not null"` // excellent, good, weak, none
 	SpecialSkills           string `json:"special_skills" gorm:"type:text"`
 
+	// Interested Products - Products the visitor is interested in
+	InterestedProducts string `json:"interested_products" gorm:"type:text"` // JSON array or comma-separated list of product names
+
 	// Commitments and Agreements
 	AgreesToUseApprovedProducts   bool   `json:"agrees_to_use_approved_products" gorm:"default:false"`
 	AgreesToViolationConsequences bool   `json:"agrees_to_violation_consequences" gorm:"default:false"`
@@ -96,6 +99,9 @@ type VisitorRegistrationRequest struct {
 	LanguageLevel           string `json:"language_level" binding:"required"`
 	SpecialSkills           string `json:"special_skills"`
 
+	// Interested Products
+	InterestedProducts string `json:"interested_products"` // Comma-separated list or JSON array
+
 	// Commitments and Agreements
 	AgreesToUseApprovedProducts   bool   `json:"agrees_to_use_approved_products" binding:"required"`
 	AgreesToViolationConsequences bool   `json:"agrees_to_violation_consequences" binding:"required"`
@@ -126,6 +132,7 @@ type VisitorResponse struct {
 	MarketingExperienceDesc       string     `json:"marketing_experience_desc"`
 	LanguageLevel                 string     `json:"language_level"`
 	SpecialSkills                 string     `json:"special_skills"`
+	InterestedProducts            string     `json:"interested_products"`
 	AgreesToUseApprovedProducts   bool       `json:"agrees_to_use_approved_products"`
 	AgreesToViolationConsequences bool       `json:"agrees_to_violation_consequences"`
 	AgreesToSubmitReports         bool       `json:"agrees_to_submit_reports"`
@@ -162,6 +169,7 @@ func CreateVisitor(db *gorm.DB, userID uint, req VisitorRegistrationRequest) (*V
 		MarketingExperienceDesc:       req.MarketingExperienceDesc,
 		LanguageLevel:                 req.LanguageLevel,
 		SpecialSkills:                 req.SpecialSkills,
+		InterestedProducts:            req.InterestedProducts,
 		AgreesToUseApprovedProducts:   req.AgreesToUseApprovedProducts,
 		AgreesToViolationConsequences: req.AgreesToViolationConsequences,
 		AgreesToSubmitReports:         req.AgreesToSubmitReports,

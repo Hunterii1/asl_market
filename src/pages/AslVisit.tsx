@@ -270,6 +270,16 @@ const AslVisit = () => {
                       </div>
                     </div>
                   )}
+
+                  {visitor.interested_products && (
+                    <div className="flex items-start gap-2 text-muted-foreground text-sm">
+                      <Award className="w-4 h-4 mt-0.5 text-yellow-500" />
+                      <div className="flex-1">
+                        <span className="block font-medium text-foreground mb-1">⭐ محصولات مورد علاقه:</span>
+                        <span className="block text-sm">{visitor.interested_products}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
 

@@ -84,6 +84,9 @@ type PublicVisitorRegistrationRequest struct {
 	LanguageLevel           string `json:"language_level" binding:"required"`
 	SpecialSkills           string `json:"special_skills"`
 
+	// Interested Products
+	InterestedProducts string `json:"interested_products"`
+
 	// Commitments and Agreements
 	AgreesToUseApprovedProducts   bool   `json:"agrees_to_use_approved_products" binding:"required"`
 	AgreesToViolationConsequences bool   `json:"agrees_to_violation_consequences" binding:"required"`
@@ -295,6 +298,7 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 		MarketingExperienceDesc:       req.MarketingExperienceDesc,
 		LanguageLevel:                 req.LanguageLevel,
 		SpecialSkills:                 req.SpecialSkills,
+		InterestedProducts:            req.InterestedProducts,
 		AgreesToUseApprovedProducts:   req.AgreesToUseApprovedProducts,
 		AgreesToViolationConsequences: req.AgreesToViolationConsequences,
 		AgreesToSubmitReports:         req.AgreesToSubmitReports,

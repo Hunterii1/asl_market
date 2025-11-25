@@ -751,6 +751,7 @@ func (s *TelegramService) handleSingleVisitorInput(chatID int64, text string) {
 		LanguageLevel:                 data["زبان"],
 		MarketingExperienceDesc:       data["سابقه بازاریابی"],
 		SpecialSkills:                 data["مهارت"],
+		InterestedProducts:            data["محصولات مورد علاقه"],
 		AgreesToUseApprovedProducts:   true,
 		AgreesToViolationConsequences: true,
 		AgreesToSubmitReports:         true,

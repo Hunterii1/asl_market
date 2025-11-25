@@ -67,6 +67,9 @@ interface VisitorFormData {
   language_level: string;
   special_skills: string;
   
+  // Interested Products
+  interested_products: string;
+  
   // Commitments and Agreements
   agrees_to_use_approved_products: boolean;
   agrees_to_violation_consequences: boolean;
@@ -120,6 +123,7 @@ export default function EditVisitor() {
     marketing_experience_desc: '',
     language_level: '',
     special_skills: '',
+    interested_products: '',
     agrees_to_use_approved_products: false,
     agrees_to_violation_consequences: false,
     agrees_to_submit_reports: false,
@@ -158,6 +162,7 @@ export default function EditVisitor() {
           marketing_experience_desc: response.visitor.marketing_experience_desc || '',
           language_level: response.visitor.language_level || '',
           special_skills: response.visitor.special_skills || '',
+          interested_products: response.visitor.interested_products || '',
           agrees_to_use_approved_products: response.visitor.agrees_to_use_approved_products || false,
           agrees_to_violation_consequences: response.visitor.agrees_to_violation_consequences || false,
           agrees_to_submit_reports: response.visitor.agrees_to_submit_reports || false,
@@ -712,6 +717,23 @@ export default function EditVisitor() {
             placeholder="مهارت‌های خاص و تخصص‌های خود را بنویسید"
             rows={3}
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="interested_products">
+            <Star className="inline w-4 h-4 ml-1" />
+            محصولات مورد علاقه یا مدنظر
+          </Label>
+          <Textarea
+            id="interested_products"
+            value={formData.interested_products}
+            onChange={(e) => updateFormData('interested_products', e.target.value)}
+            placeholder="محصولاتی که علاقه دارید یا می‌خواهید در آن‌ها فعالیت کنید (مثال: زعفران، خرما، پسته، فرش، صنایع دستی و...)"
+            rows={4}
+          />
+          <p className="text-sm text-muted-foreground">
+            محصولاتی که می‌خواهید در آن‌ها فعالیت کنید را وارد کنید. این اطلاعات به تأمین‌کنندگان کمک می‌کند تا با شما ارتباط برقرار کنند.
+          </p>
         </div>
       </div>
     </div>

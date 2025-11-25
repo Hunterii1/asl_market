@@ -2698,6 +2698,10 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 		details += fmt.Sprintf("🎯 **مهارت‌های خاص:** %s\n", visitor.SpecialSkills)
 	}
 
+	if visitor.InterestedProducts != "" {
+		details += fmt.Sprintf("⭐ **محصولات مورد علاقه:** %s\n", visitor.InterestedProducts)
+	}
+
 	// Commitments
 	details += fmt.Sprintf("✅ **تعهد محصولات تایید شده:** %t\n", visitor.AgreesToUseApprovedProducts)
 	details += fmt.Sprintf("⚖️ **تعهد عدم تخلف:** %t\n", visitor.AgreesToViolationConsequences)

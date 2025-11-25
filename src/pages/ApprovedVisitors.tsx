@@ -59,6 +59,7 @@ interface VisitorData {
   marketing_experience_desc: string;
   language_level: string;
   special_skills: string;
+  interested_products: string;
   agrees_to_use_approved_products: boolean;
   agrees_to_violation_consequences: boolean;
   agrees_to_submit_reports: boolean;
@@ -522,6 +523,17 @@ export default function ApprovedVisitors() {
                     <div><strong>سطح زبان:</strong> {getLanguageLevelLabel(selectedVisitor.language_level)}</div>
                     {selectedVisitor.special_skills && (
                       <div><strong>مهارت‌ها:</strong> {selectedVisitor.special_skills}</div>
+                    )}
+                    {selectedVisitor.interested_products && (
+                      <div className="mt-2">
+                        <div className="flex items-start gap-2">
+                          <span className="text-yellow-500">⭐</span>
+                          <div>
+                            <strong>محصولات مورد علاقه:</strong>
+                            <p className="text-sm text-muted-foreground mt-1">{selectedVisitor.interested_products}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
