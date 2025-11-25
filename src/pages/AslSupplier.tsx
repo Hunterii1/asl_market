@@ -41,6 +41,7 @@ const AslSupplier = () => {
   const [userSupplierStatus, setUserSupplierStatus] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
 
   const productCategories = [
@@ -63,6 +64,7 @@ const AslSupplier = () => {
         });
         setApprovedSuppliers(response.suppliers || []);
         setTotalPages(response.total_pages || 1);
+        setTotalItems(response.total || 0);
       } catch (error) {
         console.error('Error loading suppliers:', error);
         // Set empty array on error to prevent map error
@@ -401,15 +403,14 @@ const AslSupplier = () => {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </>
       )}
     </div>

@@ -33,6 +33,7 @@ const AslVisit = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
 
   const countries = [
@@ -91,6 +92,7 @@ const AslVisit = () => {
         });
         setVisitors(response.visitors || []);
         setTotalPages(response.total_pages || 1);
+        setTotalItems(response.total || 0);
       } catch (error) {
         console.error('Error loading visitors:', error);
         setVisitors([]);
@@ -341,15 +343,14 @@ const AslVisit = () => {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </>
       )}
     </div>

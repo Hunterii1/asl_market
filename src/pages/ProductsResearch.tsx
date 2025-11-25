@@ -30,6 +30,7 @@ const ProductsResearch = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
 
   // Load data from API with pagination
@@ -47,6 +48,7 @@ const ProductsResearch = () => {
 
         setResearchProducts(productsResponse.products || []);
         setTotalPages(productsResponse.total_pages || 1);
+        setTotalItems(productsResponse.total || 0);
 
         const allCategories = [
           { id: "all", name: "همه دسته‌ها" },
@@ -337,15 +339,14 @@ const ProductsResearch = () => {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </>
       )}
 

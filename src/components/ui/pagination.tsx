@@ -5,12 +5,22 @@ import { cn } from "@/lib/utils";
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  totalItems?: number;
   onPageChange: (page: number) => void;
   className?: string;
 }
 
-export function Pagination({ currentPage, totalPages, onPageChange, className }: PaginationProps) {
-  if (totalPages <= 1) return null;
+export function Pagination({ currentPage, totalPages, totalItems, onPageChange, className }: PaginationProps) {
+  // Don't show pagination if there's only one page or no pages
+  if (totalPages <= 1) {
+    return totalItems ? (
+      <div className={cn("flex items-center justify-center gap-2 flex-wrap py-4", className)}>
+        <span className="text-sm text-muted-foreground">
+          تعداد کل: {totalItems} مورد
+        </span>
+      </div>
+    ) : null;
+  }
 
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -130,9 +140,16 @@ export function Pagination({ currentPage, totalPages, onPageChange, className }:
       </Button>
 
       {/* Page Info */}
-      <span className="text-sm text-muted-foreground px-2">
-        صفحه {currentPage} از {totalPages}
-      </span>
+      <div className="flex items-center gap-2 px-2">
+        <span className="text-sm text-muted-foreground">
+          صفحه {currentPage} از {totalPages}
+        </span>
+        {totalItems && (
+          <span className="text-sm text-muted-foreground">
+            ({totalItems} مورد)
+          </span>
+        )}
+      </div>
     </div>
   );
 }

@@ -93,6 +93,7 @@ const AslAvailable = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
 
   // Load data from API - load all products for client-side filtering and pagination
@@ -133,6 +134,7 @@ const AslAvailable = () => {
           
           setProducts(products);
           setTotalPages(pages);
+          setTotalItems(total);
         } catch (productsErr) {
           console.error('Error loading products:', productsErr);
           setProducts([]);
@@ -467,15 +469,14 @@ const AslAvailable = () => {
           </div>
           
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
-            </div>
-          )}
+          <div className="mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+            />
+          </div>
         </>
       )}
     </div>
