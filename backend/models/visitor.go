@@ -79,7 +79,7 @@ type VisitorRegistrationRequest struct {
 	BirthDate      string `json:"birth_date" binding:"required"`
 	Mobile         string `json:"mobile" binding:"required"`
 	WhatsappNumber string `json:"whatsapp_number"`
-	Email          string `json:"email"`
+	Email          string `json:"email" binding:"omitempty,email"`
 
 	// Residence and Travel Information
 	ResidenceAddress    string `json:"residence_address" binding:"required"`

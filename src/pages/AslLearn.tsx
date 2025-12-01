@@ -205,6 +205,86 @@ const AslLearn = () => {
           </CardContent>
         </Card>
 
+        {/* Platform Tutorial Video - Mobile Optimized */}
+        <Card className="bg-gradient-to-br from-indigo-100/40 via-purple-100/40 to-pink-100/40 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 border-indigo-200/70 dark:border-indigo-700/50 rounded-3xl overflow-hidden shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 dark:from-indigo-500/30 dark:to-purple-500/30 rounded-2xl flex items-center justify-center shadow-lg">
+                <Video className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-foreground mb-1">ویدیو آموزش کامل پلتفرم</h3>
+                <p className="text-sm text-muted-foreground">آموزش گام به گام بخش‌های مختلف پلتفرم اصل مارکت</p>
+              </div>
+            </div>
+            
+            {/* Video Container - Mobile Optimized */}
+            <div className="relative bg-black/95 dark:bg-black rounded-2xl overflow-hidden shadow-2xl">
+              {/* Decorative gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 pointer-events-none z-10"></div>
+              
+              {/* Video Player */}
+              <div className="relative w-full mx-auto" style={{ maxWidth: '400px' }}>
+                <video 
+                  controls 
+                  className="w-full h-auto"
+                  playsInline
+                  preload="metadata"
+                  style={{ 
+                    aspectRatio: '9/16',
+                    objectFit: 'contain'
+                  }}
+                >
+                  <source src="/amoozesh.mp4" type="video/mp4" />
+                  مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                </video>
+              </div>
+            </div>
+            
+            {/* Video Info */}
+            <div className="mt-6 space-y-4">
+              <div className="bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl p-4 border border-indigo-200/50 dark:border-indigo-700/50">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <p className="text-sm font-semibold text-foreground">درباره این ویدیو:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
+                      <li>آموزش کامل بخش‌های مختلف پلتفرم اصل مارکت</li>
+                      <li>راهنمای استفاده از تمام امکانات و ویژگی‌ها</li>
+                      <li>پیشنهاد می‌شود قبل از شروع کار، این ویدیو را کامل مشاهده کنید</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Tips */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 border border-indigo-200/30 dark:border-indigo-700/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center">
+                      <Play className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">پخش خودکار</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">ویدیو به صورت خودکار پخش می‌شود</p>
+                </div>
+                
+                <div className="bg-white/50 dark:bg-gray-800/50 rounded-xl p-3 border border-pink-200/30 dark:border-pink-700/30">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-6 h-6 bg-pink-100 dark:bg-pink-900/30 rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-3.5 h-3.5 text-pink-600 dark:text-pink-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground">آموزش کامل</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">پوشش تمام بخش‌های پلتفرم</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* ASL Market Platform Tutorial */}
         <Card className="bg-gradient-to-r from-purple-100/40 to-purple-200/40 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200/70 dark:border-purple-700/50 rounded-3xl">
           <CardContent className="p-6">

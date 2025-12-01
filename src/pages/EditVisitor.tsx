@@ -511,14 +511,14 @@ export default function EditVisitor() {
       <div className="space-y-2">
         <Label htmlFor="email" className="flex items-center gap-2">
           <Mail className="h-4 w-4" />
-          ایمیل
+          ایمیل (اختیاری)
         </Label>
         <Input
           id="email"
           type="email"
           value={formData.email}
           onChange={(e) => updateFormData('email', e.target.value)}
-          placeholder="ایمیل (اختیاری)"
+          placeholder="example@email.com (اختیاری)"
         />
       </div>
 

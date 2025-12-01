@@ -352,13 +352,13 @@ export default function VisitorRegistration() {
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="email">ایمیل</Label>
+                <Label htmlFor="email">ایمیل (اختیاری)</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => updateFormData('email', e.target.value)}
-                  placeholder="example@email.com"
+                  placeholder="example@email.com (اختیاری)"
                 />
               </div>
             </div>

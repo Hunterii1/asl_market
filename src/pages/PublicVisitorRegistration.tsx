@@ -346,13 +346,13 @@ const PublicVisitorRegistration = () => {
         </div>
 
         <div className="md:col-span-2 space-y-2">
-          <Label htmlFor="email">ایمیل</Label>
+          <Label htmlFor="email">ایمیل (اختیاری)</Label>
           <Input
             id="email"
             type="email"
             value={formData.email}
             onChange={(e) => updateFormData('email', e.target.value)}
-            placeholder="example@email.com"
+            placeholder="example@email.com (اختیاری)"
             className="text-right"
             dir="ltr"
             autoComplete="off"
