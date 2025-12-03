@@ -1203,6 +1203,26 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 				s.handleSingleVisitorInput(message.Chat.ID, message.Text)
 			} else if state.WaitingForInput == "single_product_data" {
 				s.handleSingleProductInput(message.Chat.ID, message.Text)
+			} else if strings.HasPrefix(state.WaitingForInput, "edit_supplier_") {
+				supplierIDStr := strings.TrimPrefix(state.WaitingForInput, "edit_supplier_")
+				if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+					s.handleSupplierEditInput(message.Chat.ID, uint(supplierID), message.Text)
+				}
+			} else if strings.HasPrefix(state.WaitingForInput, "edit_visitor_") {
+				visitorIDStr := strings.TrimPrefix(state.WaitingForInput, "edit_visitor_")
+				if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+					s.handleVisitorEditInput(message.Chat.ID, uint(visitorID), message.Text)
+				}
+			} else if strings.HasPrefix(state.WaitingForInput, "edit_research_product_") {
+				productIDStr := strings.TrimPrefix(state.WaitingForInput, "edit_research_product_")
+				if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+					s.handleResearchProductEditInput(message.Chat.ID, uint(productID), message.Text)
+				}
+			} else if strings.HasPrefix(state.WaitingForInput, "edit_available_product_") {
+				productIDStr := strings.TrimPrefix(state.WaitingForInput, "edit_available_product_")
+				if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+					s.handleAvailableProductEditInput(message.Chat.ID, uint(productID), message.Text)
+				}
 			} else {
 				// Handle training category name input
 				if state.WaitingForInput == "awaiting_category_name" {
@@ -2425,19 +2445,19 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 			// Add action buttons
 			if supplier.Status == "pending" {
 				supplierInfo += fmt.Sprintf(
-					"🔘 عملیات: /view%d | /approve%d | /reject%d\n",
-					supplier.ID, supplier.ID, supplier.ID,
+					"🔘 عملیات: /view%d | /approve%d | /reject%d | /edit%d | /delete%d\n",
+					supplier.ID, supplier.ID, supplier.ID, supplier.ID, supplier.ID,
 				)
 			} else if supplier.Status == "approved" {
 				if supplier.IsFeatured {
 					supplierInfo += fmt.Sprintf(
-						"🔧 عملیات: /view%d | /unfeature%d | /edit%d\n",
-						supplier.ID, supplier.ID, supplier.ID,
+						"🔧 عملیات: /view%d | /unfeature%d | /edit%d | /delete%d\n",
+						supplier.ID, supplier.ID, supplier.ID, supplier.ID,
 					)
 				} else {
 					supplierInfo += fmt.Sprintf(
-						"🔧 عملیات: /view%d | /feature%d | /edit%d\n",
-						supplier.ID, supplier.ID, supplier.ID,
+						"🔧 عملیات: /view%d | /feature%d | /edit%d | /delete%d\n",
+						supplier.ID, supplier.ID, supplier.ID, supplier.ID,
 					)
 				}
 			} else {
@@ -2741,6 +2761,10 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vreject%d", visitor.ID)),
 			),
 			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vedit%d", visitor.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vdelete%d", visitor.ID)),
+			),
+			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(MENU_BACK),
 			),
 		)
@@ -2752,6 +2776,10 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vunfeature%d", visitor.ID)),
 				),
 				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vedit%d", visitor.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vdelete%d", visitor.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_BACK),
 				),
 			)
@@ -2761,12 +2789,20 @@ func (s *TelegramService) showVisitorDetails(chatID int64, visitorID uint) {
 					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vfeature%d", visitor.ID)),
 				),
 				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vedit%d", visitor.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/vdelete%d", visitor.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_BACK),
 				),
 			)
 		}
 	} else {
 		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vedit%d", visitor.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/vdelete%d", visitor.ID)),
+			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(MENU_BACK),
 			),
@@ -3042,6 +3078,10 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 				tgbotapi.NewKeyboardButton(fmt.Sprintf("/reject%d", supplier.ID)),
 			),
 			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/edit%d", supplier.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/delete%d", supplier.ID)),
+			),
+			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(MENU_BACK),
 			),
 		)
@@ -3053,6 +3093,10 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 					tgbotapi.NewKeyboardButton(fmt.Sprintf("/unfeature%d", supplier.ID)),
 				),
 				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/edit%d", supplier.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/delete%d", supplier.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_BACK),
 				),
 			)
@@ -3062,12 +3106,20 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 					tgbotapi.NewKeyboardButton(fmt.Sprintf("/feature%d", supplier.ID)),
 				),
 				tgbotapi.NewKeyboardButtonRow(
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/edit%d", supplier.ID)),
+					tgbotapi.NewKeyboardButton(fmt.Sprintf("/delete%d", supplier.ID)),
+				),
+				tgbotapi.NewKeyboardButtonRow(
 					tgbotapi.NewKeyboardButton(MENU_BACK),
 				),
 			)
 		}
 	} else {
 		keyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/edit%d", supplier.ID)),
+				tgbotapi.NewKeyboardButton(fmt.Sprintf("/delete%d", supplier.ID)),
+			),
 			tgbotapi.NewKeyboardButtonRow(
 				tgbotapi.NewKeyboardButton(MENU_BACK),
 			),
@@ -4392,19 +4444,19 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 			// Add action buttons
 			if visitor.Status == "pending" {
 				visitorInfo += fmt.Sprintf(
-					"🔘 عملیات: /vview%d | /vapprove%d | /vreject%d\n",
-					visitor.ID, visitor.ID, visitor.ID,
+					"🔘 عملیات: /vview%d | /vapprove%d | /vreject%d | /vedit%d | /vdelete%d\n",
+					visitor.ID, visitor.ID, visitor.ID, visitor.ID, visitor.ID,
 				)
 			} else if visitor.Status == "approved" {
 				if visitor.IsFeatured {
 					visitorInfo += fmt.Sprintf(
-						"🔧 عملیات: /vview%d | /vunfeature%d | /vedit%d\n",
-						visitor.ID, visitor.ID, visitor.ID,
+						"🔧 عملیات: /vview%d | /vunfeature%d | /vedit%d | /vdelete%d\n",
+						visitor.ID, visitor.ID, visitor.ID, visitor.ID,
 					)
 				} else {
 					visitorInfo += fmt.Sprintf(
-						"🔧 عملیات: /vview%d | /vfeature%d | /vedit%d\n",
-						visitor.ID, visitor.ID, visitor.ID,
+						"🔧 عملیات: /vview%d | /vfeature%d | /vedit%d | /vdelete%d\n",
+						visitor.ID, visitor.ID, visitor.ID, visitor.ID,
 					)
 				}
 			} else {
@@ -4572,8 +4624,48 @@ func (s *TelegramService) handleAvailableProductCommands(chatID int64, text stri
 // =================== SUPPLIER EDIT/DELETE ===================
 
 func (s *TelegramService) promptSupplierEdit(chatID int64, supplierID uint) {
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش تأمین‌کننده #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", supplierID))
+	// Get supplier info first
+	var supplier models.Supplier
+	err := s.db.Preload("User").Where("id = ?", supplierID).First(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show current info and prompt for edit
+	editMsg := fmt.Sprintf("✏️ **ویرایش تأمین‌کننده #%d**\n\n"+
+		"📋 **اطلاعات فعلی:**\n"+
+		"👤 نام: %s\n"+
+		"📱 موبایل: %s\n"+
+		"🏙️ شهر: %s\n"+
+		"🏢 برند: %s\n\n"+
+		"📝 **برای ویرایش، اطلاعات را به فرمت زیر ارسال کنید:**\n\n"+
+		"`نام|موبایل|شهر|برند`\n\n"+
+		"**مثال:**\n"+
+		"`احمد محمدی|09123456789|تهران|برند احمد`\n\n"+
+		"💡 **نکته:** برای تغییر ندادن یک فیلد، همان مقدار قبلی را وارد کنید یا خالی بگذارید.\n\n"+
+		"❌ برای لغو، '🔙 بازگشت' را ارسال کنید.",
+		supplier.ID, supplier.FullName, supplier.Mobile, supplier.City, supplier.BrandName)
+
+	// Set session state to wait for edit data
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("edit_supplier_%d", supplierID),
+		Data:            make(map[string]interface{}),
+	}
+	sessionMutex.Unlock()
+
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, editMsg)
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
@@ -4612,8 +4704,48 @@ func (s *TelegramService) confirmSupplierDelete(chatID int64, supplierID uint) {
 // =================== VISITOR EDIT/DELETE ===================
 
 func (s *TelegramService) promptVisitorEdit(chatID int64, visitorID uint) {
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش ویزیتور #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", visitorID))
+	// Get visitor info first
+	var visitor models.Visitor
+	err := s.db.Preload("User").Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show current info and prompt for edit
+	editMsg := fmt.Sprintf("✏️ **ویرایش ویزیتور #%d**\n\n"+
+		"📋 **اطلاعات فعلی:**\n"+
+		"👤 نام: %s\n"+
+		"📱 موبایل: %s\n"+
+		"🏙️ شهر/استان: %s\n"+
+		"✈️ مقصد: %s\n\n"+
+		"📝 **برای ویرایش، اطلاعات را به فرمت زیر ارسال کنید:**\n\n"+
+		"`نام|موبایل|شهر/استان|مقصد`\n\n"+
+		"**مثال:**\n"+
+		"`احمد محمدی|09123456789|دبی امارات|مسقط عمان، ریاض عربستان`\n\n"+
+		"💡 **نکته:** برای تغییر ندادن یک فیلد، همان مقدار قبلی را وارد کنید یا خالی بگذارید.\n\n"+
+		"❌ برای لغو، '🔙 بازگشت' را ارسال کنید.",
+		visitor.ID, visitor.FullName, visitor.Mobile, visitor.CityProvince, visitor.DestinationCities)
+
+	// Set session state to wait for edit data
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("edit_visitor_%d", visitorID),
+		Data:            make(map[string]interface{}),
+	}
+	sessionMutex.Unlock()
+
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, editMsg)
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
@@ -4652,8 +4784,48 @@ func (s *TelegramService) confirmVisitorDelete(chatID int64, visitorID uint) {
 // =================== RESEARCH PRODUCT EDIT/DELETE ===================
 
 func (s *TelegramService) promptResearchProductEdit(chatID int64, productID uint) {
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش محصول تحقیقی #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", productID))
+	// Get product info first
+	var product models.ResearchProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ محصول تحقیقی یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show current info and prompt for edit
+	editMsg := fmt.Sprintf("✏️ **ویرایش محصول تحقیقی #%d**\n\n"+
+		"📋 **اطلاعات فعلی:**\n"+
+		"📦 نام: %s\n"+
+		"🏷️ دسته: %s\n"+
+		"🌍 کشور هدف: %s\n"+
+		"💰 قیمت صادرات: %s\n\n"+
+		"📝 **برای ویرایش، اطلاعات را به فرمت زیر ارسال کنید:**\n\n"+
+		"`نام|دسته|کشور هدف|قیمت صادرات`\n\n"+
+		"**مثال:**\n"+
+		"`زعفران درجه یک|کشاورزی|امارات|1000 دلار`\n\n"+
+		"💡 **نکته:** برای تغییر ندادن یک فیلد، همان مقدار قبلی را وارد کنید یا خالی بگذارید.\n\n"+
+		"❌ برای لغو، '🔙 بازگشت' را ارسال کنید.",
+		product.ID, product.Name, product.Category, product.TargetCountry, product.ExportValue)
+
+	// Set session state to wait for edit data
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("edit_research_product_%d", productID),
+		Data:            make(map[string]interface{}),
+	}
+	sessionMutex.Unlock()
+
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, editMsg)
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
@@ -4692,8 +4864,48 @@ func (s *TelegramService) confirmResearchProductDelete(chatID int64, productID u
 // =================== AVAILABLE PRODUCT EDIT/DELETE ===================
 
 func (s *TelegramService) promptAvailableProductEdit(chatID int64, productID uint) {
-	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✏️ **ویرایش کالای موجود #%d**\n\n⚠️ این قابلیت در حال توسعه است.\n\nبرای ویرایش، لطفاً با پشتیبانی تماس بگیرید.", productID))
+	// Get product info first
+	var product models.AvailableProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالای موجود یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Show current info and prompt for edit
+	editMsg := fmt.Sprintf("✏️ **ویرایش کالای موجود #%d**\n\n"+
+		"📋 **اطلاعات فعلی:**\n"+
+		"📦 نام: %s\n"+
+		"🏷️ دسته: %s\n"+
+		"📍 مکان: %s\n"+
+		"💰 قیمت: %s %s\n\n"+
+		"📝 **برای ویرایش، اطلاعات را به فرمت زیر ارسال کنید:**\n\n"+
+		"`نام|دسته|مکان|قیمت|واحد پول`\n\n"+
+		"**مثال:**\n"+
+		"`زعفران درجه یک|کشاورزی|تهران|5000000|تومان`\n\n"+
+		"💡 **نکته:** برای تغییر ندادن یک فیلد، همان مقدار قبلی را وارد کنید یا خالی بگذارید.\n\n"+
+		"❌ برای لغو، '🔙 بازگشت' را ارسال کنید.",
+		product.ID, product.ProductName, product.Category, product.Location, product.WholesalePrice, product.Currency)
+
+	// Set session state to wait for edit data
+	sessionMutex.Lock()
+	sessionStates[chatID] = &SessionState{
+		ChatID:          chatID,
+		WaitingForInput: fmt.Sprintf("edit_available_product_%d", productID),
+		Data:            make(map[string]interface{}),
+	}
+	sessionMutex.Unlock()
+
+	keyboard := tgbotapi.NewReplyKeyboard(
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACK),
+		),
+	)
+
+	msg := tgbotapi.NewMessage(chatID, editMsg)
 	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
 }
 
@@ -5236,6 +5448,283 @@ func (s *TelegramService) executeAvailableProductDelete(chatID int64, productID 
 		"🏷️ **دسته:** %s\n"+
 		"📍 **مکان:** %s\n\n"+
 		"🗑️ تمام اطلاعات مربوط به این کالا حذف شدند.", product.ProductName, product.Category, product.Location)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+// =================== EDIT INPUT HANDLERS ===================
+
+func (s *TelegramService) handleSupplierEditInput(chatID int64, supplierID uint, inputText string) {
+	// Check if user wants to cancel
+	if inputText == MENU_BACK || inputText == "🔙 بازگشت" {
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
+		msg := tgbotapi.NewMessage(chatID, "❌ عملیات ویرایش لغو شد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Parse input: name|mobile|city|brand
+	parts := strings.Split(inputText, "|")
+	if len(parts) != 4 {
+		msg := tgbotapi.NewMessage(chatID, "❌ فرمت ورودی نامعتبر است.\n\nلطفاً به فرمت زیر وارد کنید:\n`نام|موبایل|شهر|برند`")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get supplier
+	var supplier models.Supplier
+	err := s.db.Where("id = ?", supplierID).First(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update fields (only if not empty)
+	if strings.TrimSpace(parts[0]) != "" {
+		supplier.FullName = strings.TrimSpace(parts[0])
+	}
+	if strings.TrimSpace(parts[1]) != "" {
+		supplier.Mobile = strings.TrimSpace(parts[1])
+	}
+	if strings.TrimSpace(parts[2]) != "" {
+		supplier.City = strings.TrimSpace(parts[2])
+	}
+	if strings.TrimSpace(parts[3]) != "" {
+		supplier.BrandName = strings.TrimSpace(parts[3])
+	}
+
+	// Save changes
+	err = s.db.Save(&supplier).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در به‌روزرسانی تأمین‌کننده")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Clear session
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	successMsg := fmt.Sprintf("✅ **تأمین‌کننده با موفقیت به‌روزرسانی شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر:** %s\n"+
+		"🏢 **برند:** %s",
+		supplier.FullName, supplier.Mobile, supplier.City, supplier.BrandName)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleVisitorEditInput(chatID int64, visitorID uint, inputText string) {
+	// Check if user wants to cancel
+	if inputText == MENU_BACK || inputText == "🔙 بازگشت" {
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
+		msg := tgbotapi.NewMessage(chatID, "❌ عملیات ویرایش لغو شد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Parse input: name|mobile|city_province|destination_cities
+	parts := strings.Split(inputText, "|")
+	if len(parts) != 4 {
+		msg := tgbotapi.NewMessage(chatID, "❌ فرمت ورودی نامعتبر است.\n\nلطفاً به فرمت زیر وارد کنید:\n`نام|موبایل|شهر/استان|مقصد`")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get visitor
+	var visitor models.Visitor
+	err := s.db.Where("id = ?", visitorID).First(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ ویزیتور یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update fields (only if not empty)
+	if strings.TrimSpace(parts[0]) != "" {
+		visitor.FullName = strings.TrimSpace(parts[0])
+	}
+	if strings.TrimSpace(parts[1]) != "" {
+		visitor.Mobile = strings.TrimSpace(parts[1])
+	}
+	if strings.TrimSpace(parts[2]) != "" {
+		visitor.CityProvince = strings.TrimSpace(parts[2])
+	}
+	if strings.TrimSpace(parts[3]) != "" {
+		visitor.DestinationCities = strings.TrimSpace(parts[3])
+	}
+
+	// Save changes
+	err = s.db.Save(&visitor).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در به‌روزرسانی ویزیتور")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Clear session
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	successMsg := fmt.Sprintf("✅ **ویزیتور با موفقیت به‌روزرسانی شد**\n\n"+
+		"👤 **نام:** %s\n"+
+		"📱 **موبایل:** %s\n"+
+		"🏙️ **شهر/استان:** %s\n"+
+		"✈️ **مقصد:** %s",
+		visitor.FullName, visitor.Mobile, visitor.CityProvince, visitor.DestinationCities)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleResearchProductEditInput(chatID int64, productID uint, inputText string) {
+	// Check if user wants to cancel
+	if inputText == MENU_BACK || inputText == "🔙 بازگشت" {
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
+		msg := tgbotapi.NewMessage(chatID, "❌ عملیات ویرایش لغو شد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Parse input: name|category|target_country|export_value
+	parts := strings.Split(inputText, "|")
+	if len(parts) != 4 {
+		msg := tgbotapi.NewMessage(chatID, "❌ فرمت ورودی نامعتبر است.\n\nلطفاً به فرمت زیر وارد کنید:\n`نام|دسته|کشور هدف|قیمت صادرات`")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get product
+	var product models.ResearchProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ محصول تحقیقی یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update fields (only if not empty)
+	if strings.TrimSpace(parts[0]) != "" {
+		product.Name = strings.TrimSpace(parts[0])
+	}
+	if strings.TrimSpace(parts[1]) != "" {
+		product.Category = strings.TrimSpace(parts[1])
+	}
+	if strings.TrimSpace(parts[2]) != "" {
+		product.TargetCountry = strings.TrimSpace(parts[2])
+	}
+	if strings.TrimSpace(parts[3]) != "" {
+		product.ExportValue = strings.TrimSpace(parts[3])
+	}
+
+	// Save changes
+	err = s.db.Save(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در به‌روزرسانی محصول تحقیقی")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Clear session
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	successMsg := fmt.Sprintf("✅ **محصول تحقیقی با موفقیت به‌روزرسانی شد**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"🌍 **کشور هدف:** %s\n"+
+		"💰 **قیمت صادرات:** %s",
+		product.Name, product.Category, product.TargetCountry, product.ExportValue)
+
+	msg := tgbotapi.NewMessage(chatID, successMsg)
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleAvailableProductEditInput(chatID int64, productID uint, inputText string) {
+	// Check if user wants to cancel
+	if inputText == MENU_BACK || inputText == "🔙 بازگشت" {
+		sessionMutex.Lock()
+		delete(sessionStates, chatID)
+		sessionMutex.Unlock()
+		msg := tgbotapi.NewMessage(chatID, "❌ عملیات ویرایش لغو شد.")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Parse input: name|category|location|price|currency
+	parts := strings.Split(inputText, "|")
+	if len(parts) != 5 {
+		msg := tgbotapi.NewMessage(chatID, "❌ فرمت ورودی نامعتبر است.\n\nلطفاً به فرمت زیر وارد کنید:\n`نام|دسته|مکان|قیمت|واحد پول`")
+		msg.ParseMode = "Markdown"
+		s.bot.Send(msg)
+		return
+	}
+
+	// Get product
+	var product models.AvailableProduct
+	err := s.db.Where("id = ?", productID).First(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ کالای موجود یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Update fields (only if not empty)
+	if strings.TrimSpace(parts[0]) != "" {
+		product.ProductName = strings.TrimSpace(parts[0])
+	}
+	if strings.TrimSpace(parts[1]) != "" {
+		product.Category = strings.TrimSpace(parts[1])
+	}
+	if strings.TrimSpace(parts[2]) != "" {
+		product.Location = strings.TrimSpace(parts[2])
+	}
+	if strings.TrimSpace(parts[3]) != "" {
+		product.WholesalePrice = strings.TrimSpace(parts[3])
+	}
+	if strings.TrimSpace(parts[4]) != "" {
+		product.Currency = strings.TrimSpace(parts[4])
+	}
+
+	// Save changes
+	err = s.db.Save(&product).Error
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در به‌روزرسانی کالای موجود")
+		s.bot.Send(msg)
+		return
+	}
+
+	// Clear session
+	sessionMutex.Lock()
+	delete(sessionStates, chatID)
+	sessionMutex.Unlock()
+
+	successMsg := fmt.Sprintf("✅ **کالای موجود با موفقیت به‌روزرسانی شد**\n\n"+
+		"📦 **نام:** %s\n"+
+		"🏷️ **دسته:** %s\n"+
+		"📍 **مکان:** %s\n"+
+		"💰 **قیمت:** %s %s",
+		product.ProductName, product.Category, product.Location, product.WholesalePrice, product.Currency)
 
 	msg := tgbotapi.NewMessage(chatID, successMsg)
 	msg.ParseMode = "Markdown"
