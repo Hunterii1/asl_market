@@ -2034,6 +2034,64 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle edit callbacks from search
+	if strings.HasPrefix(data, "edit_supplier_") {
+		supplierIDStr := strings.TrimPrefix(data, "edit_supplier_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "✏️ در حال آماده‌سازی ویرایش...")
+			s.bot.Request(callback)
+			s.promptSupplierEdit(chatID, uint(supplierID))
+		}
+		return
+	}
+	if strings.HasPrefix(data, "edit_visitor_") {
+		visitorIDStr := strings.TrimPrefix(data, "edit_visitor_")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "✏️ در حال آماده‌سازی ویرایش...")
+			s.bot.Request(callback)
+			s.promptVisitorEdit(chatID, uint(visitorID))
+		}
+		return
+	}
+	if strings.HasPrefix(data, "edit_available_product_") {
+		productIDStr := strings.TrimPrefix(data, "edit_available_product_")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "✏️ در حال آماده‌سازی ویرایش...")
+			s.bot.Request(callback)
+			s.promptAvailableProductEdit(chatID, uint(productID))
+		}
+		return
+	}
+
+	// Handle delete callbacks from search
+	if strings.HasPrefix(data, "delete_supplier_") {
+		supplierIDStr := strings.TrimPrefix(data, "delete_supplier_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "🗑️ در حال آماده‌سازی حذف...")
+			s.bot.Request(callback)
+			s.confirmSupplierDelete(chatID, uint(supplierID))
+		}
+		return
+	}
+	if strings.HasPrefix(data, "delete_visitor_") {
+		visitorIDStr := strings.TrimPrefix(data, "delete_visitor_")
+		if visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "🗑️ در حال آماده‌سازی حذف...")
+			s.bot.Request(callback)
+			s.confirmVisitorDelete(chatID, uint(visitorID))
+		}
+		return
+	}
+	if strings.HasPrefix(data, "delete_available_product_") {
+		productIDStr := strings.TrimPrefix(data, "delete_available_product_")
+		if productID, err := strconv.ParseUint(productIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "🗑️ در حال آماده‌سازی حذف...")
+			s.bot.Request(callback)
+			s.confirmAvailableProductDelete(chatID, uint(productID))
+		}
+		return
+	}
+
 	// Handle user list filters
 	if strings.HasPrefix(data, "userlist_") {
 		filter := strings.TrimPrefix(data, "userlist_")
@@ -3294,18 +3352,26 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 			text += "⭐ **برگزیده:** ❌ خیر\n"
 		}
 
-		// Create inline keyboard with feature/unfeature button
+		// Create inline keyboard with feature/unfeature, edit and delete buttons
 		var keyboard tgbotapi.InlineKeyboardMarkup
 		if supplier.IsFeatured {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_supplier_%d", supplier.ID)),
 				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_supplier_%d", supplier.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_supplier_%d", supplier.ID)),
+				),
 			)
 		} else {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_supplier_%d", supplier.ID)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_supplier_%d", supplier.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_supplier_%d", supplier.ID)),
 				),
 			)
 		}
@@ -3415,18 +3481,26 @@ func (s *TelegramService) handleVisitorSearch(chatID int64, query string) {
 			text += "⭐ **برگزیده:** ❌ خیر\n"
 		}
 
-		// Create inline keyboard with feature/unfeature button
+		// Create inline keyboard with feature/unfeature, edit and delete buttons
 		var keyboard tgbotapi.InlineKeyboardMarkup
 		if visitor.IsFeatured {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_visitor_%d", visitor.ID)),
 				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_visitor_%d", visitor.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_visitor_%d", visitor.ID)),
+				),
 			)
 		} else {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_visitor_%d", visitor.ID)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_visitor_%d", visitor.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_visitor_%d", visitor.ID)),
 				),
 			)
 		}
@@ -3536,18 +3610,26 @@ func (s *TelegramService) handleAvailableProductSearch(chatID int64, query strin
 			text += "⭐ **برگزیده:** ❌ خیر\n"
 		}
 
-		// Create inline keyboard with feature/unfeature button
+		// Create inline keyboard with feature/unfeature, edit and delete buttons
 		var keyboard tgbotapi.InlineKeyboardMarkup
 		if product.IsFeatured {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_product_%d", product.ID)),
 				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_available_product_%d", product.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_available_product_%d", product.ID)),
+				),
 			)
 		} else {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_product_%d", product.ID)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_available_product_%d", product.ID)),
+					tgbotapi.NewInlineKeyboardButtonData("🗑️ حذف", fmt.Sprintf("delete_available_product_%d", product.ID)),
 				),
 			)
 		}
