@@ -357,27 +357,15 @@ const AslLearn = () => {
                       <span className="text-purple-600 dark:text-purple-400 text-lg">🆘</span>
                       <div className="flex-1">
                         <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
-                        <div className="space-y-2">
-                          <a 
-                            href="https://t.me/incoming_center" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-mono font-bold"
-                          >
-                            incoming_center
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                          <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-purple-200 dark:border-purple-700">
-                            <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی</p>
-                            <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی: 9 تا 17</p>
-                            <a 
-                              href="tel:09966357737" 
-                              className="text-base font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors"
-                            >
-                              09966357737
-                            </a>
-                          </div>
-                        </div>
+                        <a 
+                          href="https://t.me/incoming_center" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-mono font-bold"
+                        >
+                          incoming_center
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -473,27 +461,15 @@ const AslLearn = () => {
                       <span className="text-green-600 dark:text-green-400 text-lg">❇️</span>
                       <div className="flex-1">
                         <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
-                        <div className="space-y-2">
-                          <a 
-                            href="https://t.me/incoming_center" 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
-                          >
+                        <a 
+                          href="https://t.me/incoming_center" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
+                        >
                           incoming_center
                           <ExternalLink className="w-4 h-4" />
                         </a>
-                          <div className="mt-2 p-3 bg-white dark:bg-gray-800 rounded-lg border border-green-200 dark:border-green-700">
-                            <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی</p>
-                            <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی: 9 تا 17</p>
-                            <a 
-                              href="tel:09966357737" 
-                              className="text-base font-bold text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 transition-colors"
-                            >
-                              09966357737
-                            </a>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>

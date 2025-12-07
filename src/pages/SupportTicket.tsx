@@ -527,23 +527,6 @@ const SupportTicket = () => {
                     <span>پاسخگویی سریع</span>
                     <span>پشتیبانی تخصصی</span>
                   </div>
-                  <div className="mt-4 p-4 bg-white dark:bg-gray-800 rounded-2xl border-2 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                        <MessageSquare className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی</p>
-                        <p className="text-sm text-muted-foreground">ساعت پاسخگویی: 9 تا 17</p>
-                        <a 
-                          href="tel:09966357737" 
-                          className="text-lg font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mt-1 inline-block"
-                        >
-                          09966357737
-                        </a>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
               

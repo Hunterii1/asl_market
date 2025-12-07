@@ -18,8 +18,7 @@ import {
   MapPin,
   Calendar,
   FileText,
-  ArrowLeft,
-  MessageSquare
+  ArrowLeft
 } from "lucide-react";
 import { apiService } from "@/services/api";
 
@@ -511,33 +510,12 @@ const RegistrationStatus: React.FC = () => {
             )}
 
             {registrationData.status === 'rejected' && (
-              <>
-                <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
-                  <XCircle className="h-4 w-4 text-red-600" />
-                  <AlertDescription className="text-red-800 dark:text-red-200">
-                    متأسفانه درخواست شما رد شده است. در صورت نیاز به اطلاعات بیشتر، با پشتیبانی تماس بگیرید.
-                  </AlertDescription>
-                </Alert>
-                <Card className="mt-4 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
-                        <MessageSquare className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی</p>
-                        <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی: 9 تا 17</p>
-                        <a 
-                          href="tel:09966357737" 
-                          className="text-base font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
-                        >
-                          09966357737
-                        </a>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
+              <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
+                <XCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800 dark:text-red-200">
+                  متأسفانه درخواست شما رد شده است. در صورت نیاز به اطلاعات بیشتر، با پشتیبانی تماس بگیرید.
+                </AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>
