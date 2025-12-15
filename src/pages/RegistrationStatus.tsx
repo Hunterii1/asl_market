@@ -514,6 +514,13 @@ const RegistrationStatus: React.FC = () => {
                 <XCircle className="h-4 w-4 text-red-600" />
                 <AlertDescription className="text-red-800 dark:text-red-200">
                   متأسفانه درخواست شما رد شده است. در صورت نیاز به اطلاعات بیشتر، با پشتیبانی تماس بگیرید.
+                  <br />
+                  <br />
+                  <strong>پشتیبانی تلفنی مجموعه:</strong>
+                  <br />
+                  ساعت پاسخگویی 9 تا 17
+                  <br />
+                  <a href="tel:09924674268" className="text-blue-600 dark:text-blue-400 hover:underline font-mono">09924674268</a>
                 </AlertDescription>
               </Alert>
             )}

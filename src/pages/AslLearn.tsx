@@ -54,7 +54,7 @@ const AslLearn = () => {
         if (response.status === 404) {
           toast({
             title: "فایل یافت نشد",
-            description: `فایل ${displayName} در حال حاضر در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.`,
+            description: `فایل ${displayName} در حال حاضر در دسترس نیست. لطفاً با پشتیبانی تماس بگیرید.\n\nپشتیبانی تلفنی مجموعه:\nساعت پاسخگویی 9 تا 17\n09924674268`,
             variant: "destructive"
           });
         } else {
@@ -357,15 +357,22 @@ const AslLearn = () => {
                       <span className="text-purple-600 dark:text-purple-400 text-lg">🆘</span>
                       <div className="flex-1">
                         <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
-                        <a 
-                          href="https://t.me/incoming_center" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-mono font-bold"
-                        >
-                          incoming_center
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+                        <div className="space-y-2">
+                          <a 
+                            href="https://t.me/incoming_center" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors font-mono font-bold"
+                          >
+                            incoming_center
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          <div className="mt-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200/50 dark:border-purple-700/50">
+                            <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی مجموعه:</p>
+                            <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی 9 تا 17</p>
+                            <a href="tel:09924674268" className="text-purple-600 dark:text-purple-400 hover:underline font-mono font-bold text-sm">09924674268</a>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -461,15 +468,22 @@ const AslLearn = () => {
                       <span className="text-green-600 dark:text-green-400 text-lg">❇️</span>
                       <div className="flex-1">
                         <p className="text-foreground mb-2">تیم پشتیبانی اصل مارکت همواره در خدمت شماست 👇</p>
-                        <a 
-                          href="https://t.me/incoming_center" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
-                        >
-                          incoming_center
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
+                        <div className="space-y-2">
+                          <a 
+                            href="https://t.me/incoming_center" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors font-mono font-bold"
+                          >
+                            incoming_center
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                          <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200/50 dark:border-green-700/50">
+                            <p className="text-sm font-semibold text-foreground mb-1">پشتیبانی تلفنی مجموعه:</p>
+                            <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی 9 تا 17</p>
+                            <a href="tel:09924674268" className="text-green-600 dark:text-green-400 hover:underline font-mono font-bold text-sm">09924674268</a>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -596,6 +610,7 @@ const AslLearn = () => {
                     <li>• لایسنس SpotPlayer قبلی خود را از پیام‌های تلگرام دریافت کنید</li>
                     <li>• در صورت عدم دسترسی، با پشتیبانی تماس بگیرید</li>
                     <li>• آی دی پشتیبانی: <span className="font-mono font-bold">incoming_center</span></li>
+                    <li>• پشتیبانی تلفنی مجموعه: <a href="tel:09924674268" className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:underline">09924674268</a> (ساعت پاسخگویی 9 تا 17)</li>
                   </ul>
                 </div>
               </div>
@@ -759,25 +774,32 @@ const AslLearn = () => {
                     فایل‌های ضمیمه در حال حاضر در حال آماده‌سازی هستند. در صورت عدم دسترسی، 
                     لطفاً با پشتیبانی تماس بگیرید یا از طریق تلگرام درخواست کنید.
                   </p>
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => window.open('https://t.me/aslmarket_support', '_blank')}
-                    >
-                      <Phone className="w-3 h-3 ml-1" />
-                      پشتیبانی تلگرام
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                      onClick={() => window.open('mailto:support@asllmarket.com', '_blank')}
-                    >
-                      <Mail className="w-3 h-3 ml-1" />
-                      ایمیل پشتیبانی
-                    </Button>
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => window.open('https://t.me/aslmarket_support', '_blank')}
+                      >
+                        <Phone className="w-3 h-3 ml-1" />
+                        پشتیبانی تلگرام
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        onClick={() => window.open('mailto:support@asllmarket.com', '_blank')}
+                      >
+                        <Mail className="w-3 h-3 ml-1" />
+                        ایمیل پشتیبانی
+                      </Button>
+                    </div>
+                    <div className="p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200/50 dark:border-yellow-700/50">
+                      <p className="text-xs font-semibold text-foreground mb-1">پشتیبانی تلفنی مجموعه:</p>
+                      <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی 9 تا 17</p>
+                      <a href="tel:09924674268" className="text-yellow-700 dark:text-yellow-300 hover:underline font-mono font-bold text-sm">09924674268</a>
+                    </div>
                   </div>
                 </div>
               </div>
