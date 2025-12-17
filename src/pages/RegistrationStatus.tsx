@@ -520,7 +520,7 @@ const RegistrationStatus: React.FC = () => {
                   <br />
                   ساعت پاسخگویی 9 تا 17
                   <br />
-                  <a href="tel:09924674268" className="text-blue-600 dark:text-blue-400 hover:underline font-mono">09924674268</a>
+                  <a href="tel:09939408346" className="text-blue-600 dark:text-blue-400 hover:underline font-mono">09939408346</a>
                 </AlertDescription>
               </Alert>
             )}

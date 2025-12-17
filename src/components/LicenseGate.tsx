@@ -108,7 +108,7 @@ export function LicenseGate({ children }: LicenseGateProps) {
                     <div className="mt-2 p-2 bg-muted/30 rounded-lg border border-border">
                       <p className="text-xs font-semibold text-foreground mb-1">پشتیبانی تلفنی مجموعه:</p>
                       <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی 9 تا 17</p>
-                      <a href="tel:09924674268" className="text-blue-600 dark:text-blue-400 hover:underline font-mono font-bold text-xs">09924674268</a>
+                      <a href="tel:09939408346" className="text-blue-600 dark:text-blue-400 hover:underline font-mono font-bold text-xs">09939408346</a>
                     </div>
                   </div>
                 </AlertDescription>
