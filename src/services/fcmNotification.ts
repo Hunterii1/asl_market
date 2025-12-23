@@ -53,6 +53,17 @@ class FCMNotificationService {
     }
 
     try {
+      // For iOS Safari, ensure service worker is ready first
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      if (isIOS && 'serviceWorker' in navigator) {
+        try {
+          await navigator.serviceWorker.ready;
+          console.log('Service worker ready for iOS');
+        } catch (e) {
+          console.warn('Service worker not ready for iOS:', e);
+        }
+      }
+
       // Check permission first
       if (!this.hasPermission()) {
         const permission = await this.requestPermission();
