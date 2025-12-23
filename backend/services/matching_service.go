@@ -54,11 +54,7 @@ func (s *MatchingService) FindMatchingVisitors(matchingRequest *models.MatchingR
 		}
 	}
 
-	// Limit to top 50 matches
-	if len(matchedVisitors) > 50 {
-		matchedVisitors = matchedVisitors[:50]
-	}
-
+	// Send to ALL matching visitors (no limit)
 	return matchedVisitors, nil
 }
 

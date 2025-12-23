@@ -515,11 +515,14 @@ const HeaderAuth = () => {
                   </DropdownMenuItem>
                 )}
                 
-                {/* Matching System Menu Items */}
+                {/* ASL Match System Menu Items */}
                 {currentLicenseStatus?.is_approved && (
                   <>
                     <DropdownMenuSeparator className="bg-border" />
-                    <DropdownMenuLabel className="text-foreground">سیستم Matching</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-foreground font-bold text-emerald-600 dark:text-emerald-400">
+                      ASL MATCH
+                      <Badge className="mr-2 bg-emerald-500 text-white text-xs">BETA</Badge>
+                    </DropdownMenuLabel>
                     
                     {/* For Suppliers */}
                     {hasSupplier && (
@@ -529,7 +532,7 @@ const HeaderAuth = () => {
                           onClick={() => navigate('/matching/create')}
                         >
                           <PlusCircle className="w-4 h-4 mr-2" />
-                          ایجاد درخواست Matching
+                          ایجاد درخواست ASL Match
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
@@ -558,14 +561,14 @@ const HeaderAuth = () => {
                       onClick={() => navigate('/matching/chats')}
                     >
                       <MessageCircle className="w-4 h-4 mr-2" />
-                      مکالمات Matching
+                      مکالمات ASL Match
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                       onClick={() => navigate('/matching/ratings')}
                     >
                       <Star className="w-4 h-4 mr-2" />
-                      امتیازهای Matching
+                      امتیازهای ASL Match
                     </DropdownMenuItem>
                   </>
                 )}

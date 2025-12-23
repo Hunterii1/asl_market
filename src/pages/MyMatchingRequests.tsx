@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import HeaderAuth from "@/components/ui/HeaderAuth";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { MatchingRadar } from "@/components/MatchingRadar";
 import { 
   Package, 
   Plus,
@@ -208,6 +209,17 @@ export default function MyMatchingRequests() {
                       }`}
                     >
                       <CardContent className="p-6">
+                        {/* Radar for active requests */}
+                        {(request.status === 'active' || request.status === 'pending') && !request.is_expired && (
+                          <div className="mb-6">
+                            <MatchingRadar
+                              totalVisitors={request.matched_visitor_count || 0}
+                              acceptedCount={0} // Will be updated when we load responses
+                              isActive={true}
+                            />
+                          </div>
+                        )}
+                        
                         <div className="flex flex-col lg:flex-row justify-between gap-4">
                           <div className="flex-1 space-y-4">
                             <div className="flex items-start justify-between gap-4">

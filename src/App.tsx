@@ -49,6 +49,7 @@ import AvailableMatchingRequests from "./pages/AvailableMatchingRequests";
 import MatchingRequestDetails from "./pages/MatchingRequestDetails";
 import MatchingChats from "./pages/MatchingChats";
 import MatchingRatings from "./pages/MatchingRatings";
+import AslMatch from "./pages/AslMatch";
 
 
 const queryClient = new QueryClient();
@@ -214,7 +215,14 @@ const App = () => (
                 </ProtectedRoute>
               } />
 
-              {/* Matching routes */}
+              {/* ASL Match routes */}
+              <Route path="/asl-match" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AslMatch />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
               <Route path="/matching/create" element={
                 <ProtectedRoute>
                   <LicenseRequiredRoute>

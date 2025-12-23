@@ -30,6 +30,7 @@ import {
   Star
 } from "lucide-react";
 import { MatchingChat } from "@/components/MatchingChat";
+import { MatchingRadar } from "@/components/MatchingRadar";
 
 interface MatchingRequest {
   id: number;
@@ -240,6 +241,17 @@ export default function MatchingRequestDetails() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Matching Radar - Only for suppliers */}
+            {isSupplier && (
+              <MatchingRadar
+                totalVisitors={request.matched_visitor_count || 0}
+                acceptedCount={request.responses?.filter(r => r.response_type === 'accepted').length || 0}
+                pendingCount={request.responses?.filter(r => r.response_type === 'question').length || 0}
+                rejectedCount={request.responses?.filter(r => r.response_type === 'rejected').length || 0}
+                isActive={request.status === 'active' || request.status === 'pending'}
+              />
+            )}
+
             {/* Request Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">

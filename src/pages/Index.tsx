@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apiService } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import HeaderAuth from "@/components/ui/HeaderAuth";
 import { useAuth } from "@/hooks/useAuth";
 import AuthRequiredModal from "@/components/AuthRequiredModal";
 import { Logo } from "@/components/ui/Logo";
+import { useNavigate } from "react-router-dom";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -31,7 +32,9 @@ import {
   Palette,
   Building,
   Globe,
-  ExternalLink
+  ExternalLink,
+  ArrowLeft,
+  Radio
 } from "lucide-react";
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
@@ -52,6 +55,39 @@ const Index = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState("");
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [hasSupplier, setHasSupplier] = useState(false);
+  const [hasVisitor, setHasVisitor] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkVisitorSupplierStatus();
+    }
+  }, [isAuthenticated]);
+
+  const checkVisitorSupplierStatus = async () => {
+    if (!isAuthenticated) return;
+    
+    try {
+      // Check visitor status
+      try {
+        const visitorStatus = await apiService.getMyVisitorStatus();
+        setHasVisitor(visitorStatus.has_visitor || false);
+      } catch (error) {
+        setHasVisitor(false);
+      }
+
+      // Check supplier status
+      try {
+        const supplierStatus = await apiService.getSupplierStatus();
+        setHasSupplier(supplierStatus.has_supplier || false);
+      } catch (error) {
+        setHasSupplier(false);
+      }
+    } catch (error) {
+      console.error('Error checking visitor/supplier status:', error);
+    }
+  };
 
   // Convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -140,7 +176,44 @@ const Index = () => {
       {/* Header */}
       <HeaderAuth />
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Navigation Menu */}
+        {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons */}
+        {isAuthenticated && (
+          <div className="mb-4 sm:mb-6">
+            <Button
+              onClick={() => navigate('/asl-match')}
+              className="w-full h-16 sm:h-20 md:h-24 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 group relative overflow-hidden"
+            >
+              {/* Animated background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-green-400/20 to-teal-400/20 animate-pulse"></div>
+              
+              {/* Content */}
+              <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+                <div className="p-2 sm:p-3 bg-white/20 rounded-xl sm:rounded-2xl backdrop-blur-sm">
+                  <Radio className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
+                      ASL MATCH
+                    </span>
+                    <Badge className="bg-white/30 text-white border-white/50 text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 font-bold backdrop-blur-sm">
+                      BETA
+                    </Badge>
+                  </div>
+                  <p className="text-xs sm:text-sm md:text-base text-white/90 font-semibold mt-0.5 sm:mt-1">
+                    سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
+                  </p>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-white/80">
+                  <span className="text-sm font-semibold">ورود</span>
+                  <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </Button>
+          </div>
+        )}
+
+        {/* Navigation Menu - 9 Main Buttons */}
         <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
           {menuItems.map((item) => {
             const Icon = item.icon;
