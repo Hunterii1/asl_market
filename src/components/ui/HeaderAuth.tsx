@@ -34,7 +34,12 @@ import {
   AlertTriangle,
   FileText,
   UserCheck,
-  Building
+  Building,
+  Users,
+  PlusCircle,
+  List,
+  Star,
+  MessageCircle
 } from "lucide-react";
 import { Logo } from "./Logo";
 import { apiService, type LicenseStatus } from "@/services/api";
@@ -308,6 +313,74 @@ const HeaderAuth = () => {
               </Badge>
             )}
             
+            {/* Matching System Dropdown */}
+            {currentLicenseStatus?.is_approved && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
+                    title="سیستم Matching"
+                  >
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                    <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">Matching</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
+                  <DropdownMenuLabel className="text-foreground">سیستم Matching</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border" />
+                  
+                  {/* For Suppliers */}
+                  {hasSupplier && (
+                    <>
+                      <DropdownMenuItem 
+                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                        onClick={() => navigate('/matching/create')}
+                      >
+                        <PlusCircle className="w-4 h-4 ml-2" />
+                        ایجاد درخواست
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                        onClick={() => navigate('/matching/my-requests')}
+                      >
+                        <List className="w-4 h-4 ml-2" />
+                        درخواست‌های من
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  {/* For Visitors */}
+                  {hasVisitor && (
+                    <DropdownMenuItem 
+                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                      onClick={() => navigate('/matching/available-requests')}
+                    >
+                      <Package className="w-4 h-4 ml-2" />
+                      درخواست‌های موجود
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {/* Common for all */}
+                  <DropdownMenuItem 
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    onClick={() => navigate('/matching/chats')}
+                  >
+                    <MessageCircle className="w-4 h-4 ml-2" />
+                    مکالمات
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    onClick={() => navigate('/matching/ratings')}
+                  >
+                    <Star className="w-4 h-4 ml-2" />
+                    امتیازها
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             {/* My Products Button */}
             <Button 
               variant="ghost" 
