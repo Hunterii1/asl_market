@@ -3,10 +3,11 @@ module asl-market-backend
 go 1.23.0
 
 require (
+	github.com/SherClockHolmes/webpush-go v1.4.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
-	github.com/golang-jwt/jwt/v5 v5.0.0
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/spf13/viper v1.17.0
 	github.com/xuri/excelize/v2 v2.9.1
 	golang.org/x/crypto v0.38.0
