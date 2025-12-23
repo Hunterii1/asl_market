@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LicenseRequiredRoute } from "@/components/LicenseRequiredRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ErrorTestPanel } from "@/components/ErrorTestPanel";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -51,12 +52,19 @@ import MatchingRatings from "./pages/MatchingRatings";
 
 const queryClient = new QueryClient();
 
+// Component to initialize push notifications
+const PushNotificationInitializer = () => {
+  usePushNotifications(); // This will auto-subscribe when user is logged in
+  return null;
+};
+
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider defaultTheme="dark" storageKey="asl-market-theme">
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <AuthProvider>
+            <PushNotificationInitializer />
             <Toaster />
             <Sonner />
             <ConnectionStatus />
