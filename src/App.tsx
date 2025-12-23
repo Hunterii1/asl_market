@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { LicenseRequiredRoute } from "@/components/LicenseRequiredRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ErrorTestPanel } from "@/components/ErrorTestPanel";
+import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -65,6 +66,7 @@ const App = () => (
         <TooltipProvider>
           <AuthProvider>
             <PushNotificationInitializer />
+            <NotificationPermissionPrompt />
             <Toaster />
             <Sonner />
             <ConnectionStatus />

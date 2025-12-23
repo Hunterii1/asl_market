@@ -118,16 +118,16 @@ export function usePushNotifications() {
     }
   }, [toast]);
 
-  // Auto-subscribe when user logs in
+  // Auto-subscribe when user logs in (only if permission is granted)
   useEffect(() => {
-    if (user && isSupported && !isSubscribed) {
+    if (user && isSupported && !isSubscribed && hasPermission) {
       // Auto-subscribe after a short delay
       const timer = setTimeout(() => {
         subscribe();
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [user, isSupported, isSubscribed, subscribe]);
+  }, [user, isSupported, isSubscribed, hasPermission, subscribe]);
 
   return {
     isSupported,
