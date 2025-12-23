@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { pushNotificationService } from '@/services/pushNotification';
+import { fcmNotificationService } from '@/services/fcmNotification';
 import { useToast } from './use-toast';
 import { useAuth } from './useAuth';
 
@@ -11,18 +11,34 @@ export function usePushNotifications() {
   const { user } = useAuth();
 
   useEffect(() => {
-    setIsSupported(pushNotificationService.isSupported());
+    setIsSupported(fcmNotificationService.isSupported());
     checkSubscription();
+    
+    // Setup foreground message handler
+    if (fcmNotificationService.isSupported()) {
+      fcmNotificationService.setupForegroundHandler((payload) => {
+        // Show notification when app is in foreground
+        if (payload.notification) {
+          new Notification(payload.notification.title || 'ASL Market', {
+            body: payload.notification.body,
+            icon: payload.notification.icon || '/pwa.png',
+            badge: '/pwa.png',
+            tag: payload.data?.tag || 'notification',
+            data: payload.data || {},
+          });
+        }
+      });
+    }
   }, []);
 
   const checkSubscription = async () => {
-    if (!pushNotificationService.isSupported()) return;
-    const subscribed = await pushNotificationService.isSubscribed();
+    if (!fcmNotificationService.isSupported()) return;
+    const subscribed = await fcmNotificationService.isSubscribed();
     setIsSubscribed(subscribed);
   };
 
   const subscribe = useCallback(async () => {
-    if (!pushNotificationService.isSupported()) {
+    if (!fcmNotificationService.isSupported()) {
       toast({
         variant: 'destructive',
         title: 'خطا',
@@ -33,8 +49,8 @@ export function usePushNotifications() {
 
     setIsLoading(true);
     try {
-      const subscription = await pushNotificationService.subscribe();
-      if (subscription) {
+      const token = await fcmNotificationService.subscribe();
+      if (token) {
         setIsSubscribed(true);
         toast({
           title: 'موفقیت',
@@ -64,7 +80,7 @@ export function usePushNotifications() {
   const unsubscribe = useCallback(async () => {
     setIsLoading(true);
     try {
-      const success = await pushNotificationService.unsubscribe();
+      const success = await fcmNotificationService.unsubscribe();
       if (success) {
         setIsSubscribed(false);
         toast({
@@ -88,7 +104,7 @@ export function usePushNotifications() {
 
   const sendTest = useCallback(async () => {
     try {
-      await pushNotificationService.sendTestPush();
+      await fcmNotificationService.sendTestPush();
       toast({
         title: 'موفقیت',
         description: 'پیام تست ارسال شد',
@@ -120,7 +136,7 @@ export function usePushNotifications() {
     subscribe,
     unsubscribe,
     sendTest,
-    hasPermission: pushNotificationService.hasPermission(),
+    hasPermission: fcmNotificationService.hasPermission(),
   };
 }
 

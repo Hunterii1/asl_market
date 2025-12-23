@@ -313,72 +313,18 @@ const HeaderAuth = () => {
               </Badge>
             )}
             
-            {/* Matching System Dropdown */}
+            {/* Matching System Button - Always Visible */}
             {currentLicenseStatus?.is_approved && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
-                    title="سیستم Matching"
-                  >
-                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
-                    <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">Matching</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
-                  <DropdownMenuLabel className="text-foreground">سیستم Matching</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-border" />
-                  
-                  {/* For Suppliers */}
-                  {hasSupplier && (
-                    <>
-                      <DropdownMenuItem 
-                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                        onClick={() => navigate('/matching/create')}
-                      >
-                        <PlusCircle className="w-4 h-4 ml-2" />
-                        ایجاد درخواست
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                        onClick={() => navigate('/matching/my-requests')}
-                      >
-                        <List className="w-4 h-4 ml-2" />
-                        درخواست‌های من
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                  
-                  {/* For Visitors */}
-                  {hasVisitor && (
-                    <DropdownMenuItem 
-                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                      onClick={() => navigate('/matching/available-requests')}
-                    >
-                      <Package className="w-4 h-4 ml-2" />
-                      درخواست‌های موجود
-                    </DropdownMenuItem>
-                  )}
-                  
-                  {/* Common for all */}
-                  <DropdownMenuItem 
-                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                    onClick={() => navigate('/matching/chats')}
-                  >
-                    <MessageCircle className="w-4 h-4 ml-2" />
-                    مکالمات
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                    onClick={() => navigate('/matching/ratings')}
-                  >
-                    <Star className="w-4 h-4 ml-2" />
-                    امتیازها
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button 
+                variant="default" 
+                size="sm" 
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
+                onClick={() => navigate(hasSupplier ? '/matching/create' : hasVisitor ? '/matching/available-requests' : '/matching/chats')}
+                title="سیستم Matching"
+              >
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="text-xs sm:text-sm font-semibold">Matching</span>
+              </Button>
             )}
 
             {/* My Products Button */}
@@ -581,6 +527,61 @@ const HeaderAuth = () => {
                     <Shield className="w-4 h-4 ml-2" />
                     اطلاعات لایسنس
                   </DropdownMenuItem>
+                )}
+                
+                {/* Matching System Menu Items */}
+                {currentLicenseStatus?.is_approved && (
+                  <>
+                    <DropdownMenuSeparator className="bg-border" />
+                    <DropdownMenuLabel className="text-foreground">سیستم Matching</DropdownMenuLabel>
+                    
+                    {/* For Suppliers */}
+                    {hasSupplier && (
+                      <>
+                        <DropdownMenuItem 
+                          className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                          onClick={() => navigate('/matching/create')}
+                        >
+                          <PlusCircle className="w-4 h-4 ml-2" />
+                          ایجاد درخواست Matching
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                          onClick={() => navigate('/matching/my-requests')}
+                        >
+                          <List className="w-4 h-4 ml-2" />
+                          درخواست‌های من
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    
+                    {/* For Visitors */}
+                    {hasVisitor && (
+                      <DropdownMenuItem 
+                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                        onClick={() => navigate('/matching/available-requests')}
+                      >
+                        <Package className="w-4 h-4 ml-2" />
+                        درخواست‌های موجود
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {/* Common for all */}
+                    <DropdownMenuItem 
+                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                      onClick={() => navigate('/matching/chats')}
+                    >
+                      <MessageCircle className="w-4 h-4 ml-2" />
+                      مکالمات Matching
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                      onClick={() => navigate('/matching/ratings')}
+                    >
+                      <Star className="w-4 h-4 ml-2" />
+                      امتیازهای Matching
+                    </DropdownMenuItem>
+                  </>
                 )}
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 

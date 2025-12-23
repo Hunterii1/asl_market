@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
@@ -26,9 +27,9 @@ func NewPushController(db *gorm.DB) *PushController {
 type SubscribeRequest struct {
 	Endpoint string `json:"endpoint" binding:"required"`
 	Keys     struct {
-		P256dh string `json:"p256dh" binding:"required"`
-		Auth   string `json:"auth" binding:"required"`
-	} `json:"keys" binding:"required"`
+		P256dh string `json:"p256dh"` // Optional for FCM
+		Auth   string `json:"auth"`   // Optional for FCM
+	} `json:"keys"` // Optional for FCM
 }
 
 // Subscribe handles push subscription
@@ -55,12 +56,54 @@ func (pc *PushController) Subscribe(c *gin.Context) {
 		userAgent = "Unknown"
 	}
 
+	// Handle FCM token (if endpoint is FCM token format)
+	// FCM tokens can be sent as endpoint directly
+	p256dh := req.Keys.P256dh
+	auth := req.Keys.Auth
+
+	// If endpoint looks like FCM token, keys might be empty
+	if p256dh == "" && auth == "" && (strings.HasPrefix(req.Endpoint, "fcm:") || len(req.Endpoint) > 100) {
+		// This is likely an FCM token
+		// Extract token if it's in URL format
+		endpoint := req.Endpoint
+		if strings.Contains(endpoint, "fcm.googleapis.com") {
+			parts := strings.Split(endpoint, "/")
+			if len(parts) > 0 {
+				endpoint = parts[len(parts)-1]
+			}
+		} else if strings.HasPrefix(endpoint, "fcm:") {
+			endpoint = endpoint[4:]
+		}
+
+		subscription, err := models.CreatePushSubscription(
+			pc.db,
+			userIDUint,
+			endpoint,
+			"", // FCM doesn't use these
+			"", // FCM doesn't use these
+			userAgent,
+		)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "خطا در ثبت subscription",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message":      "FCM Subscription با موفقیت ثبت شد",
+			"subscription": subscription,
+		})
+		return
+	}
+
 	subscription, err := models.CreatePushSubscription(
 		pc.db,
 		userIDUint,
 		req.Endpoint,
-		req.Keys.P256dh,
-		req.Keys.Auth,
+		p256dh,
+		auth,
 		userAgent,
 	)
 
@@ -159,4 +202,3 @@ func (pc *PushController) GetVAPIDPublicKey(c *gin.Context) {
 		"public_key": publicKey,
 	})
 }
-

@@ -68,10 +68,12 @@ self.addEventListener('activate', function(event) {
   return self.clients.claim();
 });
 
-// Push notification event listener
+// Push notification event listener (for FCM)
+// FCM handles push notifications through firebase-messaging-sw.js
+// This is kept for backward compatibility
 self.addEventListener('push', function(event) {
   console.log('Push notification received:', event);
-  
+
   let notificationData = {
     title: 'ASL Market',
     body: 'شما یک نوتیفیکیشن جدید دارید',

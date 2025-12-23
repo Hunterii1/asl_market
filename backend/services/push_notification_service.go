@@ -1,9 +1,14 @@
 package services
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
+	"net/http"
+	"strings"
+	"time"
 
 	"asl-market-backend/config"
 	"asl-market-backend/models"
@@ -98,8 +103,107 @@ func (pns *PushNotificationService) SendPushNotificationToAll(message PushMessag
 	return nil
 }
 
-// sendToSubscription sends a push notification to a specific subscription using webpush
+// sendToSubscription sends a push notification to a specific subscription
+// Supports both FCM and WebPush
 func (pns *PushNotificationService) sendToSubscription(subscription models.PushSubscription, message PushMessage) error {
+	// Check if this is an FCM subscription
+	if pns.isFCMSubscription(subscription.Endpoint) {
+		return pns.sendFCMNotification(subscription, message)
+	}
+	
+	// Otherwise use WebPush
+	return pns.sendWebPushNotification(subscription, message)
+}
+
+// isFCMSubscription checks if the endpoint is an FCM endpoint
+func (pns *PushNotificationService) isFCMSubscription(endpoint string) bool {
+	if len(endpoint) == 0 {
+		return false
+	}
+	// FCM tokens are typically long strings (152+ characters)
+	// WebPush endpoints are URLs
+	return len(endpoint) > 100 && !strings.HasPrefix(endpoint, "https://") && !strings.HasPrefix(endpoint, "http://")
+}
+
+// sendFCMNotification sends notification via FCM REST API
+func (pns *PushNotificationService) sendFCMNotification(subscription models.PushSubscription, message PushMessage) error {
+	// FCM token is stored directly in endpoint
+	fcmToken := subscription.Endpoint
+	
+	// Clean up token if it has prefix
+	if strings.HasPrefix(fcmToken, "fcm:") {
+		fcmToken = fcmToken[4:]
+	} else if strings.Contains(fcmToken, "fcm.googleapis.com") {
+		// Extract token from URL
+		parts := strings.Split(fcmToken, "/")
+		if len(parts) > 0 {
+			fcmToken = parts[len(parts)-1]
+		}
+	}
+
+	// Get FCM Server Key from config
+	fcmServerKey := config.AppConfig.Push.FCMServerKey
+	if fcmServerKey == "" {
+		// Try to use VAPID private key as fallback (if it's actually an FCM server key)
+		fcmServerKey = config.AppConfig.Push.VAPIDPrivateKey
+	}
+
+	if fcmServerKey == "" {
+		return fmt.Errorf("FCM server key not configured")
+	}
+
+	// Prepare FCM payload
+	fcmPayload := map[string]interface{}{
+		"to": fcmToken,
+		"notification": map[string]interface{}{
+			"title": message.Title,
+			"body":  message.Message,
+			"icon":  message.Icon,
+			"badge": message.Badge,
+			"tag":   message.Tag,
+		},
+		"data": message.Data,
+		"priority": "high",
+	}
+
+	payloadJSON, err := json.Marshal(fcmPayload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal FCM payload: %v", err)
+	}
+
+	// Send to FCM REST API
+	req, err := http.NewRequest("POST", "https://fcm.googleapis.com/fcm/send", bytes.NewBuffer(payloadJSON))
+	if err != nil {
+		return fmt.Errorf("failed to create FCM request: %v", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("key=%s", fcmServerKey))
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send FCM notification: %v", err)
+	}
+	defer resp.Body.Close()
+
+	// Check response
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode == 401 {
+			return fmt.Errorf("FCM authentication failed - check server key")
+		}
+		if resp.StatusCode == 404 || resp.StatusCode == 400 {
+			return fmt.Errorf("FCM token invalid or expired: %s", string(body))
+		}
+		return fmt.Errorf("FCM error (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// sendWebPushNotification sends notification via WebPush
+func (pns *PushNotificationService) sendWebPushNotification(subscription models.PushSubscription, message PushMessage) error {
 	// Get VAPID keys from config
 	vapidPublicKey := config.AppConfig.Push.VAPIDPublicKey
 	vapidPrivateKey := config.AppConfig.Push.VAPIDPrivateKey

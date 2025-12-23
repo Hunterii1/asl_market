@@ -58,7 +58,8 @@ type SMSConfig struct {
 type PushConfig struct {
 	VAPIDPublicKey  string `mapstructure:"vapid_public_key"`
 	VAPIDPrivateKey string `mapstructure:"vapid_private_key"`
-	VAPIDSubject    string `mapstructure:"vapid_subject"` // mailto: or https://
+	VAPIDSubject    string `mapstructure:"vapid_subject"`  // mailto: or https://
+	FCMServerKey    string `mapstructure:"fcm_server_key"` // FCM Server Key for REST API
 }
 
 var AppConfig *Config
