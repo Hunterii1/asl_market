@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Bell, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell, AlertCircle, CheckCircle, Sparkles, Zap, MessageSquare, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Alert,
@@ -72,12 +72,32 @@ export function NotificationPermissionPrompt() {
   const handleRequestPermission = async () => {
     setIsRequesting(true);
     try {
-      const result = await subscribe();
-      if (result) {
-        setPermissionStatus('granted');
-        setShowPrompt(false);
+      // First request native browser permission (this shows the native system prompt)
+      if ('Notification' in window && Notification.permission === 'default') {
+        const permission = await Notification.requestPermission();
+        setPermissionStatus(permission);
+        
+        if (permission === 'granted') {
+          // Now subscribe to FCM
+          const result = await subscribe();
+          if (result) {
+            setShowPrompt(false);
+            return;
+          }
+        } else if (permission === 'denied') {
+          // Show instructions for enabling
+          setShowPrompt(true);
+          return;
+        }
       } else {
-        setPermissionStatus(Notification.permission);
+        // Permission already asked, just try to subscribe
+        const result = await subscribe();
+        if (result) {
+          setPermissionStatus('granted');
+          setShowPrompt(false);
+        } else {
+          setPermissionStatus(Notification.permission);
+        }
       }
     } catch (error) {
       console.error('Error requesting permission:', error);
@@ -169,34 +189,63 @@ export function NotificationPermissionPrompt() {
 
   const instructions = getInstructions();
 
+  // Denied permission - show instructions
   if (permissionStatus === 'denied' && instructions) {
     return (
       <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-orange-500" />
-              فعال‌سازی نوتیفیکیشن‌ها
-            </DialogTitle>
-            <DialogDescription>
-              برای دریافت نوتیفیکیشن‌ها، لطفاً دسترسی را در تنظیمات مرورگر فعال کنید
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>{instructions.title}</AlertTitle>
-              <AlertDescription>
-                <ol className="list-decimal list-inside space-y-2 mt-2 text-sm">
+        <DialogContent className="sm:max-w-[550px] p-0 gap-0 overflow-hidden rounded-2xl">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-br from-orange-500 via-red-500 to-pink-500 p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4 mx-auto backdrop-blur-sm">
+                <AlertCircle className="w-8 h-8 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-center mb-2">
+                فعال‌سازی دسترسی
+              </DialogTitle>
+              <DialogDescription className="text-orange-100 text-center">
+                برای دریافت نوتیفیکیشن‌ها، لطفاً دسترسی را در تنظیمات فعال کنید
+              </DialogDescription>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-4">
+            <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800">
+              <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+              <AlertTitle className="text-orange-800 dark:text-orange-200">{instructions.title}</AlertTitle>
+              <AlertDescription className="text-orange-700 dark:text-orange-300 mt-2">
+                <ol className="list-decimal list-inside space-y-2 text-sm rtl:text-right">
                   {instructions.steps.map((step, index) => (
-                    <li key={index}>{step}</li>
+                    <li key={index} className="mb-1">{step}</li>
                   ))}
                 </ol>
               </AlertDescription>
             </Alert>
 
-            <div className="flex gap-2">
+            {/* Visual Guide */}
+            <div className="bg-muted/50 p-4 rounded-xl border border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Bell className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-sm">نکته مهم</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isIOS 
+                      ? 'در iOS، باید از طریق تنظیمات Safari دسترسی را فعال کنید'
+                      : isAndroid
+                      ? 'در Android، از طریق تنظیمات Chrome یا مرورگر خود دسترسی را فعال کنید'
+                      : 'در مرورگر خود، به تنظیمات سایت بروید و Notifications را Allow کنید'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={handleDismiss}
@@ -209,13 +258,29 @@ export function NotificationPermissionPrompt() {
                   setShowPrompt(false);
                   // Try to open browser settings if possible
                   if (isChrome || isEdge) {
-                    window.open('chrome://settings/content/notifications', '_blank');
+                    try {
+                      window.open('chrome://settings/content/notifications', '_blank');
+                    } catch (e) {
+                      // Fallback: show instructions
+                      alert('لطفاً به Chrome Settings > Privacy and security > Site settings > Notifications بروید و asllmarket.com را Allow کنید');
+                    }
                   } else if (isFirefox) {
-                    window.open('about:preferences#privacy', '_blank');
+                    try {
+                      window.open('about:preferences#privacy', '_blank');
+                    } catch (e) {
+                      alert('لطفاً به Firefox Settings > Privacy & Security > Permissions > Notifications بروید');
+                    }
+                  } else if (isSafari && isMac) {
+                    alert('لطفاً به Safari > Settings > Websites > Notifications بروید و asllmarket.com را Allow کنید');
+                  } else if (isIOS) {
+                    alert('لطفاً به Settings > Safari > Notifications بروید و asllmarket.com را Allow کنید');
+                  } else {
+                    alert('لطفاً به تنظیمات مرورگر خود بروید و Notifications را برای این سایت Allow کنید');
                   }
                 }}
-                className="flex-1"
+                className="flex-1 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white shadow-lg"
               >
+                <Bell className="w-4 h-4 mr-2" />
                 باز کردن تنظیمات
               </Button>
             </div>
@@ -225,51 +290,96 @@ export function NotificationPermissionPrompt() {
     );
   }
 
+  // Default permission - show request prompt
   if (permissionStatus === 'default') {
     return (
       <Dialog open={showPrompt} onOpenChange={setShowPrompt}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5 text-blue-500" />
-              فعال‌سازی نوتیفیکیشن‌ها
-            </DialogTitle>
-            <DialogDescription>
-              برای دریافت نوتیفیکیشن‌های مهم، لطفاً دسترسی را فعال کنید
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg space-y-2">
-              <div className="flex items-start gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+        <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden rounded-2xl">
+          {/* Header with gradient */}
+          <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 p-6 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4 mx-auto backdrop-blur-sm">
+                <Bell className="w-8 h-8 text-white" />
+              </div>
+              <DialogTitle className="text-2xl font-bold text-center mb-2">
+                فعال‌سازی نوتیفیکیشن‌ها
+              </DialogTitle>
+              <DialogDescription className="text-blue-100 text-center">
+                برای دریافت اطلاع‌رسانی‌های فوری و مهم
+              </DialogDescription>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-4">
+            {/* Benefits Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <Zap className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="font-medium text-sm">چرا نوتیفیکیشن؟</p>
-                  <ul className="text-sm text-muted-foreground mt-1 space-y-1 list-disc list-inside">
-                    <li>دریافت فوری درخواست‌های Matching</li>
-                    <li>اطلاع از پیام‌های جدید</li>
-                    <li>آگاهی از وضعیت درخواست‌ها</li>
-                    <li>نوتیفیکیشن‌های مهم از ادمین</li>
-                  </ul>
+                  <p className="font-semibold text-sm">درخواست‌های Matching</p>
+                  <p className="text-xs text-muted-foreground">اطلاع فوری</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <MessageSquare className="w-5 h-5 text-indigo-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">پیام‌های جدید</p>
+                  <p className="text-xs text-muted-foreground">همیشه در جریان</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-purple-50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800">
+                <Package className="w-5 h-5 text-purple-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">وضعیت درخواست‌ها</p>
+                  <p className="text-xs text-muted-foreground">به‌روزرسانی لحظه‌ای</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-pink-50 dark:bg-pink-950/20 rounded-xl border border-pink-200 dark:border-pink-800">
+                <Sparkles className="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm">نوتیفیکیشن ادمین</p>
+                  <p className="text-xs text-muted-foreground">اطلاعات مهم</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-2">
+            {/* Info Alert */}
+            <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+              <Bell className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                با کلیک روی "فعال‌سازی"، پنجره مرورگر برای تأیید دسترسی باز می‌شود. لطفاً <strong>"Allow"</strong> یا <strong>"اجازه"</strong> را انتخاب کنید.
+              </AlertDescription>
+            </Alert>
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={handleDismiss}
                 disabled={isRequesting}
                 className="flex-1"
               >
-                نه، ممنون
+                بعداً
               </Button>
               <Button
                 onClick={handleRequestPermission}
                 disabled={isRequesting}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
               >
-                {isRequesting ? 'در حال فعال‌سازی...' : 'فعال‌سازی'}
+                {isRequesting ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    در حال فعال‌سازی...
+                  </>
+                ) : (
+                  <>
+                    <Bell className="w-4 h-4 mr-2" />
+                    فعال‌سازی
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -280,4 +390,3 @@ export function NotificationPermissionPrompt() {
 
   return null;
 }
-
