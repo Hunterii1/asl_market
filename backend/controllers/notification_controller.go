@@ -1,10 +1,13 @@
 package controllers
 
 import (
+	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -233,6 +236,32 @@ func CreateNotification(c *gin.Context) {
 		FirstName: notification.CreatedBy.FirstName,
 		LastName:  notification.CreatedBy.LastName,
 		Email:     notification.CreatedBy.Email,
+	}
+
+	// Send push notification
+	pushService := services.GetPushNotificationService()
+	pushMessage := services.PushMessage{
+		Title:   notification.Title,
+		Message: notification.Message,
+		Icon:    "/pwa.png",
+		Tag:     fmt.Sprintf("notification-%d", notification.ID),
+		Data: map[string]interface{}{
+			"url":  notification.ActionURL,
+			"type": notification.Type,
+		},
+	}
+
+	// Send to specific user or all users
+	if notification.UserID != nil {
+		// Send to specific user
+		if err := pushService.SendPushNotification(*notification.UserID, pushMessage); err != nil {
+			log.Printf("Failed to send push notification: %v", err)
+		}
+	} else {
+		// Broadcast to all users
+		if err := pushService.SendPushNotificationToAll(pushMessage); err != nil {
+			log.Printf("Failed to send push notification to all: %v", err)
+		}
 	}
 
 	c.JSON(http.StatusCreated, response)

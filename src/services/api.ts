@@ -59,6 +59,14 @@ export interface RegisterRequest {
   phone: string;
 }
 
+export interface PushSubscription {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+}
+
 // Chat interfaces
 export interface Message {
   id: number;
@@ -1272,6 +1280,72 @@ class ApiService {
     });
   }
 
+  // Push Notification API methods
+  async subscribeToPush(subscription: PushSubscription): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/push/subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+        body: JSON.stringify(subscription),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'خطا در ثبت subscription');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      throw new Error(error.message || 'خطا در ثبت subscription');
+    }
+  }
+
+  async unsubscribeFromPush(endpoint: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/push/unsubscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+        body: JSON.stringify({ endpoint }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'خطا در لغو subscription');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      throw new Error(error.message || 'خطا در لغو subscription');
+    }
+  }
+
+  async sendTestPush(): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/push/test`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...this.getAuthHeaders(),
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'خطا در ارسال push تست');
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      throw new Error(error.message || 'خطا در ارسال push تست');
+    }
+  }
+
   // Notification API methods
   async getNotifications(params: {
     page?: number;
@@ -1546,6 +1620,65 @@ class ApiService {
         ...this.getAuthHeaders(),
       },
       body: JSON.stringify(data),
+    });
+  }
+
+  async getMatchingRatingsByUser(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/matching/ratings/user?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Matching Chat API methods
+  async getMatchingChatConversations(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/matching/chat/conversations?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getMatchingChatMessages(requestId: number, params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/matching/chat/${requestId}/messages?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async sendMatchingChatMessage(requestId: number, message: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/chat/${requestId}/send`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ message }),
     });
   }
 }

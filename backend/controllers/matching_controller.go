@@ -89,7 +89,7 @@ func (mc *MatchingController) CreateMatchingRequest(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message":         "درخواست Matching با موفقیت ایجاد شد. ویزیتورهای مناسب به زودی مطلع خواهند شد.",
+		"message":          "درخواست Matching با موفقیت ایجاد شد. ویزیتورهای مناسب به زودی مطلع خواهند شد.",
 		"matching_request": matchingRequest,
 	})
 }
@@ -140,7 +140,7 @@ func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 		remainingTime := ""
 		isExpired := false
 		if req.ExpiresAt.After(time.Now()) {
-			remaining := req.ExpiresAt.Sub(time.Now())
+			remaining := time.Until(req.ExpiresAt)
 			days := int(remaining.Hours() / 24)
 			hours := int(remaining.Hours()) % 24
 			remainingTime = fmt.Sprintf("%d روز و %d ساعت", days, hours)
@@ -175,10 +175,10 @@ func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":       responseRequests,
-		"total":      total,
-		"page":       page,
-		"per_page":   perPage,
+		"data":        responseRequests,
+		"total":       total,
+		"page":        page,
+		"per_page":    perPage,
 		"total_pages": (int(total) + perPage - 1) / perPage,
 	})
 }
@@ -232,7 +232,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 	remainingTime := ""
 	isExpired := false
 	if request.ExpiresAt.After(time.Now()) {
-		remaining := request.ExpiresAt.Sub(time.Now())
+		remaining := time.Until(request.ExpiresAt)
 		days := int(remaining.Hours() / 24)
 		hours := int(remaining.Hours()) % 24
 		remainingTime = fmt.Sprintf("%d روز و %d ساعت", days, hours)
@@ -245,7 +245,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 	var responseResponses []models.MatchingResponseResponse
 	for _, resp := range request.Responses {
 		responseResponses = append(responseResponses, models.MatchingResponseResponse{
-			ID:               resp.ID,
+			ID:                resp.ID,
 			MatchingRequestID: resp.MatchingRequestID,
 			VisitorID:         resp.VisitorID,
 			ResponseType:      resp.ResponseType,
@@ -275,7 +275,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 		AcceptedAt:           request.AcceptedAt,
 		RemainingTime:        remainingTime,
 		IsExpired:            isExpired,
-		Responses:             responseResponses,
+		Responses:            responseResponses,
 		CreatedAt:            request.CreatedAt,
 		UpdatedAt:            request.UpdatedAt,
 	}
@@ -523,7 +523,7 @@ func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 		remainingTime := ""
 		isExpired := false
 		if req.ExpiresAt.After(time.Now()) {
-			remaining := req.ExpiresAt.Sub(time.Now())
+			remaining := time.Until(req.ExpiresAt)
 			days := int(remaining.Hours() / 24)
 			hours := int(remaining.Hours()) % 24
 			remainingTime = fmt.Sprintf("%d روز و %d ساعت", days, hours)
@@ -824,8 +824,296 @@ func (mc *MatchingController) GetSuggestedVisitors(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":    responseVisitors,
-		"total":   len(responseVisitors),
+		"data":  responseVisitors,
+		"total": len(responseVisitors),
 	})
 }
 
+// GetMatchingChatMessages gets all messages for a matching chat
+func (mc *MatchingController) GetMatchingChatMessages(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	// Get or create chat
+	chat, err := models.GetOrCreateMatchingChat(mc.db, uint(requestID))
+	if err != nil {
+		if err == gorm.ErrInvalidValue {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "این درخواست accepted نشده است یا شما دسترسی ندارید",
+			})
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "چت یافت نشد"})
+		return
+	}
+
+	// Verify user has access to this chat
+	if chat.SupplierUserID != userIDUint && chat.VisitorUserID != userIDUint {
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این چت ندارید"})
+		return
+	}
+
+	// Get pagination params
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+
+	// Get messages
+	messages, total, err := models.GetMatchingChatMessages(mc.db, chat.ID, page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت پیام‌ها"})
+		return
+	}
+
+	// Mark messages as read
+	go models.MarkMatchingMessagesAsRead(mc.db, chat.ID, userIDUint)
+
+	// Convert to response format
+	var responseMessages []models.MatchingMessageResponse
+	for _, msg := range messages {
+		responseMessages = append(responseMessages, models.MatchingMessageResponse{
+			ID:             msg.ID,
+			MatchingChatID: msg.MatchingChatID,
+			SenderID:       msg.SenderID,
+			SenderName:     msg.Sender.Name(),
+			SenderType:     msg.SenderType,
+			Message:        msg.Message,
+			IsRead:         msg.IsRead,
+			ReadAt:         msg.ReadAt,
+			CreatedAt:      msg.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"messages": responseMessages,
+		"pagination": gin.H{
+			"page":        page,
+			"per_page":    perPage,
+			"total":       total,
+			"total_pages": (total + int64(perPage) - 1) / int64(perPage),
+		},
+	})
+}
+
+// SendMatchingChatMessage sends a message in a matching chat
+func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	// Get or create chat
+	chat, err := models.GetOrCreateMatchingChat(mc.db, uint(requestID))
+	if err != nil {
+		if err == gorm.ErrInvalidValue {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "این درخواست accepted نشده است",
+			})
+			return
+		}
+		c.JSON(http.StatusNotFound, gin.H{"error": "چت یافت نشد"})
+		return
+	}
+
+	// Determine sender type
+	var senderType string
+	if chat.SupplierUserID == userIDUint {
+		senderType = "supplier"
+	} else if chat.VisitorUserID == userIDUint {
+		senderType = "visitor"
+	} else {
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این چت ندارید"})
+		return
+	}
+
+	var req models.SendMatchingMessageRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "اطلاعات ارسالی نامعتبر است",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Create message
+	message, err := models.CreateMatchingMessage(mc.db, chat.ID, userIDUint, senderType, req.Message)
+	if err != nil {
+		if err == gorm.ErrInvalidValue {
+			c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این چت ندارید"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ارسال پیام"})
+		return
+	}
+
+	// Send push notification to the other party
+	pushService := services.GetPushNotificationService()
+	var recipientID uint
+	if senderType == "supplier" {
+		recipientID = chat.VisitorUserID
+	} else {
+		recipientID = chat.SupplierUserID
+	}
+
+	pushMessage := services.PushMessage{
+		Title:   "پیام جدید در چت Matching",
+		Message: fmt.Sprintf("پیام جدید از %s", message.Sender.Name()),
+		Icon:    "/pwa.png",
+		Tag:     fmt.Sprintf("matching-chat-%d", chat.ID),
+		Data: map[string]interface{}{
+			"url":  fmt.Sprintf("/matching/requests/%d/chat", requestID),
+			"type": "matching_chat",
+		},
+	}
+	go pushService.SendPushNotification(recipientID, pushMessage)
+
+	// Convert to response
+	response := models.MatchingMessageResponse{
+		ID:             message.ID,
+		MatchingChatID: message.MatchingChatID,
+		SenderID:       message.SenderID,
+		SenderName:     message.Sender.Name(),
+		SenderType:     message.SenderType,
+		Message:        message.Message,
+		IsRead:         message.IsRead,
+		ReadAt:         message.ReadAt,
+		CreatedAt:      message.CreatedAt,
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": response,
+	})
+}
+
+// GetMatchingChatConversations gets all chat conversations for the current user
+func (mc *MatchingController) GetMatchingChatConversations(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Get pagination params
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+
+	// Get chats
+	chats, total, err := models.GetMatchingChatsForUser(mc.db, userIDUint, page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت مکالمات"})
+		return
+	}
+
+	// Convert to response format
+	var responseChats []models.MatchingChatResponse
+	for _, chat := range chats {
+		// Get unread count
+		var unreadCount int64
+		mc.db.Model(&models.MatchingMessage{}).
+			Where("matching_chat_id = ? AND sender_id != ? AND is_read = ?", chat.ID, userIDUint, false).
+			Count(&unreadCount)
+
+		// Get last message
+		var lastMessage models.MatchingMessage
+		var lastMessageText string
+		var lastMessageAt *time.Time
+		if err := mc.db.Where("matching_chat_id = ?", chat.ID).
+			Order("created_at DESC").First(&lastMessage).Error; err == nil {
+			lastMessageText = lastMessage.Message
+			lastMessageAt = &lastMessage.CreatedAt
+		}
+
+		responseChats = append(responseChats, models.MatchingChatResponse{
+			ID:                chat.ID,
+			MatchingRequestID: chat.MatchingRequestID,
+			SupplierID:        chat.SupplierID,
+			SupplierName:      chat.Supplier.FullName,
+			VisitorID:         chat.VisitorID,
+			VisitorName:       chat.Visitor.FullName,
+			IsActive:          chat.IsActive,
+			LastMessage:       lastMessageText,
+			LastMessageAt:     lastMessageAt,
+			UnreadCount:       int(unreadCount),
+			CreatedAt:         chat.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"conversations": responseChats,
+		"pagination": gin.H{
+			"page":        page,
+			"per_page":    perPage,
+			"total":       total,
+			"total_pages": (total + int64(perPage) - 1) / int64(perPage),
+		},
+	})
+}
+
+// GetMatchingRatingsByUser gets all ratings for a user
+func (mc *MatchingController) GetMatchingRatingsByUser(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Get pagination params
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
+
+	// Get ratings
+	ratings, total, err := models.GetMatchingRatingsByUser(mc.db, userIDUint, page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت امتیازها"})
+		return
+	}
+
+	// Convert to response format
+	var responseRatings []models.MatchingRatingResponse
+	for _, rating := range ratings {
+		responseRatings = append(responseRatings, models.MatchingRatingResponse{
+			ID:                rating.ID,
+			MatchingRequestID: rating.MatchingRequestID,
+			RaterID:           rating.RaterID,
+			RaterType:         rating.RaterType,
+			RatedID:           rating.RatedID,
+			RatedType:         rating.RatedType,
+			Rating:            rating.Rating,
+			Comment:           rating.Comment,
+			CreatedAt:         rating.CreatedAt,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"ratings": responseRatings,
+		"pagination": gin.H{
+			"page":        page,
+			"per_page":    perPage,
+			"total":       total,
+			"total_pages": (total + int64(perPage) - 1) / int64(perPage),
+		},
+	})
+}

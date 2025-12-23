@@ -13,6 +13,7 @@ type Config struct {
 	CORS     CORSConfig     `mapstructure:"cors"`
 	OpenAI   OpenAIConfig   `mapstructure:"openai"`
 	SMS      SMSConfig      `mapstructure:"sms"`
+	Push     PushConfig     `mapstructure:"push"`
 }
 
 type ServerConfig struct {
@@ -52,6 +53,12 @@ type SMSConfig struct {
 	Originator              string `mapstructure:"originator"`
 	PatternCode             string `mapstructure:"pattern_code"`
 	PasswordRecoveryPattern string `mapstructure:"password_recovery_pattern"`
+}
+
+type PushConfig struct {
+	VAPIDPublicKey  string `mapstructure:"vapid_public_key"`
+	VAPIDPrivateKey string `mapstructure:"vapid_private_key"`
+	VAPIDSubject    string `mapstructure:"vapid_subject"` // mailto: or https://
 }
 
 var AppConfig *Config

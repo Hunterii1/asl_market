@@ -461,3 +461,260 @@ func CheckExpiredMatchingRequests(db *gorm.DB) error {
 		Where("accepted_visitor_id IS NULL").
 		Update("status", "expired").Error
 }
+
+// MatchingChat represents a chat conversation between supplier and visitor for a matching request
+type MatchingChat struct {
+	ID                uint            `json:"id" gorm:"primaryKey"`
+	MatchingRequestID uint            `json:"matching_request_id" gorm:"not null;index"`
+	MatchingRequest   MatchingRequest `json:"matching_request" gorm:"foreignKey:MatchingRequestID"`
+	SupplierID        uint            `json:"supplier_id" gorm:"not null;index"`
+	Supplier          Supplier        `json:"supplier" gorm:"foreignKey:SupplierID"`
+	VisitorID         uint            `json:"visitor_id" gorm:"not null;index"`
+	Visitor           Visitor         `json:"visitor" gorm:"foreignKey:VisitorID"`
+	SupplierUserID    uint            `json:"supplier_user_id" gorm:"not null;index"`
+	SupplierUser      User            `json:"supplier_user" gorm:"foreignKey:SupplierUserID"`
+	VisitorUserID     uint            `json:"visitor_user_id" gorm:"not null;index"`
+	VisitorUser       User            `json:"visitor_user" gorm:"foreignKey:VisitorUserID"`
+
+	// Chat status
+	IsActive bool `json:"is_active" gorm:"default:true"`
+
+	// Relations
+	Messages []MatchingMessage `json:"messages" gorm:"foreignKey:MatchingChatID"`
+
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// MatchingMessage represents a message in a matching chat
+type MatchingMessage struct {
+	ID             uint         `json:"id" gorm:"primaryKey"`
+	MatchingChatID uint         `json:"matching_chat_id" gorm:"not null;index"`
+	MatchingChat   MatchingChat `json:"matching_chat" gorm:"foreignKey:MatchingChatID"`
+	SenderID       uint         `json:"sender_id" gorm:"not null;index"` // User ID who sent the message
+	Sender         User         `json:"sender" gorm:"foreignKey:SenderID"`
+	SenderType     string       `json:"sender_type" gorm:"size:20;not null"` // "supplier" or "visitor"
+
+	// Message content
+	Message string `json:"message" gorm:"type:text;not null"`
+
+	// Read status
+	IsRead bool       `json:"is_read" gorm:"default:false"`
+	ReadAt *time.Time `json:"read_at"`
+
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// MatchingChatResponse represents a chat in API responses
+type MatchingChatResponse struct {
+	ID                uint       `json:"id"`
+	MatchingRequestID uint       `json:"matching_request_id"`
+	SupplierID        uint       `json:"supplier_id"`
+	SupplierName      string     `json:"supplier_name"`
+	VisitorID         uint       `json:"visitor_id"`
+	VisitorName       string     `json:"visitor_name"`
+	IsActive          bool       `json:"is_active"`
+	LastMessage       string     `json:"last_message,omitempty"`
+	LastMessageAt     *time.Time `json:"last_message_at,omitempty"`
+	UnreadCount       int        `json:"unread_count"`
+	CreatedAt         time.Time  `json:"created_at"`
+}
+
+// MatchingMessageResponse represents a message in API responses
+type MatchingMessageResponse struct {
+	ID             uint       `json:"id"`
+	MatchingChatID uint       `json:"matching_chat_id"`
+	SenderID       uint       `json:"sender_id"`
+	SenderName     string     `json:"sender_name"`
+	SenderType     string     `json:"sender_type"`
+	Message        string     `json:"message"`
+	IsRead         bool       `json:"is_read"`
+	ReadAt         *time.Time `json:"read_at"`
+	CreatedAt      time.Time  `json:"created_at"`
+}
+
+// CreateMatchingChatRequest represents request to create a chat
+type CreateMatchingChatRequest struct {
+	MatchingRequestID uint `json:"matching_request_id" binding:"required"`
+}
+
+// SendMatchingMessageRequest represents request to send a message
+type SendMatchingMessageRequest struct {
+	Message string `json:"message" binding:"required,min=1"`
+}
+
+// GetOrCreateMatchingChat gets or creates a chat for a matching request
+func GetOrCreateMatchingChat(db *gorm.DB, matchingRequestID uint) (*MatchingChat, error) {
+	// Get matching request
+	request, err := GetMatchingRequestByID(db, matchingRequestID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if request is accepted
+	if request.Status != "accepted" || request.AcceptedVisitorID == nil {
+		return nil, gorm.ErrInvalidValue
+	}
+
+	// Check if chat already exists
+	var chat MatchingChat
+	err = db.Where("matching_request_id = ?", matchingRequestID).
+		Preload("Supplier").Preload("Visitor").
+		Preload("SupplierUser").Preload("VisitorUser").
+		First(&chat).Error
+
+	if err == nil {
+		return &chat, nil
+	}
+
+	if err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	// Get visitor
+	var visitor Visitor
+	if err := db.First(&visitor, *request.AcceptedVisitorID).Error; err != nil {
+		return nil, err
+	}
+
+	// Create new chat
+	chat = MatchingChat{
+		MatchingRequestID: matchingRequestID,
+		SupplierID:        request.SupplierID,
+		VisitorID:         *request.AcceptedVisitorID,
+		SupplierUserID:    request.UserID,
+		VisitorUserID:     visitor.UserID,
+		IsActive:          true,
+	}
+
+	if err := db.Create(&chat).Error; err != nil {
+		return nil, err
+	}
+
+	// Preload relations
+	if err := db.Preload("Supplier").Preload("Visitor").
+		Preload("SupplierUser").Preload("VisitorUser").
+		First(&chat, chat.ID).Error; err != nil {
+		return nil, err
+	}
+
+	return &chat, nil
+}
+
+// GetMatchingChatMessages gets all messages for a chat
+func GetMatchingChatMessages(db *gorm.DB, chatID uint, page, perPage int) ([]MatchingMessage, int64, error) {
+	var messages []MatchingMessage
+	var total int64
+
+	query := db.Model(&MatchingMessage{}).Where("matching_chat_id = ?", chatID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := query.Preload("Sender").
+		Order("created_at ASC").
+		Offset(offset).Limit(perPage).Find(&messages).Error
+
+	return messages, total, err
+}
+
+// CreateMatchingMessage creates a new message in a chat
+func CreateMatchingMessage(db *gorm.DB, chatID uint, senderID uint, senderType string, message string) (*MatchingMessage, error) {
+	// Verify chat exists and user has access
+	var chat MatchingChat
+	if err := db.First(&chat, chatID).Error; err != nil {
+		return nil, err
+	}
+
+	// Verify sender is part of the chat
+	if senderType == "supplier" && chat.SupplierUserID != senderID {
+		return nil, gorm.ErrInvalidValue
+	}
+	if senderType == "visitor" && chat.VisitorUserID != senderID {
+		return nil, gorm.ErrInvalidValue
+	}
+
+	matchingMessage := MatchingMessage{
+		MatchingChatID: chatID,
+		SenderID:       senderID,
+		SenderType:     senderType,
+		Message:        message,
+		IsRead:         false,
+	}
+
+	if err := db.Create(&matchingMessage).Error; err != nil {
+		return nil, err
+	}
+
+	// Preload sender
+	if err := db.Preload("Sender").First(&matchingMessage, matchingMessage.ID).Error; err != nil {
+		return nil, err
+	}
+
+	// Update chat updated_at
+	db.Model(&chat).Update("updated_at", time.Now())
+
+	return &matchingMessage, nil
+}
+
+// MarkMatchingMessagesAsRead marks messages as read
+func MarkMatchingMessagesAsRead(db *gorm.DB, chatID uint, userID uint) error {
+	now := time.Now()
+	return db.Model(&MatchingMessage{}).
+		Where("matching_chat_id = ? AND sender_id != ? AND is_read = ?", chatID, userID, false).
+		Updates(map[string]interface{}{
+			"is_read": true,
+			"read_at": now,
+		}).Error
+}
+
+// GetMatchingChatsForUser gets all chats for a user
+func GetMatchingChatsForUser(db *gorm.DB, userID uint, page, perPage int) ([]MatchingChat, int64, error) {
+	var chats []MatchingChat
+	var total int64
+
+	query := db.Model(&MatchingChat{}).
+		Where("(supplier_user_id = ? OR visitor_user_id = ?) AND is_active = ?", userID, userID, true)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := query.Preload("MatchingRequest").
+		Preload("Supplier").Preload("Visitor").
+		Preload("SupplierUser").Preload("VisitorUser").
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Order("created_at DESC").Limit(1)
+		}).
+		Order("updated_at DESC").
+		Offset(offset).Limit(perPage).Find(&chats).Error
+
+	return chats, total, err
+}
+
+// GetMatchingRatingsByUser gets all ratings for a user
+func GetMatchingRatingsByUser(db *gorm.DB, userID uint, page, perPage int) ([]MatchingRating, int64, error) {
+	var ratings []MatchingRating
+	var total int64
+
+	query := db.Model(&MatchingRating{}).Where("rated_id = ?", userID)
+
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	offset := (page - 1) * perPage
+	err := query.Preload("MatchingRequest").
+		Preload("Rater").
+		Preload("Rated").
+		Order("created_at DESC").
+		Offset(offset).Limit(perPage).Find(&ratings).Error
+
+	return ratings, total, err
+}

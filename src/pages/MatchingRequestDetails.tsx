@@ -29,6 +29,7 @@ import {
   CalendarClock,
   Star
 } from "lucide-react";
+import { MatchingChat } from "@/components/MatchingChat";
 
 interface MatchingRequest {
   id: number;
@@ -576,6 +577,21 @@ export default function MatchingRequestDetails() {
                   این درخواست منقضی شده است.
                 </AlertDescription>
               </Alert>
+            )}
+
+            {/* Chat Section - Only for accepted requests */}
+            {request.status === 'accepted' && (
+              <Card className="border-blue-200 dark:border-blue-800">
+                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-blue-600" />
+                    چت با {isSupplier ? request.accepted_visitor?.full_name : request.supplier?.full_name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <MatchingChat requestId={request.id} />
+                </CardContent>
+              </Card>
             )}
           </CardContent>
         </Card>

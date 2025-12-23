@@ -50,3 +50,10 @@ sms:
   originator: "+9850002040000000"
   pattern_code: "9i276pvpwvuj40w"
   password_recovery_pattern: "gvqto0pk77stx2t"
+
+push:
+  # Firebase VAPID Public Key
+  vapid_public_key: "BOU4y6g5J16DjSRy5ybfM3_LiFeWTsoY8kx7ESQPNvz5OhHe3r-09XaTnyyuzHFhbrOp9DINikXHCLgHNZTQQzc"
+  # Firebase VAPID Private Key
+  vapid_private_key: "COwX4A6BaINVy-2XkoURUR0A0owtWgZLepFSDMZDij4"
+  vapid_subject: "mailto:rapexamrs@gmail.com"

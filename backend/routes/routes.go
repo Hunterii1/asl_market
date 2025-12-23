@@ -21,6 +21,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	supportTicketController := controllers.NewSupportTicketController()
 	publicRegistrationController := controllers.NewPublicRegistrationController(models.GetDB())
 	matchingController := controllers.NewMatchingController(models.GetDB())
+	pushController := controllers.NewPushController(models.GetDB())
 
 	// Initialize OpenAI monitor
 	openaiMonitor := services.NewOpenAIMonitor(telegramService)
@@ -250,6 +251,12 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
 		protected.GET("/notifications/unread-count", controllers.GetUnreadNotificationCount)
 
+		// Push Notification routes
+		protected.GET("/push/vapid-key", pushController.GetVAPIDPublicKey)
+		protected.POST("/push/subscribe", pushController.Subscribe)
+		protected.POST("/push/unsubscribe", pushController.Unsubscribe)
+		protected.POST("/push/test", pushController.SendTestPush)
+
 		// Matching routes (Supplier)
 		protected.POST("/matching/requests", matchingController.CreateMatchingRequest)
 		protected.GET("/matching/requests", matchingController.GetMyMatchingRequests)
@@ -265,6 +272,12 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 		// Matching rating routes
 		protected.POST("/matching/requests/:id/rating", matchingController.CreateMatchingRating)
+		protected.GET("/matching/ratings/user", matchingController.GetMatchingRatingsByUser)
+
+		// Matching chat routes
+		protected.GET("/matching/chat/conversations", matchingController.GetMatchingChatConversations)
+		protected.GET("/matching/chat/:id/messages", matchingController.GetMatchingChatMessages)
+		protected.POST("/matching/chat/:id/send", matchingController.SendMatchingChatMessage)
 
 		// License-protected routes
 		licensed := protected.Group("/")

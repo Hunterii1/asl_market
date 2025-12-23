@@ -247,6 +247,22 @@ func (s *MatchingService) SendMatchingNotifications(matchingRequest *models.Matc
 			if err := s.db.Create(&inAppNotification).Error; err != nil {
 				log.Printf("Failed to create in-app notification: %v", err)
 			}
+
+			// Send push notification
+			pushService := GetPushNotificationService()
+			pushMessage := PushMessage{
+				Title:   "درخواست Matching جدید",
+				Message: fmt.Sprintf("درخواست جدید برای فروش %s در %s", matchingRequest.ProductName, matchingRequest.DestinationCountries),
+				Icon:    "/pwa.png",
+				Tag:     fmt.Sprintf("matching-%d", matchingRequest.ID),
+				Data: map[string]interface{}{
+					"url":  fmt.Sprintf("/matching/requests/%d", matchingRequest.ID),
+					"type": "matching",
+				},
+			}
+			if err := pushService.SendPushNotification(visitorUserID, pushMessage); err != nil {
+				log.Printf("Failed to send push notification: %v", err)
+			}
 		}
 
 		// Send Telegram notification to admin (optional)

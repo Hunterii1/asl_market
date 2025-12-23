@@ -45,6 +45,8 @@ import CreateMatchingRequest from "./pages/CreateMatchingRequest";
 import MyMatchingRequests from "./pages/MyMatchingRequests";
 import AvailableMatchingRequests from "./pages/AvailableMatchingRequests";
 import MatchingRequestDetails from "./pages/MatchingRequestDetails";
+import MatchingChats from "./pages/MatchingChats";
+import MatchingRatings from "./pages/MatchingRatings";
 
 
 const queryClient = new QueryClient();
@@ -228,6 +230,20 @@ const App = () => (
                 <ProtectedRoute>
                   <LicenseRequiredRoute>
                     <MatchingRequestDetails />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/matching/chats" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <MatchingChats />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/matching/ratings" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <MatchingRatings />
                   </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />

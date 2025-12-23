@@ -64,4 +64,86 @@ self.addEventListener('activate', function(event) {
       );
     })
   );
+  // Claim clients immediately
+  return self.clients.claim();
+});
+
+// Push notification event listener
+self.addEventListener('push', function(event) {
+  console.log('Push notification received:', event);
+  
+  let notificationData = {
+    title: 'ASL Market',
+    body: 'شما یک نوتیفیکیشن جدید دارید',
+    icon: '/pwa.png',
+    badge: '/pwa.png',
+    tag: 'notification',
+    data: {
+      url: '/'
+    }
+  };
+
+  if (event.data) {
+    try {
+      const data = event.data.json();
+      notificationData = {
+        title: data.title || notificationData.title,
+        body: data.message || data.body || notificationData.body,
+        icon: data.icon || notificationData.icon,
+        badge: data.badge || notificationData.badge,
+        tag: data.tag || notificationData.tag,
+        data: data.data || notificationData.data,
+        requireInteraction: data.priority === 'high' || data.priority === 'urgent',
+        vibrate: data.priority === 'urgent' ? [200, 100, 200] : [200]
+      };
+    } catch (e) {
+      console.error('Error parsing push data:', e);
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(notificationData.title, {
+      body: notificationData.body,
+      icon: notificationData.icon,
+      badge: notificationData.badge,
+      tag: notificationData.tag,
+      data: notificationData.data,
+      requireInteraction: notificationData.requireInteraction,
+      vibrate: notificationData.vibrate,
+      actions: notificationData.actions || []
+    })
+  );
+});
+
+// Notification click event listener
+self.addEventListener('notificationclick', function(event) {
+  console.log('Notification clicked:', event);
+  
+  event.notification.close();
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then(function(clientList) {
+      // Check if there's already a window/tab open with the target URL
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        if (client.url === urlToOpen && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // If not, open a new window/tab
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
+  );
+});
+
+// Notification close event listener
+self.addEventListener('notificationclose', function(event) {
+  console.log('Notification closed:', event);
 });
