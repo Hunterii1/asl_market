@@ -312,20 +312,6 @@ const HeaderAuth = () => {
                 {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
               </Badge>
             )}
-            
-            {/* Matching System Button - Always Visible */}
-            {currentLicenseStatus?.is_approved && (
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
-                onClick={() => navigate(hasSupplier ? '/matching/create' : hasVisitor ? '/matching/available-requests' : '/matching/chats')}
-                title="سیستم Matching"
-              >
-                <span className="text-xs sm:text-sm font-semibold">Matching</span>
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-              </Button>
-            )}
 
             {/* My Products Button */}
             <Button 
@@ -351,13 +337,13 @@ const HeaderAuth = () => {
               <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">پشتیبانی</span>
             </Button>
 
-            {/* Notifications */}
+            {/* Notifications - Prominent */}
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative hidden sm:flex">
-                  <Bell className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
+                <Button variant="ghost" size="sm" className="relative flex items-center gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors">
+                  <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-muted-foreground" />
                   {unreadCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 text-xs bg-orange-500 text-white rounded-full p-0 flex items-center justify-center">
+                    <Badge className="bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-[20px] flex items-center justify-center">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </Badge>
                   )}
