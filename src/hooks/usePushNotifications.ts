@@ -7,11 +7,13 @@ export function usePushNotifications() {
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasPermission, setHasPermission] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     setIsSupported(fcmNotificationService.isSupported());
+    setHasPermission(fcmNotificationService.hasPermission());
     checkSubscription();
     
     // Setup foreground message handler
@@ -52,12 +54,14 @@ export function usePushNotifications() {
       const token = await fcmNotificationService.subscribe();
       if (token) {
         setIsSubscribed(true);
+        setHasPermission(fcmNotificationService.hasPermission());
         toast({
           title: 'موفقیت',
           description: 'Push Notifications با موفقیت فعال شد',
         });
         return true;
       } else {
+        setHasPermission(fcmNotificationService.hasPermission());
         toast({
           variant: 'destructive',
           title: 'خطا',
@@ -66,6 +70,7 @@ export function usePushNotifications() {
         return false;
       }
     } catch (error: any) {
+      setHasPermission(fcmNotificationService.hasPermission());
       toast({
         variant: 'destructive',
         title: 'خطا',
@@ -136,7 +141,7 @@ export function usePushNotifications() {
     subscribe,
     unsubscribe,
     sendTest,
-    hasPermission: fcmNotificationService.hasPermission(),
+    hasPermission,
   };
 }
 

@@ -24,31 +24,50 @@ export function NotificationPermissionPrompt() {
 
   useEffect(() => {
     // Check permission status
-    if ('Notification' in window) {
-      const currentPermission = Notification.permission;
-      setPermissionStatus(currentPermission);
-      
-      // Don't show if already dismissed in this session
-      if (sessionStorage.getItem('notification-prompt-dismissed') === 'true') {
-        return;
+    const checkPermission = () => {
+      if ('Notification' in window) {
+        const currentPermission = Notification.permission;
+        setPermissionStatus(currentPermission);
+        
+        // Don't show if already dismissed in this session
+        if (sessionStorage.getItem('notification-prompt-dismissed') === 'true') {
+          return;
+        }
+        
+        // Don't show if permission is granted
+        if (currentPermission === 'granted' || hasPermission) {
+          setShowPrompt(false);
+          return;
+        }
+        
+        // Show prompt if permission is default (not asked yet) or denied
+        if (currentPermission === 'default') {
+          // Wait a bit before showing prompt (after user has seen the page)
+          const timer = setTimeout(() => {
+            setShowPrompt(true);
+          }, 3000);
+          return () => clearTimeout(timer);
+        } else if (currentPermission === 'denied') {
+          // Show info about how to enable if denied (after a longer delay)
+          const timer = setTimeout(() => {
+            setShowPrompt(true);
+          }, 5000);
+          return () => clearTimeout(timer);
+        }
       }
-      
-      // Show prompt if permission is default (not asked yet) or denied
-      if (currentPermission === 'default') {
-        // Wait a bit before showing prompt (after user has seen the page)
-        const timer = setTimeout(() => {
-          setShowPrompt(true);
-        }, 3000);
-        return () => clearTimeout(timer);
-      } else if (currentPermission === 'denied') {
-        // Show info about how to enable if denied (after a longer delay)
-        const timer = setTimeout(() => {
-          setShowPrompt(true);
-        }, 5000);
-        return () => clearTimeout(timer);
+    };
+    
+    checkPermission();
+    
+    // Listen for permission changes
+    const interval = setInterval(() => {
+      if ('Notification' in window && Notification.permission !== permissionStatus) {
+        checkPermission();
       }
-    }
-  }, []);
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [permissionStatus, hasPermission]);
 
   const handleRequestPermission = async () => {
     setIsRequesting(true);
