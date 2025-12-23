@@ -11,9 +11,9 @@ type PushSubscription struct {
 	ID        uint           `json:"id" gorm:"primaryKey"`
 	UserID    uint           `json:"user_id" gorm:"not null;index"`
 	User      User           `json:"user" gorm:"foreignKey:UserID"`
-	Endpoint  string         `json:"endpoint" gorm:"type:text;not null;index"` // Can be FCM token or WebPush endpoint
-	P256dh    string         `json:"p256dh" gorm:"type:text"`                  // Optional for FCM
-	Auth      string         `json:"auth" gorm:"type:text"`                    // Optional for FCM
+	Endpoint  string         `json:"endpoint" gorm:"type:text;not null"` // Can be FCM token or WebPush endpoint (no index on TEXT in MySQL)
+	P256dh    string         `json:"p256dh" gorm:"type:text"`            // Optional for FCM
+	Auth      string         `json:"auth" gorm:"type:text"`              // Optional for FCM
 	UserAgent string         `json:"user_agent" gorm:"size:500"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -79,4 +79,3 @@ func DeletePushSubscription(db *gorm.DB, userID uint, endpoint string) error {
 	return db.Where("user_id = ? AND endpoint = ?", userID, endpoint).
 		Delete(&PushSubscription{}).Error
 }
-
