@@ -123,8 +123,8 @@ export default function MatchingChats() {
                 onClick={loadConversations}
                 disabled={loading}
               >
-                <RefreshCw className={`w-4 h-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
                 بروزرسانی
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </CardHeader>

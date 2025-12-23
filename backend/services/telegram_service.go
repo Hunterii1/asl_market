@@ -6737,6 +6737,32 @@ func (s *TelegramService) createNotification(chatID int64, data map[string]inter
 		return
 	}
 
+	// Send FCM push notification
+	pushService := GetPushNotificationService()
+	pushMessage := PushMessage{
+		Title:   notification.Title,
+		Message: notification.Message,
+		Icon:    "/pwa.png",
+		Tag:     fmt.Sprintf("notification-%d", notification.ID),
+		Data: map[string]interface{}{
+			"url":  notification.ActionURL,
+			"type": notification.Type,
+		},
+	}
+
+	// Send to specific user or all users
+	if notification.UserID != nil {
+		// Send to specific user
+		if err := pushService.SendPushNotification(*notification.UserID, pushMessage); err != nil {
+			log.Printf("Failed to send FCM push notification to user %d: %v", *notification.UserID, err)
+		}
+	} else {
+		// Broadcast to all users
+		if err := pushService.SendPushNotificationToAll(pushMessage); err != nil {
+			log.Printf("Failed to send FCM push notification to all users: %v", err)
+		}
+	}
+
 	// Clear session state
 	sessionMutex.Lock()
 	delete(sessionStates, chatID)
@@ -6755,7 +6781,7 @@ func (s *TelegramService) createNotification(chatID int64, data map[string]inter
 		"• نوع: %s\n"+
 		"• اولویت: %s\n"+
 		"• مخاطب: %s\n\n"+
-		"📱 نوتیفیکیشن در header کاربران نمایش داده خواهد شد.",
+		"📱 نوتیفیکیشن در header کاربران و از طریق FCM Push ارسال شد.",
 		notification.ID, notification.Title, notification.Type, notification.Priority, targetText)
 
 	msg := tgbotapi.NewMessage(chatID, successMsg)

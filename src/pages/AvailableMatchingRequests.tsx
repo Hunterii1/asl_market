@@ -106,8 +106,8 @@ export default function AvailableMatchingRequests() {
                 </p>
               </div>
               <Button variant="outline" onClick={loadRequests} disabled={loading}>
-                <RefreshCw className={`w-4 h-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
                 بروزرسانی
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </CardHeader>
@@ -265,7 +265,7 @@ export default function AvailableMatchingRequests() {
                               disabled={request.is_expired}
                               size="lg"
                             >
-                              <Eye className="w-4 h-4 ml-2" />
+                              <Eye className="w-4 h-4 mr-2" />
                               مشاهده و پاسخ
                             </Button>
                             {request.is_expired && (

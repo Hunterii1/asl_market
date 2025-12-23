@@ -322,8 +322,8 @@ const HeaderAuth = () => {
                 onClick={() => navigate(hasSupplier ? '/matching/create' : hasVisitor ? '/matching/available-requests' : '/matching/chats')}
                 title="سیستم Matching"
               >
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="text-xs sm:text-sm font-semibold">Matching</span>
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               </Button>
             )}
 
@@ -461,11 +461,6 @@ const HeaderAuth = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
-                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
-                      {user ? getInitials(user.first_name, user.last_name) : "U"}
-                    </AvatarFallback>
-                  </Avatar>
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-medium text-foreground">
                       {user ? `${user.first_name} ${user.last_name}` : "کاربر"}
@@ -474,6 +469,11 @@ const HeaderAuth = () => {
                       {user?.email || "user@example.com"}
                     </p>
                   </div>
+                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
+                      {user ? getInitials(user.first_name, user.last_name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
@@ -493,7 +493,7 @@ const HeaderAuth = () => {
                   className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                   onClick={() => navigate('/edit-profile')}
                 >
-                  <User className="w-4 h-4 ml-2" />
+                  <User className="w-4 h-4 mr-2" />
                   ویرایش پروفایل
                 </DropdownMenuItem>
                 
@@ -503,7 +503,7 @@ const HeaderAuth = () => {
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                     onClick={() => navigate('/visitor-status')}
                   >
-                    <UserCheck className="w-4 h-4 ml-2" />
+                    <UserCheck className="w-4 h-4 mr-2" />
                     وضعیت ویزیتور
                   </DropdownMenuItem>
                 )}
@@ -514,7 +514,7 @@ const HeaderAuth = () => {
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                     onClick={() => navigate('/supplier-status')}
                   >
-                    <Building className="w-4 h-4 ml-2" />
+                    <Building className="w-4 h-4 mr-2" />
                     وضعیت تأمین‌کننده
                   </DropdownMenuItem>
                 )}
@@ -524,7 +524,7 @@ const HeaderAuth = () => {
                     className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                     onClick={() => navigate('/license-info')}
                   >
-                    <Shield className="w-4 h-4 ml-2" />
+                    <Shield className="w-4 h-4 mr-2" />
                     اطلاعات لایسنس
                   </DropdownMenuItem>
                 )}
@@ -542,14 +542,14 @@ const HeaderAuth = () => {
                           className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                           onClick={() => navigate('/matching/create')}
                         >
-                          <PlusCircle className="w-4 h-4 ml-2" />
+                          <PlusCircle className="w-4 h-4 mr-2" />
                           ایجاد درخواست Matching
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                           className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                           onClick={() => navigate('/matching/my-requests')}
                         >
-                          <List className="w-4 h-4 ml-2" />
+                          <List className="w-4 h-4 mr-2" />
                           درخواست‌های من
                         </DropdownMenuItem>
                       </>
@@ -561,7 +561,7 @@ const HeaderAuth = () => {
                         className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                         onClick={() => navigate('/matching/available-requests')}
                       >
-                        <Package className="w-4 h-4 ml-2" />
+                        <Package className="w-4 h-4 mr-2" />
                         درخواست‌های موجود
                       </DropdownMenuItem>
                     )}
@@ -571,14 +571,14 @@ const HeaderAuth = () => {
                       className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                       onClick={() => navigate('/matching/chats')}
                     >
-                      <MessageCircle className="w-4 h-4 ml-2" />
+                      <MessageCircle className="w-4 h-4 mr-2" />
                       مکالمات Matching
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
                       onClick={() => navigate('/matching/ratings')}
                     >
-                      <Star className="w-4 h-4 ml-2" />
+                      <Star className="w-4 h-4 mr-2" />
                       امتیازهای Matching
                     </DropdownMenuItem>
                   </>
@@ -588,7 +588,7 @@ const HeaderAuth = () => {
                   onClick={handleLogout}
                   className="text-red-400 hover:bg-red-500/10 rounded-xl cursor-pointer"
                 >
-                  <LogOut className="w-4 h-4 ml-2" />
+                  <LogOut className="w-4 h-4 mr-2" />
                   خروج
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -137,8 +137,8 @@ export default function MatchingRatings() {
                 }}
                 disabled={loading}
               >
-                <RefreshCw className={`w-4 h-4 ml-2 ${loading ? 'animate-spin' : ''}`} />
                 بروزرسانی
+                <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               </Button>
             </div>
           </CardHeader>
@@ -217,7 +217,7 @@ export default function MatchingRatings() {
                     >
                       {loading ? (
                         <>
-                          <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           در حال بارگذاری...
                         </>
                       ) : (

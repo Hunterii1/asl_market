@@ -470,7 +470,7 @@ export default function MatchingRequestDetails() {
                             setShowResponseDialog(true);
                           }}
                         >
-                          <CheckCircle className="w-5 h-5 ml-2" />
+                          <CheckCircle className="w-5 h-5 mr-2" />
                           پذیرش درخواست
                         </Button>
                       </DialogTrigger>
@@ -539,13 +539,13 @@ export default function MatchingRequestDetails() {
                             >
                               {responding ? (
                                 <>
-                                  <RefreshCw className="w-4 h-4 ml-2 animate-spin" />
                                   در حال ارسال...
+                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                                 </>
                               ) : (
                                 <>
-                                  <Send className="w-4 h-4 ml-2" />
                                   ارسال پاسخ
+                                  <Send className="w-4 h-4 mr-2" />
                                 </>
                               )}
                             </Button>
