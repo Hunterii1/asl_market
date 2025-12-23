@@ -20,6 +20,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	spotPlayerController := controllers.NewSpotPlayerController()
 	supportTicketController := controllers.NewSupportTicketController()
 	publicRegistrationController := controllers.NewPublicRegistrationController(models.GetDB())
+	matchingController := controllers.NewMatchingController(models.GetDB())
 
 	// Initialize OpenAI monitor
 	openaiMonitor := services.NewOpenAIMonitor(telegramService)
@@ -248,6 +249,22 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/notifications/:id/read", controllers.MarkNotificationAsRead)
 		protected.POST("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
 		protected.GET("/notifications/unread-count", controllers.GetUnreadNotificationCount)
+
+		// Matching routes (Supplier)
+		protected.POST("/matching/requests", matchingController.CreateMatchingRequest)
+		protected.GET("/matching/requests", matchingController.GetMyMatchingRequests)
+		protected.GET("/matching/requests/:id", matchingController.GetMatchingRequestDetails)
+		protected.PUT("/matching/requests/:id", matchingController.UpdateMatchingRequest)
+		protected.DELETE("/matching/requests/:id", matchingController.CancelMatchingRequest)
+		protected.POST("/matching/requests/:id/extend", matchingController.ExtendMatchingRequest)
+		protected.GET("/matching/requests/:id/suggested-visitors", matchingController.GetSuggestedVisitors)
+
+		// Matching routes (Visitor)
+		protected.GET("/matching/available-requests", matchingController.GetAvailableMatchingRequests)
+		protected.POST("/matching/requests/:id/respond", matchingController.RespondToMatchingRequest)
+
+		// Matching rating routes
+		protected.POST("/matching/requests/:id/rating", matchingController.CreateMatchingRating)
 
 		// License-protected routes
 		licensed := protected.Group("/")

@@ -41,6 +41,10 @@ import SupportTicket from "./pages/SupportTicket";
 import EditProfile from "./pages/EditProfile";
 import EditVisitor from "./pages/EditVisitor";
 import EditSupplier from "./pages/EditSupplier";
+import CreateMatchingRequest from "./pages/CreateMatchingRequest";
+import MyMatchingRequests from "./pages/MyMatchingRequests";
+import AvailableMatchingRequests from "./pages/AvailableMatchingRequests";
+import MatchingRequestDetails from "./pages/MatchingRequestDetails";
 
 
 const queryClient = new QueryClient();
@@ -195,6 +199,36 @@ const App = () => (
               <Route path="/support" element={
                 <ProtectedRoute>
                   <SupportTicket />
+                </ProtectedRoute>
+              } />
+
+              {/* Matching routes */}
+              <Route path="/matching/create" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <CreateMatchingRequest />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/matching/my-requests" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <MyMatchingRequests />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/matching/available-requests" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <AvailableMatchingRequests />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/matching/requests/:id" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <MatchingRequestDetails />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               

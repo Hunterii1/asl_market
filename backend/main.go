@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"asl-market-backend/config"
 	"asl-market-backend/models"
@@ -77,6 +78,20 @@ func main() {
 
 		c.Next()
 	})
+
+	// Start matching expiration checker in background
+	go func() {
+		matchingService := services.NewMatchingService(models.GetDB())
+		ticker := time.NewTicker(1 * time.Hour) // Check every hour
+		defer ticker.Stop()
+		
+		// Run immediately on startup
+		matchingService.CheckAndExpireRequests()
+		
+		for range ticker.C {
+			matchingService.CheckAndExpireRequests()
+		}
+	}()
 
 	// Setup routes
 	routes.SetupRoutes(router, telegramService)

@@ -1404,6 +1404,150 @@ class ApiService {
       body: JSON.stringify({ image_path: imagePath }),
     });
   }
+
+  // Matching API methods (Supplier)
+  async createMatchingRequest(data: {
+    product_name: string;
+    product_id?: number;
+    quantity: string;
+    unit: string;
+    destination_countries: string;
+    price: string;
+    currency: string;
+    payment_terms?: string;
+    delivery_time?: string;
+    description?: string;
+    expires_at: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyMatchingRequests(params: {
+    page?: number;
+    per_page?: number;
+    status?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.status) queryParams.append('status', params.status);
+
+    return this.makeRequest(`${API_BASE_URL}/matching/requests?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getMatchingRequestDetails(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateMatchingRequest(id: number, data: {
+    product_name?: string;
+    product_id?: number;
+    quantity?: string;
+    unit?: string;
+    destination_countries?: string;
+    price?: string;
+    currency?: string;
+    payment_terms?: string;
+    delivery_time?: string;
+    description?: string;
+    expires_at?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelMatchingRequest(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async extendMatchingRequest(id: number, expiresAt: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}/extend`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ expires_at: expiresAt }),
+    });
+  }
+
+  async getSuggestedVisitors(requestId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${requestId}/suggested-visitors`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Matching API methods (Visitor)
+  async getAvailableMatchingRequests(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/matching/available-requests?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async respondToMatchingRequest(id: number, data: {
+    response_type: 'accepted' | 'rejected' | 'question';
+    message?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}/respond`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Matching rating
+  async createMatchingRating(id: number, data: {
+    rating: number;
+    comment?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}/rating`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const apiService = new ApiService();
