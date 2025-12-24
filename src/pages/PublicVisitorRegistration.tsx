@@ -74,13 +74,28 @@ const PublicVisitorRegistration = () => {
   });
 
   const countries = [
-    { code: "AE", name: "امارات متحده عربی", cities: ["دبی", "ابوظبی", "شارجه", "عجمان"] },
-    { code: "SA", name: "عربستان سعودی", cities: ["ریاض", "جده", "دمام", "مکه"] },
-    { code: "KW", name: "کویت", cities: ["کویت سیتی", "الاحمدی", "حولی"] },
-    { code: "QA", name: "قطر", cities: ["دوحه", "الریان", "الوکره"] },
-    { code: "BH", name: "بحرین", cities: ["منامه", "المحرق", "مدینه حمد"] },
-    { code: "OM", name: "عمان", cities: ["مسقط", "صلاله", "نزوا"] }
+    { code: "AE", name: "امارات متحده عربی", cities: ["دبی", "ابوظبی", "شارجه", "عجمان", "راس الخیمه", "فجیره", "ام القوین"] },
+    { code: "SA", name: "عربستان سعودی", cities: ["ریاض", "جده", "دمام", "مکه", "مدینه", "طائف", "خبر"] },
+    { code: "KW", name: "کویت", cities: ["کویت سیتی", "الاحمدی", "حولی", "الفروانیه", "الجهراء"] },
+    { code: "QA", name: "قطر", cities: ["دوحه", "الریان", "الوکره", "الخور", "دخان"] },
+    { code: "BH", name: "بحرین", cities: ["منامه", "المحرق", "مدینه حمد", "ستره", "رفاع"] },
+    { code: "OM", name: "عمان", cities: ["مسقط", "صلاله", "نزوا", "صور", "صحار"] },
+    { code: "YE", name: "یمن", cities: ["صنعا", "عدن", "تعز", "حدیده"] },
+    { code: "JO", name: "اردن", cities: ["عمان", "زرقا", "اربد", "عقبه"] },
+    { code: "LB", name: "لبنان", cities: ["بیروت", "طرابلس", "صیدا", "صور"] },
+    { code: "IQ", name: "عراق", cities: ["بغداد", "بصره", "موصل", "کربلا"] },
+    { code: "EG", name: "مصر", cities: ["قاهره", "اسکندریه", "جیزه", "شرم الشیخ"] }
   ];
+
+  // Generate all city-country combinations for easy selection
+  const cityCountryOptions = countries.flatMap(country => 
+    country.cities.map(city => ({
+      value: `${city} ${country.name}`,
+      label: `${city} ${country.name}`,
+      city: city,
+      country: country.name
+    }))
+  );
 
   const languageLevels = [
     { id: "excellent", name: "عالی" },
@@ -102,10 +117,14 @@ const PublicVisitorRegistration = () => {
     }));
   };
 
-  // List of Arabic countries (only these are allowed)
+  // List of Arabic countries (only these are allowed) - expanded and flexible
   const arabicCountries = [
-    "عمان", "امارات", "امارات متحده عربی", "عربستان", "عربستان سعودی", "سعودی",
-    "کویت", "قطر", "بحرین", "یمن", "اردن", "سوریه", "لبنان", 
+    "عمان", "امارات", "امارات متحده عربی", "امارات متحده", "دبی", "ابوظبی", "شارجه", "عجمان",
+    "عربستان", "عربستان سعودی", "سعودی", "ریاض", "جده", "دمام", "مکه",
+    "کویت", "کویت سیتی", "الاحمدی", "حولی",
+    "قطر", "دوحه", "الریان", "الوکره",
+    "بحرین", "منامه", "المحرق", "مدینه حمد",
+    "یمن", "اردن", "سوریه", "لبنان", 
     "عراق", "فلسطین", "مصر", "لیبی", "تونس", "الجزایر", "مراکش", "سودان"
   ];
 
@@ -136,9 +155,19 @@ const PublicVisitorRegistration = () => {
     );
   };
 
-  // Validate that location is Arabic and not Iranian
+  // Validate that location is Arabic and not Iranian - SIMPLIFIED and FLEXIBLE
   const validateArabicLocation = (location: string, fieldName: string): boolean => {
     const locationLower = location.toLowerCase().trim();
+    
+    // Empty check
+    if (!locationLower) {
+      toast({
+        title: "اطلاعات ناقص",
+        description: `لطفا ${fieldName} را وارد کنید`,
+        variant: "destructive",
+      });
+      return false;
+    }
     
     // Check if Iranian (strict - reject immediately)
     if (isIranianLocation(location)) {
@@ -150,12 +179,18 @@ const PublicVisitorRegistration = () => {
       return false;
     }
     
-    // Check if contains Arabic country
-    if (!isArabicCountry(location)) {
+    // FLEXIBLE CHECK: Check if contains ANY Arabic country or city
+    // This allows formats like: "دبی امارات", "مسقط عمان", "ریاض", "دبی", etc.
+    const containsArabic = arabicCountries.some(country => 
+      locationLower.includes(country.toLowerCase())
+    );
+    
+    if (!containsArabic) {
       toast({
         title: "مکان نامعتبر",
-        description: `${fieldName} باید از کشورهای عربی باشد (مثل: مسقط عمان، دبی امارات، ریاض عربستان). ویزیتورهای ایرانی پذیرفته نمی‌شوند.`,
+        description: `${fieldName} باید شامل نام یک کشور یا شهر عربی باشد.\n\nمثال‌های صحیح:\n• دبی امارات\n• مسقط عمان\n• ریاض عربستان\n• دوحه قطر`,
         variant: "destructive",
+        duration: 6000,
       });
       return false;
     }
@@ -182,7 +217,21 @@ const PublicVisitorRegistration = () => {
     }
 
     // Validate destination cities (split by comma, dash, space, or any separator)
-    const destinations = formData.destination_cities.split(/[،,\-\s]+/).map(d => d.trim()).filter(d => d);
+    // More flexible splitting - handle both Persian and English commas
+    const destinations = formData.destination_cities
+      .split(/[،,\-\s\n]+/)
+      .map(d => d.trim())
+      .filter(d => d.length > 0);
+    
+    if (destinations.length === 0) {
+      toast({
+        title: "اطلاعات ناقص",
+        description: "لطفا حداقل یک شهر مقصد وارد کنید",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     for (const dest of destinations) {
       if (!validateArabicLocation(dest, "شهرهای مقصد")) {
         return;
@@ -386,30 +435,104 @@ const PublicVisitorRegistration = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="city_province">شهر/استان *</Label>
-          <Input
-            id="city_province"
-            value={formData.city_province}
-            onChange={(e) => updateFormData('city_province', e.target.value)}
-            placeholder="شهر و استان محل سکونت"
-            required
-            className="text-right"
-            dir="rtl"
-          />
+          <Label htmlFor="city_province">شهر و کشور محل سکونت *</Label>
+          <div className="flex gap-2">
+            <Select
+              value={formData.city_province}
+              onValueChange={(value) => updateFormData('city_province', value)}
+            >
+              <SelectTrigger className="flex-1 text-right" dir="rtl">
+                <SelectValue placeholder="انتخاب شهر و کشور" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]" dir="rtl">
+                {countries.map((country) => (
+                  <div key={country.code}>
+                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                      {country.name}
+                    </div>
+                    {country.cities.map((city) => {
+                      const fullValue = `${city} ${country.name}`;
+                      return (
+                        <SelectItem key={fullValue} value={fullValue} className="text-right">
+                          {fullValue}
+                        </SelectItem>
+                      );
+                    })}
+                  </div>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              id="city_province_manual"
+              value={formData.city_province}
+              onChange={(e) => updateFormData('city_province', e.target.value)}
+              placeholder="یا تایپ کنید..."
+              className="flex-1 text-right"
+              dir="rtl"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            می‌توانید از لیست انتخاب کنید یا به صورت دستی تایپ کنید (مثال: دبی امارات)
+          </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="destination_cities">شهرهای مقصد *</Label>
-          <Textarea
-            id="destination_cities"
-            value={formData.destination_cities}
-            onChange={(e) => updateFormData('destination_cities', e.target.value)}
-            placeholder="شهرهایی که قصد سفر به آن‌ها را دارید (مثال: دبی، ابوظبی، ریاض)"
-            required
-            className="text-right"
-            dir="rtl"
-            rows={2}
-          />
+          <Label htmlFor="destination_cities">شهرهای مقصد برای ویزیت *</Label>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Select
+                onValueChange={(value) => {
+                  const current = formData.destination_cities;
+                  const newValue = current 
+                    ? `${current}, ${value}` 
+                    : value;
+                  updateFormData('destination_cities', newValue);
+                }}
+              >
+                <SelectTrigger className="flex-1 text-right" dir="rtl">
+                  <SelectValue placeholder="افزودن شهر از لیست" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]" dir="rtl">
+                  {countries.map((country) => (
+                    <div key={country.code}>
+                      <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground bg-muted">
+                        {country.name}
+                      </div>
+                      {country.cities.map((city) => {
+                        const fullValue = `${city} ${country.name}`;
+                        return (
+                          <SelectItem key={fullValue} value={fullValue} className="text-right">
+                            {fullValue}
+                          </SelectItem>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => updateFormData('destination_cities', '')}
+                className="shrink-0"
+              >
+                پاک کردن
+              </Button>
+            </div>
+            <Textarea
+              id="destination_cities"
+              value={formData.destination_cities}
+              onChange={(e) => updateFormData('destination_cities', e.target.value)}
+              placeholder="شهرهای انتخاب شده یا تایپ کنید (مثال: دبی امارات، مسقط عمان)"
+              required
+              className="text-right"
+              dir="rtl"
+              rows={2}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            می‌توانید از لیست انتخاب کنید یا به صورت دستی تایپ کنید. شهرها را با کاما جدا کنید
+          </p>
         </div>
 
         <div className="flex items-center space-x-2 space-x-reverse">
