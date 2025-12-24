@@ -28,42 +28,12 @@ export function LicenseCheck() {
     try {
       const data = await apiService.checkLicenseStatus();
       setStatus(data);
-      
-      // If has license and active, no need to stay on license page
-      // Check multiple conditions: is_approved, is_active, or has_license
-      if (data.has_license && (data.is_active || data.is_approved)) {
-        navigate('/');
-        return;
-      }
     } catch (error) {
       console.error('Error checking license status:', error);
       
       // If API call fails, check auth context license status
       if (authLicenseStatus) {
         setStatus(authLicenseStatus);
-        // If auth context shows active license, navigate away
-        if (authLicenseStatus.has_license && (authLicenseStatus.is_active || authLicenseStatus.is_approved)) {
-          navigate('/');
-          return;
-        }
-      }
-      
-      // در صورت خطا، بررسی کن که آیا لایسنس محلی وجود دارد
-      if (licenseStorage.hasStoredLicense() && licenseStorage.isStoredLicenseValid()) {
-        const licenseInfo = licenseStorage.displayLicenseInfo();
-        if (licenseInfo) {
-          toast({
-            title: "اطلاعات لایسنس محلی",
-            description: licenseInfo,
-            duration: 5000,
-          });
-        }
-      } else {
-        toast({
-          variant: "destructive",
-          title: "خطا",
-          description: "خطا در بررسی وضعیت لایسنس",
-        });
       }
     }
   };
@@ -88,9 +58,10 @@ export function LicenseCheck() {
       await checkLicenseStatus();
       await refreshUserData();
       
-      // Navigate to main page after successful activation
+      // After successful activation, reload the page to let LicenseRequiredRoute re-check
+      // This ensures proper access control separation
       setTimeout(() => {
-        navigate('/');
+        window.location.reload();
       }, 1500);
       
     } catch (error) {

@@ -53,9 +53,9 @@ export function LicenseRequiredRoute({ children }: LicenseRequiredRouteProps) {
   // Use status from API call, or fallback to auth context license status
   const currentStatus = status || authLicenseStatus;
 
-  // Check multiple conditions: is_approved, is_active, or has_license
-  // User should have access if any of these is true
-  if (!currentStatus || (!currentStatus.is_approved && !currentStatus.is_active && !currentStatus.has_license)) {
+  // Check if user has active license - simple check: has_license and is_active
+  // This is ACCESS CONTROL - just checking if user can access the route
+  if (!currentStatus || !currentStatus.has_license || !currentStatus.is_active) {
     return <LicenseCheck />;
   }
 

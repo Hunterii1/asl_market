@@ -37,7 +37,7 @@ class ErrorHandler {
   }
 
   // نمایش خطاهای API
-  handleApiError(error: any, fallbackMessage: string = 'خطای غیرمنتظره‌ای رخ داد') {
+  handleApiError(error: any, fallbackMessage: string = 'خطای غیرمنتظره‌ای رخ داد', errorSource?: string) {
     console.error('API Error:', error);
 
     let errorMessage = fallbackMessage;
@@ -54,7 +54,9 @@ class ErrorHandler {
         statusCode = error.response.status;
 
         // 🔇 فیلتر کردن خطاهای ثبت‌نام که باید سرکوب شوند
-        if (this.shouldSuppressError(errorMessage, statusCode)) {
+        // Pass errorSource to shouldSuppressError
+        const url = errorSource || error?.config?.url || error?.request?.url || '';
+        if (this.shouldSuppressError(errorMessage, statusCode, url)) {
           console.log('⏭️ Suppressing registration reminder error:', errorMessage);
           return errorMessage; // فقط return می‌کنیم، toast نمایش نمی‌دهیم
         }
@@ -122,11 +124,18 @@ class ErrorHandler {
   }
 
   // بررسی اینکه آیا خطا باید سرکوب شود (برای یادآوری‌های ثبت‌نام)
-  private shouldSuppressError(errorMessage: string, statusCode?: number): boolean {
+  private shouldSuppressError(errorMessage: string, statusCode?: number, errorSource?: string): boolean {
     const messageLower = errorMessage.toLowerCase();
+    const sourceLower = (errorSource || '').toLowerCase();
     
-    // ⚠️ فقط خطاهای خاص ثبت‌نام را سرکوب می‌کنیم
+    // ⚠️ فقط خطاهای خاص ثبت‌نام و SpotPlayer را سرکوب می‌کنیم
     // بقیه خطاها باید به درستی نمایش داده شوند
+    
+    // 0️⃣ خطاهای SpotPlayer - همیشه suppress می‌شوند (فقط برای بخش آموزش است)
+    if (sourceLower.includes('/spotplayer/license') || sourceLower.includes('spotplayer/license')) {
+      console.log('🔇 Suppressing SpotPlayer license error (404 is normal - user may not have SpotPlayer license yet)');
+      return true;
+    }
     
     // 1️⃣ خطاهای دقیق ثبت‌نام (فارسی)
     const registrationPatternsFA = [
@@ -155,8 +164,7 @@ class ErrorHandler {
       ];
       
       // Check if error is from registration status endpoint
-      const errorSource = (error as any)?.config?.url || (error as any)?.request?.url || '';
-      if (registrationEndpoints.some(endpoint => errorSource.includes(endpoint))) {
+      if (errorSource && registrationEndpoints.some(endpoint => errorSource.includes(endpoint))) {
         console.log('🔇 Suppressing 404 registration status error');
         return true;
       }

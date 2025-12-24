@@ -113,13 +113,23 @@ const AslLearn = () => {
         }
         
         // Load SpotPlayer license
-        const response = await apiService.getSpotPlayerLicense();
-        if (response.success) {
-          setSpotPlayerLicense(response.data);
+        // Note: SpotPlayer license is separate from main ASL Market license
+        // 404 is normal if user doesn't have SpotPlayer license yet
+        try {
+          const response = await apiService.getSpotPlayerLicense();
+          if (response.success) {
+            setSpotPlayerLicense(response.data);
+          }
+        } catch (spotPlayerError: any) {
+          // Silently handle SpotPlayer license errors - it's optional and only for education section
+          // 404 means user doesn't have SpotPlayer license yet, which is normal
+          if (spotPlayerError?.response?.status !== 404) {
+            console.error('Error loading SpotPlayer license:', spotPlayerError);
+          }
+          // License not found, user needs to generate one - this is expected behavior
         }
       } catch (error) {
-        console.error('Error loading SpotPlayer license:', error);
-        // License not found, user needs to generate one
+        console.error('Error loading license info:', error);
       } finally {
         setIsLoadingLicense(false);
       }

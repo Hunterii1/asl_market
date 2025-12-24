@@ -165,14 +165,29 @@ class ApiService {
         };
       }
       
+      // برای خطاهای 404 در spotplayer/license، به صورت silent handle می‌کنیم
+      // SpotPlayer license is optional and separate from main ASL Market license
+      if (response.status === 404 && url && url.includes('/spotplayer/license')) {
+        // این خطا طبیعی است - کاربر ممکن است هنوز لایسنس SpotPlayer نداشته باشد
+        throw {
+          response: {
+            data: errorData,
+            status: response.status
+          },
+          statusCode: response.status,
+          isSpotPlayerLicense404: true
+        };
+      }
+      
       // استفاده از error handler جدید
+      // Pass URL as errorSource parameter
       const errorMessage = errorHandler.handleApiError({
         response: {
           data: errorData,
           status: response.status
         },
         config: { url }
-      }, 'خطا در درخواست به سرور');
+      }, 'خطا در درخواست به سرور', url);
       
       throw new Error(errorMessage);
     }
