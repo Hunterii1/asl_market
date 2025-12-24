@@ -183,21 +183,42 @@ export default function MyMatchingRequests() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 -left-4 w-72 h-72 bg-blue-300 dark:bg-blue-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-20 animate-blob"></div>
+        <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-20 w-72 h-72 bg-indigo-300 dark:bg-indigo-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+      
       <HeaderAuth />
-      <div className="container mx-auto px-2 sm:px-4 max-w-6xl py-4 sm:py-8">
-        <Card>
-          <CardHeader>
+      <div className="container mx-auto px-2 sm:px-4 max-w-6xl py-4 sm:py-8 relative z-10">
+        <Card className="backdrop-blur-sm bg-white/80 dark:bg-gray-900/80 border-2 shadow-2xl animate-in fade-in-0 slide-in-from-top-4 duration-500">
+          <CardHeader className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-b">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <CardTitle className="text-2xl font-bold">درخواست‌های Matching من</CardTitle>
-                <p className="text-muted-foreground mt-1">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg animate-pulse">
+                    <Package className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                    درخواست‌های Matching من
+                  </CardTitle>
+                </div>
+                <p className="text-muted-foreground mt-1 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
                   مدیریت و پیگیری درخواست‌های Matching شما
                 </p>
               </div>
-              <Button onClick={() => navigate("/matching/create")}>
-                درخواست جدید
-                <Plus className="w-4 h-4 mr-2" />
+              <Button 
+                onClick={() => navigate("/matching/create")}
+                className="relative overflow-hidden group hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  درخواست جدید
+                  <Plus className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400/0 via-indigo-400/0 to-purple-400/0 group-hover:from-blue-400/20 group-hover:via-indigo-400/20 group-hover:to-purple-400/20 transition-all duration-500"></div>
               </Button>
             </div>
           </CardHeader>
@@ -226,39 +247,58 @@ export default function MyMatchingRequests() {
 
             {/* Requests List */}
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
-                <p className="text-lg font-medium text-muted-foreground">در حال بارگذاری...</p>
-                <p className="text-sm text-muted-foreground mt-2">لطفاً صبر کنید</p>
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <div className="relative">
+                  <Loader2 className="w-16 h-16 animate-spin text-primary" />
+                  <div className="absolute inset-0 w-16 h-16 border-4 border-primary/20 rounded-full animate-ping"></div>
+                </div>
+                <div className="text-center space-y-2">
+                  <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent animate-pulse">
+                    در حال بارگذاری...
+                  </p>
+                  <p className="text-sm text-muted-foreground">لطفاً صبر کنید</p>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
               </div>
             ) : requests.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">درخواستی یافت نشد</h3>
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-16 space-y-4 animate-in fade-in-0 zoom-in-95 duration-500">
+                <div className="relative inline-block">
+                  <Package className="w-20 h-20 mx-auto mb-4 text-muted-foreground animate-bounce" />
+                  <div className="absolute inset-0 w-20 h-20 border-4 border-muted rounded-full animate-ping opacity-75"></div>
+                </div>
+                <h3 className="text-2xl font-bold mb-2">درخواستی یافت نشد</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                   هنوز درخواست Matching ایجاد نکرده‌اید
                 </p>
-                <Button onClick={() => navigate("/matching/create")}>
+                <Button 
+                  onClick={() => navigate("/matching/create")}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                >
                   ایجاد درخواست جدید
                   <Plus className="w-4 h-4 mr-2" />
                 </Button>
               </div>
             ) : (
               <>
-                <div className="space-y-4">
-                  {requests.map((request) => (
+                <div className="space-y-6">
+                  {requests.map((request, index) => (
                     <Card 
                       key={request.id} 
-                      className={`hover:shadow-2xl transition-all duration-300 border-l-4 ${
-                        request.status === 'accepted' ? 'border-l-green-500 border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10' :
+                      className={`group hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 border-l-4 animate-in fade-in-0 slide-in-from-right-4 ${
+                        request.status === 'accepted' ? 'border-l-green-500 border-green-300 dark:border-green-700 bg-gradient-to-br from-green-50/50 via-emerald-50/50 to-teal-50/50 dark:from-green-900/10 dark:via-emerald-900/10 dark:to-teal-900/10' :
                         request.is_expired ? 'opacity-75 border-l-gray-400 border-gray-300 dark:border-gray-700' :
-                        'border-l-blue-500 border-blue-200 dark:border-blue-800'
+                        'border-l-blue-500 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 hover:border-l-blue-600'
                       }`}
+                      style={{ animationDelay: `${index * 100}ms` }}
                     >
                       <CardContent className="p-6">
                         {/* Radar for active requests */}
                         {(request.status === 'active' || request.status === 'pending') && !request.is_expired && (
-                          <div className="mb-6">
+                          <div className="mb-6 animate-in fade-in-0 zoom-in-95 duration-500">
                             <MatchingRadar
                               totalVisitors={request.matched_visitor_count || 0}
                               acceptedCount={0} // Will be updated when we load responses
@@ -272,19 +312,24 @@ export default function MyMatchingRequests() {
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-3">
-                                  <div className={`p-2 rounded-lg ${
-                                    request.status === 'accepted' ? 'bg-green-100 dark:bg-green-900/30' :
+                                  <div className={`relative p-3 rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110 ${
+                                    request.status === 'accepted' ? 'bg-gradient-to-br from-green-400 to-green-600 dark:from-green-600 dark:to-green-800' :
                                     request.is_expired ? 'bg-gray-100 dark:bg-gray-800' :
-                                    'bg-blue-100 dark:bg-blue-900/30'
+                                    'bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-600 dark:to-blue-800'
                                   }`}>
-                                    <Package className={`w-5 h-5 ${
-                                      request.status === 'accepted' ? 'text-green-600' :
+                                    <Package className={`w-6 h-6 ${
+                                      request.status === 'accepted' ? 'text-white' :
                                       request.is_expired ? 'text-gray-600' :
-                                      'text-blue-600'
+                                      'text-white'
                                     }`} />
+                                    {(request.status === 'active' || request.status === 'pending') && !request.is_expired && (
+                                      <div className="absolute inset-0 rounded-xl bg-blue-400 animate-ping opacity-75"></div>
+                                    )}
                                   </div>
                                   <div className="flex-1">
-                                    <h3 className="text-lg font-bold mb-1">{request.product_name}</h3>
+                                    <h3 className="text-xl font-extrabold mb-2 bg-gradient-to-r from-gray-900 to-gray-700 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
+                                      {request.product_name}
+                                    </h3>
                                     {getStatusBadge(request.status, request.is_expired)}
                                   </div>
                                 </div>
@@ -346,10 +391,15 @@ export default function MyMatchingRequests() {
                               variant="default"
                               size="lg"
                               onClick={() => navigate(`/matching/requests/${request.id}`)}
-                              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                              className="relative w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 text-white shadow-2xl hover:shadow-blue-500/50 transition-all duration-500 overflow-hidden group/btn"
                             >
-                              <Eye className="w-5 h-5 ml-2" />
-                              <span className="font-semibold">مشاهده جزئیات</span>
+                              {/* Shimmer effect */}
+                              <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                              <span className="relative z-10 flex items-center gap-2">
+                                <Eye className="w-5 h-5 group-hover/btn:scale-110 transition-transform duration-300" />
+                                <span className="font-extrabold text-base">مشاهده جزئیات</span>
+                              </span>
+                              <div className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping"></div>
                             </Button>
                             {request.status === "pending" || request.status === "active" ? (
                               <>
