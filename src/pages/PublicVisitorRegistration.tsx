@@ -119,7 +119,7 @@ const PublicVisitorRegistration = () => {
 
   // List of Arabic countries (only these are allowed) - expanded and flexible
   const arabicCountries = [
-    "عمان", "امارات", "امارات متحده عربی", "امارات متحده", "دبی", "ابوظبی", "شارجه", "عجمان",
+    "عمان", "امارات", "امارات متحده عربی", "امارات متحده", "دبی", "ابوظبی", "شارجه", "عجمان", "راس الخیمه", "راس الخيمه",
     "عربستان", "عربستان سعودی", "سعودی", "ریاض", "جده", "دمام", "مکه",
     "کویت", "کویت سیتی", "الاحمدی", "حولی",
     "قطر", "دوحه", "الریان", "الوکره",
@@ -216,10 +216,11 @@ const PublicVisitorRegistration = () => {
       return;
     }
 
-    // Validate destination cities (split by comma, dash, space, or any separator)
-    // More flexible splitting - handle both Persian and English commas
+    // Validate destination cities
+    // Split only by comma (Persian or English), not by space or dash
+    // This allows "راس الخیمه امارات متحده عربی" to stay as one item
     const destinations = formData.destination_cities
-      .split(/[،,\-\s\n]+/)
+      .split(/[،,]+/)
       .map(d => d.trim())
       .filter(d => d.length > 0);
     
@@ -322,8 +323,10 @@ const PublicVisitorRegistration = () => {
         }
         
         // Validate destination cities
+        // Split only by comma (Persian or English), not by space or dash
+        // This allows "راس الخیمه امارات متحده عربی" to stay as one item
         const destinations = formData.destination_cities
-          .split(/[،,\-\s\n]+/)
+          .split(/[،,]+/)
           .map(d => d.trim())
           .filter(d => d.length > 0);
         
