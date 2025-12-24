@@ -20,14 +20,12 @@ import {
   CheckCircle,
   Clock,
   TrendingUp,
-  Info,
   Eye,
   Edit,
   Trash2,
   CalendarClock,
   XCircle,
   AlertTriangle,
-  Zap,
   Activity
 } from "lucide-react";
 
@@ -231,84 +229,7 @@ export default function AslMatch() {
         </Card>
       </div>
 
-      {/* Quick Access Menu - Always Visible */}
-      <Card className="mb-6 sm:mb-8 bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-orange-200 dark:border-orange-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-            <Zap className="w-5 h-5 text-orange-600 dark:text-orange-500" />
-            دسترسی سریع ASL Match
-            <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs px-2 py-0.5 font-bold">
-              BETA
-            </Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const isDisabled = item.badge !== undefined;
-              return (
-                <Card
-                  key={item.id}
-                  className={`group hover:shadow-xl transition-all duration-300 cursor-pointer border-2 ${
-                    isDisabled 
-                      ? 'border-gray-300 dark:border-gray-700 opacity-75 hover:border-orange-300 dark:hover:border-orange-700' 
-                      : 'hover:border-orange-300 dark:hover:border-orange-700'
-                  } bg-card relative overflow-hidden`}
-                  onClick={() => {
-                    if (item.action) {
-                      item.action();
-                    }
-                  }}
-                >
-                  {/* Animated gradient background on hover */}
-                  <div className={`absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${isDisabled ? 'opacity-50' : ''}`}></div>
-                  
-                  {/* Shimmer effect */}
-                  {!isDisabled && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  )}
-                  
-                  <CardContent className="p-4 sm:p-5 relative z-10">
-                    <div className="flex flex-col items-center text-center space-y-3">
-                      <div className={`p-3 bg-gradient-to-br ${item.color} rounded-xl shadow-lg group-hover:scale-110 ${isDisabled ? '' : 'group-hover:rotate-6'} transition-all duration-300 relative`}>
-                        <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <Icon className={`w-6 h-6 sm:w-7 sm:h-7 text-white relative z-10 ${isDisabled ? '' : 'group-hover:scale-110'} transition-transform duration-300`} />
-                      </div>
-                      <div className="w-full">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <h3 className={`text-sm sm:text-base font-bold ${isDisabled ? 'text-muted-foreground' : 'text-foreground group-hover:text-orange-600 dark:group-hover:text-orange-400'} transition-colors`}>
-                            {item.label}
-                          </h3>
-                          {item.badge && (
-                            <Badge variant="secondary" className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border-yellow-300 dark:border-yellow-700">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className={`text-xs ${isDisabled ? 'text-muted-foreground/70' : 'text-muted-foreground'} leading-tight`}>
-                          {item.description}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={isDisabled}
-                        className={`w-full text-xs ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-gradient-to-r group-hover:from-orange-50 group-hover:to-red-50 dark:group-hover:from-orange-900/20 dark:group-hover:to-red-900/20 group-hover:border-orange-300 dark:group-hover:border-orange-700 group-hover:text-orange-700 dark:group-hover:text-orange-400'} transition-all duration-300`}
-                      >
-                        {isDisabled ? 'نیاز به ثبت‌نام' : 'ورود'}
-                        {!isDisabled && <ArrowLeft className="w-3 h-3 mr-1 group-hover:translate-x-1 transition-transform" />}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Menu Items - Detailed Cards */}
+      {/* Menu Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -371,22 +292,6 @@ export default function AslMatch() {
         })}
       </div>
 
-      {/* Info Card */}
-      <Card className="bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-orange-200 dark:border-orange-800 hover:shadow-xl transition-all duration-300">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
-            <Info className="w-5 h-5 text-orange-600 dark:text-orange-500" />
-            درباره ASL Match
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            ASL Match یک سیستم هوشمند برای اتصال سریع و خودکار تأمین‌کنندگان ایرانی با ویزیتورهای فعال در کشورهای عربی است. 
-            این سیستم با استفاده از الگوریتم‌های پیشرفته، بهترین تطابق‌ها را پیدا کرده و از طریق نوتیفیکیشن‌های فوری، 
-            طرفین را مطلع می‌کند.
-          </p>
-        </CardContent>
-      </Card>
     </>
   );
 
