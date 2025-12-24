@@ -53,6 +53,76 @@ interface MatchingChatProps {
   onClose?: () => void;
 }
 
+// Component for displaying image messages with error handling
+function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl: string; messageId: number; getImageUrl: (path: string) => string }) {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  
+  const fullImageUrl = getImageUrl(imageUrl);
+  
+  if (imageError) {
+    return (
+      <div className="mb-2 p-4 bg-muted rounded-lg text-center text-sm text-muted-foreground">
+        <div className="flex flex-col items-center gap-2">
+          <ImageIcon className="w-6 h-6 opacity-50" />
+          <span>خطا در بارگذاری تصویر</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs mt-1"
+            onClick={() => {
+              window.open(fullImageUrl, '_blank');
+            }}
+          >
+            تلاش مجدد
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="mb-2 rounded-lg overflow-hidden max-w-full">
+      {!imageLoaded && (
+        <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+          <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
+        </div>
+      )}
+      <img
+        key={`img-${messageId}-${imageUrl}`}
+        src={fullImageUrl}
+        alt="پیام تصویری"
+        className={`max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${imageLoaded ? 'block' : 'hidden'}`}
+        style={{ maxWidth: '100%', height: 'auto' }}
+        loading="lazy"
+        onLoad={() => {
+          setImageLoaded(true);
+          console.log('✅ Image loaded successfully:', {
+            message_id: messageId,
+            image_url: imageUrl,
+            src: fullImageUrl
+          });
+        }}
+        onClick={() => {
+          console.log('🖼️ Opening image in new tab:', fullImageUrl);
+          window.open(fullImageUrl, '_blank');
+        }}
+        onError={(e) => {
+          const imgElement = e.currentTarget;
+          console.error('❌ Error loading image:', {
+            message_id: messageId,
+            image_url: imageUrl,
+            constructed_url: imgElement.src,
+            timestamp: new Date().toISOString()
+          });
+          setImageError(true);
+          console.warn('⚠️ Image failed to load. Check if file exists on server:', fullImageUrl);
+        }}
+      />
+    </div>
+  );
+}
+
 export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -89,19 +159,23 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
       // Production server - use api subdomain for backend static files
       if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
         // Backend serves static files at /uploads via api.asllmarket.com
-        const url = `${protocol}//api.${hostname}${normalizedPath}`;
-        console.log('🖼️ Image URL (production via api subdomain):', url, 'from path:', imagePath);
+        const url = `https://api.${hostname}${normalizedPath}`;
+        console.log('🖼️ Image URL (production):', url, 'from path:', imagePath);
         return url;
       }
       
       // Development server
       if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
-        return `http://localhost:8080${normalizedPath}`;
+        const url = `http://localhost:8080${normalizedPath}`;
+        console.log('🖼️ Image URL (development):', url, 'from path:', imagePath);
+        return url;
       }
     }
     
     // Fallback
-    return `http://localhost:8080${normalizedPath}`;
+    const url = `http://localhost:8080${normalizedPath}`;
+    console.log('🖼️ Image URL (fallback):', url, 'from path:', imagePath);
+    return url;
   };
 
   useEffect(() => {
@@ -131,19 +205,29 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
       const messagesData = response.messages || response.data?.messages || response.data?.data?.messages;
       
       if (messagesData && Array.isArray(messagesData)) {
-        // Format messages to match our interface
-        const formattedMessages: ChatMessage[] = messagesData.map((msg: any) => ({
+      // Format messages to match our interface
+      const formattedMessages: ChatMessage[] = messagesData.map((msg: any) => {
+        const imageUrl = msg.image_url || msg.imageURL || undefined;
+        if (imageUrl) {
+          console.log('📨 Message with image loaded:', {
+            message_id: msg.id,
+            image_url: imageUrl,
+            constructed_url: getImageUrl(imageUrl)
+          });
+        }
+        return {
           id: msg.id,
           matching_chat_id: msg.matching_chat_id || msg.matchingChatID,
           sender_id: msg.sender_id || msg.senderID,
           sender_name: msg.sender_name || msg.senderName,
           sender_type: msg.sender_type || msg.senderType,
           message: msg.message,
-          image_url: msg.image_url || msg.imageURL || undefined,
+          image_url: imageUrl,
           is_read: msg.is_read !== undefined ? msg.is_read : msg.isRead || false,
           read_at: msg.read_at || msg.readAt,
           created_at: msg.created_at || msg.createdAt,
-        }));
+        };
+      });
         
         setMessages(formattedMessages);
         const pagination = response.data?.pagination || response.pagination;
@@ -401,25 +485,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                           </Badge>
                         </div>
                       )}
-                      {message.image_url && (
-                        <div className="mb-2 rounded-lg overflow-hidden max-w-full">
-                          <img
-                            src={getImageUrl(message.image_url)}
-                            alt="پیام تصویری"
-                            className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
-                            style={{ maxWidth: '100%', height: 'auto' }}
-                            onClick={() => {
-                              // Open image in new tab
-                              window.open(getImageUrl(message.image_url), '_blank');
-                            }}
-                            onError={(e) => {
-                              console.error('❌ Error loading image:', message.image_url, 'Current src:', e.currentTarget.src);
-                              // Hide image on error
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        </div>
-                      )}
+                      {message.image_url && <ImageMessageComponent imageUrl={message.image_url} messageId={message.id} getImageUrl={getImageUrl} />}
                       {message.message && (
                         <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
                           {message.message}
