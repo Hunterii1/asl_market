@@ -56,9 +56,37 @@ interface MatchingChatProps {
 // Component for displaying image messages with error handling
 function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl: string; messageId: number; getImageUrl: (path: string) => string }) {
   const [imageError, setImageError] = useState(false);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
   
   const fullImageUrl = getImageUrl(imageUrl);
+  
+  // Check if image is already loaded (from cache) and set timeout
+  useEffect(() => {
+    const img = new Image();
+    let timeoutId: NodeJS.Timeout;
+    
+    img.onload = () => {
+      setImageLoading(false);
+      console.log('✅ Image preloaded (from cache):', fullImageUrl);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+    img.onerror = () => {
+      // Don't set error here, let the actual img tag handle it
+      setImageLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+    img.src = fullImageUrl;
+    
+    // Timeout after 10 seconds - hide spinner even if image hasn't loaded
+    timeoutId = setTimeout(() => {
+      setImageLoading(false);
+      console.warn('⏱️ Image loading timeout, hiding spinner:', fullImageUrl);
+    }, 10000);
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [fullImageUrl]);
   
   if (imageError) {
     return (
@@ -82,9 +110,9 @@ function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl:
   }
   
   return (
-    <div className="mb-2 rounded-lg overflow-hidden max-w-full">
-      {!imageLoaded && (
-        <div className="flex items-center justify-center p-4 bg-muted rounded-lg">
+    <div className="mb-2 rounded-lg overflow-hidden max-w-full relative">
+      {imageLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80 rounded-lg z-10">
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
       )}
@@ -92,11 +120,11 @@ function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl:
         key={`img-${messageId}-${imageUrl}`}
         src={fullImageUrl}
         alt="پیام تصویری"
-        className={`max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity ${imageLoaded ? 'block' : 'hidden'}`}
-        style={{ maxWidth: '100%', height: 'auto' }}
+        className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+        style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
         loading="lazy"
         onLoad={() => {
-          setImageLoaded(true);
+          setImageLoading(false);
           console.log('✅ Image loaded successfully:', {
             message_id: messageId,
             image_url: imageUrl,
@@ -116,6 +144,7 @@ function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl:
             timestamp: new Date().toISOString()
           });
           setImageError(true);
+          setImageLoading(false);
           console.warn('⚠️ Image failed to load. Check if file exists on server:', fullImageUrl);
         }}
       />
