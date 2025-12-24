@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import HeaderAuth from "@/components/ui/HeaderAuth";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   Package, 
   Eye,
@@ -50,6 +51,7 @@ interface MatchingRequest {
 export default function AvailableMatchingRequests() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [requests, setRequests] = useState<MatchingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -57,8 +59,51 @@ export default function AvailableMatchingRequests() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    loadRequests();
-  }, [page]);
+    if (!isAuthenticated) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای مشاهده درخواست‌های موجود، ابتدا باید وارد شوید.",
+        variant: "default",
+      });
+      navigate('/login');
+      return;
+    }
+    
+    // Check if user is a visitor
+    checkVisitorStatus();
+  }, [isAuthenticated, page]);
+
+  const checkVisitorStatus = async () => {
+    try {
+      const visitorStatus = await apiService.getMyVisitorStatus();
+      if (!visitorStatus.has_visitor) {
+        toast({
+          title: "نیاز به ثبت‌نام ویزیتور",
+          description: "برای مشاهده درخواست‌های موجود، ابتدا باید به عنوان ویزیتور ثبت‌نام کنید.",
+          variant: "default",
+        });
+        navigate('/visitor-registration');
+        return;
+      }
+      loadRequests();
+    } catch (error: any) {
+      // 404 means user hasn't registered as visitor
+      if (error?.response?.status === 404 || error?.statusCode === 404) {
+        toast({
+          title: "نیاز به ثبت‌نام ویزیتور",
+          description: "برای مشاهده درخواست‌های موجود، ابتدا باید به عنوان ویزیتور ثبت‌نام کنید.",
+          variant: "default",
+        });
+        navigate('/visitor-registration');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: error.message || "خطا در بررسی وضعیت ویزیتور",
+        });
+      }
+    }
+  };
 
   const loadRequests = async () => {
     setLoading(true);

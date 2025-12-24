@@ -59,35 +59,7 @@ const Index = () => {
   const [hasSupplier, setHasSupplier] = useState(false);
   const [hasVisitor, setHasVisitor] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      checkVisitorSupplierStatus();
-    }
-  }, [isAuthenticated]);
-
-  const checkVisitorSupplierStatus = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      // Check visitor status
-      try {
-        const visitorStatus = await apiService.getMyVisitorStatus();
-        setHasVisitor(visitorStatus.has_visitor || false);
-      } catch (error) {
-        setHasVisitor(false);
-      }
-
-      // Check supplier status
-      try {
-        const supplierStatus = await apiService.getSupplierStatus();
-        setHasSupplier(supplierStatus.has_supplier || false);
-      } catch (error) {
-        setHasSupplier(false);
-      }
-    } catch (error) {
-      console.error('Error checking visitor/supplier status:', error);
-    }
-  };
+  // Don't check visitor/supplier status here - let each page check it when needed
 
   // Convert numbers to Farsi
   const toFarsiNumber = (num: number) => {

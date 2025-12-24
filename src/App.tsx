@@ -215,14 +215,8 @@ const App = () => (
                 </ProtectedRoute>
               } />
 
-              {/* ASL Match routes */}
-              <Route path="/asl-match" element={
-                <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <AslMatch />
-                  </LicenseRequiredRoute>
-                </ProtectedRoute>
-              } />
+              {/* ASL Match routes - Public access, no license required */}
+              <Route path="/asl-match" element={<AslMatch />} />
               <Route path="/matching/create" element={
                 <ProtectedRoute>
                   <LicenseRequiredRoute>

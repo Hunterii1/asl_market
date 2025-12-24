@@ -55,190 +55,134 @@ interface MatchingRequest {
 
 export default function AslMatch() {
   const navigate = useNavigate();
-  const { isAuthenticated, licenseStatus } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [hasSupplier, setHasSupplier] = useState(false);
-  const [hasVisitor, setHasVisitor] = useState(false);
-  const [myRequests, setMyRequests] = useState<MatchingRequest[]>([]);
-  const [availableRequests, setAvailableRequests] = useState<MatchingRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'my-requests' | 'available' | 'chats' | 'ratings'>('overview');
 
   useEffect(() => {
-    if (isAuthenticated) {
-      checkVisitorSupplierStatus();
-      if (activeTab === 'my-requests' && hasSupplier) {
-        fetchMyRequests();
-      } else if (activeTab === 'available' && hasVisitor) {
-        fetchAvailableRequests();
-      }
-    }
-  }, [isAuthenticated, activeTab, hasSupplier, hasVisitor]);
+    setLoading(false);
+    // Don't check visitor/supplier status here - let each page check it when needed
+  }, [isAuthenticated]);
 
-  const checkVisitorSupplierStatus = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      // Check visitor status
-      try {
-        const visitorStatus = await apiService.getMyVisitorStatus();
-        setHasVisitor(visitorStatus.has_visitor || false);
-      } catch (error) {
-        setHasVisitor(false);
-      }
+  // Page is accessible to everyone - no authentication/license required
+  // Users can see all features, but checks will be done in target pages
 
-      // Check supplier status
-      try {
-        const supplierStatus = await apiService.getSupplierStatus();
-        setHasSupplier(supplierStatus.has_supplier || false);
-      } catch (error) {
-        setHasSupplier(false);
-      }
-    } catch (error) {
-      console.error('Error checking visitor/supplier status:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMyRequests = async () => {
-    try {
-      const response = await apiService.getMyMatchingRequests();
-      setMyRequests(response.requests || []);
-    } catch (error) {
-      console.error('Error fetching my requests:', error);
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: "خطا در دریافت درخواست‌های شما",
-      });
-    }
-  };
-
-  const fetchAvailableRequests = async () => {
-    try {
-      const response = await apiService.getAvailableMatchingRequests();
-      setAvailableRequests(response.requests || []);
-    } catch (error) {
-      console.error('Error fetching available requests:', error);
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: "خطا در دریافت درخواست‌های موجود",
-      });
-    }
-  };
-
-  if (!isAuthenticated || !licenseStatus?.is_approved) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 dark:from-gray-900 dark:via-orange-950/20 dark:to-gray-800 flex items-center justify-center">
-        <Card className="w-full max-w-md text-center p-8">
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-2">دسترسی محدود</h2>
-          <p className="text-muted-foreground mb-4">
-            برای دسترسی به ASL Match، باید وارد شوید و لایسنس فعال داشته باشید.
-          </p>
-          <Button onClick={() => navigate("/login")}>ورود / ثبت‌نام</Button>
-        </Card>
-      </div>
-    );
-  }
-
-  // Handle navigation with smart routing
+  // Handle navigation - checks will be done in the target pages
   const handleCreateRequest = () => {
-    if (hasSupplier) {
-      navigate('/matching/create');
-    } else {
+    if (!isAuthenticated) {
       toast({
-        title: "نیاز به ثبت‌نام تأمین‌کننده",
-        description: "برای ایجاد درخواست، ابتدا باید به عنوان تأمین‌کننده ثبت‌نام کنید.",
+        title: "نیاز به ورود",
+        description: "برای ایجاد درخواست، ابتدا باید وارد شوید.",
         variant: "default",
       });
-      navigate('/supplier-registration');
+      navigate('/login');
+      return;
     }
+    navigate('/matching/create');
   };
 
   const handleMyRequests = () => {
-    if (hasSupplier) {
-      setActiveTab('my-requests');
-      fetchMyRequests();
-    } else {
+    if (!isAuthenticated) {
       toast({
-        title: "نیاز به ثبت‌نام تأمین‌کننده",
-        description: "برای مشاهده درخواست‌های خود، ابتدا باید به عنوان تأمین‌کننده ثبت‌نام کنید.",
+        title: "نیاز به ورود",
+        description: "برای مشاهده درخواست‌های خود، ابتدا باید وارد شوید.",
         variant: "default",
       });
-      navigate('/supplier-registration');
+      navigate('/login');
+      return;
     }
+    navigate('/matching/my-requests');
   };
 
   const handleAvailableRequests = () => {
-    if (hasVisitor) {
-      setActiveTab('available');
-      fetchAvailableRequests();
-    } else {
+    if (!isAuthenticated) {
       toast({
-        title: "نیاز به ثبت‌نام ویزیتور",
-        description: "برای مشاهده درخواست‌های موجود، ابتدا باید به عنوان ویزیتور ثبت‌نام کنید.",
+        title: "نیاز به ورود",
+        description: "برای مشاهده درخواست‌های موجود، ابتدا باید وارد شوید.",
         variant: "default",
       });
-      navigate('/visitor-registration');
+      navigate('/login');
+      return;
     }
+    navigate('/matching/available-requests');
+  };
+
+  const handleChats = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای دسترسی به مکالمات، ابتدا باید وارد شوید.",
+        variant: "default",
+      });
+      navigate('/login');
+      return;
+    }
+    navigate('/matching/chats');
+  };
+
+  const handleRatings = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای مشاهده امتیازها، ابتدا باید وارد شوید.",
+        variant: "default",
+      });
+      navigate('/login');
+      return;
+    }
+    navigate('/matching/ratings');
   };
 
   const menuItems = [
-    // Always show - Create Request (smart routing)
+    // Always show - Create Request
     {
       id: "create",
       label: "ایجاد درخواست",
-      description: hasSupplier 
-        ? "ایجاد درخواست جدید برای فروش محصول" 
-        : "برای ایجاد درخواست، ابتدا به عنوان تأمین‌کننده ثبت‌نام کنید",
+      description: "ایجاد درخواست جدید برای فروش محصول",
       icon: PlusCircle,
       color: "from-orange-500 to-orange-600",
-      action: handleCreateRequest,
-      badge: hasSupplier ? undefined : "نیاز به ثبت‌نام"
+      action: handleCreateRequest
     },
-    // Always show - My Requests (smart routing)
+    // Always show - My Requests
     {
       id: "my-requests",
       label: "درخواست‌های من",
-      description: hasSupplier 
-        ? "مشاهده و مدیریت درخواست‌های شما" 
-        : "برای مشاهده درخواست‌های خود، ابتدا به عنوان تأمین‌کننده ثبت‌نام کنید",
+      description: "مشاهده و مدیریت درخواست‌های شما",
       icon: List,
       color: "from-orange-600 to-red-600",
-      action: handleMyRequests,
-      badge: hasSupplier ? undefined : "نیاز به ثبت‌نام"
+      action: handleMyRequests
     },
-    // Always show - Available Requests (smart routing)
+    // Always show - Available Requests
     {
       id: "available",
       label: "درخواست‌های موجود",
-      description: hasVisitor 
-        ? "مشاهده درخواست‌های مناسب برای شما" 
-        : "برای مشاهده درخواست‌های موجود، ابتدا به عنوان ویزیتور ثبت‌نام کنید",
+      description: "مشاهده درخواست‌های مناسب برای شما",
       icon: Package,
       color: "from-red-500 to-orange-600",
-      action: handleAvailableRequests,
-      badge: hasVisitor ? undefined : "نیاز به ثبت‌نام"
+      action: handleAvailableRequests
     },
-    // Common for all - Always available
+    // Common for all - Always available (but require authentication)
     {
       id: "chats",
       label: "مکالمات",
-      description: "چت با تأمین‌کنندگان و ویزیتورها",
+      description: isAuthenticated 
+        ? "چت با تأمین‌کنندگان و ویزیتورها" 
+        : "برای دسترسی به مکالمات، ابتدا وارد شوید",
       icon: MessageCircle,
       color: "from-orange-500 via-red-500 to-orange-600",
-      route: "/matching/chats"
+      action: handleChats,
+      badge: !isAuthenticated ? "نیاز به ورود" : undefined
     },
     {
       id: "ratings",
       label: "امتیازها",
-      description: "مشاهده امتیازهای دریافتی و داده شده",
+      description: isAuthenticated 
+        ? "مشاهده امتیازهای دریافتی و داده شده" 
+        : "برای مشاهده امتیازها، ابتدا وارد شوید",
       icon: Star,
       color: "from-amber-500 to-orange-600",
-      route: "/matching/ratings"
+      action: handleRatings,
+      badge: !isAuthenticated ? "نیاز به ورود" : undefined
     }
   ];
 
@@ -312,9 +256,7 @@ export default function AslMatch() {
                       : 'hover:border-orange-300 dark:hover:border-orange-700'
                   } bg-card relative overflow-hidden`}
                   onClick={() => {
-                    if (item.route) {
-                      navigate(item.route);
-                    } else if (item.action) {
+                    if (item.action) {
                       item.action();
                     }
                   }}
@@ -380,9 +322,7 @@ export default function AslMatch() {
                   : 'hover:border-orange-300 dark:hover:border-orange-700'
               } bg-card relative overflow-hidden`}
               onClick={() => {
-                if (item.route) {
-                  navigate(item.route);
-                } else if (item.action) {
+                if (item.action) {
                   item.action();
                 }
               }}
@@ -450,183 +390,6 @@ export default function AslMatch() {
     </>
   );
 
-  const renderMyRequests = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-orange-700 dark:text-orange-400">درخواست‌های من</h2>
-        <Button 
-          onClick={() => navigate('/matching/create')}
-          className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-        >
-          <PlusCircle className="w-4 h-4 ml-2" />
-          ایجاد درخواست جدید
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-8">
-          <Clock className="w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">در حال بارگذاری...</p>
-        </div>
-      ) : myRequests.length === 0 ? (
-        <Card className="text-center p-8">
-          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-bold mb-2">درخواستی وجود ندارد</h3>
-          <p className="text-muted-foreground mb-4">هنوز درخواستی ایجاد نکرده‌اید</p>
-          <Button 
-            onClick={() => navigate('/matching/create')}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
-          >
-            <PlusCircle className="w-4 h-4 ml-2" />
-            ایجاد اولین درخواست
-          </Button>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {myRequests.map((request) => {
-            const acceptedCount = request.responses?.filter(r => r.response_type === 'accepted').length || 0;
-            const pendingCount = request.responses?.filter(r => r.response_type === 'question').length || 0;
-            const rejectedCount = request.responses?.filter(r => r.response_type === 'rejected').length || 0;
-
-            return (
-              <Card key={request.id} className="hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-bold">{request.product_name}</h3>
-                        <Badge 
-                          variant={
-                            request.status === 'active' ? 'default' :
-                            request.status === 'accepted' ? 'default' :
-                            request.status === 'expired' ? 'destructive' :
-                            'secondary'
-                          }
-                          className={
-                            request.status === 'active' ? 'bg-green-500' :
-                            request.status === 'accepted' ? 'bg-blue-500' :
-                            ''
-                          }
-                        >
-                          {request.status === 'active' ? 'فعال' :
-                           request.status === 'accepted' ? 'پذیرفته شده' :
-                           request.status === 'expired' ? 'منقضی شده' :
-                           request.status === 'cancelled' ? 'لغو شده' :
-                           'در انتظار'}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Package className="w-4 h-4" />
-                          <span>{request.quantity} {request.unit}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp className="w-4 h-4" />
-                          <span>{request.price} {request.currency}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{request.remaining_time}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span>{request.matched_visitor_count} ویزیتور</span>
-                        </div>
-                      </div>
-                      {request.status === 'active' && (
-                        <div className="mt-4">
-                          <MatchingRadar 
-                            totalVisitors={request.matched_visitor_count} 
-                            acceptedCount={acceptedCount}
-                            pendingCount={pendingCount}
-                            rejectedCount={rejectedCount}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/matching/requests/${request.id}`)}
-                      >
-                        <Eye className="w-4 h-4 ml-2" />
-                        مشاهده
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-
-  const renderAvailableRequests = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-orange-700 dark:text-orange-400">درخواست‌های موجود</h2>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-8">
-          <Clock className="w-8 h-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">در حال بارگذاری...</p>
-        </div>
-      ) : availableRequests.length === 0 ? (
-        <Card className="text-center p-8">
-          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-bold mb-2">درخواستی وجود ندارد</h3>
-          <p className="text-muted-foreground">در حال حاضر درخواست مناسبی برای شما وجود ندارد</p>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {availableRequests.map((request) => (
-            <Card key={request.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold">{request.product_name}</h3>
-                      <Badge variant="default" className="bg-green-500">
-                        {request.status === 'active' ? 'فعال' : request.status}
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Package className="w-4 h-4" />
-                        <span>{request.quantity} {request.unit}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="w-4 h-4" />
-                        <span>{request.price} {request.currency}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        <span>{request.remaining_time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate(`/matching/requests/${request.id}`)}
-                    >
-                      <Eye className="w-4 h-4 ml-2" />
-                      مشاهده
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-red-50 to-amber-50 dark:from-gray-900 dark:via-orange-950/20 dark:to-gray-800">
@@ -663,64 +426,8 @@ export default function AslMatch() {
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          <Button
-            variant={activeTab === 'overview' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('overview')}
-            className={`${activeTab === 'overview' ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : ''}`}
-          >
-            <Activity className="w-4 h-4 ml-2" />
-            نمای کلی
-          </Button>
-          {hasSupplier && (
-            <Button
-              variant={activeTab === 'my-requests' ? 'default' : 'outline'}
-              onClick={() => {
-                setActiveTab('my-requests');
-                fetchMyRequests();
-              }}
-              className={`${activeTab === 'my-requests' ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : ''}`}
-            >
-              <List className="w-4 h-4 ml-2" />
-              درخواست‌های من
-            </Button>
-          )}
-          {hasVisitor && (
-            <Button
-              variant={activeTab === 'available' ? 'default' : 'outline'}
-              onClick={() => {
-                setActiveTab('available');
-                fetchAvailableRequests();
-              }}
-              className={`${activeTab === 'available' ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : ''}`}
-            >
-              <Package className="w-4 h-4 ml-2" />
-              درخواست‌های موجود
-            </Button>
-          )}
-          <Button
-            variant={activeTab === 'chats' ? 'default' : 'outline'}
-            onClick={() => navigate('/matching/chats')}
-            className={`${activeTab === 'chats' ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : ''}`}
-          >
-            <MessageCircle className="w-4 h-4 ml-2" />
-            مکالمات
-          </Button>
-          <Button
-            variant={activeTab === 'ratings' ? 'default' : 'outline'}
-            onClick={() => navigate('/matching/ratings')}
-            className={`${activeTab === 'ratings' ? 'bg-gradient-to-r from-orange-500 to-red-600 text-white' : ''}`}
-          >
-            <Star className="w-4 h-4 ml-2" />
-            امتیازها
-          </Button>
-        </div>
-
         {/* Content */}
-        {activeTab === 'overview' && renderOverview()}
-        {activeTab === 'my-requests' && renderMyRequests()}
-        {activeTab === 'available' && renderAvailableRequests()}
+        {renderOverview()}
       </div>
     </div>
   );

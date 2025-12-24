@@ -137,7 +137,7 @@ class ApiService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  private async handleResponse(response: Response) {
+  private async handleResponse(response: Response, url: string = '') {
     if (!response.ok) {
       let errorData;
       try {
@@ -152,12 +152,26 @@ class ApiService {
       // اضافه کردن status code به error data
       errorData.statusCode = response.status;
       
+      // برای خطاهای 404 در visitor/status و supplier/status، به صورت silent handle می‌کنیم
+      if (response.status === 404 && url && (url.includes('/visitor/status') || url.includes('/supplier/status'))) {
+        // این خطاها طبیعی هستند - فقط throw می‌کنیم بدون نمایش toast
+        throw {
+          response: {
+            data: errorData,
+            status: response.status
+          },
+          statusCode: response.status,
+          isRegistrationStatus404: true
+        };
+      }
+      
       // استفاده از error handler جدید
       const errorMessage = errorHandler.handleApiError({
         response: {
           data: errorData,
           status: response.status
-        }
+        },
+        config: { url }
       }, 'خطا در درخواست به سرور');
       
       throw new Error(errorMessage);
@@ -182,7 +196,7 @@ class ApiService {
           ...options.headers,
         },
       });
-      return this.handleResponse(response);
+      return this.handleResponse(response, url);
     } catch (error) {
       console.error(`❌ Network error for ${url}:`, error);
       
@@ -453,12 +467,20 @@ class ApiService {
   }
 
   async getSupplierStatus(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/supplier/status`, {
-      method: 'GET',
-      headers: {
-        ...this.getAuthHeaders(),
-      },
-    });
+    try {
+      return await this.makeRequest(`${API_BASE_URL}/supplier/status`, {
+        method: 'GET',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+    } catch (error: any) {
+      // 404 is expected when user hasn't registered as supplier - return empty status silently
+      if (error?.response?.status === 404 || error?.statusCode === 404 || error?.isRegistrationStatus404 || error?.message?.includes('404')) {
+        return { has_supplier: false };
+      }
+      throw error;
+    }
   }
 
   async getApprovedSuppliers(params: { page?: number; per_page?: number } = {}): Promise<any> {
@@ -506,12 +528,20 @@ class ApiService {
   }
 
   async getMyVisitorStatus(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/visitor/status`, {
-      method: 'GET',
-      headers: {
-        ...this.getAuthHeaders(),
-      },
-    });
+    try {
+      return await this.makeRequest(`${API_BASE_URL}/visitor/status`, {
+        method: 'GET',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+    } catch (error: any) {
+      // 404 is expected when user hasn't registered as visitor - return empty status silently
+      if (error?.response?.status === 404 || error?.statusCode === 404 || error?.isRegistrationStatus404 || error?.message?.includes('404')) {
+        return { has_visitor: false };
+      }
+      throw error;
+    }
   }
 
   async getApprovedVisitors(params: { page?: number; per_page?: number } = {}): Promise<any> {

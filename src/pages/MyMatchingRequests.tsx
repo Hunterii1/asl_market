@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import HeaderAuth from "@/components/ui/HeaderAuth";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 import { MatchingRadar } from "@/components/MatchingRadar";
 import { 
   Package, 
@@ -48,6 +49,7 @@ interface MatchingRequest {
 export default function MyMatchingRequests() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const [requests, setRequests] = useState<MatchingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -56,8 +58,51 @@ export default function MyMatchingRequests() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    loadRequests();
-  }, [page, statusFilter]);
+    if (!isAuthenticated) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای مشاهده درخواست‌های خود، ابتدا باید وارد شوید.",
+        variant: "default",
+      });
+      navigate('/login');
+      return;
+    }
+    
+    // Check if user is a supplier
+    checkSupplierStatus();
+  }, [isAuthenticated, page, statusFilter]);
+
+  const checkSupplierStatus = async () => {
+    try {
+      const supplierStatus = await apiService.getSupplierStatus();
+      if (!supplierStatus.has_supplier) {
+        toast({
+          title: "نیاز به ثبت‌نام تأمین‌کننده",
+          description: "برای مشاهده درخواست‌های خود، ابتدا باید به عنوان تأمین‌کننده ثبت‌نام کنید.",
+          variant: "default",
+        });
+        navigate('/supplier-registration');
+        return;
+      }
+      loadRequests();
+    } catch (error: any) {
+      // 404 means user hasn't registered as supplier
+      if (error?.response?.status === 404 || error?.statusCode === 404) {
+        toast({
+          title: "نیاز به ثبت‌نام تأمین‌کننده",
+          description: "برای مشاهده درخواست‌های خود، ابتدا باید به عنوان تأمین‌کننده ثبت‌نام کنید.",
+          variant: "default",
+        });
+        navigate('/supplier-registration');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "خطا",
+          description: error.message || "خطا در بررسی وضعیت تأمین‌کننده",
+        });
+      }
+    }
+  };
 
   const loadRequests = async () => {
     setLoading(true);

@@ -85,33 +85,9 @@ const HeaderAuth = () => {
     if (isAuthenticated) {
       fetchNotifications();
       fetchUnreadCount();
-      checkVisitorSupplierStatus();
+      // Don't check visitor/supplier status here - let each page check it when needed
     }
   }, [isAuthenticated, authLicenseStatus]);
-
-  const checkVisitorSupplierStatus = async () => {
-    if (!isAuthenticated) return;
-    
-    try {
-      // Check visitor status
-      try {
-        const visitorStatus = await apiService.getMyVisitorStatus();
-        setHasVisitor(visitorStatus.has_visitor || false);
-      } catch (error) {
-        setHasVisitor(false);
-      }
-
-      // Check supplier status
-      try {
-        const supplierStatus = await apiService.getSupplierStatus();
-        setHasSupplier(supplierStatus.has_supplier || false);
-      } catch (error) {
-        setHasSupplier(false);
-      }
-    } catch (error) {
-      console.error('Error checking visitor/supplier status:', error);
-    }
-  };
 
   // Fetch notifications every 30 seconds
   useEffect(() => {

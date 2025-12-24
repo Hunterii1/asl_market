@@ -144,8 +144,24 @@ class ErrorHandler {
       }
     }
     
-    // 2️⃣ خطاهای دقیق ثبت‌نام (انگلیسی) - فقط با 404
+    // 2️⃣ خطاهای 404 برای visitor/status و supplier/status - همیشه suppress می‌شوند
     if (statusCode === 404) {
+      // Suppress 404 errors for registration status endpoints
+      const registrationEndpoints = [
+        '/visitor/status',
+        '/supplier/status',
+        'visitor/status',
+        'supplier/status',
+      ];
+      
+      // Check if error is from registration status endpoint
+      const errorSource = (error as any)?.config?.url || (error as any)?.request?.url || '';
+      if (registrationEndpoints.some(endpoint => errorSource.includes(endpoint))) {
+        console.log('🔇 Suppressing 404 registration status error');
+        return true;
+      }
+      
+      // Also check error message patterns
       const registrationPatternsEN = [
         'visitor not found',
         'supplier not found',
