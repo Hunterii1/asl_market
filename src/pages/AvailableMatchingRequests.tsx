@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import HeaderAuth from "@/components/ui/HeaderAuth";
+import { Pagination } from "@/components/ui/pagination";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -73,7 +74,13 @@ export default function AvailableMatchingRequests() {
     
     // Check if user is a visitor
     checkVisitorStatus();
-  }, [isAuthenticated, page]);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadRequests();
+    }
+  }, [page, isAuthenticated]);
 
   const checkVisitorStatus = async () => {
     try {
@@ -87,7 +94,7 @@ export default function AvailableMatchingRequests() {
         navigate('/visitor-registration');
         return;
       }
-      loadRequests();
+      // loadRequests will be called by useEffect when page changes
     } catch (error: any) {
       // 404 means user hasn't registered as visitor
       if (error?.response?.status === 404 || error?.statusCode === 404) {
@@ -413,31 +420,13 @@ export default function AvailableMatchingRequests() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-3 mt-8 pt-6 border-t">
-                    <Button
-                      variant="outline"
-                      size="default"
-                      onClick={() => setPage(p => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      className="min-w-[100px]"
-                    >
-                      قبلی
-                    </Button>
-                    <span className="text-sm font-medium text-muted-foreground px-4">
-                      صفحه {page} از {totalPages}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      (مجموع {total} درخواست)
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="default"
-                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      className="min-w-[100px]"
-                    >
-                      بعدی
-                    </Button>
+                  <div className="mt-8 pt-6 border-t">
+                    <Pagination
+                      currentPage={page}
+                      totalPages={totalPages}
+                      totalItems={total}
+                      onPageChange={setPage}
+                    />
                   </div>
                 )}
               </>

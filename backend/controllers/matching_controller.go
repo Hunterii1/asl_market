@@ -267,10 +267,27 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 		})
 	}
 
+	// Convert supplier to response format
+	var supplierResponse models.SupplierResponse
+	if request.Supplier.ID > 0 {
+		supplierResponse = models.SupplierResponse{
+			ID:        request.Supplier.ID,
+			UserID:    request.Supplier.UserID,
+			FullName:  request.Supplier.FullName,
+			Mobile:    request.Supplier.Mobile,
+			BrandName: request.Supplier.BrandName,
+			ImageURL:  request.Supplier.ImageURL,
+			City:      request.Supplier.City,
+			Address:   request.Supplier.Address,
+			Status:    request.Supplier.Status,
+		}
+	}
+
 	response := models.MatchingRequestResponse{
 		ID:                   request.ID,
 		SupplierID:           request.SupplierID,
 		UserID:               request.UserID, // Include user_id so frontend can check ownership
+		Supplier:             supplierResponse,
 		ProductName:          request.ProductName,
 		ProductID:            request.ProductID,
 		Quantity:             request.Quantity,
