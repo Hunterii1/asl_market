@@ -52,6 +52,34 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper function to get image URL
+  const getImageUrl = (imagePath: string): string => {
+    if (!imagePath) return '';
+    
+    // If already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // Get base URL for static files
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      
+      // Production server
+      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+        return `https://asllmarket.com${imagePath}`;
+      }
+      
+      // Development server
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
+        return `http://localhost:8080${imagePath}`;
+      }
+    }
+    
+    // Fallback
+    return `http://localhost:8080${imagePath}`;
+  };
+
   useEffect(() => {
     loadMessages();
     // Poll for new messages every 5 seconds
@@ -352,15 +380,16 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                       {message.image_url && (
                         <div className="mb-2 rounded-lg overflow-hidden max-w-full">
                           <img
-                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`}
+                            src={getImageUrl(message.image_url)}
                             alt="پیام تصویری"
                             className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
                             style={{ maxWidth: '100%', height: 'auto' }}
                             onClick={() => {
                               // Open image in new tab
-                              window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`, '_blank');
+                              window.open(getImageUrl(message.image_url), '_blank');
                             }}
                             onError={(e) => {
+                              console.error('❌ Error loading image:', message.image_url);
                               e.currentTarget.style.display = 'none';
                             }}
                           />
