@@ -224,16 +224,16 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 		}
 	}
 
-		// Check if user is an approved visitor who can view this request (even if they haven't responded yet)
-		if !isAuthorized {
-			visitor, err := models.GetVisitorByUserID(mc.db, userIDUint)
-			if err == nil && visitor.Status == "approved" {
-				// Check if this request matches visitor's destination cities
-				if mc.matchingService.CanVisitorViewRequest(visitor, request) {
-					isAuthorized = true
-				}
+	// Check if user is an approved visitor who can view this request (even if they haven't responded yet)
+	if !isAuthorized {
+		visitor, err := models.GetVisitorByUserID(mc.db, userIDUint)
+		if err == nil && visitor.Status == "approved" {
+			// Check if this request matches visitor's destination cities
+			if mc.matchingService.CanVisitorViewRequest(visitor, request) {
+				isAuthorized = true
 			}
 		}
+	}
 
 	if !isAuthorized {
 		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این درخواست ندارید"})
@@ -918,6 +918,7 @@ func (mc *MatchingController) GetMatchingChatMessages(c *gin.Context) {
 			SenderName:     msg.Sender.Name(),
 			SenderType:     msg.SenderType,
 			Message:        msg.Message,
+			ImageURL:       msg.ImageURL,
 			IsRead:         msg.IsRead,
 			ReadAt:         msg.ReadAt,
 			CreatedAt:      msg.CreatedAt,

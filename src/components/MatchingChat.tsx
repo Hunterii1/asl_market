@@ -414,32 +414,8 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                             }}
                             onError={(e) => {
                               console.error('❌ Error loading image:', message.image_url, 'Current src:', e.currentTarget.src);
-                              // Try alternative URL if first one fails
-                              const currentSrc = e.currentTarget.src;
-                              const hostname = window.location.hostname;
-                              const protocol = window.location.protocol;
-                              
-                              // If current URL includes /backend, try without /backend
-                              if (currentSrc.includes('/backend/uploads')) {
-                                const altUrl = `${protocol}//${hostname}${message.image_url}`;
-                                console.log('🔄 Trying alternative URL (without /backend):', altUrl);
-                                if (currentSrc !== altUrl) {
-                                  e.currentTarget.src = altUrl;
-                                } else {
-                                  e.currentTarget.style.display = 'none';
-                                }
-                              } else {
-                                // If direct path failed, try with /backend
-                                const altUrl = `${protocol}//${hostname}/backend${message.image_url}`;
-                                console.log('🔄 Trying alternative URL (with /backend):', altUrl);
-                                if (currentSrc !== altUrl) {
-                                  e.currentTarget.src = altUrl;
-                                } else {
-                                  // Both failed, hide image
-                                  console.error('❌ Both URLs failed, hiding image');
-                                  e.currentTarget.style.display = 'none';
-                                }
-                              }
+                              // Hide image on error
+                              e.currentTarget.style.display = 'none';
                             }}
                           />
                         </div>

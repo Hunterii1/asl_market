@@ -61,6 +61,9 @@ func UploadChatImage(c *gin.Context) {
 		return
 	}
 
+	// Debug: Log the image path
+	fmt.Printf("📸 Chat image uploaded: %s\n", imagePath)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "تصویر با موفقیت آپلود شد",
 		"image_url": imagePath,
