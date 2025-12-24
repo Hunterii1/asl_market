@@ -181,22 +181,31 @@ const Index = () => {
           <div className="mb-4 sm:mb-6">
             <Button
               onClick={() => navigate('/asl-match')}
-              className="w-full h-16 sm:h-20 md:h-24 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 hover:from-emerald-600 hover:via-green-600 hover:to-teal-600 text-white rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-emerald-500/50 transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 group relative overflow-hidden"
+              className="w-full h-16 sm:h-20 md:h-24 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 group relative overflow-hidden"
             >
-              {/* Animated background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/20 via-green-400/20 to-teal-400/20 animate-pulse"></div>
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/30 via-orange-500/30 to-red-500/30 animate-pulse"></div>
+              
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              
+              {/* Glowing particles */}
+              <div className="absolute top-0 left-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute bottom-0 left-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1.5s' }}></div>
               
               {/* Content */}
               <div className="relative z-10 flex items-center gap-3 sm:gap-4">
-                <div className="p-2 sm:p-3 bg-white/20 rounded-xl sm:rounded-2xl backdrop-blur-sm">
-                  <Radio className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+                <div className="p-2 sm:p-3 bg-white/20 rounded-xl sm:rounded-2xl backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                  <Radio className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white group-hover:rotate-180 transition-transform duration-500" />
                 </div>
                 <div className="flex flex-col items-start">
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white drop-shadow-lg">
+                    <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white drop-shadow-lg group-hover:scale-105 transition-transform duration-300">
                       ASL MATCH
                     </span>
-                    <Badge className="bg-white/30 text-white border-white/50 text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 font-bold backdrop-blur-sm">
+                    <Badge className="bg-white/30 text-white border-white/50 text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 font-bold backdrop-blur-sm group-hover:bg-white/40 transition-all duration-300 animate-pulse">
                       BETA
                     </Badge>
                   </div>
@@ -204,9 +213,9 @@ const Index = () => {
                     سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
                   </p>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 text-white/80">
+                <div className="hidden sm:flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
                   <span className="text-sm font-semibold">ورود</span>
-                  <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
             </Button>

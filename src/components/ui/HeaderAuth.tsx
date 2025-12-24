@@ -447,6 +447,11 @@ const HeaderAuth = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
+                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
+                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
+                      {user ? getInitials(user.first_name, user.last_name) : "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="text-right hidden lg:block">
                     <p className="text-sm font-medium text-foreground">
                       {user ? `${user.first_name} ${user.last_name}` : "کاربر"}
@@ -455,130 +460,78 @@ const HeaderAuth = () => {
                       {user?.email || "user@example.com"}
                     </p>
                   </div>
-                  <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
-                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
-                      {user ? getInitials(user.first_name, user.last_name) : "U"}
-                    </AvatarFallback>
-                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
-                <DropdownMenuLabel className="text-foreground">
-                  حساب کاربری
+                <DropdownMenuLabel className="text-foreground flex items-center justify-between">
+                  <span>حساب کاربری</span>
                   {currentLicenseStatus && (
                     <Badge 
                       variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
-                      className="mt-2 sm:hidden"
+                      className="sm:hidden"
                     >
                       {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
                     </Badge>
                   )}
                 </DropdownMenuLabel>
+                {currentLicenseStatus && (
+                  <div className="px-2 py-1.5 hidden sm:block">
+                    <Badge 
+                      variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
+                      className="w-full justify-center"
+                    >
+                      {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
+                    </Badge>
+                  </div>
+                )}
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 
-                  className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                  className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
                   onClick={() => navigate('/edit-profile')}
                 >
-                  <User className="w-4 h-4 mr-2" />
-                  ویرایش پروفایل
+                  <span className="flex-1 text-right">ویرایش پروفایل</span>
+                  <User className="w-4 h-4 ml-2 flex-shrink-0" />
                 </DropdownMenuItem>
                 
                 {/* Visitor Status */}
                 {hasVisitor && (
                   <DropdownMenuItem 
-                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
                     onClick={() => navigate('/visitor-status')}
                   >
-                    <UserCheck className="w-4 h-4 mr-2" />
-                    وضعیت ویزیتور
+                    <span className="flex-1 text-right">وضعیت ویزیتور</span>
+                    <UserCheck className="w-4 h-4 ml-2 flex-shrink-0" />
                   </DropdownMenuItem>
                 )}
 
                 {/* Supplier Status */}
                 {hasSupplier && (
                   <DropdownMenuItem 
-                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
                     onClick={() => navigate('/supplier-status')}
                   >
-                    <Building className="w-4 h-4 mr-2" />
-                    وضعیت تأمین‌کننده
+                    <span className="flex-1 text-right">وضعیت تأمین‌کننده</span>
+                    <Building className="w-4 h-4 ml-2 flex-shrink-0" />
                   </DropdownMenuItem>
                 )}
 
                 {currentLicenseStatus?.is_approved && (
                   <DropdownMenuItem 
-                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
+                    className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
                     onClick={() => navigate('/license-info')}
                   >
-                    <Shield className="w-4 h-4 mr-2" />
-                    اطلاعات لایسنس
+                    <span className="flex-1 text-right">اطلاعات لایسنس</span>
+                    <Shield className="w-4 h-4 ml-2 flex-shrink-0" />
                   </DropdownMenuItem>
                 )}
                 
-                {/* ASL Match System Menu Items */}
-                {currentLicenseStatus?.is_approved && (
-                  <>
-                    <DropdownMenuSeparator className="bg-border" />
-                    <DropdownMenuLabel className="text-foreground font-bold text-emerald-600 dark:text-emerald-400">
-                      ASL MATCH
-                      <Badge className="mr-2 bg-emerald-500 text-white text-xs">BETA</Badge>
-                    </DropdownMenuLabel>
-                    
-                    {/* For Suppliers */}
-                    {hasSupplier && (
-                      <>
-                        <DropdownMenuItem 
-                          className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                          onClick={() => navigate('/matching/create')}
-                        >
-                          <PlusCircle className="w-4 h-4 mr-2" />
-                          ایجاد درخواست ASL Match
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                          onClick={() => navigate('/matching/my-requests')}
-                        >
-                          <List className="w-4 h-4 mr-2" />
-                          درخواست‌های من
-                        </DropdownMenuItem>
-                      </>
-                    )}
-                    
-                    {/* For Visitors */}
-                    {hasVisitor && (
-                      <DropdownMenuItem 
-                        className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                        onClick={() => navigate('/matching/available-requests')}
-                      >
-                        <Package className="w-4 h-4 mr-2" />
-                        درخواست‌های موجود
-                      </DropdownMenuItem>
-                    )}
-                    
-                    {/* Common for all */}
-                    <DropdownMenuItem 
-                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                      onClick={() => navigate('/matching/chats')}
-                    >
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      مکالمات ASL Match
-                    </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-foreground hover:bg-muted rounded-xl cursor-pointer"
-                      onClick={() => navigate('/matching/ratings')}
-                    >
-                      <Star className="w-4 h-4 mr-2" />
-                      امتیازهای ASL Match
-                    </DropdownMenuItem>
-                  </>
-                )}
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 
                   onClick={handleLogout}
-                  className="text-red-400 hover:bg-red-500/10 rounded-xl cursor-pointer"
+                  className="text-red-400 hover:bg-red-500/10 rounded-xl cursor-pointer flex items-center"
                 >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  خروج
+                  <span className="flex-1 text-right">خروج</span>
+                  <LogOut className="w-4 h-4 ml-2 flex-shrink-0" />
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
