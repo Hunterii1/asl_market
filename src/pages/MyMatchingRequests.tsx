@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import HeaderAuth from "@/components/ui/HeaderAuth";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
@@ -129,8 +130,14 @@ export default function MyMatchingRequests() {
   };
 
   const getStatusBadge = (status: string, isExpired: boolean) => {
-    if (isExpired) {
-      return <Badge variant="secondary" className="bg-gray-500">منقضی شده</Badge>;
+    // Check if expired (either by status or is_expired flag)
+    if (isExpired || status === 'expired') {
+      return (
+        <Badge variant="secondary" className="bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg animate-pulse">
+          <Clock className="w-3 h-3 ml-1" />
+          منقضی شده
+        </Badge>
+      );
     }
 
     switch (status) {
@@ -144,8 +151,6 @@ export default function MyMatchingRequests() {
         return <Badge className="bg-purple-500">تکمیل شده</Badge>;
       case "cancelled":
         return <Badge variant="destructive">لغو شده</Badge>;
-      case "expired":
-        return <Badge variant="secondary" className="bg-gray-500">منقضی شده</Badge>;
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -290,7 +295,7 @@ export default function MyMatchingRequests() {
                       key={request.id} 
                       className={`group hover:shadow-2xl hover:scale-[1.02] transition-all duration-500 border-l-4 animate-in fade-in-0 slide-in-from-right-4 ${
                         request.status === 'accepted' ? 'border-l-green-500 border-green-300 dark:border-green-700 bg-gradient-to-br from-green-50/50 via-emerald-50/50 to-teal-50/50 dark:from-green-900/10 dark:via-emerald-900/10 dark:to-teal-900/10' :
-                        request.is_expired ? 'opacity-75 border-l-gray-400 border-gray-300 dark:border-gray-700' :
+                        request.is_expired || request.status === 'expired' ? 'opacity-90 border-l-red-400 border-red-200 dark:border-red-700 bg-gradient-to-br from-red-50/30 via-gray-50/30 to-gray-50/30 dark:from-red-900/10 dark:via-gray-900/10 dark:to-gray-900/10' :
                         'border-l-blue-500 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 hover:border-l-blue-600'
                       }`}
                       style={{ animationDelay: `${index * 100}ms` }}
@@ -322,7 +327,7 @@ export default function MyMatchingRequests() {
                                       request.is_expired ? 'text-gray-600' :
                                       'text-white'
                                     }`} />
-                                    {(request.status === 'active' || request.status === 'pending') && !request.is_expired && (
+                                    {(request.status === 'active' || request.status === 'pending') && !request.is_expired && request.status !== 'expired' && (
                                       <div className="absolute inset-0 rounded-xl bg-blue-400 animate-ping opacity-75"></div>
                                     )}
                                   </div>
@@ -333,6 +338,28 @@ export default function MyMatchingRequests() {
                                     {getStatusBadge(request.status, request.is_expired)}
                                   </div>
                                 </div>
+                                
+                                {/* Expired Notice for Supplier */}
+                                {(request.is_expired || request.status === 'expired') && (
+                                  <Alert className="border-2 border-red-300 bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 dark:from-red-900/20 dark:via-rose-900/20 dark:to-pink-900/20 shadow-lg mt-4 animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                                    <div className="flex items-center gap-3">
+                                      <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg shadow-lg">
+                                        <Clock className="h-5 w-5 text-white" />
+                                      </div>
+                                      <AlertDescription className="text-red-800 dark:text-red-200 flex-1">
+                                        <p className="font-extrabold text-base mb-1">⏰ این درخواست منقضی شده است</p>
+                                        <p className="text-sm">
+                                          این درخواست دیگر به ویزیتورها نمایش داده نمی‌شود و نمی‌توانید پاسخ جدیدی دریافت کنید.
+                                          {request.matched_visitor_count > 0 && (
+                                            <span className="block mt-1">
+                                              تعداد ویزیتورهای مطلع شده: <strong className="text-red-700 dark:text-red-300">{request.matched_visitor_count}</strong>
+                                            </span>
+                                          )}
+                                        </p>
+                                      </AlertDescription>
+                                    </div>
+                                  </Alert>
+                                )}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
                                   <div className="flex items-center gap-3">
                                     <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">

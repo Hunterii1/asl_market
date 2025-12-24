@@ -27,7 +27,8 @@ import {
   RefreshCw,
   Edit,
   CalendarClock,
-  Star
+  Star,
+  AlertCircle
 } from "lucide-react";
 import { MatchingChat } from "@/components/MatchingChat";
 import { MatchingRadar } from "@/components/MatchingRadar";
@@ -50,6 +51,7 @@ interface MatchingRequest {
   remaining_time: string;
   is_expired: boolean;
   created_at: string;
+  user_id?: number; // ID of user who created the request (supplier)
   supplier?: {
     id: number;
     full_name: string;
@@ -96,6 +98,21 @@ export default function MatchingRequestDetails() {
   const [isSupplier, setIsSupplier] = useState(false);
   const [hasVisitor, setHasVisitor] = useState(false);
   const [myResponse, setMyResponse] = useState<MatchingResponse | null>(null);
+  
+  // Debug: Log states to help understand why buttons might not show
+  useEffect(() => {
+    if (request) {
+      console.log('🔍 Matching Request Details Debug:', {
+        isSupplier,
+        hasVisitor,
+        hasMyResponse: !!myResponse,
+        requestStatus: request.status,
+        isExpired: request.is_expired,
+        acceptedVisitorId: request.accepted_visitor_id,
+        shouldShowResponseButtons: !isSupplier && !myResponse && !request.is_expired && request.status !== 'accepted' && request.status !== 'completed'
+      });
+    }
+  }, [request, isSupplier, hasVisitor, myResponse]);
 
   useEffect(() => {
     if (id) {
@@ -109,33 +126,68 @@ export default function MatchingRequestDetails() {
       const response = await apiService.getMatchingRequestDetails(parseInt(id!));
       setRequest(response.data);
       
-      // Check if current user is the supplier
-      try {
-        const supplierStatus = await apiService.getSupplierStatus();
-        setIsSupplier(supplierStatus?.has_supplier || false);
-      } catch {
-        // User is not a supplier
-        setIsSupplier(false);
-      }
+      // Check if current user is the OWNER of this request (not just a supplier)
+      // A user can be both supplier and visitor, so we check ownership, not just supplier status
+      const isRequestOwner = user && response.data?.user_id && response.data.user_id === user.id;
+      setIsSupplier(isRequestOwner || false);
+      
+      console.log('🔍 Request Ownership Check:', {
+        userId: user?.id,
+        requestUserId: response.data?.user_id,
+        isRequestOwner,
+        isSupplier: isRequestOwner
+      });
 
-      // Check if current user is a visitor and find their response
-      if (!isSupplier && user) {
+      // Check if current user is a visitor (regardless of supplier status)
+      // This allows users who are both supplier and visitor to respond to OTHER requests
+      if (user) {
         try {
           const visitorStatus = await apiService.getMyVisitorStatus();
-          if (visitorStatus?.has_visitor && response.data?.responses) {
+          console.log('👤 Visitor Status:', visitorStatus);
+          
+          if (visitorStatus?.has_visitor) {
             setHasVisitor(true);
-            // Find current user's response
-            const myResp = response.data.responses.find(
-              (r: MatchingResponse) => r.user_id === user.id || r.visitor_id === visitorStatus.visitor?.id
-            );
-            if (myResp) {
-              setMyResponse(myResp);
+            console.log('✅ User is a visitor');
+            
+            // Only check for responses if user is NOT the owner of this request
+            // If user owns the request, they see it as supplier, not visitor
+            if (!isRequestOwner) {
+              // Find current user's response
+              if (response.data?.responses && response.data.responses.length > 0) {
+                console.log('📋 Available responses:', response.data.responses);
+                const myResp = response.data.responses.find(
+                  (r: MatchingResponse) => r.user_id === user.id || r.visitor_id === visitorStatus.visitor?.id
+                );
+                if (myResp) {
+                  console.log('✅ Found my response:', myResp);
+                  setMyResponse(myResp);
+                } else {
+                  console.log('ℹ️ No response found for current user');
+                  setMyResponse(null);
+                }
+              } else {
+                console.log('ℹ️ No responses exist yet');
+                setMyResponse(null);
+              }
+            } else {
+              console.log('ℹ️ User owns this request, viewing as supplier (not visitor)');
+              setMyResponse(null);
             }
+          } else {
+            console.log('❌ User is not a visitor');
+            setHasVisitor(false);
+            setMyResponse(null);
           }
-        } catch {
+        } catch (error) {
+          console.error('❌ Error checking visitor status:', error);
           // User is not a visitor or hasn't responded
           setHasVisitor(false);
+          setMyResponse(null);
         }
+      } else {
+        console.log('ℹ️ User not logged in');
+        setHasVisitor(false);
+        setMyResponse(null);
       }
     } catch (error: any) {
       toast({
@@ -171,7 +223,7 @@ export default function MatchingRequestDetails() {
       toast({
         title: "موفقیت",
         description: responseType === 'accepted' 
-          ? "درخواست با موفقیت پذیرفته شد. می‌توانید با تأمین‌کننده ارتباط برقرار کنید."
+          ? "درخواست با موفقیت پذیرفته شد! چت با تأمین‌کننده اکنون در دسترس است."
           : responseType === 'rejected'
           ? "درخواست رد شد"
           : "سوال شما ارسال شد",
@@ -179,7 +231,19 @@ export default function MatchingRequestDetails() {
 
       setShowResponseDialog(false);
       setResponseMessage('');
-      loadRequest();
+      
+      // Reload request to get updated status and chat
+      await loadRequest();
+      
+      // If accepted, scroll to chat section after a short delay
+      if (responseType === 'accepted') {
+        setTimeout(() => {
+          const chatSection = document.getElementById('matching-chat-section');
+          if (chatSection) {
+            chatSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 500);
+      }
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -584,7 +648,19 @@ export default function MatchingRequestDetails() {
             )}
 
             {/* Action Buttons (for visitors who haven't responded yet) */}
-            {!isSupplier && !myResponse && !request.is_expired && request.status !== 'accepted' && request.status !== 'completed' && (
+            {/* 
+              📌 دکمه‌های پاسخ فقط نمایش داده می‌شوند اگر:
+              1. ✅ کاربر صاحب درخواست نباشد (!isSupplier) - حتی اگر تأمین‌کننده باشد
+              2. ✅ کاربر ویزیتور تأیید شده باشد (hasVisitor)
+              3. ✅ کاربر قبلاً پاسخ نداده باشد (!myResponse)
+              4. ✅ درخواست منقضی نشده باشد (!request.is_expired)
+              5. ✅ درخواست accepted یا completed نشده باشد
+              
+              💡 نکته: اگر کاربر هم تأمین‌کننده باشد هم ویزیتور:
+              - اگر صاحب درخواست است → به عنوان تأمین‌کننده می‌بیند (Radar, Responses)
+              - اگر صاحب درخواست نیست → به عنوان ویزیتور می‌بیند (دکمه پاسخ)
+            */}
+            {!isSupplier && hasVisitor && !myResponse && !request.is_expired && request.status !== 'accepted' && request.status !== 'completed' && (
               <Card className="bg-gradient-to-r from-green-50 via-emerald-50 to-blue-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-blue-900/20 border-2 border-green-200 dark:border-green-800 shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.01] animate-in fade-in-0 slide-in-from-bottom-4 duration-500 relative overflow-hidden">
                 {/* Animated connection lines */}
                 <div className="absolute inset-0 opacity-10">
@@ -596,9 +672,14 @@ export default function MatchingRequestDetails() {
                     <div className="p-3 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl shadow-lg animate-pulse">
                       <MessageCircle className="w-6 h-6 text-white" />
                     </div>
-                    <h3 className="font-extrabold text-2xl bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">
-                      پاسخ به درخواست
-                    </h3>
+                    <div className="flex-1">
+                      <h3 className="font-extrabold text-2xl bg-gradient-to-r from-green-600 to-blue-600 dark:from-green-400 dark:to-blue-400 bg-clip-text text-transparent">
+                        پاسخ به درخواست Matching
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        می‌توانید این درخواست را بپذیرید، رد کنید یا سوال بپرسید
+                      </p>
+                    </div>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
@@ -614,7 +695,7 @@ export default function MatchingRequestDetails() {
                           <div className="absolute inset-0 -translate-x-full group-hover/accept:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                           <span className="relative z-10 flex items-center justify-center gap-2">
                             <CheckCircle className="w-6 h-6 group-hover/accept:scale-110 transition-transform duration-300" />
-                            <span className="font-extrabold text-base">پذیرش درخواست</span>
+                            <span className="font-extrabold text-base">✅ پذیرش درخواست</span>
                           </span>
                           <div className="absolute top-0 right-0 w-3 h-3 bg-white rounded-full animate-ping"></div>
                         </Button>
@@ -732,40 +813,190 @@ export default function MatchingRequestDetails() {
               </Card>
             )}
 
-            {/* Accepted Status */}
-            {request.status === 'accepted' && request.accepted_visitor && (
-              <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <AlertDescription className="text-green-800 dark:text-green-200">
-                  این درخواست توسط <strong>{request.accepted_visitor.full_name}</strong> پذیرفته شده است.
-                  می‌توانید با ویزیتور ارتباط برقرار کنید.
+            {/* Debug Info - Show why buttons might not be visible */}
+            {!isSupplier && !hasVisitor && (
+              <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                  <p className="font-extrabold text-lg mb-2">⚠️ دکمه پاسخ نمایش داده نمی‌شود</p>
+                  <p className="text-sm mb-3">برای پاسخ دادن به درخواست‌های Matching، باید:</p>
+                  <ul className="list-disc list-inside text-sm space-y-1 mb-3">
+                    <li>به عنوان ویزیتور ثبت‌نام کرده باشید</li>
+                    <li>وضعیت ویزیتور شما "تأیید شده" (approved) باشد</li>
+                  </ul>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    💡 نکته: حتی اگر تأمین‌کننده هم باشید، برای پاسخ به درخواست‌های دیگران باید ویزیتور تأیید شده باشید.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={() => navigate('/visitor-registration')}
+                  >
+                    ثبت‌نام به عنوان ویزیتور
+                  </Button>
                 </AlertDescription>
               </Alert>
             )}
 
-            {/* Expired Status */}
-            {request.is_expired && (
+            {/* Show message if user owns the request (even if they're also a visitor) */}
+            {isSupplier && hasVisitor && (
+              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <AlertCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200">
+                  <p className="font-extrabold text-lg mb-1">ℹ️ این درخواست متعلق به شماست</p>
+                  <p className="text-sm">
+                    شما هم تأمین‌کننده هستید هم ویزیتور. این درخواست را شما ایجاد کرده‌اید، 
+                    بنابراین به عنوان تأمین‌کننده مشاهده می‌کنید (Radar، Responses). 
+                    برای پاسخ به درخواست‌های دیگران، به صفحه "درخواست‌های موجود" بروید.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Show message if visitor already responded */}
+            {!isSupplier && hasVisitor && myResponse && (
+              <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <MessageCircle className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800 dark:text-blue-200">
+                  <p className="font-extrabold text-lg mb-2">ℹ️ شما قبلاً به این درخواست پاسخ داده‌اید</p>
+                  <p className="text-sm">
+                    نوع پاسخ: <strong className="text-blue-700 dark:text-blue-300">
+                      {myResponse.response_type === 'accepted' && '✅ پذیرفته شده'}
+                      {myResponse.response_type === 'rejected' && '❌ رد شده'}
+                      {myResponse.response_type === 'question' && '❓ سوال پرسیده شده'}
+                    </strong>
+                  </p>
+                  {myResponse.message && (
+                    <p className="text-sm mt-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded-lg">
+                      پیام شما: {myResponse.message}
+                    </p>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Show message if request is already accepted by another visitor */}
+            {!isSupplier && hasVisitor && !myResponse && request.status === 'accepted' && request.accepted_visitor_id && (
+              <Alert className="border-purple-200 bg-purple-50 dark:border-purple-800 dark:bg-purple-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <CheckCircle className="h-4 w-4 text-purple-600" />
+                <AlertDescription className="text-purple-800 dark:text-purple-200">
+                  <p className="font-extrabold text-lg mb-1">ℹ️ این درخواست قبلاً توسط ویزیتور دیگری پذیرفته شده است</p>
+                  <p className="text-sm">
+                    ویزیتور <strong className="text-purple-700 dark:text-purple-300">
+                      {request.accepted_visitor?.full_name || 'ویزیتور دیگر'}
+                    </strong> این درخواست را قبول کرده است.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Accepted Status - For Suppliers */}
+            {isSupplier && request.status === 'accepted' && request.accepted_visitor && (
+              <Alert className="border-2 border-green-300 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 shadow-lg animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg animate-pulse">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <AlertDescription className="text-green-800 dark:text-green-200 flex-1">
+                    <p className="font-extrabold text-lg mb-1">✅ درخواست شما پذیرفته شد!</p>
+                    <p>
+                      ویزیتور <strong className="text-green-700 dark:text-green-300">{request.accepted_visitor.full_name}</strong> درخواست شما را پذیرفته است.
+                      می‌توانید از طریق چت زیر با ویزیتور ارتباط برقرار کنید.
+                    </p>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+
+            {/* Accepted Status - For Visitors */}
+            {!isSupplier && myResponse && myResponse.response_type === 'accepted' && request.status === 'accepted' && (
+              <Alert className="border-2 border-green-300 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/20 dark:via-emerald-900/20 dark:to-teal-900/20 shadow-lg animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg shadow-lg animate-pulse">
+                    <CheckCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <AlertDescription className="text-green-800 dark:text-green-200 flex-1">
+                    <p className="font-extrabold text-lg mb-1">✅ درخواست شما پذیرفته شد!</p>
+                    <p>
+                      شما این درخواست را پذیرفته‌اید. می‌توانید از طریق چت زیر با تأمین‌کننده <strong className="text-green-700 dark:text-green-300">{request.supplier?.full_name || 'تأمین‌کننده'}</strong> ارتباط برقرار کنید.
+                    </p>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+
+            {/* Expired Status - Show to supplier */}
+            {isSupplier && (request.is_expired || request.status === 'expired') && (
+              <Alert className="border-2 border-red-300 bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 dark:from-red-900/20 dark:via-rose-900/20 dark:to-pink-900/20 shadow-lg animate-in fade-in-0 slide-in-from-top-4 duration-500">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-red-500 to-rose-600 rounded-lg shadow-lg animate-pulse">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
+                  <AlertDescription className="text-red-800 dark:text-red-200 flex-1">
+                    <p className="font-extrabold text-lg mb-1">⏰ این درخواست منقضی شده است</p>
+                    <p className="text-sm">
+                      این درخواست دیگر به ویزیتورها نمایش داده نمی‌شود و نمی‌توانید پاسخ جدیدی دریافت کنید.
+                      {request.matched_visitor_count > 0 && (
+                        <span className="block mt-2">
+                          تعداد ویزیتورهای مطلع شده: <strong className="text-red-700 dark:text-red-300">{request.matched_visitor_count}</strong>
+                        </span>
+                      )}
+                    </p>
+                  </AlertDescription>
+                </div>
+              </Alert>
+            )}
+
+            {/* Expired Status - Show to visitors (they shouldn't see this, but just in case) */}
+            {!isSupplier && (request.is_expired || request.status === 'expired') && (
               <Alert className="border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900/20">
                 <Clock className="h-4 w-4 text-gray-600" />
                 <AlertDescription className="text-gray-800 dark:text-gray-200">
-                  این درخواست منقضی شده است.
+                  این درخواست منقضی شده است و دیگر قابل پاسخ نیست.
                 </AlertDescription>
               </Alert>
             )}
 
             {/* Chat Section - Only for accepted requests */}
-            {request.status === 'accepted' && (
-              <Card className="border-blue-200 dark:border-blue-800">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageCircle className="w-5 h-5 text-blue-600" />
-                    چت با {isSupplier ? request.accepted_visitor?.full_name : request.supplier?.full_name}
+            {request.status === 'accepted' && request.accepted_visitor_id && (
+              <Card 
+                id="matching-chat-section"
+                className="border-2 border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 dark:from-blue-900/10 dark:via-indigo-900/10 dark:to-purple-900/10 shadow-xl hover:shadow-2xl transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+              >
+                <CardHeader className="bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 border-b">
+                  <CardTitle className="text-xl font-extrabold flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg animate-pulse">
+                      <MessageCircle className="w-6 h-6 text-white" />
+                    </div>
+                    <span>چت Matching</span>
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg animate-pulse">
+                      <CheckCircle className="w-3 h-3 ml-1" />
+                      فعال
+                    </Badge>
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    {isSupplier 
+                      ? `در حال چت با ویزیتور: ${request.accepted_visitor?.full_name || 'ویزیتور'}`
+                      : `در حال چت با تأمین‌کننده: ${request.supplier?.full_name || 'تأمین‌کننده'}`
+                    }
+                  </p>
                 </CardHeader>
                 <CardContent className="p-0">
                   <MatchingChat requestId={request.id} />
                 </CardContent>
               </Card>
+            )}
+
+            {/* Show message if request is accepted but chat not available yet */}
+            {request.status === 'accepted' && !request.accepted_visitor_id && (
+              <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <MessageCircle className="h-4 w-4 text-yellow-600" />
+                <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+                  درخواست پذیرفته شده است. چت به زودی فعال خواهد شد.
+                </AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>

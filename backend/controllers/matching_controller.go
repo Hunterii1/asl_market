@@ -152,6 +152,7 @@ func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 		responseRequests = append(responseRequests, models.MatchingRequestResponse{
 			ID:                   req.ID,
 			SupplierID:           req.SupplierID,
+			UserID:               req.UserID, // Include user_id for ownership check
 			ProductName:          req.ProductName,
 			ProductID:            req.ProductID,
 			Quantity:             req.Quantity,
@@ -269,6 +270,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 	response := models.MatchingRequestResponse{
 		ID:                   request.ID,
 		SupplierID:           request.SupplierID,
+		UserID:               request.UserID, // Include user_id so frontend can check ownership
 		ProductName:          request.ProductName,
 		ProductID:            request.ProductID,
 		Quantity:             request.Quantity,
@@ -561,6 +563,7 @@ func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 		responseRequests = append(responseRequests, models.MatchingRequestResponse{
 			ID:                   req.ID,
 			SupplierID:           req.SupplierID,
+			UserID:               req.UserID, // Include user_id for ownership check
 			Supplier:             supplierResponse,
 			ProductName:          req.ProductName,
 			ProductID:            req.ProductID,

@@ -193,6 +193,7 @@ type MatchingRatingRequest struct {
 type MatchingRequestResponse struct {
 	ID                   uint                       `json:"id"`
 	SupplierID           uint                       `json:"supplier_id"`
+	UserID               uint                       `json:"user_id"` // User who created the request (for ownership check)
 	Supplier             SupplierResponse           `json:"supplier"`
 	ProductName          string                     `json:"product_name"`
 	ProductID            *uint                      `json:"product_id"`
@@ -320,6 +321,8 @@ func GetMatchingRequestsBySupplier(db *gorm.DB, supplierID uint, status string, 
 // TODO: When visitor count increases, add country matching logic to filter requests
 // based on visitor's destination cities matching request's destination countries.
 // Currently, all active requests are shown to all approved visitors to help with low visitor count.
+//
+// IMPORTANT: Expired requests are NOT shown to visitors - they are filtered out here.
 func GetAvailableMatchingRequestsForVisitor(db *gorm.DB, visitorID uint, page, perPage int) ([]MatchingRequest, int64, error) {
 	var requests []MatchingRequest
 	var total int64
@@ -330,12 +333,14 @@ func GetAvailableMatchingRequestsForVisitor(db *gorm.DB, visitorID uint, page, p
 		return nil, 0, err
 	}
 
-	// Query for active requests
+	// Query for active requests ONLY (exclude expired, cancelled, completed, accepted)
 	// TODO: Add destination cities matching when visitor count increases
 	// For now, show all active requests to all approved visitors
+	// Filter out expired requests - visitors should NOT see expired requests
 	query := db.Model(&MatchingRequest{}).
 		Where("status IN ?", []string{"pending", "active"}).
-		Where("expires_at > ?", time.Now())
+		Where("expires_at > ?", time.Now()).
+		Where("status != ?", "expired") // Explicitly exclude expired status
 
 	// Get total count
 	if err := query.Count(&total).Error; err != nil {
