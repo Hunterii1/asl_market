@@ -270,9 +270,191 @@ const PublicVisitorRegistration = () => {
     }
   };
 
+  // Validate step before moving to next
+  const validateStep = (step: number): boolean => {
+    console.log(`🔍 Validating step ${step}...`);
+    console.log('📋 Form data:', formData);
+    
+    switch (step) {
+      case 1:
+        const step1Valid = !!(formData.full_name && formData.national_id && formData.birth_date && formData.mobile);
+        console.log('✅ Step 1 validation:', step1Valid, {
+          full_name: !!formData.full_name,
+          national_id: !!formData.national_id,
+          birth_date: !!formData.birth_date,
+          mobile: !!formData.mobile
+        });
+        return step1Valid;
+        
+      case 2:
+        if (!formData.residence_address || !formData.city_province || !formData.destination_cities) {
+          console.log('❌ Step 2 validation failed - missing fields:', {
+            residence_address: !!formData.residence_address,
+            city_province: !!formData.city_province,
+            destination_cities: !!formData.destination_cities
+          });
+          return false;
+        }
+        
+        // Validate Arabic location for residence (silent validation - no toast)
+        const cityProvinceLower = formData.city_province.toLowerCase().trim();
+        if (!cityProvinceLower) {
+          console.log('❌ Step 2 validation failed - empty city_province');
+          return false;
+        }
+        
+        // Check if Iranian
+        const isIranian = iranianTerms.some(term => 
+          cityProvinceLower.includes(term.toLowerCase())
+        );
+        if (isIranian) {
+          console.log('❌ Step 2 validation failed - Iranian location detected');
+          return false;
+        }
+        
+        // Check if contains Arabic country
+        const containsArabic = arabicCountries.some(country => 
+          cityProvinceLower.includes(country.toLowerCase())
+        );
+        if (!containsArabic) {
+          console.log('❌ Step 2 validation failed - no Arabic country found');
+          return false;
+        }
+        
+        // Validate destination cities
+        const destinations = formData.destination_cities
+          .split(/[،,\-\s\n]+/)
+          .map(d => d.trim())
+          .filter(d => d.length > 0);
+        
+        if (destinations.length === 0) {
+          console.log('❌ Step 2 validation failed - no destination cities');
+          return false;
+        }
+        
+        // Validate each destination (silent validation)
+        for (const dest of destinations) {
+          const destLower = dest.toLowerCase().trim();
+          if (!destLower) continue;
+          
+          // Check if Iranian
+          if (iranianTerms.some(term => destLower.includes(term.toLowerCase()))) {
+            console.log('❌ Step 2 validation failed - Iranian destination:', dest);
+            return false;
+          }
+          
+          // Check if contains Arabic country
+          if (!arabicCountries.some(country => destLower.includes(country.toLowerCase()))) {
+            console.log('❌ Step 2 validation failed - invalid destination:', dest);
+            return false;
+          }
+        }
+        
+        console.log('✅ Step 2 validation passed');
+        return true;
+        
+      case 3:
+        const step3Valid = !!(formData.bank_account_iban && formData.bank_name);
+        console.log('✅ Step 3 validation:', step3Valid, {
+          bank_account_iban: !!formData.bank_account_iban,
+          bank_name: !!formData.bank_name
+        });
+        return step3Valid;
+        
+      case 4:
+        const step4Valid = !!(formData.language_level);
+        console.log('✅ Step 4 validation:', step4Valid, {
+          language_level: !!formData.language_level
+        });
+        return step4Valid;
+        
+      case 5:
+        const step5Valid = !!(formData.agrees_to_use_approved_products && 
+                             formData.agrees_to_violation_consequences && 
+                             formData.agrees_to_submit_reports && 
+                             formData.digital_signature);
+        console.log('✅ Step 5 validation:', step5Valid, {
+          agrees_to_use_approved_products: formData.agrees_to_use_approved_products,
+          agrees_to_violation_consequences: formData.agrees_to_violation_consequences,
+          agrees_to_submit_reports: formData.agrees_to_submit_reports,
+          digital_signature: !!formData.digital_signature
+        });
+        return step5Valid;
+        
+      default:
+        return true;
+    }
+  };
+
   const nextStep = () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
+    console.log(`🚀 nextStep called for step ${currentStep}`);
+    const isValid = validateStep(currentStep);
+    console.log(`📊 Validation result: ${isValid}`);
+    
+    if (isValid) {
+      if (currentStep < 5) {
+        console.log(`✅ Moving to step ${currentStep + 1}`);
+        setCurrentStep(currentStep + 1);
+      }
+    } else {
+      console.log('❌ Validation failed - showing toast');
+      
+      // Show specific error message based on step
+      let errorMessage = "لطفا تمام فیلدهای الزامی را پر کنید";
+      
+      switch (currentStep) {
+        case 1:
+          const missingFields1 = [];
+          if (!formData.full_name) missingFields1.push("نام و نام خانوادگی");
+          if (!formData.national_id) missingFields1.push("کد ملی");
+          if (!formData.birth_date) missingFields1.push("تاریخ تولد");
+          if (!formData.mobile) missingFields1.push("شماره موبایل");
+          if (missingFields1.length > 0) {
+            errorMessage = `لطفا فیلدهای زیر را پر کنید: ${missingFields1.join('، ')}`;
+          }
+          break;
+        case 2:
+          const missingFields2 = [];
+          if (!formData.residence_address) missingFields2.push("آدرس محل سکونت");
+          if (!formData.city_province) missingFields2.push("شهر و کشور محل سکونت");
+          if (!formData.destination_cities) missingFields2.push("شهرهای مقصد");
+          if (missingFields2.length > 0) {
+            errorMessage = `لطفا فیلدهای زیر را پر کنید: ${missingFields2.join('، ')}`;
+          } else {
+            errorMessage = "لطفا شهر و کشور را به فرمت صحیح وارد کنید (مثال: دبی امارات، مسقط عمان)";
+          }
+          break;
+        case 3:
+          const missingFields3 = [];
+          if (!formData.bank_account_iban) missingFields3.push("شماره شبا");
+          if (!formData.bank_name) missingFields3.push("نام بانک");
+          if (missingFields3.length > 0) {
+            errorMessage = `لطفا فیلدهای زیر را پر کنید: ${missingFields3.join('، ')}`;
+          }
+          break;
+        case 4:
+          if (!formData.language_level) {
+            errorMessage = "لطفا سطح زبان را انتخاب کنید";
+          }
+          break;
+        case 5:
+          const missingFields5 = [];
+          if (!formData.agrees_to_use_approved_products) missingFields5.push("تأیید استفاده از محصولات تأیید شده");
+          if (!formData.agrees_to_violation_consequences) missingFields5.push("تأیید عواقب تخلف");
+          if (!formData.agrees_to_submit_reports) missingFields5.push("تأیید ارسال گزارش");
+          if (!formData.digital_signature) missingFields5.push("امضای دیجیتال");
+          if (missingFields5.length > 0) {
+            errorMessage = `لطفا موارد زیر را تأیید کنید: ${missingFields5.join('، ')}`;
+          }
+          break;
+      }
+      
+      toast({
+        title: "اطلاعات ناقص",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
     }
   };
 
