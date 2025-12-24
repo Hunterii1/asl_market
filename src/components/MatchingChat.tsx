@@ -14,8 +14,8 @@ const getStaticFileBaseUrl = (): string => {
   
   // Production server
   if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-    // API is at /backend/api/v1, so static files should be at /backend/uploads
-    return `${protocol}//${hostname}/backend`;
+    // Use api.asllmarket.com for static files (backend serves them directly)
+    return `${protocol}//api.${hostname}`;
   }
   
   // Development server
@@ -81,12 +81,27 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
     // Ensure imagePath starts with /
     const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     
-    // Get static file base URL
-    const baseUrl = getStaticFileBaseUrl();
-    const url = `${baseUrl}${normalizedPath}`;
+    // Get static file base URL - use api.asllmarket.com for backend static files
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname;
+      const protocol = window.location.protocol;
+      
+      // Production server - use api subdomain for backend static files
+      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+        // Backend serves static files at /uploads via api.asllmarket.com
+        const url = `${protocol}//api.${hostname}${normalizedPath}`;
+        console.log('🖼️ Image URL (production via api subdomain):', url, 'from path:', imagePath);
+        return url;
+      }
+      
+      // Development server
+      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
+        return `http://localhost:8080${normalizedPath}`;
+      }
+    }
     
-    console.log('🖼️ Image URL:', url, 'from path:', imagePath);
-    return url;
+    // Fallback
+    return `http://localhost:8080${normalizedPath}`;
   };
 
   useEffect(() => {
