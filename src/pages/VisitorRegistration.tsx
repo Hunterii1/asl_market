@@ -268,32 +268,54 @@ export default function VisitorRegistration() {
         // Validate destination cities
         // Split only by comma (Persian or English), not by space or dash
         // This allows "راس الخیمه امارات متحده عربی" to stay as one item
-        const destinations = formData.destination_cities
-          .split(/[،,]+/)
-          .map(d => d.trim())
-          .filter(d => d.length > 0);
+        console.log('📍 Original destination_cities:', formData.destination_cities);
         
-        if (destinations.length === 0) {
+        // Trim the input first
+        const trimmedInput = formData.destination_cities.trim();
+        
+        // Split only by comma (Persian or English comma)
+        // Use a more precise regex that only matches commas, not spaces
+        const destinations = trimmedInput
+          ? trimmedInput.split(/[،,]/).map(d => d.trim()).filter(d => d.length > 0)
+          : [];
+        
+        // If no comma found, treat the whole string as one destination
+        const finalDestinations = destinations.length > 0 ? destinations : (trimmedInput ? [trimmedInput] : []);
+        
+        console.log('📍 Split destinations:', finalDestinations);
+        console.log('📍 Number of destinations:', finalDestinations.length);
+        
+        if (finalDestinations.length === 0) {
           console.log('❌ Step 2 validation failed - no destination cities');
           return false;
         }
         
         // Validate each destination (silent validation)
-        for (const dest of destinations) {
-          const destLower = dest.toLowerCase().trim();
-          if (!destLower) continue;
+        for (const dest of finalDestinations) {
+          const destTrimmed = dest.trim();
+          const destLower = destTrimmed.toLowerCase();
+          
+          console.log(`🔍 Validating destination: "${destTrimmed}" (lowercase: "${destLower}")`);
+          
+          if (!destTrimmed || !destLower) {
+            console.log('⚠️ Empty destination, skipping');
+            continue;
+          }
           
           // Check if Iranian
-          if (isIranianLocation(dest)) {
-            console.log('❌ Step 2 validation failed - Iranian destination:', dest);
+          if (isIranianLocation(destTrimmed)) {
+            console.log('❌ Step 2 validation failed - Iranian destination:', destTrimmed);
             return false;
           }
           
           // Check if contains Arabic country
-          if (!isArabicCountry(dest)) {
-            console.log('❌ Step 2 validation failed - invalid destination:', dest);
+          if (!isArabicCountry(destTrimmed)) {
+            console.log('❌ Step 2 validation failed - invalid destination:', destTrimmed);
+            console.log('❌ Destination does not contain any Arabic country/city');
             return false;
           }
+          
+          console.log(`✅ Destination "${destTrimmed}" is valid`);
         }
         
         console.log('✅ Step 2 validation passed');
