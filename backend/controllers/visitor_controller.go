@@ -74,10 +74,25 @@ func RegisterVisitor(c *gin.Context) {
 		return
 	}
 
-	// Validate destination cities (split by comma, dash, space, or any separator and check each)
-	destinations := strings.FieldsFunc(req.DestinationCities, func(r rune) bool {
-		return r == ',' || r == '،' || r == '-' || r == '–' || r == ' ' || r == '\n'
+	// Validate destination cities
+	// Split only by comma (Persian or English), not by space or dash
+	// This allows "راس الخیمه امارات متحده عربی" to stay as one item
+	trimmedInput := strings.TrimSpace(req.DestinationCities)
+	if trimmedInput == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا حداقل یک شهر مقصد وارد کنید"})
+		return
+	}
+	
+	// Split only by comma (Persian or English comma), not by space or dash
+	destinations := strings.FieldsFunc(trimmedInput, func(r rune) bool {
+		return r == ',' || r == '،'
 	})
+	
+	// If no comma found, treat the whole string as one destination
+	if len(destinations) == 0 {
+		destinations = []string{trimmedInput}
+	}
+	
 	for _, dest := range destinations {
 		dest = strings.TrimSpace(dest)
 		if dest != "" {
@@ -593,10 +608,25 @@ func UpdateMyVisitor(c *gin.Context) {
 		return
 	}
 
-	// Validate destination cities (split by comma, dash, or any separator and check each)
-	destinations := strings.FieldsFunc(req.DestinationCities, func(r rune) bool {
-		return r == ',' || r == '،' || r == '-' || r == '–' || r == ' ' || r == '\n'
+	// Validate destination cities
+	// Split only by comma (Persian or English), not by space or dash
+	// This allows "راس الخیمه امارات متحده عربی" to stay as one item
+	trimmedInput := strings.TrimSpace(req.DestinationCities)
+	if trimmedInput == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا حداقل یک شهر مقصد وارد کنید"})
+		return
+	}
+	
+	// Split only by comma (Persian or English comma), not by space or dash
+	destinations := strings.FieldsFunc(trimmedInput, func(r rune) bool {
+		return r == ',' || r == '،'
 	})
+	
+	// If no comma found, treat the whole string as one destination
+	if len(destinations) == 0 {
+		destinations = []string{trimmedInput}
+	}
+	
 	for _, dest := range destinations {
 		dest = strings.TrimSpace(dest)
 		if dest != "" {
