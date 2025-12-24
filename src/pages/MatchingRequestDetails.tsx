@@ -69,6 +69,7 @@ interface MatchingRequest {
 interface MatchingResponse {
   id: number;
   visitor_id: number;
+  user_id?: number;
   response_type: 'accepted' | 'rejected' | 'question';
   message?: string;
   status: string;
@@ -93,6 +94,8 @@ export default function MatchingRequestDetails() {
   const [responseMessage, setResponseMessage] = useState('');
   const [showResponseDialog, setShowResponseDialog] = useState(false);
   const [isSupplier, setIsSupplier] = useState(false);
+  const [hasVisitor, setHasVisitor] = useState(false);
+  const [myResponse, setMyResponse] = useState<MatchingResponse | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -113,6 +116,26 @@ export default function MatchingRequestDetails() {
       } catch {
         // User is not a supplier
         setIsSupplier(false);
+      }
+
+      // Check if current user is a visitor and find their response
+      if (!isSupplier && user) {
+        try {
+          const visitorStatus = await apiService.getMyVisitorStatus();
+          if (visitorStatus?.has_visitor && response.data?.responses) {
+            setHasVisitor(true);
+            // Find current user's response
+            const myResp = response.data.responses.find(
+              (r: MatchingResponse) => r.user_id === user.id || r.visitor_id === visitorStatus.visitor?.id
+            );
+            if (myResp) {
+              setMyResponse(myResp);
+            }
+          }
+        } catch {
+          // User is not a visitor or hasn't responded
+          setHasVisitor(false);
+        }
       }
     } catch (error: any) {
       toast({
@@ -467,8 +490,56 @@ export default function MatchingRequestDetails() {
               </Card>
             )}
 
-            {/* Action Buttons (for visitors) */}
-            {!isSupplier && !request.is_expired && request.status !== 'accepted' && request.status !== 'completed' && (
+            {/* My Response Status (for visitors) */}
+            {!isSupplier && myResponse && (
+              <Card className={`border-2 ${
+                myResponse.response_type === 'accepted' 
+                  ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10' :
+                myResponse.response_type === 'rejected'
+                  ? 'border-red-300 dark:border-red-700 bg-red-50/50 dark:bg-red-900/10' :
+                  'border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/10'
+              }`}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {myResponse.response_type === 'accepted' && (
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                      )}
+                      {myResponse.response_type === 'rejected' && (
+                        <XCircle className="w-6 h-6 text-red-600" />
+                      )}
+                      {myResponse.response_type === 'question' && (
+                        <MessageCircle className="w-6 h-6 text-blue-600" />
+                      )}
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {myResponse.response_type === 'accepted' && 'شما این درخواست را پذیرفته‌اید'}
+                          {myResponse.response_type === 'rejected' && 'شما این درخواست را رد کرده‌اید'}
+                          {myResponse.response_type === 'question' && 'شما سوالی برای این درخواست پرسیده‌اید'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          تاریخ پاسخ: {formatDate(myResponse.created_at)}
+                        </p>
+                        {myResponse.message && (
+                          <p className="text-sm mt-2 p-2 bg-white dark:bg-gray-800 rounded-lg">
+                            {myResponse.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {myResponse.response_type === 'accepted' && (
+                      <Badge className="bg-green-500">
+                        <CheckCircle className="w-3 h-3 ml-1" />
+                        پذیرفته شده
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Action Buttons (for visitors who haven't responded yet) */}
+            {!isSupplier && !myResponse && !request.is_expired && request.status !== 'accepted' && request.status !== 'completed' && (
               <Card className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-200 dark:border-green-800">
                 <CardContent className="p-6">
                   <h3 className="font-semibold text-lg mb-4">پاسخ به درخواست</h3>
