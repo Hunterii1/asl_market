@@ -299,8 +299,8 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
   }
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+    <Card className="h-[600px] flex flex-col overflow-hidden">
+      <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-blue-500" />
@@ -314,9 +314,9 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col p-0">
-        <div className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
+      <CardContent className="flex-1 flex flex-col p-0 min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0" ref={scrollAreaRef}>
+          <div className="space-y-4 w-full">
             {messages.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <MessageCircle className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -329,10 +329,10 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                    className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[75%] rounded-2xl px-4 py-2 ${
+                      className={`max-w-[75%] min-w-0 rounded-2xl px-4 py-2 ${
                         isMine
                           ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
                           : 'bg-muted text-foreground'
@@ -350,11 +350,12 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                         </div>
                       )}
                       {message.image_url && (
-                        <div className="mb-2 rounded-lg overflow-hidden">
+                        <div className="mb-2 rounded-lg overflow-hidden max-w-full">
                           <img
                             src={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`}
                             alt="پیام تصویری"
                             className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{ maxWidth: '100%', height: 'auto' }}
                             onClick={() => {
                               // Open image in new tab
                               window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`, '_blank');
@@ -366,7 +367,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                         </div>
                       )}
                       {message.message && (
-                        <p className="text-sm whitespace-pre-wrap break-words">
+                        <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
                           {message.message}
                         </p>
                       )}
@@ -394,15 +395,16 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
           </div>
         </div>
 
-        <div className="border-t p-4 bg-muted/30">
+        <div className="border-t p-4 bg-muted/30 shrink-0">
           {/* Image Preview */}
           {imagePreview && (
-            <div className="mb-3 relative inline-block">
+            <div className="mb-3 relative inline-block max-w-full">
               <div className="relative">
                 <img
                   src={imagePreview}
                   alt="پیش‌نمایش"
-                  className="max-w-xs h-auto rounded-lg border-2 border-blue-300"
+                  className="max-w-xs max-h-32 h-auto rounded-lg border-2 border-blue-300 object-contain"
+                  style={{ maxWidth: '100%' }}
                 />
                 <Button
                   variant="destructive"
@@ -416,7 +418,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
             </div>
           )}
           
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full">
             <input
               type="file"
               ref={fileInputRef}
@@ -447,7 +449,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                 }
               }}
               placeholder="پیام خود را بنویسید..."
-              className="flex-1"
+              className="flex-1 min-w-0"
               disabled={sending || uploadingImage}
             />
             <Button
