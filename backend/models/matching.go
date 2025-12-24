@@ -317,18 +317,22 @@ func GetMatchingRequestsBySupplier(db *gorm.DB, supplierID uint, status string, 
 }
 
 // GetAvailableMatchingRequestsForVisitor gets matching requests available for a visitor
+// TODO: When visitor count increases, add country matching logic to filter requests
+// based on visitor's destination cities matching request's destination countries.
+// Currently, all active requests are shown to all approved visitors to help with low visitor count.
 func GetAvailableMatchingRequestsForVisitor(db *gorm.DB, visitorID uint, page, perPage int) ([]MatchingRequest, int64, error) {
 	var requests []MatchingRequest
 	var total int64
 
-	// Get visitor to check destination cities
+	// Get visitor to check if approved (required for access)
 	var visitor Visitor
 	if err := db.First(&visitor, visitorID).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Query for active requests that match visitor's destination cities
-	// This is a simplified version - the actual matching logic will be in the service layer
+	// Query for active requests
+	// TODO: Add destination cities matching when visitor count increases
+	// For now, show all active requests to all approved visitors
 	query := db.Model(&MatchingRequest{}).
 		Where("status IN ?", []string{"pending", "active"}).
 		Where("expires_at > ?", time.Now())

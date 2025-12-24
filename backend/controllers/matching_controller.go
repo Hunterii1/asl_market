@@ -204,7 +204,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 		return
 	}
 
-	// Check authorization - user must be the supplier or a matched visitor
+	// Check authorization - user must be the supplier, a matched visitor, or an approved visitor who can view available requests
 	userIDUint := userID.(uint)
 	isAuthorized := false
 
@@ -222,6 +222,17 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 			}
 		}
 	}
+
+		// Check if user is an approved visitor who can view this request (even if they haven't responded yet)
+		if !isAuthorized {
+			visitor, err := models.GetVisitorByUserID(mc.db, userIDUint)
+			if err == nil && visitor.Status == "approved" {
+				// Check if this request matches visitor's destination cities
+				if mc.matchingService.CanVisitorViewRequest(visitor, request) {
+					isAuthorized = true
+				}
+			}
+		}
 
 	if !isAuthorized {
 		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این درخواست ندارید"})
@@ -532,9 +543,25 @@ func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 			remainingTime = "منقضی شده"
 		}
 
+		// Convert supplier to response format
+		var supplierResponse models.SupplierResponse
+		if req.Supplier.ID > 0 {
+			supplierResponse = models.SupplierResponse{
+				ID:        req.Supplier.ID,
+				UserID:    req.Supplier.UserID,
+				FullName:  req.Supplier.FullName,
+				Mobile:    req.Supplier.Mobile,
+				BrandName: req.Supplier.BrandName,
+				ImageURL:  req.Supplier.ImageURL,
+				City:      req.Supplier.City,
+				Status:    req.Supplier.Status,
+			}
+		}
+
 		responseRequests = append(responseRequests, models.MatchingRequestResponse{
 			ID:                   req.ID,
 			SupplierID:           req.SupplierID,
+			Supplier:             supplierResponse,
 			ProductName:          req.ProductName,
 			ProductID:            req.ProductID,
 			Quantity:             req.Quantity,

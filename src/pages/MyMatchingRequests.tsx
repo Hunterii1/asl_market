@@ -25,7 +25,8 @@ import {
   RefreshCw,
   Edit,
   Trash2,
-  CalendarClock
+  CalendarClock,
+  Loader2
 } from "lucide-react";
 
 interface MatchingRequest {
@@ -225,9 +226,10 @@ export default function MyMatchingRequests() {
 
             {/* Requests List */}
             {loading ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">در حال بارگذاری...</p>
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">در حال بارگذاری...</p>
+                <p className="text-sm text-muted-foreground mt-2">لطفاً صبر کنید</p>
               </div>
             ) : requests.length === 0 ? (
               <div className="text-center py-12">
@@ -247,10 +249,10 @@ export default function MyMatchingRequests() {
                   {requests.map((request) => (
                     <Card 
                       key={request.id} 
-                      className={`hover:shadow-xl transition-all duration-300 ${
-                        request.status === 'accepted' ? 'border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10' :
-                        request.is_expired ? 'opacity-75 border-gray-300 dark:border-gray-700' :
-                        'border-blue-200 dark:border-blue-800'
+                      className={`hover:shadow-2xl transition-all duration-300 border-l-4 ${
+                        request.status === 'accepted' ? 'border-l-green-500 border-green-300 dark:border-green-700 bg-green-50/50 dark:bg-green-900/10' :
+                        request.is_expired ? 'opacity-75 border-l-gray-400 border-gray-300 dark:border-gray-700' :
+                        'border-l-blue-500 border-blue-200 dark:border-blue-800'
                       }`}
                     >
                       <CardContent className="p-6">
@@ -339,41 +341,41 @@ export default function MyMatchingRequests() {
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2 lg:min-w-[180px]">
+                          <div className="flex flex-col items-center justify-center gap-3 lg:min-w-[200px]">
                             <Button
                               variant="default"
-                              size="sm"
+                              size="lg"
                               onClick={() => navigate(`/matching/requests/${request.id}`)}
-                              className="w-full"
+                              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                             >
-                              <Eye className="w-4 h-4 mr-2" />
-                              مشاهده جزئیات
+                              <Eye className="w-5 h-5 ml-2" />
+                              <span className="font-semibold">مشاهده جزئیات</span>
                             </Button>
                             {request.status === "pending" || request.status === "active" ? (
                               <>
                                 <Button
                                   variant="outline"
-                                  size="sm"
+                                  size="default"
                                   onClick={() => navigate(`/matching/requests/${request.id}`)}
-                                  className="w-full"
+                                  className="w-full border-2"
                                 >
-                                  <Edit className="w-4 h-4 mr-2" />
+                                  <Edit className="w-4 h-4 ml-2" />
                                   ویرایش
                                 </Button>
                                 <Button
                                   variant="destructive"
-                                  size="sm"
+                                  size="default"
                                   onClick={() => handleCancel(request.id)}
-                                  className="w-full"
+                                  className="w-full shadow-md hover:shadow-lg transition-all duration-300"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  <Trash2 className="w-4 h-4 ml-2" />
                                   لغو درخواست
                                 </Button>
                               </>
                             ) : null}
                             {request.status === "accepted" && (
-                              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                                <p className="text-xs text-green-800 dark:text-green-200 text-center">
+                              <div className="w-full p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800">
+                                <p className="text-sm font-semibold text-green-800 dark:text-green-200 text-center">
                                   ✓ پذیرفته شده
                                 </p>
                               </div>
@@ -387,23 +389,28 @@ export default function MyMatchingRequests() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-6">
+                  <div className="flex justify-center items-center gap-3 mt-8 pt-6 border-t">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
+                      className="min-w-[100px]"
                     >
                       قبلی
                     </Button>
-                    <span className="text-sm text-muted-foreground">
-                      صفحه {page} از {totalPages} (مجموع {total} درخواست)
+                    <span className="text-sm font-medium text-muted-foreground px-4">
+                      صفحه {page} از {totalPages}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      (مجموع {total} درخواست)
                     </span>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
+                      className="min-w-[100px]"
                     >
                       بعدی
                     </Button>

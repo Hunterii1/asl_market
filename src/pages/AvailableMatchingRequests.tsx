@@ -20,7 +20,8 @@ import {
   MessageCircle,
   Calendar,
   User,
-  MapPin
+  MapPin,
+  Loader2
 } from "lucide-react";
 
 interface MatchingRequest {
@@ -158,9 +159,10 @@ export default function AvailableMatchingRequests() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-12">
-                <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">در حال بارگذاری...</p>
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">در حال بارگذاری...</p>
+                <p className="text-sm text-muted-foreground mt-2">لطفاً صبر کنید</p>
               </div>
             ) : requests.length === 0 ? (
               <div className="text-center py-12">
@@ -176,10 +178,10 @@ export default function AvailableMatchingRequests() {
                   {requests.map((request) => (
                     <Card 
                       key={request.id} 
-                      className={`hover:shadow-xl transition-all duration-300 ${
+                      className={`hover:shadow-2xl transition-all duration-300 border-l-4 ${
                         request.is_expired 
-                          ? 'opacity-60 border-gray-300 dark:border-gray-700' 
-                          : 'border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-blue-50/50 dark:from-green-900/10 dark:to-blue-900/10'
+                          ? 'opacity-60 border-l-gray-400 border-gray-300 dark:border-gray-700' 
+                          : 'border-l-green-500 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50/50 to-blue-50/50 dark:from-green-900/10 dark:to-blue-900/10'
                       }`}
                     >
                       <CardContent className="p-6">
@@ -213,22 +215,28 @@ export default function AvailableMatchingRequests() {
                                 </div>
                                 
                                 {request.supplier && (
-                                  <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <User className="w-4 h-4 text-blue-600" />
-                                      <p className="text-sm font-semibold">
-                                        {request.supplier.full_name}
+                                  <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800 shadow-sm">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                                        <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <p className="text-base font-bold text-gray-900 dark:text-gray-100">
+                                          {request.supplier.full_name || "نام نامشخص"}
+                                        </p>
                                         {request.supplier.brand_name && (
-                                          <span className="text-muted-foreground font-normal">
-                                            {" "}({request.supplier.brand_name})
-                                          </span>
+                                          <p className="text-sm text-muted-foreground mt-0.5">
+                                            {request.supplier.brand_name}
+                                          </p>
                                         )}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                                      <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                        {request.supplier.city || "شهر نامشخص"}
                                       </p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                      <MapPin className="w-3 h-3" />
-                                      {request.supplier.city}
-                                    </p>
                                   </div>
                                 )}
 
@@ -303,25 +311,25 @@ export default function AvailableMatchingRequests() {
                               </div>
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2 lg:min-w-[200px]">
+                          <div className="flex flex-col items-center justify-center gap-3 lg:min-w-[220px]">
                             <Button
                               onClick={() => navigate(`/matching/requests/${request.id}`)}
-                              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                              className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                               disabled={request.is_expired}
                               size="lg"
                             >
-                              <Eye className="w-4 h-4 mr-2" />
-                              مشاهده و پاسخ
+                              <Eye className="w-5 h-5 ml-2" />
+                              <span className="font-semibold">مشاهده و پاسخ</span>
                             </Button>
                             {request.is_expired && (
-                              <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                              <div className="w-full p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
                                 <p className="text-xs text-center text-muted-foreground">
                                   ⏰ این درخواست منقضی شده است
                                 </p>
                               </div>
                             )}
                             {!request.is_expired && (
-                              <p className="text-xs text-center text-muted-foreground">
+                              <p className="text-xs text-center text-muted-foreground px-2">
                                 برای مشاهده جزئیات و پاسخ دادن کلیک کنید
                               </p>
                             )}
@@ -334,23 +342,28 @@ export default function AvailableMatchingRequests() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-6">
+                  <div className="flex justify-center items-center gap-3 mt-8 pt-6 border-t">
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page === 1}
+                      className="min-w-[100px]"
                     >
                       قبلی
                     </Button>
-                    <span className="text-sm text-muted-foreground">
-                      صفحه {page} از {totalPages} (مجموع {total} درخواست)
+                    <span className="text-sm font-medium text-muted-foreground px-4">
+                      صفحه {page} از {totalPages}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      (مجموع {total} درخواست)
                     </span>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="default"
                       onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                       disabled={page === totalPages}
+                      className="min-w-[100px]"
                     >
                       بعدی
                     </Button>

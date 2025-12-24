@@ -22,6 +22,9 @@ func NewMatchingService(db *gorm.DB) *MatchingService {
 }
 
 // FindMatchingVisitors finds suitable visitors for a matching request
+// TODO: When visitor count increases, add country matching logic to filter visitors
+// based on their destination cities matching request's destination countries.
+// Currently, all approved visitors are matched to help with low visitor count.
 func (s *MatchingService) FindMatchingVisitors(matchingRequest *models.MatchingRequest) ([]models.Visitor, error) {
 	// Get all approved visitors
 	var allVisitors []models.Visitor
@@ -29,15 +32,19 @@ func (s *MatchingService) FindMatchingVisitors(matchingRequest *models.MatchingR
 		return nil, err
 	}
 
-	// Parse destination countries from matching request
-	requestCountries := parseCountries(matchingRequest.DestinationCountries)
+	// TODO: Add country matching filter when visitor count increases
+	// For now, return all approved visitors
+	// Parse destination countries from matching request (for future use)
+	// requestCountries := parseCountries(matchingRequest.DestinationCountries)
 
 	// Filter and score visitors
 	var matchedVisitors []models.Visitor
 	scores := make(map[uint]int) // visitor ID -> score
 
 	for _, visitor := range allVisitors {
-		score := s.calculateMatchingScore(matchingRequest, &visitor, requestCountries)
+		// TODO: Add country matching check here when visitor count increases
+		// For now, give all visitors a base score
+		score := s.calculateMatchingScore(matchingRequest, &visitor, nil) // Pass nil for now
 		if score > 0 {
 			matchedVisitors = append(matchedVisitors, visitor)
 			scores[visitor.ID] = score
@@ -60,28 +67,38 @@ func (s *MatchingService) FindMatchingVisitors(matchingRequest *models.MatchingR
 
 // calculateMatchingScore calculates a matching score for a visitor
 // Returns 0 if visitor doesn't match at all
+// TODO: When visitor count increases, re-enable country matching check
+// Currently, all approved visitors get a score regardless of country match
 func (s *MatchingService) calculateMatchingScore(request *models.MatchingRequest, visitor *models.Visitor, requestCountries []string) int {
 	score := 0
 
+	// TODO: Re-enable country matching when visitor count increases
 	// 1. Country match (highest priority - 50 points)
-	visitorCountries := parseCountries(visitor.DestinationCities)
-	countryMatch := false
-	for _, reqCountry := range requestCountries {
-		for _, visCountry := range visitorCountries {
-			if strings.EqualFold(strings.TrimSpace(reqCountry), strings.TrimSpace(visCountry)) {
-				countryMatch = true
-				score += 50
-				break
-			}
-		}
-		if countryMatch {
-			break
-		}
-	}
+	// visitorCountries := parseCountries(visitor.DestinationCities)
+	// countryMatch := false
+	// for _, reqCountry := range requestCountries {
+	// 	for _, visCountry := range visitorCountries {
+	// 		if strings.EqualFold(strings.TrimSpace(reqCountry), strings.TrimSpace(visCountry)) {
+	// 			countryMatch = true
+	// 			score += 50
+	// 			break
+	// 		}
+	// 	}
+	// 	if countryMatch {
+	// 		break
+	// 	}
+	// }
+	//
+	// // If no country match, return 0 (visitor is not suitable)
+	// if !countryMatch {
+	// 	return 0
+	// }
 
-	// If no country match, return 0 (visitor is not suitable)
-	if !countryMatch {
-		return 0
+	// For now, give base score to all approved visitors
+	// This allows all visitors to see all requests
+	if requestCountries == nil {
+		// No country filtering - give base score
+		score += 50 // Base score for all approved visitors
 	}
 
 	// 2. Product interest match (30 points)
@@ -129,18 +146,19 @@ func (s *MatchingService) calculateMatchingScore(request *models.MatchingRequest
 	return score
 }
 
-// parseCountries parses comma-separated or space-separated countries
+// parseCountries parses comma-separated (Persian or English) countries
+// This handles both "دبی امارات، مسقط عمان" and "Dubai UAE, Muscat Oman"
 func parseCountries(countriesStr string) []string {
 	if countriesStr == "" {
 		return []string{}
 	}
 
-	// Try comma first
-	countries := strings.Split(countriesStr, ",")
-	if len(countries) == 1 {
-		// Try space
-		countries = strings.Fields(countriesStr)
-	}
+	// Split by both Persian comma (،) and English comma (,)
+	// Replace Persian comma with English comma for easier splitting
+	normalized := strings.ReplaceAll(countriesStr, "،", ",")
+
+	// Split by comma
+	countries := strings.Split(normalized, ",")
 
 	// Clean up
 	var result []string
@@ -299,3 +317,40 @@ func (s *MatchingService) CheckAndExpireRequests() error {
 	return models.CheckExpiredMatchingRequests(s.db)
 }
 
+// CanVisitorViewRequest checks if a visitor can view a matching request
+// Returns true if:
+// 1. Visitor is approved
+// 2. Request is active or pending
+// 3. Request hasn't expired
+//
+// TODO: When visitor count increases, add country matching logic:
+// - Check if visitor's destination cities match request's destination countries
+// - This will help filter requests to only show relevant ones to each visitor
+// - Current implementation allows all approved visitors to see all active requests
+func (s *MatchingService) CanVisitorViewRequest(visitor *models.Visitor, request *models.MatchingRequest) bool {
+	// Check if visitor is approved
+	if visitor.Status != "approved" {
+		return false
+	}
+
+	// Check if request is active or pending
+	if request.Status != "active" && request.Status != "pending" {
+		return false
+	}
+
+	// Check if request hasn't expired
+	if request.ExpiresAt.Before(time.Now()) {
+		return false
+	}
+
+	// TODO: Add country matching logic when visitor count increases
+	// For now, all approved visitors can see all active requests
+	// This helps with low visitor count scenario
+	//
+	// Future implementation:
+	// requestCountries := parseCountries(request.DestinationCountries)
+	// visitorCountries := parseCountries(visitor.DestinationCities)
+	// ... matching logic ...
+
+	return true
+}

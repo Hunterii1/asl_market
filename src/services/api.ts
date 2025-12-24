@@ -484,11 +484,11 @@ class ApiService {
   async getSupplierStatus(): Promise<any> {
     try {
       return await this.makeRequest(`${API_BASE_URL}/supplier/status`, {
-        method: 'GET',
-        headers: {
-          ...this.getAuthHeaders(),
-        },
-      });
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
     } catch (error: any) {
       // 404 is expected when user hasn't registered as supplier - return empty status silently
       if (error?.response?.status === 404 || error?.statusCode === 404 || error?.isRegistrationStatus404 || error?.message?.includes('404')) {
@@ -545,11 +545,11 @@ class ApiService {
   async getMyVisitorStatus(): Promise<any> {
     try {
       return await this.makeRequest(`${API_BASE_URL}/visitor/status`, {
-        method: 'GET',
-        headers: {
-          ...this.getAuthHeaders(),
-        },
-      });
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
     } catch (error: any) {
       // 404 is expected when user hasn't registered as visitor - return empty status silently
       if (error?.response?.status === 404 || error?.statusCode === 404 || error?.isRegistrationStatus404 || error?.message?.includes('404')) {
