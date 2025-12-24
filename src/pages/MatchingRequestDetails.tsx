@@ -28,7 +28,8 @@ import {
   Edit,
   CalendarClock,
   Star,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from "lucide-react";
 import { MatchingChat } from "@/components/MatchingChat";
 import { MatchingRadar } from "@/components/MatchingRadar";
@@ -98,6 +99,11 @@ export default function MatchingRequestDetails() {
   const [isSupplier, setIsSupplier] = useState(false);
   const [hasVisitor, setHasVisitor] = useState(false);
   const [myResponse, setMyResponse] = useState<MatchingResponse | null>(null);
+  const [hasRated, setHasRated] = useState(false); // Track if user has already rated
+  const [showRatingDialog, setShowRatingDialog] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [ratingComment, setRatingComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
   
   // Debug: Log states to help understand why buttons might not show
   useEffect(() => {
@@ -188,6 +194,19 @@ export default function MatchingRequestDetails() {
         console.log('ℹ️ User not logged in');
         setHasVisitor(false);
         setMyResponse(null);
+      }
+      
+      // Check if user has already rated this request
+      if (user && (response.data?.status === 'accepted' || response.data?.status === 'completed')) {
+        try {
+          const ratingsResponse = await apiService.getMatchingRatingsByUser({ page: 1, per_page: 100 });
+          const userRatings = ratingsResponse.data?.ratings || ratingsResponse.ratings || [];
+          const hasRatedThis = userRatings.some((r: any) => r.matching_request_id === parseInt(id!));
+          setHasRated(hasRatedThis);
+        } catch (error) {
+          console.error('Error checking ratings:', error);
+          setHasRated(false);
+        }
       }
     } catch (error: any) {
       toast({
@@ -995,6 +1014,174 @@ export default function MatchingRequestDetails() {
                 <MessageCircle className="h-4 w-4 text-yellow-600" />
                 <AlertDescription className="text-yellow-800 dark:text-yellow-200">
                   درخواست پذیرفته شده است. چت به زودی فعال خواهد شد.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Rating Section - Show after request is accepted or completed */}
+            {(request.status === 'accepted' || request.status === 'completed') && request.accepted_visitor_id && !hasRated && (
+              <Card className="border-2 border-yellow-200 dark:border-yellow-800 bg-gradient-to-br from-yellow-50/50 via-amber-50/50 to-orange-50/50 dark:from-yellow-900/10 dark:via-amber-900/10 dark:to-orange-900/10 shadow-xl hover:shadow-2xl transition-all duration-300 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <CardHeader className="bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-orange-500/10 dark:from-yellow-900/20 dark:via-amber-900/20 dark:to-orange-900/20 border-b">
+                  <CardTitle className="text-xl font-extrabold flex items-center gap-3 bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent">
+                    <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg shadow-lg animate-pulse">
+                      <Star className="w-6 h-6 text-white fill-white" />
+                    </div>
+                    <span>امتیازدهی</span>
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {isSupplier 
+                      ? `به ویزیتور ${request.accepted_visitor?.full_name || 'ویزیتور'} امتیاز دهید`
+                      : `به تأمین‌کننده ${request.supplier?.full_name || 'تأمین‌کننده'} امتیاز دهید`
+                    }
+                  </p>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <Dialog open={showRatingDialog} onOpenChange={setShowRatingDialog}>
+                    <DialogTrigger asChild>
+                      <Button
+                        className="w-full h-14 bg-gradient-to-r from-yellow-600 via-amber-600 to-orange-600 hover:from-yellow-700 hover:via-amber-700 hover:to-orange-700 text-white shadow-2xl hover:shadow-yellow-500/50 transition-all duration-500"
+                        onClick={() => {
+                          setRating(0);
+                          setRatingComment('');
+                          setShowRatingDialog(true);
+                        }}
+                      >
+                        <Star className="w-5 h-5 ml-2 fill-current" />
+                        <span className="font-extrabold text-base">امتیاز دهید (1-5 ستاره)</span>
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md backdrop-blur-sm bg-white/95 dark:bg-gray-900/95 border-2 shadow-2xl">
+                      <DialogHeader className="bg-gradient-to-r from-yellow-500/10 via-amber-500/10 to-orange-500/10 dark:from-yellow-900/20 dark:via-amber-900/20 dark:to-orange-900/20 p-4 rounded-t-lg border-b">
+                        <DialogTitle className="text-2xl font-extrabold bg-gradient-to-r from-yellow-600 to-orange-600 dark:from-yellow-400 dark:to-orange-400 bg-clip-text text-transparent flex items-center gap-2">
+                          <div className="p-2 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-lg shadow-lg">
+                            <Star className="w-5 h-5 text-white fill-white" />
+                          </div>
+                          امتیازدهی
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6 py-6 px-4">
+                        <div>
+                          <label className="text-base font-extrabold mb-4 block text-gray-900 dark:text-gray-100">
+                            امتیاز خود را انتخاب کنید (1-5 ستاره)
+                          </label>
+                          <div className="flex gap-2 justify-center">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setRating(star)}
+                                className={`transition-all duration-300 hover:scale-125 ${
+                                  star <= rating
+                                    ? 'text-yellow-400 scale-125'
+                                    : 'text-gray-300 hover:text-yellow-300'
+                                }`}
+                              >
+                                <Star
+                                  className={`w-10 h-10 ${
+                                    star <= rating ? 'fill-current' : ''
+                                  }`}
+                                />
+                              </button>
+                            ))}
+                          </div>
+                          {rating > 0 && (
+                            <p className="text-center mt-4 text-sm text-muted-foreground">
+                              شما {rating} ستاره انتخاب کرده‌اید
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <label className="text-base font-extrabold mb-2 block text-gray-900 dark:text-gray-100">
+                            نظر (اختیاری)
+                          </label>
+                          <Textarea
+                            value={ratingComment}
+                            onChange={(e) => setRatingComment(e.target.value)}
+                            placeholder="نظر خود را درباره این همکاری بنویسید..."
+                            className="min-h-[100px]"
+                          />
+                        </div>
+                        
+                        <div className="flex gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setShowRatingDialog(false);
+                              setRating(0);
+                              setRatingComment('');
+                            }}
+                            className="flex-1"
+                          >
+                            انصراف
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              if (rating === 0) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "خطا",
+                                  description: "لطفاً امتیاز خود را انتخاب کنید",
+                                });
+                                return;
+                              }
+                              
+                              setSubmittingRating(true);
+                              try {
+                                await apiService.createMatchingRating(parseInt(id!), {
+                                  rating,
+                                  comment: ratingComment.trim() || undefined,
+                                });
+                                
+                                toast({
+                                  title: "موفقیت",
+                                  description: "امتیاز شما با موفقیت ثبت شد",
+                                });
+                                
+                                setHasRated(true);
+                                setShowRatingDialog(false);
+                                setRating(0);
+                                setRatingComment('');
+                              } catch (error: any) {
+                                toast({
+                                  variant: "destructive",
+                                  title: "خطا",
+                                  description: error.message || "خطا در ثبت امتیاز",
+                                });
+                              } finally {
+                                setSubmittingRating(false);
+                              }
+                            }}
+                            disabled={rating === 0 || submittingRating}
+                            className="flex-1 bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700"
+                          >
+                            {submittingRating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                                در حال ثبت...
+                              </>
+                            ) : (
+                              <>
+                                <Star className="w-4 h-4 ml-2 fill-current" />
+                                ثبت امتیاز
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Show message if user has already rated */}
+            {hasRated && (request.status === 'accepted' || request.status === 'completed') && (
+              <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
+                <Star className="h-4 w-4 text-green-600 fill-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  <p className="font-extrabold">✅ شما قبلاً به این درخواست امتیاز داده‌اید</p>
+                  <p className="text-sm mt-1">از امتیازدهی شما متشکریم!</p>
                 </AlertDescription>
               </Alert>
             )}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"math"
 	"time"
 
 	"gorm.io/gorm"
@@ -738,4 +739,25 @@ func GetMatchingRatingsByUser(db *gorm.DB, userID uint, page, perPage int) ([]Ma
 		Offset(offset).Limit(perPage).Find(&ratings).Error
 
 	return ratings, total, err
+}
+
+// GetAverageRatingForUser calculates the average rating for a user (supplier or visitor)
+func GetAverageRatingForUser(db *gorm.DB, userID uint) (float64, int, error) {
+	var result struct {
+		AverageRating float64
+		TotalRatings  int
+	}
+
+	err := db.Model(&MatchingRating{}).
+		Select("COALESCE(AVG(rating), 0) as average_rating, COUNT(*) as total_ratings").
+		Where("rated_id = ?", userID).
+		Scan(&result).Error
+
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// Round to 1 decimal place
+	avgRating := math.Round(result.AverageRating*10) / 10
+	return avgRating, result.TotalRatings, nil
 }

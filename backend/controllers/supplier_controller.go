@@ -79,6 +79,15 @@ func GetMySupplierStatus(c *gin.Context) {
 		return
 	}
 
+	// Calculate average rating for this supplier
+	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), supplier.UserID)
+
+	// If supplier is featured, always show 5.0 stars regardless of actual rating
+	displayRating := avgRating
+	if supplier.IsFeatured {
+		displayRating = 5.0
+	}
+
 	// Convert to response format
 	response := models.SupplierResponse{
 		ID:                       supplier.ID,
@@ -99,6 +108,10 @@ func GetMySupplierStatus(c *gin.Context) {
 		Status:                   supplier.Status,
 		AdminNotes:               supplier.AdminNotes,
 		ApprovedAt:               supplier.ApprovedAt,
+		IsFeatured:               supplier.IsFeatured,
+		FeaturedAt:               supplier.FeaturedAt,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
 		CreatedAt:                supplier.CreatedAt,
 	}
 
@@ -139,7 +152,7 @@ func GetApprovedSuppliers(c *gin.Context) {
 	// Parse pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "12"))
-	
+
 	// Validate pagination
 	if page < 1 {
 		page = 1
@@ -176,6 +189,15 @@ func GetApprovedSuppliers(c *gin.Context) {
 			})
 		}
 
+		// Calculate average rating for this supplier
+		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), supplier.UserID)
+
+		// If supplier is featured, always show 5.0 stars regardless of actual rating
+		displayRating := avgRating
+		if supplier.IsFeatured {
+			displayRating = 5.0
+		}
+
 		suppliersResponse = append(suppliersResponse, models.SupplierResponse{
 			ID:                     supplier.ID,
 			UserID:                 supplier.UserID,
@@ -190,6 +212,8 @@ func GetApprovedSuppliers(c *gin.Context) {
 			ApprovedAt:             supplier.ApprovedAt,
 			IsFeatured:             supplier.IsFeatured,
 			FeaturedAt:             supplier.FeaturedAt,
+			AverageRating:          displayRating,
+			TotalRatings:           totalRatings,
 			CreatedAt:              supplier.CreatedAt,
 			Products:               productsResponse,
 		})
@@ -235,6 +259,15 @@ func GetSuppliersForAdmin(c *gin.Context) {
 	// Convert to response format
 	var suppliersResponse []models.SupplierResponse
 	for _, supplier := range suppliers {
+		// Calculate average rating for this supplier
+		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), supplier.UserID)
+
+		// If supplier is featured, always show 5.0 stars regardless of actual rating
+		displayRating := avgRating
+		if supplier.IsFeatured {
+			displayRating = 5.0
+		}
+
 		suppliersResponse = append(suppliersResponse, models.SupplierResponse{
 			ID:                       supplier.ID,
 			UserID:                   supplier.UserID,
@@ -254,6 +287,10 @@ func GetSuppliersForAdmin(c *gin.Context) {
 			Status:                   supplier.Status,
 			AdminNotes:               supplier.AdminNotes,
 			ApprovedAt:               supplier.ApprovedAt,
+			IsFeatured:               supplier.IsFeatured,
+			FeaturedAt:               supplier.FeaturedAt,
+			AverageRating:            displayRating,
+			TotalRatings:             totalRatings,
 			CreatedAt:                supplier.CreatedAt,
 		})
 	}

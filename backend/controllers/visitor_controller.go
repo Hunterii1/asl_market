@@ -141,6 +141,15 @@ func GetMyVisitorStatus(c *gin.Context) {
 
 	fmt.Printf("✅ Found visitor ID %d for user ID %d\n", visitor.ID, userIDUint)
 
+	// Calculate average rating for this visitor
+	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
+	
+	// If visitor is featured, always show 5.0 stars regardless of actual rating
+	displayRating := avgRating
+	if visitor.IsFeatured {
+		displayRating = 5.0
+	}
+
 	// Convert to response format
 	response := models.VisitorResponse{
 		ID:                            visitor.ID,
@@ -172,6 +181,10 @@ func GetMyVisitorStatus(c *gin.Context) {
 		Status:                        visitor.Status,
 		AdminNotes:                    visitor.AdminNotes,
 		ApprovedAt:                    visitor.ApprovedAt,
+		IsFeatured:                    visitor.IsFeatured,
+		FeaturedAt:                    visitor.FeaturedAt,
+		AverageRating:                 displayRating,
+		TotalRatings:                  totalRatings,
 		CreatedAt:                     visitor.CreatedAt,
 	}
 
@@ -203,6 +216,15 @@ func GetApprovedVisitors(c *gin.Context) {
 
 	var response []models.VisitorResponse
 	for _, visitor := range visitors {
+		// Calculate average rating for this visitor
+		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
+		
+		// If visitor is featured, always show 5.0 stars regardless of actual rating
+		displayRating := avgRating
+		if visitor.IsFeatured {
+			displayRating = 5.0
+		}
+		
 		visitorResponse := models.VisitorResponse{
 			ID:                 visitor.ID,
 			UserID:             visitor.UserID,
@@ -216,6 +238,8 @@ func GetApprovedVisitors(c *gin.Context) {
 			Status:             visitor.Status,
 			IsFeatured:         visitor.IsFeatured,
 			FeaturedAt:         visitor.FeaturedAt,
+			AverageRating:      displayRating,
+			TotalRatings:       totalRatings,
 			CreatedAt:          visitor.CreatedAt,
 		}
 		response = append(response, visitorResponse)
@@ -267,6 +291,15 @@ func GetVisitorsForAdmin(c *gin.Context) {
 	// Convert to response format
 	var response []models.VisitorResponse
 	for _, visitor := range visitors {
+		// Calculate average rating for this visitor
+		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
+		
+		// If visitor is featured, always show 5.0 stars regardless of actual rating
+		displayRating := avgRating
+		if visitor.IsFeatured {
+			displayRating = 5.0
+		}
+		
 		visitorResponse := models.VisitorResponse{
 			ID:                            visitor.ID,
 			UserID:                        visitor.UserID,
@@ -300,6 +333,8 @@ func GetVisitorsForAdmin(c *gin.Context) {
 			ApprovedAt:                    visitor.ApprovedAt,
 			IsFeatured:                    visitor.IsFeatured,
 			FeaturedAt:                    visitor.FeaturedAt,
+			AverageRating:                 displayRating,
+			TotalRatings:                  totalRatings,
 			CreatedAt:                     visitor.CreatedAt,
 		}
 		response = append(response, visitorResponse)
@@ -441,6 +476,15 @@ func GetVisitorDetails(c *gin.Context) {
 		return
 	}
 
+	// Calculate average rating for this visitor
+	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
+	
+	// If visitor is featured, always show 5.0 stars regardless of actual rating
+	displayRating := avgRating
+	if visitor.IsFeatured {
+		displayRating = 5.0
+	}
+
 	// Convert to response format
 	response := models.VisitorResponse{
 		ID:                            visitor.ID,
@@ -472,6 +516,10 @@ func GetVisitorDetails(c *gin.Context) {
 		Status:                        visitor.Status,
 		AdminNotes:                    visitor.AdminNotes,
 		ApprovedAt:                    visitor.ApprovedAt,
+		IsFeatured:                    visitor.IsFeatured,
+		FeaturedAt:                    visitor.FeaturedAt,
+		AverageRating:                 displayRating,
+		TotalRatings:                  totalRatings,
 		CreatedAt:                     visitor.CreatedAt,
 	}
 

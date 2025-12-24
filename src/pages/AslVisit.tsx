@@ -222,8 +222,14 @@ const AslVisit = () => {
                     </div>
                     <div className="flex items-center gap-1 mb-2">
                       <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="text-yellow-400 font-medium">4.5</span>
-                      <span className="text-muted-foreground text-sm">(تازه عضو)</span>
+                      <span className="text-yellow-400 font-medium">
+                        {visitor.is_featured ? '5.0' : (visitor.average_rating?.toFixed(1) || '0.0')}
+                      </span>
+                      {visitor.total_ratings > 0 ? (
+                        <span className="text-muted-foreground text-sm">({visitor.total_ratings} امتیاز)</span>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">(بدون امتیاز)</span>
+                      )}
                     </div>
                   </div>
                 </div>

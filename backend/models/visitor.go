@@ -143,6 +143,8 @@ type VisitorResponse struct {
 	ApprovedAt                    *time.Time `json:"approved_at"`
 	IsFeatured                    bool       `json:"is_featured"`
 	FeaturedAt                    *time.Time `json:"featured_at"`
+	AverageRating                 float64    `json:"average_rating"` // Average rating from matching requests (1-5)
+	TotalRatings                  int        `json:"total_ratings"`  // Total number of ratings received
 	CreatedAt                     time.Time  `json:"created_at"`
 }
 
