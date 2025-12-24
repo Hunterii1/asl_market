@@ -337,10 +337,13 @@ func GetAvailableMatchingRequestsForVisitor(db *gorm.DB, visitorID uint, page, p
 	// TODO: Add destination cities matching when visitor count increases
 	// For now, show all active requests to all approved visitors
 	// Filter out expired requests - visitors should NOT see expired requests
+	// IMPORTANT: Also exclude accepted requests - once a request is accepted, other visitors shouldn't see it
 	query := db.Model(&MatchingRequest{}).
 		Where("status IN ?", []string{"pending", "active"}).
 		Where("expires_at > ?", time.Now()).
-		Where("status != ?", "expired") // Explicitly exclude expired status
+		Where("status != ?", "expired").     // Explicitly exclude expired status
+		Where("status != ?", "accepted").    // Exclude accepted requests - only the accepted visitor can see it
+		Where("accepted_visitor_id IS NULL") // Also check that no visitor has been accepted yet
 
 	// Get total count
 	if err := query.Count(&total).Error; err != nil {
@@ -506,7 +509,8 @@ type MatchingMessage struct {
 	SenderType     string       `json:"sender_type" gorm:"size:20;not null"` // "supplier" or "visitor"
 
 	// Message content
-	Message string `json:"message" gorm:"type:text;not null"`
+	Message  string `json:"message" gorm:"type:text"`  // Optional if image_url is provided
+	ImageURL string `json:"image_url" gorm:"size:500"` // Optional image URL
 
 	// Read status
 	IsRead bool       `json:"is_read" gorm:"default:false"`
@@ -540,6 +544,7 @@ type MatchingMessageResponse struct {
 	SenderName     string     `json:"sender_name"`
 	SenderType     string     `json:"sender_type"`
 	Message        string     `json:"message"`
+	ImageURL       string     `json:"image_url,omitempty"`
 	IsRead         bool       `json:"is_read"`
 	ReadAt         *time.Time `json:"read_at"`
 	CreatedAt      time.Time  `json:"created_at"`
@@ -552,7 +557,8 @@ type CreateMatchingChatRequest struct {
 
 // SendMatchingMessageRequest represents request to send a message
 type SendMatchingMessageRequest struct {
-	Message string `json:"message" binding:"required,min=1"`
+	Message  string `json:"message"`   // Optional if image_url is provided
+	ImageURL string `json:"image_url"` // Optional image URL
 }
 
 // GetOrCreateMatchingChat gets or creates a chat for a matching request
@@ -633,7 +639,7 @@ func GetMatchingChatMessages(db *gorm.DB, chatID uint, page, perPage int) ([]Mat
 }
 
 // CreateMatchingMessage creates a new message in a chat
-func CreateMatchingMessage(db *gorm.DB, chatID uint, senderID uint, senderType string, message string) (*MatchingMessage, error) {
+func CreateMatchingMessage(db *gorm.DB, chatID uint, senderID uint, senderType string, message string, imageURL string) (*MatchingMessage, error) {
 	// Verify chat exists and user has access
 	var chat MatchingChat
 	if err := db.First(&chat, chatID).Error; err != nil {
@@ -648,11 +654,17 @@ func CreateMatchingMessage(db *gorm.DB, chatID uint, senderID uint, senderType s
 		return nil, gorm.ErrInvalidValue
 	}
 
+	// Validate: either message or image_url must be provided
+	if message == "" && imageURL == "" {
+		return nil, gorm.ErrInvalidValue
+	}
+
 	matchingMessage := MatchingMessage{
 		MatchingChatID: chatID,
 		SenderID:       senderID,
 		SenderType:     senderType,
 		Message:        message,
+		ImageURL:       imageURL,
 		IsRead:         false,
 	}
 

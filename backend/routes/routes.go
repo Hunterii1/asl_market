@@ -125,6 +125,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/upload/supplier-image", controllers.UploadSupplierImage)
 		protected.POST("/upload/product-image", controllers.UploadProductImage)
 		protected.POST("/upload/product-images", controllers.UploadMultipleProductImages)
+		protected.POST("/upload/chat-image", controllers.UploadChatImage)
 		protected.POST("/upload/delete-image", controllers.DeleteImage)
 
 		// Supplier routes

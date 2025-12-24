@@ -13,7 +13,9 @@ import {
   Clock,
   Check,
   CheckCheck,
-  Loader2
+  Loader2,
+  Image as ImageIcon,
+  X
 } from "lucide-react";
 
 interface ChatMessage {
@@ -23,6 +25,7 @@ interface ChatMessage {
   sender_name: string;
   sender_type: 'supplier' | 'visitor';
   message: string;
+  image_url?: string;
   is_read: boolean;
   read_at?: string;
   created_at: string;
@@ -38,12 +41,16 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadMessages();
@@ -67,9 +74,30 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
         per_page: 100,
       });
       
-      if (response.data?.messages) {
-        setMessages(response.data.messages);
-        setHasMore(response.data.pagination?.page < response.data.pagination?.total_pages);
+      // Backend returns: { "messages": [...], "pagination": {...} }
+      // Check both response.messages and response.data.messages for compatibility
+      const messagesData = response.messages || response.data?.messages || response.data?.data?.messages;
+      
+      if (messagesData && Array.isArray(messagesData)) {
+        // Format messages to match our interface
+        const formattedMessages: ChatMessage[] = messagesData.map((msg: any) => ({
+          id: msg.id,
+          matching_chat_id: msg.matching_chat_id || msg.matchingChatID,
+          sender_id: msg.sender_id || msg.senderID,
+          sender_name: msg.sender_name || msg.senderName,
+          sender_type: msg.sender_type || msg.senderType,
+          message: msg.message,
+          image_url: msg.image_url || msg.imageURL || undefined,
+          is_read: msg.is_read !== undefined ? msg.is_read : msg.isRead || false,
+          read_at: msg.read_at || msg.readAt,
+          created_at: msg.created_at || msg.createdAt,
+        }));
+        
+        setMessages(formattedMessages);
+        const pagination = response.data?.pagination || response.pagination;
+        setHasMore(pagination ? pagination.page < pagination.total_pages : false);
+      } else {
+        console.warn('⚠️ No messages array found in response:', response);
       }
     } catch (error: any) {
       if (!silent) {
@@ -84,19 +112,151 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
     }
   };
 
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "لطفا فقط فایل تصویری انتخاب کنید",
+      });
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: "حجم فایل نباید بیشتر از 5MB باشد",
+      });
+      return;
+    }
+
+    setSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+      
+      const response = await apiService.uploadChatImage(formData);
+      return response.image_url || null;
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: error.message || "خطا در آپلود تصویر",
+      });
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !selectedImage) || sending || uploadingImage) return;
 
     setSending(true);
+    
+    // Upload image first if selected
+    let imageUrl: string | null = null;
+    if (selectedImage) {
+      imageUrl = await uploadImage();
+      if (!imageUrl) {
+        setSending(false);
+        return;
+      }
+    }
+
+    const messageText = newMessage.trim();
+    
+    // Optimistically add message to UI
+    const tempMessage: ChatMessage = {
+      id: Date.now(), // Temporary ID
+      matching_chat_id: 0,
+      sender_id: user?.id || 0,
+      sender_name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || 'شما' : 'شما',
+      sender_type: 'supplier', // Will be corrected by backend response
+      message: messageText,
+      image_url: imageUrl || undefined,
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, tempMessage]);
+    setNewMessage("");
+    removeImage();
+    
+    // Scroll to bottom immediately
+    setTimeout(() => scrollToBottom(), 100);
+
     try {
-      const response = await apiService.sendMatchingChatMessage(requestId, newMessage.trim());
+      const response = await apiService.sendMatchingChatMessage(requestId, messageText, imageUrl || undefined);
       
-      if (response.data?.message) {
-        setMessages(prev => [...prev, response.data.message]);
-        setNewMessage("");
-        scrollToBottom();
+      // Backend returns: { "message": { ... } }
+      // Check both response.message and response.data.message for compatibility
+      const sentMessage = response.message || response.data?.message;
+      
+      if (sentMessage) {
+        // Convert backend format to frontend format
+        const formattedMessage: ChatMessage = {
+          id: sentMessage.id,
+          matching_chat_id: sentMessage.matching_chat_id || sentMessage.matchingChatID,
+          sender_id: sentMessage.sender_id || sentMessage.senderID,
+          sender_name: sentMessage.sender_name || sentMessage.senderName,
+          sender_type: sentMessage.sender_type || sentMessage.senderType,
+          message: sentMessage.message,
+          image_url: sentMessage.image_url || sentMessage.imageURL || undefined,
+          is_read: sentMessage.is_read !== undefined ? sentMessage.is_read : sentMessage.isRead || false,
+          read_at: sentMessage.read_at || sentMessage.readAt,
+          created_at: sentMessage.created_at || sentMessage.createdAt,
+        };
+        
+        // Replace temp message with real one from server
+        setMessages(prev => {
+          // Remove temp message and add real one
+          const filtered = prev.filter(m => m.id !== tempMessage.id);
+          return [...filtered, formattedMessage];
+        });
+        
+        // Scroll to bottom after message is added
+        setTimeout(() => scrollToBottom(), 100);
+        
+        // Reload messages after a short delay to ensure consistency
+        setTimeout(() => {
+          loadMessages(true);
+        }, 1000);
+      } else {
+        // If response doesn't have message, reload all messages
+        console.warn('⚠️ No message in response, reloading messages...', response);
+        setTimeout(() => {
+          loadMessages(true);
+        }, 500);
       }
     } catch (error: any) {
+      // Remove temp message on error
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id));
+      
       toast({
         variant: "destructive",
         title: "خطا",
@@ -189,9 +349,27 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                           </Badge>
                         </div>
                       )}
-                      <p className="text-sm whitespace-pre-wrap break-words">
-                        {message.message}
-                      </p>
+                      {message.image_url && (
+                        <div className="mb-2 rounded-lg overflow-hidden">
+                          <img
+                            src={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`}
+                            alt="پیام تصویری"
+                            className="max-w-full h-auto rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => {
+                              // Open image in new tab
+                              window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${message.image_url}`, '_blank');
+                            }}
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      )}
+                      {message.message && (
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {message.message}
+                        </p>
+                      )}
                       <div className="flex items-center justify-end gap-2 mt-1">
                         <span className="text-xs opacity-70 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -217,7 +395,48 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
         </div>
 
         <div className="border-t p-4 bg-muted/30">
+          {/* Image Preview */}
+          {imagePreview && (
+            <div className="mb-3 relative inline-block">
+              <div className="relative">
+                <img
+                  src={imagePreview}
+                  alt="پیش‌نمایش"
+                  className="max-w-xs h-auto rounded-lg border-2 border-blue-300"
+                />
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  className="absolute top-2 right-2 h-6 w-6 rounded-full"
+                  onClick={removeImage}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          )}
+          
           <div className="flex gap-2">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/*"
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending || uploadingImage}
+              className="shrink-0"
+            >
+              {uploadingImage ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ImageIcon className="w-4 h-4" />
+              )}
+            </Button>
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -229,11 +448,11 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
               }}
               placeholder="پیام خود را بنویسید..."
               className="flex-1"
-              disabled={sending}
+              disabled={sending || uploadingImage}
             />
             <Button
               onClick={sendMessage}
-              disabled={!newMessage.trim() || sending}
+              disabled={(!newMessage.trim() && !selectedImage) || sending || uploadingImage}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
               {sending ? (

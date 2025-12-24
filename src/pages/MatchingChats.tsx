@@ -51,8 +51,13 @@ export default function MatchingChats() {
         per_page: 50,
       });
       
-      if (response.data?.conversations) {
-        setConversations(response.data.conversations);
+      // Backend might return conversations in different formats
+      const conversationsData = response.conversations || response.data?.conversations || response.data?.data?.conversations;
+      
+      if (conversationsData && Array.isArray(conversationsData)) {
+        setConversations(conversationsData);
+      } else {
+        console.warn('⚠️ No conversations array found in response:', response);
       }
     } catch (error: any) {
       toast({

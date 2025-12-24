@@ -38,6 +38,35 @@ func UploadSupplierImage(c *gin.Context) {
 	})
 }
 
+// UploadChatImage uploads an image for matching chat messages
+func UploadChatImage(c *gin.Context) {
+	// Check if user is authenticated
+	_, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	// Get file from request
+	file, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا یک تصویر انتخاب کنید"})
+		return
+	}
+
+	// Upload image
+	imagePath, err := utils.UploadImage(file, "chat")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "تصویر با موفقیت آپلود شد",
+		"image_url": imagePath,
+	})
+}
+
 // UploadProductImage uploads a product image
 func UploadProductImage(c *gin.Context) {
 	// Debug: Check what's in context

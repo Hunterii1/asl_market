@@ -985,7 +985,7 @@ func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
 	}
 
 	// Create message
-	message, err := models.CreateMatchingMessage(mc.db, chat.ID, userIDUint, senderType, req.Message)
+	message, err := models.CreateMatchingMessage(mc.db, chat.ID, userIDUint, senderType, req.Message, req.ImageURL)
 	if err != nil {
 		if err == gorm.ErrInvalidValue {
 			c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی به این چت ندارید"})
@@ -1024,6 +1024,7 @@ func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
 		SenderName:     message.Sender.Name(),
 		SenderType:     message.SenderType,
 		Message:        message.Message,
+		ImageURL:       message.ImageURL,
 		IsRead:         message.IsRead,
 		ReadAt:         message.ReadAt,
 		CreatedAt:      message.CreatedAt,
@@ -1070,7 +1071,16 @@ func (mc *MatchingController) GetMatchingChatConversations(c *gin.Context) {
 		var lastMessageAt *time.Time
 		if err := mc.db.Where("matching_chat_id = ?", chat.ID).
 			Order("created_at DESC").First(&lastMessage).Error; err == nil {
-			lastMessageText = lastMessage.Message
+			// Show image indicator if message has image
+			if lastMessage.ImageURL != "" {
+				if lastMessage.Message != "" {
+					lastMessageText = "📷 " + lastMessage.Message
+				} else {
+					lastMessageText = "📷 تصویر"
+				}
+			} else {
+				lastMessageText = lastMessage.Message
+			}
 			lastMessageAt = &lastMessage.CreatedAt
 		}
 

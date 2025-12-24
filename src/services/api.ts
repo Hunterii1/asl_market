@@ -1717,13 +1717,24 @@ class ApiService {
     });
   }
 
-  async sendMatchingChatMessage(requestId: number, message: string): Promise<any> {
+  async sendMatchingChatMessage(requestId: number, message: string, imageUrl?: string): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/matching/chat/${requestId}/send`, {
       method: 'POST',
       headers: {
         ...this.getAuthHeaders(),
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, image_url: imageUrl }),
+    });
+  }
+
+  async uploadChatImage(formData: FormData): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/upload/chat-image`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        // Don't set Content-Type - let browser set it with boundary for multipart/form-data
+      },
+      body: formData,
     });
   }
 }
