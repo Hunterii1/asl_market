@@ -219,44 +219,32 @@ const App = () => (
               <Route path="/asl-match" element={<AslMatch />} />
               <Route path="/matching/create" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <CreateMatchingRequest />
-                  </LicenseRequiredRoute>
+                  <CreateMatchingRequest />
                 </ProtectedRoute>
               } />
               <Route path="/matching/my-requests" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <MyMatchingRequests />
-                  </LicenseRequiredRoute>
+                  <MyMatchingRequests />
                 </ProtectedRoute>
               } />
               <Route path="/matching/available-requests" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <AvailableMatchingRequests />
-                  </LicenseRequiredRoute>
+                  <AvailableMatchingRequests />
                 </ProtectedRoute>
               } />
               <Route path="/matching/requests/:id" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <MatchingRequestDetails />
-                  </LicenseRequiredRoute>
+                  <MatchingRequestDetails />
                 </ProtectedRoute>
               } />
               <Route path="/matching/chats" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <MatchingChats />
-                  </LicenseRequiredRoute>
+                  <MatchingChats />
                 </ProtectedRoute>
               } />
               <Route path="/matching/ratings" element={
                 <ProtectedRoute>
-                  <LicenseRequiredRoute>
-                    <MatchingRatings />
-                  </LicenseRequiredRoute>
+                  <MatchingRatings />
                 </ProtectedRoute>
               } />
               
