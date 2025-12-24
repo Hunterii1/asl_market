@@ -4,6 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
+
+// Helper to get static file base URL from API base URL
+const getStaticFileBaseUrl = (): string => {
+  if (typeof window === 'undefined') return 'http://localhost:8080';
+  
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // Production server
+  if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+    // API is at /backend/api/v1, so static files should be at /backend/uploads
+    return `${protocol}//${hostname}/backend`;
+  }
+  
+  // Development server
+  return 'http://localhost:8080';
+};
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -61,23 +78,15 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
       return imagePath;
     }
     
-    // Get base URL for static files
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      
-      // Production server
-      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-        return `https://asllmarket.com${imagePath}`;
-      }
-      
-      // Development server
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
-        return `http://localhost:8080${imagePath}`;
-      }
-    }
+    // Ensure imagePath starts with /
+    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
     
-    // Fallback
-    return `http://localhost:8080${imagePath}`;
+    // Get static file base URL
+    const baseUrl = getStaticFileBaseUrl();
+    const url = `${baseUrl}${normalizedPath}`;
+    
+    console.log('🖼️ Image URL:', url, 'from path:', imagePath);
+    return url;
   };
 
   useEffect(() => {
@@ -389,8 +398,33 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                               window.open(getImageUrl(message.image_url), '_blank');
                             }}
                             onError={(e) => {
-                              console.error('❌ Error loading image:', message.image_url);
-                              e.currentTarget.style.display = 'none';
+                              console.error('❌ Error loading image:', message.image_url, 'Current src:', e.currentTarget.src);
+                              // Try alternative URL if first one fails
+                              const currentSrc = e.currentTarget.src;
+                              const hostname = window.location.hostname;
+                              const protocol = window.location.protocol;
+                              
+                              // If current URL includes /backend, try without /backend
+                              if (currentSrc.includes('/backend/uploads')) {
+                                const altUrl = `${protocol}//${hostname}${message.image_url}`;
+                                console.log('🔄 Trying alternative URL (without /backend):', altUrl);
+                                if (currentSrc !== altUrl) {
+                                  e.currentTarget.src = altUrl;
+                                } else {
+                                  e.currentTarget.style.display = 'none';
+                                }
+                              } else {
+                                // If direct path failed, try with /backend
+                                const altUrl = `${protocol}//${hostname}/backend${message.image_url}`;
+                                console.log('🔄 Trying alternative URL (with /backend):', altUrl);
+                                if (currentSrc !== altUrl) {
+                                  e.currentTarget.src = altUrl;
+                                } else {
+                                  // Both failed, hide image
+                                  console.error('❌ Both URLs failed, hiding image');
+                                  e.currentTarget.style.display = 'none';
+                                }
+                              }
                             }}
                           />
                         </div>
