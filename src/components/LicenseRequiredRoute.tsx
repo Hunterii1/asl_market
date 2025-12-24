@@ -12,7 +12,7 @@ interface LicenseRequiredRouteProps {
 export function LicenseRequiredRoute({ children }: LicenseRequiredRouteProps) {
   const [status, setStatus] = useState<LicenseStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, licenseStatus: authLicenseStatus } = useAuth();
   const location = useLocation();
 
   useEffect(() => {
@@ -25,6 +25,10 @@ export function LicenseRequiredRoute({ children }: LicenseRequiredRouteProps) {
       setStatus(data);
     } catch (error) {
       console.error('Error checking license status:', error);
+      // If API call fails, use license status from auth context
+      if (authLicenseStatus) {
+        setStatus(authLicenseStatus);
+      }
     } finally {
       setLoading(false);
     }
@@ -46,7 +50,12 @@ export function LicenseRequiredRoute({ children }: LicenseRequiredRouteProps) {
     );
   }
 
-  if (!status?.is_approved) {
+  // Use status from API call, or fallback to auth context license status
+  const currentStatus = status || authLicenseStatus;
+
+  // Check multiple conditions: is_approved, is_active, or has_license
+  // User should have access if any of these is true
+  if (!currentStatus || (!currentStatus.is_approved && !currentStatus.is_active && !currentStatus.has_license)) {
     return <LicenseCheck />;
   }
 

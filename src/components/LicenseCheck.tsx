@@ -16,7 +16,7 @@ export function LicenseCheck() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [status, setStatus] = useState<LicenseStatus | null>(null);
-  const { user, refreshUserData } = useAuth();
+  const { user, refreshUserData, licenseStatus: authLicenseStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -30,11 +30,24 @@ export function LicenseCheck() {
       setStatus(data);
       
       // If has license and active, no need to stay on license page
-      if (data.has_license && data.is_active) {
+      // Check multiple conditions: is_approved, is_active, or has_license
+      if (data.has_license && (data.is_active || data.is_approved)) {
         navigate('/');
+        return;
       }
     } catch (error) {
       console.error('Error checking license status:', error);
+      
+      // If API call fails, check auth context license status
+      if (authLicenseStatus) {
+        setStatus(authLicenseStatus);
+        // If auth context shows active license, navigate away
+        if (authLicenseStatus.has_license && (authLicenseStatus.is_active || authLicenseStatus.is_approved)) {
+          navigate('/');
+          return;
+        }
+      }
+      
       // در صورت خطا، بررسی کن که آیا لایسنس محلی وجود دارد
       if (licenseStorage.hasStoredLicense() && licenseStorage.isStoredLicenseValid()) {
         const licenseInfo = licenseStorage.displayLicenseInfo();
