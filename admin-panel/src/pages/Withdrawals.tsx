@@ -211,26 +211,31 @@ export default function Withdrawals() {
           search: searchQuery || undefined,
         });
 
-        if (response && (response.data || response.withdrawals)) {
-          const withdrawalsData = response.data?.withdrawals || response.withdrawals || [];
+        if (response) {
+          // Backend returns: { requests: [...], total: 168, limit: 10, offset: 0 }
+          // Or wrapped in: { data: { requests: [...], total: ... } }
+          const withdrawalsData = response.requests || response.data?.requests || [];
           const transformedWithdrawals: Withdrawal[] = withdrawalsData.map((w: any) => ({
             id: w.id?.toString() || w.ID?.toString() || '',
             userId: w.user_id?.toString() || w.userID?.toString() || '',
             userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
             amount: w.amount || 0,
             method: w.method || 'bank_transfer',
-            accountInfo: w.account_info || w.accountInfo || '',
+            accountInfo: w.bank_card_number || w.sheba_number || w.account_info || w.accountInfo || '',
             status: w.status || 'pending',
-            description: w.description || '',
-            requestedAt: w.requested_at || w.created_at || '',
-            createdAt: w.created_at || new Date().toISOString(),
-            processedAt: w.processed_at || null,
-            processedBy: w.processed_by || null,
+            description: w.admin_notes || w.description || '',
+            requestedAt: w.requested_at ? new Date(w.requested_at).toLocaleDateString('fa-IR') : (w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : ''),
+            createdAt: w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+            processedAt: w.completed_at || w.approved_at || null,
+            processedBy: w.admin?.name || w.processed_by || null,
           }));
 
           setWithdrawals(transformedWithdrawals);
-          setTotalWithdrawals(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
+          setTotalWithdrawals(response.total || response.data?.total || 0);
+          // Calculate total pages
+          const total = response.total || response.data?.total || 0;
+          const totalPagesCalc = Math.ceil(total / itemsPerPage);
+          setTotalPages(totalPagesCalc || 1);
         }
       } catch (error: any) {
         console.error('Error loading withdrawals:', error);

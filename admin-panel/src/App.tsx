@@ -13,13 +13,11 @@ import Statistics from "./pages/Statistics";
 import Withdrawals from "./pages/Withdrawals";
 import Licenses from "./pages/Licenses";
 import Tickets from "./pages/Tickets";
-import Education from "./pages/Education";
 import Suppliers from "./pages/Suppliers";
 import Visitors from "./pages/Visitors";
 import Popups from "./pages/Popups";
 import Notifications from "./pages/Notifications";
 import Export from "./pages/Export";
-import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { SupportAdminRoute } from "./components/auth/SupportAdminRoute";
@@ -120,14 +118,6 @@ const App = () => (
             }
           />
           <Route
-            path="/education"
-            element={
-              <ProtectedRoute>
-                <Education />
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/suppliers"
             element={
               <ProtectedRoute>
@@ -164,14 +154,6 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Export />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
               </ProtectedRoute>
             }
           />

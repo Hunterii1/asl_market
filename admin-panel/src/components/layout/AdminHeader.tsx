@@ -1,4 +1,4 @@
-import { Moon, Sun, Menu, User, Settings, LogOut } from 'lucide-react';
+import { Moon, Sun, Menu, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
@@ -86,10 +86,6 @@ export function AdminHeader({ sidebarCollapsed }: AdminHeaderProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/settings')}>
-              <Settings className="w-4 h-4 ml-2" />
-              تنظیمات
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate('/admins')}>
               <User className="w-4 h-4 ml-2" />
               پروفایل
