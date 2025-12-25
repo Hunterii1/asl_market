@@ -179,8 +179,11 @@ export default function Users() {
           search: searchQuery || undefined,
         });
 
-        if (response && response.data) {
-          const usersData = response.data.users || response.users || [];
+        console.log('Users API Response:', response);
+
+        if (response) {
+          // handleResponse returns data.data, so response is already the data object
+          const usersData = response.users || response.data?.users || [];
           const transformedUsers: User[] = usersData.map((u: any) => ({
             id: u.id?.toString() || u.ID?.toString() || '',
             name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
@@ -196,8 +199,8 @@ export default function Users() {
           }));
 
           setUsers(transformedUsers);
-          setTotalUsers(response.data.total || response.total || 0);
-          setTotalPages(response.data.total_pages || response.total_pages || 1);
+          setTotalUsers(response.total || response.data?.total || 0);
+          setTotalPages(response.total_pages || response.data?.total_pages || 1);
         }
       } catch (error: any) {
         console.error('Error loading users:', error);
