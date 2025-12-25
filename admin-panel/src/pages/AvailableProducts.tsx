@@ -110,7 +110,7 @@ const statusConfig = {
 type SortField = 'name' | 'category' | 'price' | 'stock' | 'status' | 'sales' | 'revenue' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
-export default function Products() {
+export default function AvailableProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);

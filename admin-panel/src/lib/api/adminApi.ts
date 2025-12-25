@@ -516,8 +516,61 @@ class AdminApiService {
     });
   }
 
-  // ==================== Products Management ====================
-  async getProducts(params: {
+  // ==================== Research Products Management ====================
+  async getResearchProducts(params: {
+    page?: number;
+    per_page?: number;
+    category?: string;
+    status?: string;
+    hs_code?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.category) queryParams.append('category', params.category);
+    if (params.status) queryParams.append('status', params.status);
+    if (params.hs_code) queryParams.append('hs_code', params.hs_code);
+
+    return this.makeRequest(`${API_BASE_URL}/research-products?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getResearchProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/research-products/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createResearchProduct(data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateResearchProduct(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteResearchProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async updateResearchProductStatus(id: number, status: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/research-products/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // ==================== Available Products Management ====================
+  async getAvailableProducts(params: {
     page?: number;
     per_page?: number;
     category?: string;
@@ -529,35 +582,68 @@ class AdminApiService {
     if (params.category) queryParams.append('category', params.category);
     if (params.status) queryParams.append('status', params.status);
 
-    return this.makeRequest(`${API_BASE_URL}/admin/available-products?${queryParams}`, {
+    return this.makeRequest(`${API_BASE_URL}/available-products?${queryParams}`, {
       method: 'GET',
     });
   }
 
-  async getProduct(id: number): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}`, {
+  async getAvailableProduct(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/available-products/${id}`, {
       method: 'GET',
     });
   }
 
-  async createProduct(data: any): Promise<any> {
+  async createAvailableProduct(data: any): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/available-products`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateProduct(id: number, data: any): Promise<any> {
+  async updateAvailableProduct(id: number, data: any): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteProduct(id: number): Promise<any> {
+  async deleteAvailableProduct(id: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  async updateAvailableProductStatus(id: number, status: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/available-products/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+  }
+
+  // Legacy methods for backward compatibility
+  async getProducts(params: {
+    page?: number;
+    per_page?: number;
+    category?: string;
+    status?: string;
+  } = {}): Promise<any> {
+    return this.getAvailableProducts(params);
+  }
+
+  async getProduct(id: number): Promise<any> {
+    return this.getAvailableProduct(id);
+  }
+
+  async createProduct(data: any): Promise<any> {
+    return this.createAvailableProduct(data);
+  }
+
+  async updateProduct(id: number, data: any): Promise<any> {
+    return this.updateAvailableProduct(id, data);
+  }
+
+  async deleteProduct(id: number): Promise<any> {
+    return this.deleteAvailableProduct(id);
   }
 
   // ==================== Marketing Popups Management ====================

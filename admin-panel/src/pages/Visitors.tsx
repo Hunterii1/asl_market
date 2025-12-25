@@ -389,7 +389,7 @@ export default function Visitors() {
     } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error.message || 'خطا در حذف بازدیدکننده',
+        description: error.message || 'خطا در حذف ویزیتور',
         variant: 'destructive',
       });
     } finally {
@@ -445,13 +445,13 @@ export default function Visitors() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">مدیریت بازدیدکنندگان</h1>
-            <p className="text-muted-foreground">لیست تمامی بازدیدکنندگان سیستم</p>
+            <h1 className="text-2xl font-bold text-foreground">مدیریت ویزیتورها</h1>
+            <p className="text-muted-foreground">لیست تمامی ویزیتورهای سیستم</p>
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="w-4 h-4 ml-2" />
-              ثبت بازدیدکننده
+              ثبت ویزیتور
             </Button>
           </div>
         </div>
@@ -504,14 +504,14 @@ export default function Visitors() {
             <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <span className="text-sm text-foreground font-medium">
-                  {selectedVisitors.length} بازدیدکننده انتخاب شده
+                  {selectedVisitors.length} ویزیتور انتخاب شده
                 </span>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => {
-                      if (confirm(`آیا از حذف ${selectedVisitors.length} بازدیدکننده اطمینان دارید؟`)) {
+                      if (confirm(`آیا از حذف ${selectedVisitors.length} ویزیتور اطمینان دارید؟`)) {
                         handleBulkAction('delete');
                       }
                     }}
@@ -540,7 +540,7 @@ export default function Visitors() {
               <div className="p-12 text-center">
                 <div className="flex flex-col items-center gap-2">
                   <EyeIcon className="w-12 h-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">هیچ بازدیدکننده‌ای یافت نشد</p>
+                  <p className="text-muted-foreground">هیچ ویزیتوری یافت نشد</p>
                 </div>
               </div>
             ) : (
@@ -769,7 +769,7 @@ export default function Visitors() {
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-muted-foreground">
-                  نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalVisitors)} از {totalVisitors} بازدیدکننده
+                  نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalVisitors)} از {totalVisitors} ویزیتور
                 </span>
                 <Select
                   value={itemsPerPage.toString()}
@@ -837,14 +837,14 @@ export default function Visitors() {
         </Card>
       </div>
 
-      {/* Dialog افزودن بازدیدکننده */}
+      {/* Dialog افزودن ویزیتور */}
       <AddVisitorDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={handleVisitorAdded}
       />
 
-      {/* Dialog مشاهده بازدیدکننده */}
+      {/* Dialog مشاهده ویزیتور */}
       <ViewVisitorDialog
         open={!!viewVisitor}
         onOpenChange={(open) => !open && setViewVisitor(null)}
@@ -868,7 +868,7 @@ export default function Visitors() {
         } : null}
       />
 
-      {/* Dialog حذف بازدیدکننده */}
+      {/* Dialog حذف ویزیتور */}
       <DeleteVisitorDialog
         open={!!deleteVisitor}
         onOpenChange={(open) => !open && setDeleteVisitor(null)}

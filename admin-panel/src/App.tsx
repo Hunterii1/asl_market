@@ -7,7 +7,8 @@ import { useEffect } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Users from "./pages/Users";
-import Products from "./pages/Products";
+import AvailableProducts from "./pages/AvailableProducts";
+import ResearchProducts from "./pages/ResearchProducts";
 import Admins from "./pages/Admins";
 import Statistics from "./pages/Statistics";
 import Withdrawals from "./pages/Withdrawals";
@@ -62,10 +63,18 @@ const App = () => (
             }
           />
           <Route
-            path="/products"
+            path="/products/available"
             element={
               <ProtectedRoute>
-                <Products />
+                <AvailableProducts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products/research"
+            element={
+              <ProtectedRoute>
+                <ResearchProducts />
               </ProtectedRoute>
             }
           />

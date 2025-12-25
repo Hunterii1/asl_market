@@ -82,17 +82,17 @@ func RegisterVisitor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا حداقل یک شهر مقصد وارد کنید"})
 		return
 	}
-	
+
 	// Split only by comma (Persian or English comma), not by space or dash
 	destinations := strings.FieldsFunc(trimmedInput, func(r rune) bool {
 		return r == ',' || r == '،'
 	})
-	
+
 	// If no comma found, treat the whole string as one destination
 	if len(destinations) == 0 {
 		destinations = []string{trimmedInput}
 	}
-	
+
 	for _, dest := range destinations {
 		dest = strings.TrimSpace(dest)
 		if dest != "" {
@@ -143,7 +143,7 @@ func GetMyVisitorStatus(c *gin.Context) {
 
 	// Calculate average rating for this visitor
 	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
-	
+
 	// If visitor is featured, always show 5.0 stars regardless of actual rating
 	displayRating := avgRating
 	if visitor.IsFeatured {
@@ -218,13 +218,13 @@ func GetApprovedVisitors(c *gin.Context) {
 	for _, visitor := range visitors {
 		// Calculate average rating for this visitor
 		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
-		
+
 		// If visitor is featured, always show 5.0 stars regardless of actual rating
 		displayRating := avgRating
 		if visitor.IsFeatured {
 			displayRating = 5.0
 		}
-		
+
 		visitorResponse := models.VisitorResponse{
 			ID:                 visitor.ID,
 			UserID:             visitor.UserID,
@@ -260,13 +260,6 @@ func GetApprovedVisitors(c *gin.Context) {
 
 // GetVisitorsForAdmin returns paginated list of visitors for admin panel
 func GetVisitorsForAdmin(c *gin.Context) {
-	// Check if user is admin
-	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
-		return
-	}
-
 	// Parse query parameters
 	status := c.DefaultQuery("status", "all")
 	pageStr := c.DefaultQuery("page", "1")
@@ -293,13 +286,13 @@ func GetVisitorsForAdmin(c *gin.Context) {
 	for _, visitor := range visitors {
 		// Calculate average rating for this visitor
 		avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
-		
+
 		// If visitor is featured, always show 5.0 stars regardless of actual rating
 		displayRating := avgRating
 		if visitor.IsFeatured {
 			displayRating = 5.0
 		}
-		
+
 		visitorResponse := models.VisitorResponse{
 			ID:                            visitor.ID,
 			UserID:                        visitor.UserID,
@@ -478,7 +471,7 @@ func GetVisitorDetails(c *gin.Context) {
 
 	// Calculate average rating for this visitor
 	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), visitor.UserID)
-	
+
 	// If visitor is featured, always show 5.0 stars regardless of actual rating
 	displayRating := avgRating
 	if visitor.IsFeatured {
@@ -664,17 +657,17 @@ func UpdateMyVisitor(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "لطفا حداقل یک شهر مقصد وارد کنید"})
 		return
 	}
-	
+
 	// Split only by comma (Persian or English comma), not by space or dash
 	destinations := strings.FieldsFunc(trimmedInput, func(r rune) bool {
 		return r == ',' || r == '،'
 	})
-	
+
 	// If no comma found, treat the whole string as one destination
 	if len(destinations) == 0 {
 		destinations = []string{trimmedInput}
 	}
-	
+
 	for _, dest := range destinations {
 		dest = strings.TrimSpace(dest)
 		if dest != "" {
