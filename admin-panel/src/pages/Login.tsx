@@ -212,19 +212,6 @@ export default function Login() {
                 </Button>
               </form>
             </Form>
-
-            {/* Demo Credentials */}
-            <div className="mt-6 p-4 rounded-lg bg-muted/50 border border-border">
-              <p className="text-xs font-semibold text-foreground mb-2">اطلاعات ورود آزمایشی:</p>
-              <div className="space-y-1 text-xs text-muted-foreground">
-                <p>
-                  <span className="font-medium">مدیر سیستم:</span> admin@example.com / admin123
-                </p>
-                <p>
-                  <span className="font-medium">مدیر محتوا:</span> content@example.com / content123
-                </p>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
