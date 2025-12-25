@@ -152,7 +152,7 @@ const initialPopups: Popup[] = [
   },
 ];
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
   active: {
     label: 'فعال',
     className: 'bg-success/10 text-success',
@@ -170,7 +170,7 @@ const statusConfig = {
   },
 };
 
-const typeConfig = {
+const typeConfig: Record<string, { label: string; className: string }> = {
   modal: { label: 'Modal', className: 'bg-primary/10 text-primary' },
   banner: { label: 'Banner', className: 'bg-info/10 text-info' },
   toast: { label: 'Toast', className: 'bg-success/10 text-success' },

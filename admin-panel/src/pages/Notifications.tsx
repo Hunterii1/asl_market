@@ -157,7 +157,7 @@ const initialNotifications: Notification[] = [
   },
 ];
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
   sent: {
     label: 'ارسال شده',
     className: 'bg-success/10 text-success',
@@ -178,18 +178,34 @@ const statusConfig = {
     className: 'bg-muted text-muted-foreground',
     icon: FileText,
   },
+  active: {
+    label: 'فعال',
+    className: 'bg-success/10 text-success',
+    icon: CheckCircle,
+  },
+  inactive: {
+    label: 'غیرفعال',
+    className: 'bg-muted text-muted-foreground',
+    icon: XCircle,
+  },
 };
 
-const typeConfig = {
+const typeConfig: Record<string, { label: string; className: string }> = {
   system: { label: 'سیستمی', className: 'bg-primary/10 text-primary' },
   email: { label: 'ایمیل', className: 'bg-info/10 text-info' },
   sms: { label: 'پیامک', className: 'bg-success/10 text-success' },
   telegram: { label: 'تلگرام', className: 'bg-blue-500/10 text-blue-500' },
   push: { label: 'Push', className: 'bg-warning/10 text-warning' },
+  matching: { label: 'Matching', className: 'bg-purple-500/10 text-purple-500' },
+  info: { label: 'اطلاعات', className: 'bg-info/10 text-info' },
+  warning: { label: 'هشدار', className: 'bg-warning/10 text-warning' },
+  success: { label: 'موفقیت', className: 'bg-success/10 text-success' },
+  error: { label: 'خطا', className: 'bg-destructive/10 text-destructive' },
 };
 
-const priorityConfig = {
+const priorityConfig: Record<string, { label: string; className: string }> = {
   low: { label: 'پایین', className: 'bg-muted text-muted-foreground' },
+  normal: { label: 'عادی', className: 'bg-info/10 text-info' },
   medium: { label: 'متوسط', className: 'bg-info/10 text-info' },
   high: { label: 'بالا', className: 'bg-warning/10 text-warning' },
   urgent: { label: 'فوری', className: 'bg-destructive/10 text-destructive' },
@@ -233,15 +249,16 @@ export default function Notifications() {
           type: typeFilterValue,
         });
 
-        if (response && (response.data || response.notifications)) {
+        if (response) {
+          // Backend returns: { data: { notifications: [], total: 0, ... } }
           const notificationsData = response.data?.notifications || response.notifications || [];
           const transformedNotifications: Notification[] = notificationsData.map((n: any) => ({
             id: n.id?.toString() || n.ID?.toString() || '',
             title: n.title || 'بدون عنوان',
             content: n.message || n.content || '',
             type: n.type || 'system',
-            status: n.is_active ? 'sent' : 'pending',
-            priority: n.priority || 'medium',
+            status: n.is_active ? (n.is_read ? 'sent' : 'pending') : 'inactive',
+            priority: n.priority || 'normal',
             recipientType: n.user_id ? 'specific' : 'all',
             recipientIds: n.user_id ? [n.user_id.toString()] : [],
             scheduledAt: n.scheduled_at || undefined,
@@ -577,7 +594,10 @@ export default function Notifications() {
                   </thead>
                   <tbody>
                     {paginatedNotifications.map((notification, index) => {
-                      const StatusIcon = statusConfig[notification.status].icon;
+                      const statusInfo = statusConfig[notification.status] || statusConfig.pending;
+                      const typeInfo = typeConfig[notification.type] || typeConfig.system;
+                      const priorityInfo = priorityConfig[notification.priority] || priorityConfig.normal;
+                      const StatusIcon = statusInfo.icon || Clock;
                       return (
                         <tr
                           key={notification.id}
@@ -603,27 +623,27 @@ export default function Notifications() {
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', typeConfig[notification.type].className)}
+                              className={cn('text-xs', typeInfo.className)}
                             >
-                              {typeConfig[notification.type].label}
+                              {typeInfo.label}
                             </Badge>
                           </td>
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', statusConfig[notification.status].className)}
+                              className={cn('text-xs', statusInfo.className)}
                             >
                               <StatusIcon className="w-3 h-3 ml-1" />
-                              {statusConfig[notification.status].label}
+                              {statusInfo.label}
                             </Badge>
                           </td>
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', priorityConfig[notification.priority].className)}
+                              className={cn('text-xs', priorityInfo.className)}
                             >
                               <AlertCircle className="w-3 h-3 ml-1" />
-                              {priorityConfig[notification.priority].label}
+                              {priorityInfo.label}
                             </Badge>
                           </td>
                           <td className="p-4">
