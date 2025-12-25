@@ -22,6 +22,8 @@ import Export from "./pages/Export";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { SupportAdminRoute } from "./components/auth/SupportAdminRoute";
+import SupportTickets from "./pages/SupportTickets";
 
 const queryClient = new QueryClient();
 
