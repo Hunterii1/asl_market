@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
-
 	"asl-market-backend/config"
 	"asl-market-backend/models"
 	"asl-market-backend/utils"
+	"fmt"
+	"log"
+	"os"
 )
 
 func main() {

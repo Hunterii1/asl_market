@@ -293,8 +293,6 @@ export default function Users() {
         title: 'خطا',
         description: error.message || 'خطا در حذف کاربر',
         variant: 'destructive',
-        description: 'خطا در حذف کاربر',
-        variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
@@ -509,7 +507,7 @@ export default function Users() {
         <Card>
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">لیست کاربران ({sortedUsers.length})</CardTitle>
+              <CardTitle className="text-lg">لیست کاربران ({users.length})</CardTitle>
               {(statusFilter.length > 0 || minBalance || maxBalance) && (
                 <Button
                   variant="ghost"
@@ -811,14 +809,31 @@ export default function Users() {
       <ViewUserDialog
         open={!!viewUser}
         onOpenChange={(open) => !open && setViewUser(null)}
-        user={viewUser}
+        user={viewUser ? {
+          id: viewUser.id,
+          name: viewUser.name,
+          email: viewUser.email,
+          phone: viewUser.phone,
+          telegramId: viewUser.telegramId || '',
+          balance: viewUser.balance || 0,
+          status: viewUser.status,
+          createdAt: viewUser.createdAt,
+        } : null}
       />
 
       {/* Dialog ویرایش کاربر */}
       <EditUserDialog
         open={!!editUser}
         onOpenChange={(open) => !open && setEditUser(null)}
-        user={editUser}
+        user={editUser ? {
+          id: editUser.id,
+          name: editUser.name,
+          email: editUser.email,
+          phone: editUser.phone,
+          telegramId: editUser.telegramId || '',
+          balance: editUser.balance || 0,
+          status: editUser.status,
+        } : null}
         onSuccess={() => {
           const stored = localStorage.getItem('asll-users');
           if (stored) {

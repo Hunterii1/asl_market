@@ -458,7 +458,7 @@ export default function Products() {
         {/* Products Grid/List */}
         <Card>
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">لیست محصولات ({sortedProducts.length})</CardTitle>
+            <CardTitle className="text-lg">لیست محصولات ({products.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {paginatedProducts.length === 0 ? (
@@ -787,7 +787,7 @@ export default function Products() {
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-muted-foreground">
-                  نمایش {startIndex + 1} تا {Math.min(endIndex, sortedProducts.length)} از {sortedProducts.length} محصول
+                  نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalProducts)} از {totalProducts} محصول
                 </span>
                 <Select
                   value={itemsPerPage.toString()}
@@ -852,7 +852,6 @@ export default function Products() {
                 </Button>
               </div>
             </div>
-            )}
           </CardContent>
         </Card>
       </div>
