@@ -2,7 +2,6 @@ import { Moon, Sun, Menu, User, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
-import { NotificationsDropdown } from '@/components/header/NotificationsDropdown';
 import { SearchBox } from '@/components/header/SearchBox';
 import {
   DropdownMenu,
@@ -44,9 +43,6 @@ export function AdminHeader({ sidebarCollapsed }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Notifications */}
-        <NotificationsDropdown />
-
         {/* Theme Toggle */}
         <Button
           variant="ghost"

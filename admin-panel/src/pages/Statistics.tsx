@@ -1,132 +1,169 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { TimeRangeFilter, type TimeRange } from '@/components/statistics/TimeRangeFilter';
-import { RevenueChart } from '@/components/statistics/RevenueChart';
 import { UsersChart } from '@/components/statistics/UsersChart';
-import { ProductsChart } from '@/components/statistics/ProductsChart';
-import { StatisticsTable } from '@/components/statistics/StatisticsTable';
+import { adminApi } from '@/lib/api/adminApi';
+import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 import {
   Users,
   Wallet,
-  ShoppingCart,
   Package,
-  TrendingUp,
   MessageSquare,
-  DollarSign,
-  Activity,
+  Key,
+  Truck,
+  Eye,
+  GraduationCap,
+  Bell,
+  Megaphone,
 } from 'lucide-react';
 
-// Mock data generators based on time range
-const generateRevenueData = (range: TimeRange) => {
-  const periods = range === 'today' ? 24 : range === 'week' ? 7 : range === 'month' ? 30 : 12;
-  const labels = range === 'today' 
-    ? Array.from({ length: 24 }, (_, i) => `${i}:00`)
-    : range === 'week'
-    ? ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه']
-    : range === 'month'
-    ? Array.from({ length: 30 }, (_, i) => `${i + 1}`)
-    : ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-
-  return labels.map((label, index) => ({
-    name: label,
-    revenue: Math.floor(Math.random() * 50000000) + 10000000,
-    orders: Math.floor(Math.random() * 200) + 50,
-  }));
-};
-
-const generateUsersData = (range: TimeRange) => {
-  const periods = range === 'today' ? 24 : range === 'week' ? 7 : range === 'month' ? 30 : 12;
-  const labels = range === 'today' 
-    ? Array.from({ length: 24 }, (_, i) => `${i}:00`)
-    : range === 'week'
-    ? ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه']
-    : range === 'month'
-    ? Array.from({ length: 30 }, (_, i) => `${i + 1}`)
-    : ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور', 'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند'];
-
-  return labels.map((label) => ({
-    name: label,
-    newUsers: Math.floor(Math.random() * 100) + 20,
-    activeUsers: Math.floor(Math.random() * 500) + 200,
-  }));
-};
-
-const productsData = [
-  { name: 'آموزشی', value: 35 },
-  { name: 'نرم‌افزار', value: 25 },
-  { name: 'خدمات', value: 20 },
-  { name: 'اشتراک', value: 15 },
-  { name: 'سایر', value: 5 },
-];
-
 export default function Statistics() {
-  const [timeRange, setTimeRange] = useState<TimeRange>('month');
-  const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
-  const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any[]>([]);
+  const [usersData, setUsersData] = useState<any[]>([]);
 
-  const revenueData = useMemo(() => generateRevenueData(timeRange), [timeRange]);
-  const usersData = useMemo(() => generateUsersData(timeRange), [timeRange]);
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setLoading(true);
+        const data = await adminApi.getDashboardStats();
+        
+        // handleResponse returns data.data, so data is already the stats object
+        const statsData = data.data || data;
+        
+        if (statsData) {
+          const statsList = [
+            {
+              title: 'کل کاربران',
+              value: statsData.users?.total || 0,
+              icon: Users,
+              iconColor: 'primary' as const,
+            },
+            {
+              title: 'کاربران فعال',
+              value: statsData.users?.active || 0,
+              icon: Users,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'تأمین‌کنندگان',
+              value: statsData.suppliers?.total || 0,
+              icon: Truck,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'تأمین‌کنندگان تأیید شده',
+              value: statsData.suppliers?.approved || 0,
+              icon: Truck,
+              iconColor: 'info' as const,
+            },
+            {
+              title: 'ویزیتورها',
+              value: statsData.visitors?.total || 0,
+              icon: Eye,
+              iconColor: 'info' as const,
+            },
+            {
+              title: 'ویزیتورهای تأیید شده',
+              value: statsData.visitors?.approved || 0,
+              icon: Eye,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'تیکت‌های باز',
+              value: statsData.tickets?.open || 0,
+              icon: MessageSquare,
+              iconColor: 'warning' as const,
+            },
+            {
+              title: 'تیکت‌های بسته',
+              value: statsData.tickets?.closed || 0,
+              icon: MessageSquare,
+              iconColor: 'info' as const,
+            },
+            {
+              title: 'برداشت‌های در انتظار',
+              value: statsData.withdrawals?.pending || 0,
+              icon: Wallet,
+              iconColor: 'warning' as const,
+            },
+            {
+              title: 'برداشت‌های تکمیل شده',
+              value: statsData.withdrawals?.completed || 0,
+              icon: Wallet,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'لایسنس‌های استفاده شده',
+              value: statsData.licenses?.used || 0,
+              icon: Key,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'لایسنس‌های موجود',
+              value: statsData.licenses?.available || 0,
+              icon: Key,
+              iconColor: 'info' as const,
+            },
+            {
+              title: 'ویدیوهای آموزشی',
+              value: statsData.training?.total || 0,
+              icon: GraduationCap,
+              iconColor: 'primary' as const,
+            },
+            {
+              title: 'اعلان‌ها',
+              value: statsData.notifications?.total || 0,
+              icon: Bell,
+              iconColor: 'info' as const,
+            },
+            {
+              title: 'پاپ‌آپ‌های فعال',
+              value: statsData.marketing_popups?.active || 0,
+              icon: Megaphone,
+              iconColor: 'success' as const,
+            },
+            {
+              title: 'محصولات تحقیقاتی',
+              value: statsData.research_products?.total || 0,
+              icon: Package,
+              iconColor: 'primary' as const,
+            },
+            {
+              title: 'محصولات در دسترس',
+              value: statsData.available_products?.total || 0,
+              icon: Package,
+              iconColor: 'success' as const,
+            },
+          ].filter(stat => stat.value > 0 || stat.title.includes('کل') || stat.title.includes('باز') || stat.title.includes('در انتظار')); // Only show stats with data or important ones
 
-  // Calculate stats based on data
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalOrders = revenueData.reduce((sum, item) => sum + item.orders, 0);
-  const totalNewUsers = usersData.reduce((sum, item) => sum + item.newUsers, 0);
-  const avgActiveUsers = Math.round(usersData.reduce((sum, item) => sum + item.activeUsers, 0) / usersData.length);
+          setStats(statsList);
 
-  const stats = [
-    {
-      title: 'کل درآمد',
-      value: totalRevenue.toLocaleString('fa-IR'),
-      change: 12.5,
-      icon: Wallet,
-      iconColor: 'success' as const,
-    },
-    {
-      title: 'کل سفارشات',
-      value: totalOrders.toLocaleString('fa-IR'),
-      change: 8.2,
-      icon: ShoppingCart,
-      iconColor: 'primary' as const,
-    },
-    {
-      title: 'کاربران جدید',
-      value: totalNewUsers.toLocaleString('fa-IR'),
-      change: 15.3,
-      icon: Users,
-      iconColor: 'info' as const,
-    },
-    {
-      title: 'میانگین کاربران فعال',
-      value: avgActiveUsers.toLocaleString('fa-IR'),
-      change: 5.7,
-      icon: Activity,
-      iconColor: 'warning' as const,
-    },
-    {
-      title: 'میانگین سفارش',
-      value: Math.round(totalRevenue / totalOrders).toLocaleString('fa-IR') + ' تومان',
-      change: -2.4,
-      icon: DollarSign,
-      iconColor: 'primary' as const,
-    },
-    {
-      title: 'محصولات فعال',
-      value: '۱۵۶',
-      change: 5,
-      icon: Package,
-      iconColor: 'success' as const,
-    },
-  ];
+          // Generate simple users chart data (last 7 days)
+          const days = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+          const chartData = days.map((day, index) => ({
+            name: day,
+            newUsers: Math.floor(Math.random() * 20) + 5, // Mock data for chart
+            activeUsers: Math.floor((statsData.users?.active || 0) / 7) + Math.floor(Math.random() * 10),
+          }));
+          setUsersData(chartData);
+        }
+      } catch (error: any) {
+        console.error('Error loading statistics:', error);
+        toast({
+          title: 'خطا',
+          description: error.message || 'خطا در بارگذاری آمار',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const tableData = [
-    { category: 'فروش آنلاین', value: '۱۲۳,۴۵۶,۰۰۰ تومان', change: 12.5, trend: 'up' as const },
-    { category: 'فروش آفلاین', value: '۸۹,۱۲۳,۰۰۰ تومان', change: 8.2, trend: 'up' as const },
-    { category: 'بازگشت وجه', value: '۵,۶۷۸,۰۰۰ تومان', change: -3.1, trend: 'down' as const },
-    { category: 'تخفیفات', value: '۱۵,۹۸۷,۰۰۰ تومان', change: 5.4, trend: 'up' as const },
-    { category: 'مالیات', value: '۱۲,۳۴۵,۰۰۰ تومان', change: 2.1, trend: 'up' as const },
-  ];
+    loadStats();
+  }, []);
 
   return (
     <AdminLayout>
@@ -142,107 +179,29 @@ export default function Statistics() {
           </div>
         </div>
 
-        {/* Time Range Filter */}
-        <Card>
-          <CardContent className="p-4">
-            <TimeRangeFilter
-              value={timeRange}
-              onChange={setTimeRange}
-              customStartDate={customStartDate}
-              customEndDate={customEndDate}
-              onCustomDateChange={(start, end) => {
-                setCustomStartDate(start);
-                setCustomEndDate(end);
-                if (start && end) {
-                  setTimeRange('custom');
-                }
-              }}
-            />
-          </CardContent>
-        </Card>
-
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stats.map((stat, index) => (
-            <div key={stat.title} style={{ animationDelay: `${index * 50}ms` }}>
-              <StatCard {...stat} />
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {stats.map((stat, index) => (
+                <div key={stat.title} style={{ animationDelay: `${index * 50}ms` }}>
+                  <StatCard {...stat} />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RevenueChart data={revenueData} />
-          <UsersChart data={usersData} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ProductsChart data={productsData} />
-          <StatisticsTable data={tableData} title="جزئیات مالی" />
-        </div>
-
-        {/* Additional Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">نرخ تبدیل</p>
-                  <p className="text-2xl font-bold text-foreground">۳.۲%</p>
-                  <p className="text-xs text-success mt-1">+۰.۸% از ماه گذشته</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-primary" />
-                </div>
+            {/* Users Chart - Only if we have data */}
+            {usersData.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                <UsersChart data={usersData} />
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">تیکت‌های باز</p>
-                  <p className="text-2xl font-bold text-foreground">۱۸</p>
-                  <p className="text-xs text-warning mt-1">+۱۵% از ماه گذشته</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
-                  <MessageSquare className="w-6 h-6 text-warning" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">میانگین سبد خرید</p>
-                  <p className="text-2xl font-bold text-foreground">۵۲۷,۰۰۰</p>
-                  <p className="text-xs text-success mt-1">+۲.۴% از ماه گذشته</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-success" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">بازدیدکنندگان</p>
-                  <p className="text-2xl font-bold text-foreground">۱۲,۸۴۷</p>
-                  <p className="text-xs text-info mt-1">+۱۲.۵% از ماه گذشته</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-info" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </>
+        )}
       </div>
     </AdminLayout>
   );
