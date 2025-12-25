@@ -52,7 +52,7 @@ interface Ticket {
   userId: string;
   userName: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other';
+  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   message: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
@@ -209,6 +209,10 @@ const categoryConfig = {
     label: 'عمومی',
     className: 'bg-info/10 text-info',
   },
+  license: {
+    label: 'لایسنس',
+    className: 'bg-warning/10 text-warning',
+  },
   bug: {
     label: 'باگ',
     className: 'bg-destructive/10 text-destructive',
@@ -264,33 +268,38 @@ export default function Tickets() {
           search: searchQuery || undefined,
         });
 
-        if (response && (response.data || response.tickets)) {
-          const ticketsData = response.data?.tickets || response.tickets || [];
+        if (response) {
+          // Backend returns: { data: { tickets: [...], pagination: {...} }, success: true }
+          // Or wrapped in: { data: { data: { tickets: [...], pagination: {...} } } }
+          const data = response.data || response;
+          const ticketsData = data.tickets || [];
+          const pagination = data.pagination || {};
+          
           const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
             id: t.id?.toString() || t.ID?.toString() || '',
-            userId: t.user_id?.toString() || t.userID?.toString() || '',
+            userId: t.user_id?.toString() || t.userID?.toString() || t.user?.id?.toString() || '',
             userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
             subject: t.title || t.subject || '',
             category: t.category || 'general',
             priority: t.priority || 'medium',
             message: t.description || t.message || '',
             status: t.status || 'open',
-            createdAt: t.created_at || new Date().toISOString(),
-            updatedAt: t.updated_at || t.created_at || new Date().toISOString(),
+            createdAt: t.created_at ? new Date(t.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+            updatedAt: t.updated_at ? new Date(t.updated_at).toLocaleDateString('fa-IR') : (t.created_at ? new Date(t.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR')),
             replies: t.messages?.map((m: any) => ({
               id: m.id?.toString() || '',
               message: m.message || '',
-              author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : 'ادمین',
+              author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : (m.is_admin ? 'ادمین' : 'کاربر'),
               authorType: m.is_admin ? 'admin' : 'user',
-              createdAt: m.created_at || new Date().toISOString(),
+              createdAt: m.created_at ? new Date(m.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
               isInternal: false,
             })) || [],
             assignedTo: t.assigned_to || null,
           }));
 
           setTickets(transformedTickets);
-          setTotalTickets(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
+          setTotalTickets(pagination.total || data.total || 0);
+          setTotalPages(pagination.total_pages || data.total_pages || 1);
         }
       } catch (error: any) {
         console.error('Error loading tickets:', error);
@@ -754,7 +763,12 @@ export default function Tickets() {
                     </tr>
                   ) : (
                     paginatedTickets.map((ticket, index) => {
-                      const StatusIcon = statusConfig[ticket.status].icon;
+                      // Safe access to configs with fallback
+                      const statusInfo = statusConfig[ticket.status as keyof typeof statusConfig] || statusConfig.open;
+                      const categoryInfo = categoryConfig[ticket.category as keyof typeof categoryConfig] || categoryConfig.general;
+                      const priorityInfo = priorityConfig[ticket.priority as keyof typeof priorityConfig] || priorityConfig.medium;
+                      const StatusIcon = statusInfo.icon || Clock;
+                      
                       return (
                         <tr
                           key={ticket.id}
@@ -784,31 +798,31 @@ export default function Tickets() {
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium',
-                                categoryConfig[ticket.category].className
+                                categoryInfo.className
                               )}
                             >
-                              {categoryConfig[ticket.category].label}
+                              {categoryInfo.label}
                             </span>
                           </td>
                           <td className="p-4">
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium',
-                                priorityConfig[ticket.priority].className
+                                priorityInfo.className
                               )}
                             >
-                              {priorityConfig[ticket.priority].label}
+                              {priorityInfo.label}
                             </span>
                           </td>
                           <td className="p-4">
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit',
-                                statusConfig[ticket.status].className
+                                statusInfo.className
                               )}
                             >
                               <StatusIcon className="w-3 h-3" />
-                              {statusConfig[ticket.status].label}
+                              {statusInfo.label}
                             </span>
                           </td>
                           <td className="p-4">
