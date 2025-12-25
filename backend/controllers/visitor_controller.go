@@ -589,6 +589,92 @@ func UpdateVisitorStatus(c *gin.Context) {
 	})
 }
 
+// UpdateVisitorByAdmin allows admin to update visitor information
+func UpdateVisitorByAdmin(c *gin.Context) {
+	visitorIDStr := c.Param("id")
+	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		FullName          string `json:"full_name"`
+		Mobile            string `json:"mobile"`
+		Email             string `json:"email"`
+		CityProvince      string `json:"city_province"`
+		DestinationCities string `json:"destination_cities"`
+		AdminNotes        string `json:"admin_notes"`
+		Status            string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	// Build updates map
+	updates := make(map[string]interface{})
+	if req.FullName != "" {
+		updates["full_name"] = req.FullName
+	}
+	if req.Mobile != "" {
+		updates["mobile"] = req.Mobile
+	}
+	if req.Email != "" {
+		updates["email"] = req.Email
+	}
+	if req.CityProvince != "" {
+		updates["city_province"] = req.CityProvince
+	}
+	if req.DestinationCities != "" {
+		updates["destination_cities"] = req.DestinationCities
+	}
+	if req.AdminNotes != "" {
+		updates["admin_notes"] = req.AdminNotes
+	}
+	if req.Status != "" {
+		// Validate status
+		validStatuses := []string{"pending", "approved", "rejected"}
+		statusValid := false
+		for _, status := range validStatuses {
+			if req.Status == status {
+				statusValid = true
+				break
+			}
+		}
+		if !statusValid {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "وضعیت انتخاب شده نامعتبر است"})
+			return
+		}
+		updates["status"] = req.Status
+		userID, _ := c.Get("user_id")
+		adminID := userID.(uint)
+		updates["approved_by"] = adminID
+
+		if req.Status == "approved" {
+			now := time.Now()
+			updates["approved_at"] = &now
+		} else {
+			updates["approved_at"] = nil
+		}
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ فیلدی برای به‌روزرسانی ارسال نشده است"})
+		return
+	}
+
+	err = models.GetDB().Model(&models.Visitor{}).Where("id = ?", visitorID).Updates(updates).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی اطلاعات ویزیتور"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "اطلاعات ویزیتور با موفقیت به‌روزرسانی شد",
+	})
+}
+
 // UpdateMyVisitor allows user to update their own visitor information
 func UpdateMyVisitor(c *gin.Context) {
 	userID, exists := c.Get("user_id")

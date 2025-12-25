@@ -10,6 +10,7 @@ import {
   Search, 
   Eye, 
   Plus,
+  Edit,
   Trash2,
   X,
   XCircle,
@@ -30,6 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { AddVisitorDialog } from '@/components/visitors/AddVisitorDialog';
+import { EditVisitorDialog } from '@/components/visitors/EditVisitorDialog';
 import { ViewVisitorDialog } from '@/components/visitors/ViewVisitorDialog';
 import { DeleteVisitorDialog } from '@/components/visitors/DeleteVisitorDialog';
 import { VisitorsFilters } from '@/components/visitors/VisitorsFilters';
@@ -202,6 +204,7 @@ export default function Visitors() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisitors, setSelectedVisitors] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editVisitor, setEditVisitor] = useState<Visitor | null>(null);
   const [viewVisitor, setViewVisitor] = useState<Visitor | null>(null);
   const [deleteVisitor, setDeleteVisitor] = useState<Visitor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -805,6 +808,59 @@ export default function Visitors() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onSuccess={handleVisitorAdded}
+      />
+
+      {/* Dialog ویرایش ویزیتور */}
+      <EditVisitorDialog
+        open={!!editVisitor}
+        onOpenChange={(open) => !open && setEditVisitor(null)}
+        visitor={editVisitor}
+        onSuccess={() => {
+          // Reload visitors
+          const loadVisitors = async () => {
+            try {
+              const statusFilterValue = statusFilter.length === 1 
+                ? statusFilter[0] === 'active' ? 'approved' 
+                  : statusFilter[0] === 'inactive' ? 'pending' 
+                  : statusFilter[0] === 'suspended' ? 'rejected' 
+                  : 'all'
+                : 'all';
+
+              const response = await adminApi.getVisitors({
+                page: currentPage,
+                per_page: itemsPerPage,
+                status: statusFilterValue,
+                search: searchQuery || undefined,
+              });
+
+              if (response) {
+                const visitorsData = response.visitors || [];
+                const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
+                  id: v.id?.toString() || '',
+                  user_id: v.user_id,
+                  full_name: v.full_name || 'بدون نام',
+                  mobile: v.mobile || '',
+                  email: v.email || '',
+                  city_province: v.city_province || '',
+                  destination_cities: v.destination_cities || '',
+                  national_id: v.national_id || '',
+                  status: v.status || 'pending',
+                  is_featured: v.is_featured || false,
+                  average_rating: v.average_rating || 0,
+                  created_at: v.created_at || new Date().toISOString(),
+                  createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+                }));
+                setVisitors(transformedVisitors);
+                setTotalVisitors(response.total || 0);
+                setTotalPages(response.total_pages || 1);
+              }
+            } catch (error: any) {
+              console.error('Error reloading visitors:', error);
+            }
+          };
+          loadVisitors();
+          setEditVisitor(null);
+        }}
       />
 
       {/* Dialog مشاهده ویزیتور */}

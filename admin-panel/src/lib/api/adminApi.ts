@@ -273,7 +273,15 @@ class AdminApiService {
     });
   }
 
-  async updateVisitor(id: number, data: any): Promise<any> {
+  async updateVisitor(id: number, data: {
+    full_name?: string;
+    mobile?: string;
+    email?: string;
+    city_province?: string;
+    destination_cities?: string;
+    admin_notes?: string;
+    status?: string;
+  }): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/visitors/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
