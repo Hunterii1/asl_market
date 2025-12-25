@@ -12,6 +12,8 @@ import {
   Plus,
   Trash2,
   X,
+  XCircle,
+  CheckCircle,
   Eye as EyeIcon,
   Monitor,
   Smartphone,
@@ -387,9 +389,7 @@ export default function Visitors() {
     } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error.message || 'خطا در حذف ویزیتور',
-        variant: 'destructive',
-        description: 'خطا در حذف بازدیدکننده',
+        description: error.message || 'خطا در حذف بازدیدکننده',
         variant: 'destructive',
       });
     } finally {
@@ -769,7 +769,7 @@ export default function Visitors() {
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-muted-foreground">
-                  نمایش {startIndex + 1} تا {Math.min(endIndex, sortedVisitors.length)} از {sortedVisitors.length} بازدیدکننده
+                  نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalVisitors)} از {totalVisitors} بازدیدکننده
                 </span>
                 <Select
                   value={itemsPerPage.toString()}
@@ -848,14 +848,31 @@ export default function Visitors() {
       <ViewVisitorDialog
         open={!!viewVisitor}
         onOpenChange={(open) => !open && setViewVisitor(null)}
-        visitor={viewVisitor}
+        visitor={viewVisitor ? {
+          id: viewVisitor.id,
+          ip: viewVisitor.ip || '0.0.0.0',
+          userAgent: viewVisitor.userAgent,
+          browser: viewVisitor.browser,
+          os: viewVisitor.os,
+          device: viewVisitor.device,
+          country: viewVisitor.country,
+          city: viewVisitor.city,
+          page: viewVisitor.page || '/',
+          referrer: viewVisitor.referrer,
+          sessionId: viewVisitor.sessionId,
+          duration: viewVisitor.duration,
+          isBot: viewVisitor.isBot || false,
+          language: viewVisitor.language,
+          visitedAt: viewVisitor.visitedAt,
+          createdAt: viewVisitor.createdAt || viewVisitor.created_at || '',
+        } : null}
       />
 
       {/* Dialog حذف بازدیدکننده */}
       <DeleteVisitorDialog
         open={!!deleteVisitor}
         onOpenChange={(open) => !open && setDeleteVisitor(null)}
-        visitor={deleteVisitor}
+        visitor={deleteVisitor ? { id: deleteVisitor.id, ip: deleteVisitor.ip || '0.0.0.0' } : null}
         onConfirm={handleDeleteVisitor}
         isDeleting={isDeleting}
       />
