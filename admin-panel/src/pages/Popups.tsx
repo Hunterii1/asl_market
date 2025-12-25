@@ -595,7 +595,9 @@ export default function Popups() {
                   </thead>
                   <tbody>
                     {paginatedPopups.map((popup, index) => {
-                      const StatusIcon = statusConfig[popup.status].icon;
+                      const statusInfo = statusConfig[popup.status] || statusConfig.inactive;
+                      const typeInfo = typeConfig[popup.type] || typeConfig.modal;
+                      const StatusIcon = statusInfo?.icon || XCircle;
                       const clickRate = popup.displayCount > 0 
                         ? ((popup.clickCount || 0) / popup.displayCount * 100).toFixed(2)
                         : '0.00';
@@ -624,19 +626,19 @@ export default function Popups() {
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', typeConfig[popup.type].className)}
+                              className={cn('text-xs', typeInfo?.className || 'bg-muted text-muted-foreground')}
                             >
                               <Layout className="w-3 h-3 ml-1" />
-                              {typeConfig[popup.type].label}
+                              {typeInfo?.label || popup.type}
                             </Badge>
                           </td>
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', statusConfig[popup.status].className)}
+                              className={cn('text-xs', statusInfo?.className || 'bg-muted text-muted-foreground')}
                             >
                               <StatusIcon className="w-3 h-3 ml-1" />
-                              {statusConfig[popup.status].label}
+                              {statusInfo?.label || popup.status}
                             </Badge>
                           </td>
                           <td className="p-4">
