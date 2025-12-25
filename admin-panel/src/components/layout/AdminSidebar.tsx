@@ -52,7 +52,7 @@ export function AdminSidebar() {
     { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers' },
     { title: 'کالاهای موجود', icon: Package, href: '/products/available' },
     { title: 'محصولات تحقیقی', icon: Box, href: '/products/research' },
-    { title: 'بازدیدکنندگان', icon: Eye, href: '/visitors' },
+    { title: 'ویزیتورها', icon: Eye, href: '/visitors' },
     { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
     { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
     { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
