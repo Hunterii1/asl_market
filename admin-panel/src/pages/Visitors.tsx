@@ -55,6 +55,7 @@ interface Visitor {
   status?: 'pending' | 'approved' | 'rejected';
   is_featured?: boolean;
   average_rating?: number;
+  admin_notes?: string;
   created_at?: string;
   createdAt: string;
   // Legacy fields for compatibility
@@ -690,6 +691,14 @@ export default function Visitors() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon-sm"
+                                onClick={() => setEditVisitor(visitor)}
+                                title="ویرایش"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
                               {visitor.status === 'pending' && (
                                 <Button 
                                   variant="ghost" 
@@ -869,21 +878,18 @@ export default function Visitors() {
         onOpenChange={(open) => !open && setViewVisitor(null)}
         visitor={viewVisitor ? {
           id: viewVisitor.id,
-          ip: viewVisitor.ip || '0.0.0.0',
-          userAgent: viewVisitor.userAgent,
-          browser: viewVisitor.browser,
-          os: viewVisitor.os,
-          device: viewVisitor.device,
-          country: viewVisitor.country,
-          city: viewVisitor.city,
-          page: viewVisitor.page || '/',
-          referrer: viewVisitor.referrer,
-          sessionId: viewVisitor.sessionId,
-          duration: viewVisitor.duration,
-          isBot: viewVisitor.isBot || false,
-          language: viewVisitor.language,
-          visitedAt: viewVisitor.visitedAt,
-          createdAt: viewVisitor.createdAt || viewVisitor.created_at || '',
+          full_name: viewVisitor.full_name,
+          mobile: viewVisitor.mobile,
+          email: viewVisitor.email,
+          city_province: viewVisitor.city_province,
+          destination_cities: viewVisitor.destination_cities,
+          national_id: viewVisitor.national_id,
+          status: viewVisitor.status,
+          is_featured: viewVisitor.is_featured,
+          average_rating: viewVisitor.average_rating,
+          admin_notes: viewVisitor.admin_notes,
+          created_at: viewVisitor.created_at,
+          createdAt: viewVisitor.createdAt || (viewVisitor.created_at ? new Date(viewVisitor.created_at).toLocaleDateString('fa-IR') : ''),
         } : null}
       />
 

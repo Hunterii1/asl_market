@@ -9,36 +9,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Eye,
-  Globe,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Bot,
-  Clock,
-  FileText,
-  Calendar,
+  User,
+  Phone,
+  Mail,
   MapPin,
-  Languages,
-  ExternalLink,
+  Calendar,
+  FileText,
+  Star,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface VisitorData {
   id: string;
-  ip: string;
-  userAgent?: string;
-  browser?: string;
-  os?: string;
-  device?: 'desktop' | 'mobile' | 'tablet' | 'other';
-  country?: string;
-  city?: string;
-  page: string;
-  referrer?: string;
-  sessionId?: string;
-  duration?: number;
-  isBot: boolean;
-  language?: string;
-  visitedAt?: string;
+  full_name?: string;
+  mobile?: string;
+  email?: string;
+  city_province?: string;
+  destination_cities?: string;
+  national_id?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  is_featured?: boolean;
+  average_rating?: number;
+  admin_notes?: string;
+  created_at?: string;
   createdAt?: string;
 }
 
@@ -48,33 +45,28 @@ interface ViewVisitorDialogProps {
   visitor: VisitorData | null;
 }
 
-const deviceConfig = {
-  desktop: {
-    label: 'دسکتاپ',
-    className: 'bg-primary/10 text-primary',
-    icon: Monitor,
+const statusConfig = {
+  pending: {
+    label: 'در انتظار',
+    className: 'bg-warning/10 text-warning border-warning/20',
+    icon: Clock,
   },
-  mobile: {
-    label: 'موبایل',
-    className: 'bg-info/10 text-info',
-    icon: Smartphone,
+  approved: {
+    label: 'تأیید شده',
+    className: 'bg-success/10 text-success border-success/20',
+    icon: CheckCircle,
   },
-  tablet: {
-    label: 'تبلت',
-    className: 'bg-success/10 text-success',
-    icon: Tablet,
-  },
-  other: {
-    label: 'سایر',
-    className: 'bg-muted text-muted-foreground',
-    icon: Monitor,
+  rejected: {
+    label: 'رد شده',
+    className: 'bg-destructive/10 text-destructive border-destructive/20',
+    icon: XCircle,
   },
 };
 
 export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDialogProps) {
   if (!visitor) return null;
 
-  const DeviceIcon = visitor.device ? deviceConfig[visitor.device].icon : Monitor;
+  const StatusIcon = visitor.status ? statusConfig[visitor.status].icon : Clock;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,10 +74,10 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Eye className="w-5 h-5 text-primary" />
-            جزئیات بازدیدکننده
+            جزئیات ویزیتور
           </DialogTitle>
           <DialogDescription className="text-right">
-            اطلاعات کامل بازدیدکننده
+            اطلاعات کامل ویزیتور
           </DialogDescription>
         </DialogHeader>
 
@@ -95,28 +87,29 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-foreground mb-2 font-mono" dir="ltr">
-                    {visitor.ip}
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {visitor.full_name || 'بدون نام'}
                   </h3>
                   <div className="flex flex-wrap items-center gap-2">
-                    {visitor.device && (
+                    {visitor.status && (
                       <Badge
                         variant="outline"
-                        className={cn('border-2', deviceConfig[visitor.device].className)}
+                        className={cn('border-2', statusConfig[visitor.status].className)}
                       >
-                        <DeviceIcon className="w-3 h-3 ml-1" />
-                        {deviceConfig[visitor.device].label}
+                        <StatusIcon className="w-3 h-3 ml-1" />
+                        {statusConfig[visitor.status].label}
                       </Badge>
                     )}
-                    {visitor.isBot && (
-                      <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
-                        <Bot className="w-3 h-3 ml-1" />
-                        ربات
+                    {visitor.is_featured && (
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        <Star className="w-3 h-3 ml-1" />
+                        ویژه
                       </Badge>
                     )}
-                    {visitor.country && (
+                    {visitor.average_rating !== undefined && visitor.average_rating > 0 && (
                       <Badge variant="outline" className="bg-info/10 text-info border-info/20">
-                        {visitor.country}
+                        <Star className="w-3 h-3 ml-1" />
+                        {visitor.average_rating.toFixed(1)} ⭐
                       </Badge>
                     )}
                   </div>
@@ -125,65 +118,84 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
             </CardContent>
           </Card>
 
-          {/* Browser & OS */}
+          {/* Personal Information */}
           <Card>
             <CardContent className="p-6">
-              <h4 className="font-semibold text-foreground mb-4">مرورگر و سیستم عامل</h4>
+              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                اطلاعات شخصی
+              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {visitor.browser && (
+                {visitor.full_name && (
                   <div className="bg-muted/50 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Globe className="w-4 h-4" />
-                      مرورگر
+                      <User className="w-4 h-4" />
+                      نام و نام خانوادگی
                     </div>
-                    <p className="text-lg font-bold text-foreground">{visitor.browser}</p>
+                    <p className="text-lg font-bold text-foreground">{visitor.full_name}</p>
                   </div>
                 )}
-                {visitor.os && (
+                {visitor.national_id && (
                   <div className="bg-muted/50 rounded-xl p-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Monitor className="w-4 h-4" />
-                      سیستم عامل
+                      <Shield className="w-4 h-4" />
+                      کد ملی
                     </div>
-                    <p className="text-lg font-bold text-foreground">{visitor.os}</p>
+                    <p className="text-lg font-bold text-foreground font-mono" dir="ltr">
+                      {visitor.national_id}
+                    </p>
+                  </div>
+                )}
+                {visitor.mobile && (
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Phone className="w-4 h-4" />
+                      شماره موبایل
+                    </div>
+                    <p className="text-lg font-bold text-foreground font-mono" dir="ltr">
+                      {visitor.mobile}
+                    </p>
+                  </div>
+                )}
+                {visitor.email && (
+                  <div className="bg-muted/50 rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                      <Mail className="w-4 h-4" />
+                      ایمیل
+                    </div>
+                    <p className="text-lg font-bold text-foreground font-mono" dir="ltr">
+                      {visitor.email}
+                    </p>
                   </div>
                 )}
               </div>
-              {visitor.userAgent && (
-                <div className="mt-4 p-3 bg-muted/30 rounded-lg">
-                  <p className="text-xs text-muted-foreground mb-1">User Agent:</p>
-                  <p className="text-xs font-mono text-foreground break-all" dir="ltr">
-                    {visitor.userAgent}
-                  </p>
-                </div>
-              )}
             </CardContent>
           </Card>
 
-          {/* Location */}
-          {(visitor.country || visitor.city) && (
+          {/* Location Information */}
+          {(visitor.city_province || visitor.destination_cities) && (
             <Card>
               <CardContent className="p-6">
                 <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
-                  موقعیت جغرافیایی
+                  اطلاعات موقعیت
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {visitor.country && (
+                <div className="space-y-4">
+                  {visitor.city_province && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">کشور</p>
-                        <p className="text-sm font-medium text-foreground">{visitor.country}</p>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">شهر و استان محل سکونت</p>
+                        <p className="text-sm font-medium text-foreground">{visitor.city_province}</p>
                       </div>
                     </div>
                   )}
-                  {visitor.city && (
+                  {visitor.destination_cities && (
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">شهر</p>
-                        <p className="text-sm font-medium text-foreground">{visitor.city}</p>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">شهرهای مقصد</p>
+                        <p className="text-sm font-medium text-foreground">{visitor.destination_cities}</p>
                       </div>
                     </div>
                   )}
@@ -192,95 +204,43 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
             </Card>
           )}
 
-          {/* Visit Details */}
-          <Card>
-            <CardContent className="p-6">
-              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                جزئیات بازدید
-              </h4>
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">صفحه بازدید شده</p>
-                    <p className="text-sm font-medium text-foreground font-mono" dir="ltr">
-                      {visitor.page}
-                    </p>
-                  </div>
+          {/* Admin Notes */}
+          {visitor.admin_notes && (
+            <Card>
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  یادداشت ادمین
+                </h4>
+                <div className="bg-muted/30 rounded-lg p-4">
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{visitor.admin_notes}</p>
                 </div>
-                {visitor.referrer && (
-                  <div className="flex items-center gap-2">
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">مرجع</p>
-                      <a
-                        href={visitor.referrer}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline break-all"
-                        dir="ltr"
-                      >
-                        {visitor.referrer}
-                      </a>
-                    </div>
-                  </div>
-                )}
-                {visitor.duration !== undefined && visitor.duration > 0 && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">مدت زمان بازدید</p>
-                      <p className="text-sm font-medium text-foreground">
-                        {Math.floor(visitor.duration / 60)} دقیقه و {visitor.duration % 60} ثانیه
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {visitor.language && (
-                  <div className="flex items-center gap-2">
-                    <Languages className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">زبان</p>
-                      <p className="text-sm font-medium text-foreground">{visitor.language}</p>
-                    </div>
-                  </div>
-                )}
-                {visitor.sessionId && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">شناسه نشست</p>
-                      <p className="text-sm font-medium text-foreground font-mono" dir="ltr">
-                        {visitor.sessionId}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Dates */}
           <Card>
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">زمان‌بندی</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {visitor.visitedAt && (
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">زمان بازدید</p>
-                      <p className="text-sm font-medium text-foreground">{visitor.visitedAt}</p>
-                    </div>
-                  </div>
-                )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {visitor.createdAt && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ ثبت</p>
                       <p className="text-sm font-medium text-foreground">{visitor.createdAt}</p>
+                    </div>
+                  </div>
+                )}
+                {visitor.created_at && !visitor.createdAt && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">تاریخ ثبت</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(visitor.created_at).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -292,4 +252,5 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
     </Dialog>
   );
 }
+
 
