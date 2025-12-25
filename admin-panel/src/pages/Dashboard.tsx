@@ -3,8 +3,6 @@ import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
 import { QuickActions } from '@/components/dashboard/QuickActions';
-import { SalesChart } from '@/components/dashboard/SalesChart';
-import { TopProducts } from '@/components/dashboard/TopProducts';
 import { AddUserDialog } from '@/components/users/AddUserDialog';
 import { ImportUsersDialog } from '@/components/users/ImportUsersDialog';
 import { ExportUsersDialog } from '@/components/users/ExportUsersDialog';
@@ -67,7 +65,7 @@ export default function Dashboard() {
       value: 0,
       change: 0,
       icon: Wallet,
-      iconColor: 'error' as const,
+      iconColor: 'warning' as const,
     },
     {
       title: 'لایسنس‌های استفاده شده',
@@ -89,8 +87,10 @@ export default function Dashboard() {
         setLoading(true);
         const data = await adminApi.getDashboardStats();
         
-        if (data && data.data) {
-          const statsData = data.data;
+        // handleResponse returns data.data, so data is already the stats object
+        const statsData = data.data || data;
+        
+        if (statsData) {
           setStats([
             {
               title: 'کل کاربران',
@@ -125,7 +125,7 @@ export default function Dashboard() {
               value: statsData.withdrawals?.pending || 0,
               change: 0,
               icon: Wallet,
-              iconColor: 'error' as const,
+              iconColor: 'warning' as const,
             },
             {
               title: 'لایسنس‌های استفاده شده',
@@ -246,14 +246,13 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Charts & Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <SalesChart />
+        {/* Recent Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <RecentActivity />
         </div>
 
-        {/* Quick Actions & Top Products */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <QuickActions 
             onAddUser={handleAddUserClick}
             onImportUsers={handleImportUsersClick}
@@ -262,7 +261,6 @@ export default function Dashboard() {
             onAddProduct={handleAddProductClick}
             onGenerateReport={handleGenerateReportClick}
           />
-          <TopProducts />
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser } from '@/lib/utils/auth';
+import { useSidebarStats } from '@/hooks/useSidebarStats';
 import {
   LayoutDashboard,
   Users,
@@ -32,37 +33,38 @@ interface NavItem {
   badge?: number;
 }
 
-// Full admin navigation items
-const fullAdminNavItems: NavItem[] = [
-  { title: 'داشبورد', icon: LayoutDashboard, href: '/' },
-  { title: 'کاربران', icon: Users, href: '/users', badge: 12 },
-  { title: 'مدیران', icon: Shield, href: '/admins' },
-  { title: 'آمار سیستم', icon: BarChart3, href: '/statistics' },
-  { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: 5 },
-  { title: 'لایسنس‌ها', icon: Key, href: '/licenses' },
-  { title: 'تیکت‌ها', icon: MessageSquare, href: '/tickets', badge: 8 },
-  { title: 'آموزش', icon: GraduationCap, href: '/education' },
-  { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers' },
-  { title: 'محصولات', icon: Package, href: '/products' },
-  { title: 'بازدیدکنندگان', icon: Eye, href: '/visitors' },
-  { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
-  { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
-  { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
-  { title: 'تنظیمات', icon: Settings, href: '/settings' },
-];
-
-// Support admin navigation items (limited access - only tickets)
-const supportAdminNavItems: NavItem[] = [
-  { title: 'تیکت‌های پشتیبانی', icon: MessageSquare, href: '/support/tickets', badge: 8 },
-];
-
 export function AdminSidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const user = getCurrentUser();
+  const { stats } = useSidebarStats();
   
   // Check if user is support admin (moderator role)
   const isSupportAdmin = user?.role === 'moderator' || user?.role === 'support_admin';
+  
+  // Full admin navigation items with real stats
+  const fullAdminNavItems: NavItem[] = [
+    { title: 'داشبورد', icon: LayoutDashboard, href: '/' },
+    { title: 'کاربران', icon: Users, href: '/users', badge: stats.users > 0 ? stats.users : undefined },
+    { title: 'مدیران', icon: Shield, href: '/admins' },
+    { title: 'آمار سیستم', icon: BarChart3, href: '/statistics' },
+    { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: stats.withdrawals > 0 ? stats.withdrawals : undefined },
+    { title: 'لایسنس‌ها', icon: Key, href: '/licenses' },
+    { title: 'تیکت‌ها', icon: MessageSquare, href: '/tickets', badge: stats.tickets > 0 ? stats.tickets : undefined },
+    { title: 'آموزش', icon: GraduationCap, href: '/education' },
+    { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers' },
+    { title: 'محصولات', icon: Package, href: '/products' },
+    { title: 'بازدیدکنندگان', icon: Eye, href: '/visitors' },
+    { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
+    { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
+    { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
+    { title: 'تنظیمات', icon: Settings, href: '/settings' },
+  ];
+
+  // Support admin navigation items (limited access - only tickets)
+  const supportAdminNavItems: NavItem[] = [
+    { title: 'تیکت‌های پشتیبانی', icon: MessageSquare, href: '/support/tickets', badge: stats.tickets > 0 ? stats.tickets : undefined },
+  ];
   
   // Use appropriate nav items based on user role
   const navItems = isSupportAdmin ? supportAdminNavItems : fullAdminNavItems;
