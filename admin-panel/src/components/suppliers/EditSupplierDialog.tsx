@@ -1,0 +1,621 @@
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Truck, Building2, Mail, Phone, MapPin, Globe, User, Star, FileText } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { editSupplierSchema, type EditSupplierFormData } from '@/lib/validations/supplier';
+import { toast } from '@/hooks/use-toast';
+
+interface Supplier {
+  id: string;
+  name: string;
+  companyName?: string;
+  email?: string;
+  phone: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  postalCode?: string;
+  taxId?: string;
+  website?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  category?: 'electronics' | 'clothing' | 'food' | 'books' | 'furniture' | 'automotive' | 'other';
+  status: 'active' | 'inactive' | 'suspended';
+  rating?: number;
+  notes?: string;
+  totalOrders: number;
+  totalAmount: number;
+}
+
+interface EditSupplierDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  supplier: Supplier | null;
+  onSuccess?: () => void;
+}
+
+// Mock API function
+const updateSupplier = async (data: EditSupplierFormData): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (Math.random() < 0.1) {
+        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
+      } else {
+        const suppliers = JSON.parse(localStorage.getItem('asll-suppliers') || '[]');
+        const index = suppliers.findIndex((s: Supplier) => s.id === data.id);
+        if (index !== -1) {
+          suppliers[index] = { ...suppliers[index], ...data };
+          suppliers[index].updatedAt = new Date().toLocaleDateString('fa-IR');
+          localStorage.setItem('asll-suppliers', JSON.stringify(suppliers));
+        }
+        resolve();
+      }
+    }, 1000);
+  });
+};
+
+export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: EditSupplierDialogProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentTab, setCurrentTab] = useState('basic');
+
+  const form = useForm<EditSupplierFormData>({
+    resolver: zodResolver(editSupplierSchema),
+    defaultValues: {
+      id: '',
+      name: '',
+      companyName: '',
+      email: '',
+      phone: '',
+      address: '',
+      city: '',
+      country: 'ایران',
+      postalCode: '',
+      taxId: '',
+      website: '',
+      contactPerson: '',
+      contactPhone: '',
+      contactEmail: '',
+      category: 'other',
+      status: 'active',
+      rating: 0,
+      notes: '',
+      totalOrders: 0,
+      totalAmount: 0,
+    },
+  });
+
+  // Update form when supplier changes
+  useEffect(() => {
+    if (supplier && open) {
+      form.reset({
+        id: supplier.id,
+        name: supplier.name,
+        companyName: supplier.companyName || '',
+        email: supplier.email || '',
+        phone: supplier.phone,
+        address: supplier.address || '',
+        city: supplier.city || '',
+        country: supplier.country || 'ایران',
+        postalCode: supplier.postalCode || '',
+        taxId: supplier.taxId || '',
+        website: supplier.website || '',
+        contactPerson: supplier.contactPerson || '',
+        contactPhone: supplier.contactPhone || '',
+        contactEmail: supplier.contactEmail || '',
+        category: supplier.category || 'other',
+        status: supplier.status,
+        rating: supplier.rating || 0,
+        notes: supplier.notes || '',
+        totalOrders: supplier.totalOrders || 0,
+        totalAmount: supplier.totalAmount || 0,
+      });
+      setCurrentTab('basic');
+    }
+  }, [supplier, open, form]);
+
+  const onSubmit = async (data: EditSupplierFormData) => {
+    setIsSubmitting(true);
+    try {
+      await updateSupplier(data);
+      toast({
+        title: 'موفقیت',
+        description: 'اطلاعات تامین‌کننده با موفقیت به‌روزرسانی شد.',
+        variant: 'default',
+      });
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!isSubmitting) {
+      if (!newOpen) {
+        form.reset();
+        setCurrentTab('basic');
+      }
+      onOpenChange(newOpen);
+    }
+  };
+
+  if (!supplier) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl">
+        <DialogHeader className="text-right">
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Truck className="w-5 h-5 text-primary" />
+            ویرایش تامین‌کننده
+          </DialogTitle>
+          <DialogDescription>
+            اطلاعات تامین‌کننده را ویرایش کنید.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="basic">اطلاعات پایه</TabsTrigger>
+                <TabsTrigger value="contact">اطلاعات تماس</TabsTrigger>
+                <TabsTrigger value="additional">اطلاعات تکمیلی</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        نام تامین‌کننده *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="companyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-muted-foreground" />
+                        نام شرکت
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          ایمیل
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            {...field}
+                            disabled={isSubmitting}
+                            dir="ltr"
+                            className="text-left"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          شماره تلفن *
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isSubmitting}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="address"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        آدرس
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-[80px]"
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>شهر</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isSubmitting}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="country"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>کشور</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isSubmitting}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="postalCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>کد پستی</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isSubmitting}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="contact" className="space-y-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="contactPerson"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        نام شخص تماس
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="contactPhone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          شماره تلفن تماس
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isSubmitting}
+                            className="text-right"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          ایمیل تماس
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            {...field}
+                            disabled={isSubmitting}
+                            dir="ltr"
+                            className="text-left"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        وب‌سایت
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          dir="ltr"
+                          className="text-left"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+
+              <TabsContent value="additional" className="space-y-4 mt-4">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>دسته‌بندی</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-right">
+                            <SelectValue placeholder="دسته‌بندی را انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="electronics">الکترونیک</SelectItem>
+                          <SelectItem value="clothing">پوشاک</SelectItem>
+                          <SelectItem value="food">غذا</SelectItem>
+                          <SelectItem value="books">کتاب</SelectItem>
+                          <SelectItem value="furniture">مبلمان</SelectItem>
+                          <SelectItem value="automotive">خودرو</SelectItem>
+                          <SelectItem value="other">سایر</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>وضعیت</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-right">
+                            <SelectValue placeholder="وضعیت را انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="active">فعال</SelectItem>
+                          <SelectItem value="inactive">غیرفعال</SelectItem>
+                          <SelectItem value="suspended">معلق</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="taxId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>شناسه مالیاتی</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          disabled={isSubmitting}
+                          className="text-right"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="rating"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Star className="w-4 h-4 text-muted-foreground" />
+                        امتیاز (۰ تا ۵)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          disabled={isSubmitting}
+                          className="text-right"
+                          min="0"
+                          max="5"
+                          step="0.1"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-muted-foreground" />
+                        یادداشت
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          className="min-h-[100px]"
+                          {...field}
+                          disabled={isSubmitting}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {field.value?.length || 0} / 2000 کاراکتر
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter className="gap-2 sm:gap-0 flex-row-reverse">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="min-w-[120px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    در حال ذخیره...
+                  </>
+                ) : (
+                  <>
+                    <Truck className="w-4 h-4 ml-2" />
+                    ذخیره تغییرات
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => handleOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                انصراف
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+

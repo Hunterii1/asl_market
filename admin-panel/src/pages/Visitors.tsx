@@ -1,0 +1,865 @@
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/layout/AdminLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { adminApi } from '@/lib/api/adminApi';
+import { Loader2 } from 'lucide-react';
+import { 
+  Search, 
+  Eye, 
+  Plus,
+  Trash2,
+  X,
+  Eye as EyeIcon,
+  Monitor,
+  Smartphone,
+  Tablet,
+  Bot,
+  Globe,
+  MapPin,
+  Clock,
+  FileText,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
+import { AddVisitorDialog } from '@/components/visitors/AddVisitorDialog';
+import { ViewVisitorDialog } from '@/components/visitors/ViewVisitorDialog';
+import { DeleteVisitorDialog } from '@/components/visitors/DeleteVisitorDialog';
+import { VisitorsFilters } from '@/components/visitors/VisitorsFilters';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface Visitor {
+  id: string;
+  user_id?: number;
+  full_name?: string;
+  mobile?: string;
+  email?: string;
+  city_province?: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  created_at?: string;
+  // Legacy fields for compatibility
+  ip?: string;
+  userAgent?: string;
+  browser?: string;
+  os?: string;
+  device?: 'desktop' | 'mobile' | 'tablet' | 'other';
+  country?: string;
+  city?: string;
+  page?: string;
+  referrer?: string;
+  sessionId?: string;
+  duration?: number;
+  isBot?: boolean;
+  language?: string;
+  visitedAt?: string;
+  createdAt: string;
+}
+
+// داده‌های اولیه
+const initialVisitors: Visitor[] = [
+  {
+    id: '1',
+    ip: '192.168.1.100',
+    browser: 'Chrome',
+    os: 'Windows',
+    device: 'desktop',
+    country: 'ایران',
+    city: 'تهران',
+    page: '/products',
+    referrer: 'https://google.com',
+    duration: 120,
+    isBot: false,
+    language: 'fa',
+    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۳۰:۲۵',
+    createdAt: '۱۴۰۳/۰۹/۲۰',
+  },
+  {
+    id: '2',
+    ip: '192.168.1.101',
+    browser: 'Safari',
+    os: 'iOS',
+    device: 'mobile',
+    country: 'ایران',
+    city: 'اصفهان',
+    page: '/',
+    duration: 45,
+    isBot: false,
+    language: 'fa',
+    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۲۵:۱۰',
+    createdAt: '۱۴۰۳/۰۹/۲۰',
+  },
+  {
+    id: '3',
+    ip: '192.168.1.102',
+    browser: 'Firefox',
+    os: 'Linux',
+    device: 'desktop',
+    country: 'ایران',
+    city: 'مشهد',
+    page: '/education',
+    referrer: 'https://example.com',
+    duration: 300,
+    isBot: false,
+    language: 'fa',
+    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۲۰:۰۰',
+    createdAt: '۱۴۰۳/۰۹/۲۰',
+  },
+  {
+    id: '4',
+    ip: '66.249.64.1',
+    userAgent: 'Googlebot/2.1',
+    browser: 'Googlebot',
+    os: 'Unknown',
+    device: 'other',
+    country: 'ایالات متحده',
+    city: 'Mountain View',
+    page: '/',
+    duration: 0,
+    isBot: true,
+    language: 'en',
+    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۱۵:۰۰',
+    createdAt: '۱۴۰۳/۰۹/۲۰',
+  },
+  {
+    id: '5',
+    ip: '192.168.1.103',
+    browser: 'Edge',
+    os: 'Windows',
+    device: 'tablet',
+    country: 'ایران',
+    city: 'شیراز',
+    page: '/users',
+    duration: 180,
+    isBot: false,
+    language: 'fa',
+    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۱۰:۳۰',
+    createdAt: '۱۴۰۳/۰۹/۲۰',
+  },
+];
+
+const deviceConfig = {
+  desktop: {
+    label: 'دسکتاپ',
+    className: 'bg-primary/10 text-primary',
+    icon: Monitor,
+  },
+  mobile: {
+    label: 'موبایل',
+    className: 'bg-info/10 text-info',
+    icon: Smartphone,
+  },
+  tablet: {
+    label: 'تبلت',
+    className: 'bg-success/10 text-success',
+    icon: Tablet,
+  },
+  other: {
+    label: 'سایر',
+    className: 'bg-muted text-muted-foreground',
+    icon: Monitor,
+  },
+};
+
+type SortField = 'ip' | 'browser' | 'os' | 'device' | 'country' | 'page' | 'duration' | 'visitedAt' | 'createdAt';
+type SortOrder = 'asc' | 'desc';
+
+export default function Visitors() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedVisitors, setSelectedVisitors] = useState<string[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [viewVisitor, setViewVisitor] = useState<Visitor | null>(null);
+  const [deleteVisitor, setDeleteVisitor] = useState<Visitor | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deviceFilter, setDeviceFilter] = useState<('desktop' | 'mobile' | 'tablet' | 'other')[]>([]);
+  const [isBotFilter, setIsBotFilter] = useState<boolean | null>(null);
+  const [countryFilter, setCountryFilter] = useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive' | 'suspended')[]>([]);
+  const [sortField, setSortField] = useState<SortField>('visitedAt');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalVisitors, setTotalVisitors] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  // Load visitors from API
+  useEffect(() => {
+    const loadVisitors = async () => {
+      try {
+        setLoading(true);
+        const statusFilterValue = statusFilter.length === 1 
+          ? statusFilter[0] === 'active' ? 'approved' 
+            : statusFilter[0] === 'inactive' ? 'pending' 
+            : statusFilter[0] === 'suspended' ? 'rejected' 
+            : 'all'
+          : 'all';
+
+        const response = await adminApi.getVisitors({
+          page: currentPage,
+          per_page: itemsPerPage,
+          status: statusFilterValue,
+          search: searchQuery || undefined,
+        });
+
+        if (response && (response.data || response.visitors)) {
+          const visitorsData = response.data?.visitors || response.visitors || [];
+          const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
+            id: v.id?.toString() || v.ID?.toString() || '',
+            user_id: v.user_id || v.userID,
+            full_name: v.full_name || v.name || 'بدون نام',
+            mobile: v.mobile || v.phone || '',
+            email: v.email || '',
+            city_province: v.city_province || v.city || '',
+            status: v.status || 'pending',
+            created_at: v.created_at || new Date().toISOString(),
+            createdAt: v.created_at || new Date().toISOString(),
+          }));
+
+          setVisitors(transformedVisitors);
+          setTotalVisitors(response.data?.total || response.total || 0);
+          setTotalPages(response.data?.total_pages || response.total_pages || 1);
+        }
+      } catch (error: any) {
+        console.error('Error loading visitors:', error);
+        toast({
+          title: 'خطا',
+          description: error.message || 'خطا در بارگذاری ویزیتورها',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVisitors();
+  }, [currentPage, itemsPerPage, statusFilter, searchQuery]);
+
+  // Use visitors directly from API (already filtered and paginated)
+  const paginatedVisitors = visitors;
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [totalPages, currentPage]);
+
+  const handleVisitorAdded = () => {
+    const stored = localStorage.getItem('asll-visitors');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setVisitors(parsed);
+      } catch {}
+    }
+  };
+
+  const toggleSelectVisitor = (visitorId: string) => {
+    setSelectedVisitors(prev =>
+      prev.includes(visitorId)
+        ? prev.filter(id => id !== visitorId)
+        : [...prev, visitorId]
+    );
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleApproveVisitor = async (visitorId: string, notes?: string) => {
+    try {
+      await adminApi.approveVisitor(parseInt(visitorId), { admin_notes: notes });
+      toast({
+        title: 'موفقیت',
+        description: 'ویزیتور با موفقیت تأیید شد.',
+      });
+      // Reload visitors
+      const response = await adminApi.getVisitors({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilter.length === 1 
+          ? statusFilter[0] === 'active' ? 'approved' 
+            : statusFilter[0] === 'inactive' ? 'pending' 
+            : statusFilter[0] === 'suspended' ? 'rejected' 
+            : 'all'
+          : 'all',
+        search: searchQuery || undefined,
+      });
+      if (response && (response.data || response.visitors)) {
+        const visitorsData = response.data?.visitors || response.visitors || [];
+        const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
+          id: v.id?.toString() || v.ID?.toString() || '',
+          user_id: v.user_id || v.userID,
+          full_name: v.full_name || v.name || 'بدون نام',
+          mobile: v.mobile || v.phone || '',
+          email: v.email || '',
+          city_province: v.city_province || v.city || '',
+          status: v.status || 'pending',
+          created_at: v.created_at || new Date().toISOString(),
+          createdAt: v.created_at || new Date().toISOString(),
+        }));
+        setVisitors(transformedVisitors);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تأیید ویزیتور',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRejectVisitor = async (visitorId: string, notes: string) => {
+    try {
+      await adminApi.rejectVisitor(parseInt(visitorId), { admin_notes: notes });
+      toast({
+        title: 'موفقیت',
+        description: 'ویزیتور با موفقیت رد شد.',
+      });
+      // Reload visitors
+      const response = await adminApi.getVisitors({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilter.length === 1 
+          ? statusFilter[0] === 'active' ? 'approved' 
+            : statusFilter[0] === 'inactive' ? 'pending' 
+            : statusFilter[0] === 'suspended' ? 'rejected' 
+            : 'all'
+          : 'all',
+        search: searchQuery || undefined,
+      });
+      if (response && (response.data || response.visitors)) {
+        const visitorsData = response.data?.visitors || response.visitors || [];
+        const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
+          id: v.id?.toString() || v.ID?.toString() || '',
+          user_id: v.user_id || v.userID,
+          full_name: v.full_name || v.name || 'بدون نام',
+          mobile: v.mobile || v.phone || '',
+          email: v.email || '',
+          city_province: v.city_province || v.city || '',
+          status: v.status || 'pending',
+          created_at: v.created_at || new Date().toISOString(),
+          createdAt: v.created_at || new Date().toISOString(),
+        }));
+        setVisitors(transformedVisitors);
+      }
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در رد ویزیتور',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeleteVisitor = async () => {
+    if (!deleteVisitor) return;
+    
+    setIsDeleting(true);
+    try {
+      await adminApi.deleteVisitor(parseInt(deleteVisitor.id));
+      
+      setVisitors(prev => prev.filter(v => v.id !== deleteVisitor.id));
+      setSelectedVisitors(prev => prev.filter(id => id !== deleteVisitor.id));
+      setDeleteVisitor(null);
+      setTotalVisitors(prev => prev - 1);
+      
+      toast({
+        title: 'موفقیت',
+        description: 'ویزیتور با موفقیت حذف شد.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در حذف ویزیتور',
+        variant: 'destructive',
+        description: 'خطا در حذف بازدیدکننده',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkAction = async (action: 'delete') => {
+    if (selectedVisitors.length === 0) return;
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (action === 'delete') {
+        setVisitors(prev => prev.filter(v => !selectedVisitors.includes(v.id)));
+      }
+
+      setSelectedVisitors([]);
+      
+      toast({
+        title: 'موفقیت',
+        description: `عملیات با موفقیت انجام شد.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: 'خطا در انجام عملیات',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleResetFilters = () => {
+    setDeviceFilter([]);
+    setIsBotFilter(null);
+    setCountryFilter([]);
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-4 h-4 text-muted-foreground" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-4 h-4 text-primary" />
+    ) : (
+      <ArrowDown className="w-4 h-4 text-primary" />
+    );
+  };
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">مدیریت بازدیدکنندگان</h1>
+            <p className="text-muted-foreground">لیست تمامی بازدیدکنندگان سیستم</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="w-4 h-4 ml-2" />
+              ثبت بازدیدکننده
+            </Button>
+          </div>
+        </div>
+
+        {/* Filters & Search */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="جستجو بر اساس IP، مرورگر، سیستم عامل، کشور، شهر یا صفحه..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                  />
+                </div>
+                <VisitorsFilters
+                  deviceFilter={deviceFilter}
+                  onDeviceFilterChange={setDeviceFilter}
+                  isBotFilter={isBotFilter}
+                  onIsBotFilterChange={setIsBotFilter}
+                  countryFilter={countryFilter}
+                  onCountryFilterChange={setCountryFilter}
+                  onReset={handleResetFilters}
+                />
+              </div>
+              {(deviceFilter.length > 0 || isBotFilter !== null || countryFilter.length > 0) && (
+                <div className="flex items-center justify-end">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilters}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <X className="w-4 h-4 ml-1" />
+                    پاک کردن فیلترها
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bulk Actions */}
+        {selectedVisitors.length > 0 && (
+          <Card className="border-primary/50 bg-primary/5 animate-scale-in">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <span className="text-sm text-foreground font-medium">
+                  {selectedVisitors.length} بازدیدکننده انتخاب شده
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (confirm(`آیا از حذف ${selectedVisitors.length} بازدیدکننده اطمینان دارید؟`)) {
+                        handleBulkAction('delete');
+                      }
+                    }}
+                    className="text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="w-4 h-4 ml-2" />
+                    حذف
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Visitors Table */}
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">لیست ویزیتورها ({totalVisitors})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : paginatedVisitors.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="flex flex-col items-center gap-2">
+                  <EyeIcon className="w-12 h-12 text-muted-foreground" />
+                  <p className="text-muted-foreground">هیچ بازدیدکننده‌ای یافت نشد</p>
+                </div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground w-12">
+                        <input
+                          type="checkbox"
+                          checked={selectedVisitors.length === paginatedVisitors.length && paginatedVisitors.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedVisitors(paginatedVisitors.map(v => v.id));
+                            } else {
+                              setSelectedVisitors([]);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-border"
+                        />
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('ip')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          IP
+                          {getSortIcon('ip')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('browser')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          مرورگر
+                          {getSortIcon('browser')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('os')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          سیستم عامل
+                          {getSortIcon('os')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('device')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          دستگاه
+                          {getSortIcon('device')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('country')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          موقعیت
+                          {getSortIcon('country')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('page')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          صفحه
+                          {getSortIcon('page')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('duration')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          مدت زمان
+                          {getSortIcon('duration')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right">
+                        <button
+                          onClick={() => handleSort('visitedAt')}
+                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          زمان بازدید
+                          {getSortIcon('visitedAt')}
+                        </button>
+                      </th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedVisitors.map((visitor, index) => {
+                      const DeviceIcon = visitor.device ? deviceConfig[visitor.device].icon : Monitor;
+                      return (
+                        <tr
+                          key={visitor.id}
+                          className="border-b border-border/50 hover:bg-muted/30 transition-colors animate-fade-in"
+                          style={{ animationDelay: `${index * 30}ms` }}
+                        >
+                          <td className="p-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedVisitors.includes(visitor.id)}
+                              onChange={() => toggleSelectVisitor(visitor.id)}
+                              className="w-4 h-4 rounded border-border"
+                            />
+                          </td>
+                          <td className="p-4">
+                            <p className="font-mono text-sm text-foreground" dir="ltr">{visitor.ip}</p>
+                            {visitor.isBot && (
+                              <Badge variant="outline" className="mt-1 text-xs bg-warning/10 text-warning border-warning/20">
+                                <Bot className="w-3 h-3 ml-1" />
+                                ربات
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-foreground">{visitor.browser || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-foreground">{visitor.os || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            {visitor.device && (
+                              <Badge
+                                variant="outline"
+                                className={cn('text-xs', deviceConfig[visitor.device].className)}
+                              >
+                                <DeviceIcon className="w-3 h-3 ml-1" />
+                                {deviceConfig[visitor.device].label}
+                              </Badge>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            {visitor.country && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">{visitor.country}</p>
+                                  {visitor.city && (
+                                    <p className="text-xs text-muted-foreground">{visitor.city}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-3 h-3 text-muted-foreground" />
+                              <p className="text-sm font-mono text-foreground" dir="ltr">{visitor.page}</p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            {visitor.duration !== undefined && visitor.duration > 0 ? (
+                              <div className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-muted-foreground" />
+                                <p className="text-sm text-foreground">
+                                  {Math.floor(visitor.duration / 60)}:{String(visitor.duration % 60).padStart(2, '0')}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-foreground">{visitor.visitedAt || visitor.createdAt}</p>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon-sm"
+                                onClick={() => setViewVisitor(visitor)}
+                                title="مشاهده"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              {visitor.status === 'pending' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon-sm"
+                                  className="text-success hover:bg-success/10"
+                                  onClick={() => handleApproveVisitor(visitor.id)}
+                                  title="تأیید"
+                                >
+                                  <CheckCircle className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {visitor.status === 'pending' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon-sm"
+                                  className="text-destructive hover:bg-destructive/10"
+                                  onClick={() => handleRejectVisitor(visitor.id, 'رد شده توسط ادمین')}
+                                  title="رد"
+                                >
+                                  <XCircle className="w-4 h-4" />
+                                </Button>
+                              )}
+                              <Button 
+                                variant="ghost" 
+                                size="icon-sm" 
+                                className="text-destructive hover:bg-destructive/10"
+                                onClick={() => setDeleteVisitor(visitor)}
+                                title="حذف"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-muted-foreground">
+                  نمایش {startIndex + 1} تا {Math.min(endIndex, sortedVisitors.length)} از {sortedVisitors.length} بازدیدکننده
+                </span>
+                <Select
+                  value={itemsPerPage.toString()}
+                  onValueChange={(value) => {
+                    setItemsPerPage(Number(value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-20 h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="20">۲۰</SelectItem>
+                    <SelectItem value="50">۵۰</SelectItem>
+                    <SelectItem value="100">۱۰۰</SelectItem>
+                    <SelectItem value="200">۲۰۰</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                >
+                  قبلی
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  بعدی
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Dialog افزودن بازدیدکننده */}
+      <AddVisitorDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={handleVisitorAdded}
+      />
+
+      {/* Dialog مشاهده بازدیدکننده */}
+      <ViewVisitorDialog
+        open={!!viewVisitor}
+        onOpenChange={(open) => !open && setViewVisitor(null)}
+        visitor={viewVisitor}
+      />
+
+      {/* Dialog حذف بازدیدکننده */}
+      <DeleteVisitorDialog
+        open={!!deleteVisitor}
+        onOpenChange={(open) => !open && setDeleteVisitor(null)}
+        visitor={deleteVisitor}
+        onConfirm={handleDeleteVisitor}
+        isDeleting={isDeleting}
+      />
+    </AdminLayout>
+  );
+}
+

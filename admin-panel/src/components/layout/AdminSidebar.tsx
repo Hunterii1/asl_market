@@ -1,0 +1,175 @@
+import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { getCurrentUser } from '@/lib/utils/auth';
+import {
+  LayoutDashboard,
+  Users,
+  Shield,
+  BarChart3,
+  Wallet,
+  Key,
+  MessageSquare,
+  GraduationCap,
+  Truck,
+  Package,
+  Eye,
+  Boxes,
+  Megaphone,
+  Bell,
+  FileSpreadsheet,
+  Settings,
+  ChevronRight,
+  ChevronLeft,
+  LogOut,
+} from 'lucide-react';
+
+interface NavItem {
+  title: string;
+  icon: React.ElementType;
+  href: string;
+  badge?: number;
+}
+
+// Full admin navigation items
+const fullAdminNavItems: NavItem[] = [
+  { title: 'داشبورد', icon: LayoutDashboard, href: '/' },
+  { title: 'کاربران', icon: Users, href: '/users', badge: 12 },
+  { title: 'مدیران', icon: Shield, href: '/admins' },
+  { title: 'آمار سیستم', icon: BarChart3, href: '/statistics' },
+  { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: 5 },
+  { title: 'لایسنس‌ها', icon: Key, href: '/licenses' },
+  { title: 'تیکت‌ها', icon: MessageSquare, href: '/tickets', badge: 8 },
+  { title: 'آموزش', icon: GraduationCap, href: '/education' },
+  { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers' },
+  { title: 'محصولات', icon: Package, href: '/products' },
+  { title: 'بازدیدکنندگان', icon: Eye, href: '/visitors' },
+  { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
+  { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
+  { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
+  { title: 'تنظیمات', icon: Settings, href: '/settings' },
+];
+
+// Support admin navigation items (limited access - only tickets)
+const supportAdminNavItems: NavItem[] = [
+  { title: 'تیکت‌های پشتیبانی', icon: MessageSquare, href: '/support/tickets', badge: 8 },
+];
+
+export function AdminSidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const user = getCurrentUser();
+  
+  // Check if user is support admin (moderator role)
+  const isSupportAdmin = user?.role === 'moderator' || user?.role === 'support_admin';
+  
+  // Use appropriate nav items based on user role
+  const navItems = isSupportAdmin ? supportAdminNavItems : fullAdminNavItems;
+
+  return (
+    <aside
+      className={cn(
+        'fixed top-0 right-0 h-screen bg-sidebar border-l border-sidebar-border z-50 transition-all duration-300 flex flex-col',
+        collapsed ? 'w-20' : 'w-64'
+      )}
+    >
+      {/* Logo */}
+      <div className="h-16 flex items-center justify-center border-b border-sidebar-border px-4">
+        {collapsed ? (
+          <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-lg">A</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center">
+              <span className="text-primary-foreground font-bold text-lg">A</span>
+            </div>
+            <div>
+              <h1 className="font-bold text-sidebar-foreground">ASLL Market</h1>
+              <p className="text-xs text-muted-foreground">پنل مدیریت</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto scrollbar-thin py-4 px-3">
+        <ul className="space-y-1">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.href;
+            return (
+              <li key={item.href}>
+                <NavLink
+                  to={item.href}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
+                    isActive
+                      ? 'bg-sidebar-accent text-sidebar-primary font-medium'
+                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                  )}
+                >
+                  <item.icon
+                    className={cn(
+                      'w-5 h-5 shrink-0 transition-colors',
+                      isActive ? 'text-sidebar-primary' : 'text-muted-foreground group-hover:text-sidebar-foreground'
+                    )}
+                  />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-primary text-primary-foreground">
+                          {item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                  {collapsed && item.badge && (
+                    <span className="absolute top-1 left-1 w-2 h-2 rounded-full bg-primary" />
+                  )}
+                </NavLink>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="border-t border-sidebar-border p-3 space-y-2">
+        {!collapsed && (
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-sidebar-accent/50">
+            <div className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center">
+              <span className="text-primary-foreground text-sm font-medium">م</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">مدیر سیستم</p>
+              <p className="text-xs text-muted-foreground truncate">admin@asllmarket.com</p>
+            </div>
+          </div>
+        )}
+
+        <Button
+          variant="ghost"
+          size={collapsed ? 'icon' : 'default'}
+          className={cn(
+            'w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10',
+            collapsed ? 'justify-center' : 'justify-start'
+          )}
+        >
+          <LogOut className="w-5 h-5" />
+          {!collapsed && <span>خروج</span>}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setCollapsed(!collapsed)}
+          className="w-full text-muted-foreground hover:text-sidebar-foreground"
+        >
+          {collapsed ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        </Button>
+      </div>
+    </aside>
+  );
+}

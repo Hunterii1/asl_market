@@ -223,11 +223,42 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.DELETE("/admin/training/videos/:id", controllers.DeleteTrainingVideo)
 
 		// Admin notification management routes
+		protected.GET("/admin/notifications", controllers.GetAllNotificationsForAdmin)
 		protected.POST("/admin/notifications", controllers.CreateNotification)
 		protected.PUT("/admin/notifications/:id", controllers.UpdateNotification)
 		protected.DELETE("/admin/notifications/:id", controllers.DeleteNotification)
 		protected.GET("/admin/notifications/stats", controllers.GetNotificationStats)
 		protected.POST("/admin/training/categories", controllers.CreateTrainingCategory)
+
+		// Admin Panel Web API routes (comprehensive admin endpoints)
+		protected.GET("/admin/dashboard/stats", controllers.GetAdminDashboardStats)
+
+		// User Management (Admin)
+		protected.GET("/admin/users", controllers.GetUsersForAdmin)
+		protected.GET("/admin/users/:id", controllers.GetUserDetailsForAdmin)
+		protected.PUT("/admin/users/:id/status", controllers.UpdateUserStatus)
+		protected.DELETE("/admin/users/:id", controllers.DeleteUser)
+
+		// License Management (Admin)
+		protected.GET("/admin/licenses", controllers.GetLicensesForAdmin)
+		protected.POST("/admin/licenses/generate", controllers.GenerateLicensesForAdmin)
+
+		// Support Ticket Management (Admin)
+		protected.GET("/admin/support/tickets", controllers.GetAllTicketsForAdmin)
+		protected.GET("/admin/support/tickets/:id", controllers.GetTicketDetailsForAdmin)
+		protected.PUT("/admin/support/tickets/:id/status", controllers.UpdateTicketStatusForAdmin)
+		protected.POST("/admin/support/tickets/:id/messages", controllers.AddAdminMessageToTicket)
+
+		// Telegram Admin Management (Admin)
+		protected.GET("/admin/telegram-admins", controllers.GetTelegramAdminsForAdmin)
+		protected.POST("/admin/telegram-admins", controllers.AddTelegramAdmin)
+		protected.DELETE("/admin/telegram-admins/:telegram_id", controllers.RemoveTelegramAdmin)
+
+		// Excel Export (Admin)
+		protected.GET("/admin/export/users", controllers.ExportUsersToExcel)
+		protected.GET("/admin/export/suppliers", controllers.ExportSuppliersToExcel)
+		protected.GET("/admin/export/visitors", controllers.ExportVisitorsToExcel)
+		protected.GET("/admin/export/licenses", controllers.ExportLicensesToExcel)
 
 		// OpenAI Monitor routes (Admin only)
 		protected.GET("/admin/openai/usage", openaiMonitorController.GetUsageStats)
