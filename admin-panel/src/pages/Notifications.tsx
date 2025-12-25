@@ -679,7 +679,6 @@ export default function Notifications() {
               </div>
             )}
 
-            )}
             {/* Pagination */}
             {!loading && (
             <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
