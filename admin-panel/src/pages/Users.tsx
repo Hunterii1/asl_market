@@ -186,8 +186,10 @@ export default function Users() {
             name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
             email: u.email || '',
             phone: u.phone || '',
+            telegramId: u.telegram_id || u.telegramId || undefined,
+            balance: u.balance || 0,
             status: u.is_active === false ? 'inactive' : u.is_active === true ? 'active' : 'inactive',
-            createdAt: u.created_at || new Date().toISOString(),
+            createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
             first_name: u.first_name,
             last_name: u.last_name,
             is_active: u.is_active,
@@ -606,7 +608,9 @@ export default function Users() {
                           </div>
                           <div>
                             <p className="font-medium text-foreground">{user.name}</p>
-                            <p className="text-sm text-muted-foreground">{user.telegramId}</p>
+                            {user.telegramId && (
+                              <p className="text-sm text-muted-foreground">{user.telegramId}</p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -631,10 +635,10 @@ export default function Users() {
                         <span
                           className={cn(
                             'px-3 py-1 rounded-full text-xs font-medium',
-                            statusConfig[user.status].className
+                            statusConfig[user.status]?.className || 'bg-muted text-muted-foreground'
                           )}
                         >
-                          {statusConfig[user.status].label}
+                          {statusConfig[user.status]?.label || user.status}
                         </span>
                       </td>
                       <td className="p-4 text-sm text-muted-foreground">

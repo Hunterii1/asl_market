@@ -194,6 +194,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/marketing-popups/:id", controllers.GetMarketingPopup)
 
 		// Admin marketing popup management routes
+		protected.GET("/admin/marketing-popups", controllers.GetMarketingPopups)
 		protected.POST("/admin/marketing-popups", controllers.CreateMarketingPopup)
 		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
 		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)

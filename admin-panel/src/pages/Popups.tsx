@@ -210,7 +210,9 @@ export default function Popups() {
           active_only: statusFilter.length === 1 && statusFilter[0] === 'active',
         });
 
-        if (response && (response.data || response.popups)) {
+        if (response) {
+          // Backend returns: { popups: [], total: 0, page: 1, per_page: 10, total_pages: 0 }
+          // Or wrapped in: { data: { popups: [], total: 0, ... } }
           const popupsData = response.data?.popups || response.popups || [];
           const transformedPopups: Popup[] = popupsData.map((p: any) => ({
             id: p.id?.toString() || p.ID?.toString() || '',
@@ -225,17 +227,17 @@ export default function Popups() {
             showToUsers: p.show_to_users || p.showToUsers || 'all',
             specificUserIds: p.specific_user_ids || p.specificUserIds || [],
             buttonText: p.button_text || p.buttonText || undefined,
-            buttonLink: p.button_link || p.buttonLink || undefined,
+            buttonLink: p.button_link || p.buttonLink || p.discount_url || undefined,
             closeButton: p.close_button !== undefined ? p.close_button : true,
             showDelay: p.show_delay || p.showDelay || 0,
             backgroundColor: p.background_color || p.backgroundColor || undefined,
             textColor: p.text_color || p.textColor || undefined,
             width: p.width || undefined,
             height: p.height || undefined,
-            displayCount: p.display_count || p.displayCount || 0,
+            displayCount: p.display_count || p.displayCount || p.show_count || 0,
             clickCount: p.click_count || p.clickCount || 0,
-            createdAt: p.created_at || new Date().toISOString(),
-            updatedAt: p.updated_at || p.created_at || new Date().toISOString(),
+            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+            updatedAt: p.updated_at ? new Date(p.updated_at).toLocaleDateString('fa-IR') : (p.created_at ? new Date(p.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR')),
           }));
 
           setPopups(transformedPopups);
