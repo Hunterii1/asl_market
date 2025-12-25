@@ -48,8 +48,13 @@ interface Visitor {
   mobile?: string;
   email?: string;
   city_province?: string;
+  destination_cities?: string;
+  national_id?: string;
   status?: 'pending' | 'approved' | 'rejected';
+  is_featured?: boolean;
+  average_rating?: number;
   created_at?: string;
+  createdAt: string;
   // Legacy fields for compatibility
   ip?: string;
   userAgent?: string;
@@ -65,7 +70,6 @@ interface Visitor {
   isBot?: boolean;
   language?: string;
   visitedAt?: string;
-  createdAt: string;
 }
 
 // داده‌های اولیه
@@ -173,6 +177,24 @@ const deviceConfig = {
   },
 };
 
+const statusConfig = {
+  pending: {
+    label: 'در انتظار',
+    className: 'bg-warning/10 text-warning',
+    icon: Clock,
+  },
+  approved: {
+    label: 'تأیید شده',
+    className: 'bg-success/10 text-success',
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: 'رد شده',
+    className: 'bg-destructive/10 text-destructive',
+    icon: XCircle,
+  },
+};
+
 type SortField = 'ip' | 'browser' | 'os' | 'device' | 'country' | 'page' | 'duration' | 'visitedAt' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
@@ -215,23 +237,29 @@ export default function Visitors() {
           search: searchQuery || undefined,
         });
 
-        if (response && (response.data || response.visitors)) {
-          const visitorsData = response.data?.visitors || response.visitors || [];
+        if (response) {
+          // Backend returns: { visitors: [...], total: ..., total_pages: ..., page: ..., per_page: ... }
+          const visitorsData = response.visitors || [];
+          
           const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-            id: v.id?.toString() || v.ID?.toString() || '',
-            user_id: v.user_id || v.userID,
-            full_name: v.full_name || v.name || 'بدون نام',
-            mobile: v.mobile || v.phone || '',
+            id: v.id?.toString() || '',
+            user_id: v.user_id,
+            full_name: v.full_name || 'بدون نام',
+            mobile: v.mobile || '',
             email: v.email || '',
-            city_province: v.city_province || v.city || '',
+            city_province: v.city_province || '',
+            destination_cities: v.destination_cities || '',
+            national_id: v.national_id || '',
             status: v.status || 'pending',
+            is_featured: v.is_featured || false,
+            average_rating: v.average_rating || 0,
             created_at: v.created_at || new Date().toISOString(),
-            createdAt: v.created_at || new Date().toISOString(),
+            createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
           }));
 
           setVisitors(transformedVisitors);
-          setTotalVisitors(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
+          setTotalVisitors(response.total || 0);
+          setTotalPages(response.total_pages || 1);
         }
       } catch (error: any) {
         console.error('Error loading visitors:', error);
@@ -303,18 +331,22 @@ export default function Visitors() {
           : 'all',
         search: searchQuery || undefined,
       });
-      if (response && (response.data || response.visitors)) {
-        const visitorsData = response.data?.visitors || response.visitors || [];
+      if (response) {
+        const visitorsData = response.visitors || [];
         const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-          id: v.id?.toString() || v.ID?.toString() || '',
-          user_id: v.user_id || v.userID,
-          full_name: v.full_name || v.name || 'بدون نام',
-          mobile: v.mobile || v.phone || '',
+          id: v.id?.toString() || '',
+          user_id: v.user_id,
+          full_name: v.full_name || 'بدون نام',
+          mobile: v.mobile || '',
           email: v.email || '',
-          city_province: v.city_province || v.city || '',
+          city_province: v.city_province || '',
+          destination_cities: v.destination_cities || '',
+          national_id: v.national_id || '',
           status: v.status || 'pending',
+          is_featured: v.is_featured || false,
+          average_rating: v.average_rating || 0,
           created_at: v.created_at || new Date().toISOString(),
-          createdAt: v.created_at || new Date().toISOString(),
+          createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
         }));
         setVisitors(transformedVisitors);
       }
@@ -346,18 +378,22 @@ export default function Visitors() {
           : 'all',
         search: searchQuery || undefined,
       });
-      if (response && (response.data || response.visitors)) {
-        const visitorsData = response.data?.visitors || response.visitors || [];
+      if (response) {
+        const visitorsData = response.visitors || [];
         const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-          id: v.id?.toString() || v.ID?.toString() || '',
-          user_id: v.user_id || v.userID,
-          full_name: v.full_name || v.name || 'بدون نام',
-          mobile: v.mobile || v.phone || '',
+          id: v.id?.toString() || '',
+          user_id: v.user_id,
+          full_name: v.full_name || 'بدون نام',
+          mobile: v.mobile || '',
           email: v.email || '',
-          city_province: v.city_province || v.city || '',
+          city_province: v.city_province || '',
+          destination_cities: v.destination_cities || '',
+          national_id: v.national_id || '',
           status: v.status || 'pending',
+          is_featured: v.is_featured || false,
+          average_rating: v.average_rating || 0,
           created_at: v.created_at || new Date().toISOString(),
-          createdAt: v.created_at || new Date().toISOString(),
+          createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
         }));
         setVisitors(transformedVisitors);
       }
@@ -562,84 +598,21 @@ export default function Visitors() {
                           className="w-4 h-4 rounded border-border"
                         />
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('ip')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          IP
-                          {getSortIcon('ip')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('browser')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          مرورگر
-                          {getSortIcon('browser')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('os')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          سیستم عامل
-                          {getSortIcon('os')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('device')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          دستگاه
-                          {getSortIcon('device')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('country')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          موقعیت
-                          {getSortIcon('country')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('page')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          صفحه
-                          {getSortIcon('page')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('duration')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          مدت زمان
-                          {getSortIcon('duration')}
-                        </button>
-                      </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('visitedAt')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          زمان بازدید
-                          {getSortIcon('visitedAt')}
-                        </button>
-                      </th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">نام</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">موبایل</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">ایمیل</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">شهر/استان</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">شهرهای مقصد</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">وضعیت</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">امتیاز</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">تاریخ ثبت</th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedVisitors.map((visitor, index) => {
-                      const DeviceIcon = visitor.device ? deviceConfig[visitor.device].icon : Monitor;
+                      const statusInfo = statusConfig[visitor.status as keyof typeof statusConfig] || statusConfig.pending;
+                      const StatusIcon = statusInfo.icon || CheckCircle;
                       return (
                         <tr
                           key={visitor.id}
@@ -655,64 +628,54 @@ export default function Visitors() {
                             />
                           </td>
                           <td className="p-4">
-                            <p className="font-mono text-sm text-foreground" dir="ltr">{visitor.ip}</p>
-                            {visitor.isBot && (
-                              <Badge variant="outline" className="mt-1 text-xs bg-warning/10 text-warning border-warning/20">
-                                <Bot className="w-3 h-3 ml-1" />
-                                ربات
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <p className="text-sm text-foreground">{visitor.browser || '-'}</p>
-                          </td>
-                          <td className="p-4">
-                            <p className="text-sm text-foreground">{visitor.os || '-'}</p>
-                          </td>
-                          <td className="p-4">
-                            {visitor.device && (
-                              <Badge
-                                variant="outline"
-                                className={cn('text-xs', deviceConfig[visitor.device].className)}
-                              >
-                                <DeviceIcon className="w-3 h-3 ml-1" />
-                                {deviceConfig[visitor.device].label}
-                              </Badge>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            {visitor.country && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3 text-muted-foreground" />
-                                <div>
-                                  <p className="text-sm font-medium text-foreground">{visitor.country}</p>
-                                  {visitor.city && (
-                                    <p className="text-xs text-muted-foreground">{visitor.city}</p>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1">
-                              <FileText className="w-3 h-3 text-muted-foreground" />
-                              <p className="text-sm font-mono text-foreground" dir="ltr">{visitor.page}</p>
+                            <div>
+                              <p className="font-medium text-foreground">{visitor.full_name || 'بدون نام'}</p>
+                              {visitor.national_id && (
+                                <p className="text-xs text-muted-foreground">کد ملی: {visitor.national_id}</p>
+                              )}
+                              {visitor.is_featured && (
+                                <Badge variant="outline" className="mt-1 text-xs bg-warning/10 text-warning border-warning/20">
+                                  ویژه
+                                </Badge>
+                              )}
                             </div>
                           </td>
                           <td className="p-4">
-                            {visitor.duration !== undefined && visitor.duration > 0 ? (
+                            <p className="text-sm text-foreground font-mono" dir="ltr">{visitor.mobile || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-foreground">{visitor.email || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 text-muted-foreground" />
+                              <p className="text-sm text-foreground">{visitor.city_province || '-'}</p>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <p className="text-sm text-foreground">{visitor.destination_cities || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <Badge
+                              variant="outline"
+                              className={cn('text-xs', statusInfo.className)}
+                            >
+                              <StatusIcon className="w-3 h-3 ml-1" />
+                              {statusInfo.label}
+                            </Badge>
+                          </td>
+                          <td className="p-4">
+                            {visitor.average_rating !== undefined && visitor.average_rating > 0 ? (
                               <div className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-muted-foreground" />
-                                <p className="text-sm text-foreground">
-                                  {Math.floor(visitor.duration / 60)}:{String(visitor.duration % 60).padStart(2, '0')}
-                                </p>
+                                <span className="text-sm font-medium text-warning">{visitor.average_rating.toFixed(1)}</span>
+                                <span className="text-xs text-muted-foreground">⭐</span>
                               </div>
                             ) : (
                               <span className="text-sm text-muted-foreground">-</span>
                             )}
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-foreground">{visitor.visitedAt || visitor.createdAt}</p>
+                            <p className="text-sm text-foreground">{visitor.createdAt}</p>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1">
