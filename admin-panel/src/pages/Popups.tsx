@@ -595,9 +595,26 @@ export default function Popups() {
                   </thead>
                   <tbody>
                     {paginatedPopups.map((popup, index) => {
-                      const statusInfo = statusConfig[popup.status] || statusConfig.inactive;
-                      const typeInfo = typeConfig[popup.type] || typeConfig.modal;
-                      const StatusIcon = statusInfo?.icon || XCircle;
+                      // Safe access to statusConfig with fallback
+                      const statusKey = (popup.status && ['active', 'inactive', 'scheduled'].includes(popup.status)) 
+                        ? popup.status as 'active' | 'inactive' | 'scheduled'
+                        : 'inactive';
+                      const statusInfo = statusConfig[statusKey] || {
+                        label: popup.status || 'نامشخص',
+                        className: 'bg-muted text-muted-foreground',
+                        icon: XCircle,
+                      };
+                      
+                      // Safe access to typeConfig with fallback
+                      const typeKey = (popup.type && ['modal', 'banner', 'toast', 'slide_in'].includes(popup.type))
+                        ? popup.type as 'modal' | 'banner' | 'toast' | 'slide_in'
+                        : 'modal';
+                      const typeInfo = typeConfig[typeKey] || {
+                        label: popup.type || 'نامشخص',
+                        className: 'bg-muted text-muted-foreground',
+                      };
+                      
+                      const StatusIcon = statusInfo.icon || XCircle;
                       const clickRate = popup.displayCount > 0 
                         ? ((popup.clickCount || 0) / popup.displayCount * 100).toFixed(2)
                         : '0.00';
