@@ -67,7 +67,12 @@ class AdminApiService {
       throw new Error(errorData.error || errorData.message || 'خطا در درخواست به سرور');
     }
     const data = await response.json();
-    return data.data || data;
+    // Backend may return { data: {...} } or { success: true, ... } or direct data
+    // Return data.data if it exists, otherwise return the whole response
+    if (data.data !== undefined) {
+      return data.data;
+    }
+    return data;
   }
 
   private async makeRequest(url: string, options: RequestInit = {}) {
@@ -148,10 +153,11 @@ class AdminApiService {
   }
 
   async updateUserStatus(id: number, isActive: boolean): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/users/${id}/status`, {
+    const response = await this.makeRequest(`${API_BASE_URL}/admin/users/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ is_active: isActive }),
     });
+    return response;
   }
 
   async deleteUser(id: number): Promise<any> {

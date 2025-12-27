@@ -306,25 +306,53 @@ export default function Users() {
 
   const handleToggleUserStatus = async (userId: string, currentStatus: 'active' | 'inactive' | 'banned') => {
     try {
-      const newStatus = currentStatus === 'active' ? false : true;
-      await adminApi.updateUserStatus(parseInt(userId), newStatus);
+      // Determine new status: if currently active, make inactive; otherwise make active
+      const newIsActive = currentStatus !== 'active';
       
+      // Update status on backend
+      await adminApi.updateUserStatus(parseInt(userId), newIsActive);
+      
+      // Update local state immediately for better UX
       setUsers(prev => prev.map(user => 
         user.id === userId 
-          ? { ...user, status: newStatus ? 'active' : 'inactive', is_active: newStatus }
+          ? { ...user, status: newIsActive ? 'active' : 'inactive', is_active: newIsActive }
           : user
       ));
       
       toast({
         title: 'موفقیت',
-        description: `وضعیت کاربر با موفقیت تغییر کرد.`,
+        description: `وضعیت کاربر با موفقیت ${newIsActive ? 'فعال' : 'غیرفعال'} شد.`,
       });
     } catch (error: any) {
+      console.error('Error updating user status:', error);
       toast({
         title: 'خطا',
         description: error.message || 'خطا در تغییر وضعیت کاربر',
         variant: 'destructive',
       });
+      // Reload users on error to get correct state
+      const response = await adminApi.getUsers({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilter.length === 1 ? statusFilter[0] === 'active' ? 'active' : statusFilter[0] === 'inactive' ? 'inactive' : undefined : undefined,
+        search: searchQuery || undefined,
+      });
+      
+      if (response && (response.data || response.users)) {
+        const usersData = response.data?.users || response.users || [];
+        const transformedUsers = usersData.map((u: any) => ({
+          id: u.id?.toString() || u.ID?.toString() || '',
+          name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
+          email: u.email || '',
+          phone: u.phone || '',
+          telegramId: u.telegram_id || u.telegramId || '',
+          balance: u.balance || 0,
+          status: u.is_active ? 'active' : 'inactive',
+          is_active: u.is_active || false,
+          createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+        }));
+        setUsers(transformedUsers);
+      }
     }
   };
 

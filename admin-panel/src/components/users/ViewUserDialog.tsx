@@ -12,12 +12,7 @@ import {
   User,
   Mail,
   Phone,
-  MessageSquare,
-  Wallet,
-  Calendar,
   Shield,
-  TrendingUp,
-  ShoppingCart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,14 +50,6 @@ const statusConfig = {
 
 export function ViewUserDialog({ open, onOpenChange, user }: ViewUserDialogProps) {
   if (!user) return null;
-
-  // Mock statistics
-  const stats = {
-    totalOrders: Math.floor(Math.random() * 100) + 10,
-    totalSpent: Math.floor(Math.random() * 5000000) + 1000000,
-    lastOrder: '۱۴۰۳/۰۹/۲۰',
-    avgOrderValue: Math.floor(Math.random() * 200000) + 50000,
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,82 +111,6 @@ export function ViewUserDialog({ open, onOpenChange, user }: ViewUserDialogProps
                     <p className="text-sm text-muted-foreground">شماره تلفن</p>
                     <p className="font-medium text-foreground">{user.phone}</p>
                   </div>
-                </div>
-                <Separator />
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                    <MessageSquare className="w-5 h-5 text-warning" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">آیدی تلگرام</p>
-                    <p className="font-medium text-foreground font-mono">{user.telegramId}</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Financial Information */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h4 className="font-semibold text-foreground mb-4">اطلاعات مالی</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Wallet className="w-4 h-4" />
-                    موجودی فعلی
-                  </div>
-                  <p className="text-2xl font-bold text-foreground">
-                    {user.balance.toLocaleString('fa-IR')} تومان
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <ShoppingCart className="w-4 h-4" />
-                    کل خریدها
-                  </div>
-                  <p className="text-2xl font-bold text-success">
-                    {stats.totalSpent.toLocaleString('fa-IR')} تومان
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Statistics */}
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              <h4 className="font-semibold text-foreground mb-4">آمار و اطلاعات</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <ShoppingCart className="w-4 h-4" />
-                    تعداد سفارشات
-                  </div>
-                  <p className="text-xl font-bold text-foreground">{stats.totalOrders}</p>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <TrendingUp className="w-4 h-4" />
-                    میانگین سفارش
-                  </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {stats.avgOrderValue.toLocaleString('fa-IR')} تومان
-                  </p>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Calendar className="w-4 h-4" />
-                    تاریخ ثبت‌نام
-                  </div>
-                  <p className="text-lg font-semibold text-foreground">{user.createdAt}</p>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <ShoppingCart className="w-4 h-4" />
-                    آخرین سفارش
-                  </div>
-                  <p className="text-lg font-semibold text-foreground">{stats.lastOrder}</p>
                 </div>
               </div>
             </CardContent>
