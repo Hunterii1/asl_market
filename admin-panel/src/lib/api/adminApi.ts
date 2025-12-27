@@ -153,11 +153,21 @@ class AdminApiService {
   }
 
   async updateUserStatus(id: number, isActive: boolean): Promise<any> {
-    const response = await this.makeRequest(`${API_BASE_URL}/admin/users/${id}/status`, {
+    // Ensure boolean is properly sent - backend expects is_active as boolean
+    const payload = { is_active: isActive };
+    
+    // Make direct fetch call to ensure proper JSON encoding
+    const url = `${API_BASE_URL}/admin/users/${id}/status`;
+    const response = await fetch(url, {
       method: 'PUT',
-      body: JSON.stringify({ is_active: isActive }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(payload),
     });
-    return response;
+    
+    return this.handleResponse(response);
   }
 
   async deleteUser(id: number): Promise<any> {

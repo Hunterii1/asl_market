@@ -309,6 +309,8 @@ export default function Users() {
       // Determine new status: if currently active, make inactive; otherwise make active
       const newIsActive = currentStatus !== 'active';
       
+      console.log('Toggling user status:', { userId, currentStatus, newIsActive });
+      
       // Update status on backend
       await adminApi.updateUserStatus(parseInt(userId), newIsActive);
       
