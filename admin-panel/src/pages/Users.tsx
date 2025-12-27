@@ -13,8 +13,6 @@ import {
   MoreHorizontal,
   Mail,
   Phone,
-  Ban,
-  CheckCircle,
   Eye,
   Edit,
   Trash2,
@@ -304,93 +302,19 @@ export default function Users() {
     }
   };
 
-  const handleToggleUserStatus = async (userId: string, currentStatus: 'active' | 'inactive' | 'banned') => {
-    try {
-      // Determine new status: if currently active, make inactive; otherwise make active
-      const newIsActive = currentStatus !== 'active';
-      
-      console.log('Toggling user status:', { userId, currentStatus, newIsActive });
-      
-      // Update status on backend
-      await adminApi.updateUserStatus(parseInt(userId), newIsActive);
-      
-      // Update local state immediately for better UX
-      setUsers(prev => prev.map(user => 
-        user.id === userId 
-          ? { ...user, status: newIsActive ? 'active' : 'inactive', is_active: newIsActive }
-          : user
-      ));
-      
-      toast({
-        title: 'موفقیت',
-        description: `وضعیت کاربر با موفقیت ${newIsActive ? 'فعال' : 'غیرفعال'} شد.`,
-      });
-    } catch (error: any) {
-      console.error('Error updating user status:', error);
-      toast({
-        title: 'خطا',
-        description: error.message || 'خطا در تغییر وضعیت کاربر',
-        variant: 'destructive',
-      });
-      // Reload users on error to get correct state
-      const response = await adminApi.getUsers({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] === 'active' ? 'active' : statusFilter[0] === 'inactive' ? 'inactive' : undefined : undefined,
-        search: searchQuery || undefined,
-      });
-      
-      if (response && (response.data || response.users)) {
-        const usersData = response.data?.users || response.users || [];
-        const transformedUsers = usersData.map((u: any) => ({
-          id: u.id?.toString() || u.ID?.toString() || '',
-          name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
-          email: u.email || '',
-          phone: u.phone || '',
-          telegramId: u.telegram_id || u.telegramId || '',
-          balance: u.balance || 0,
-          status: u.is_active ? 'active' : 'inactive',
-          is_active: u.is_active || false,
-          createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-        }));
-        setUsers(transformedUsers);
-      }
-    }
-  };
 
-  const handleBulkAction = async (action: 'ban' | 'activate' | 'delete') => {
+  const handleBulkAction = async (action: 'delete') => {
     if (selectedUsers.length === 0) return;
 
     try {
-      // Update status for each selected user
+      // Delete each selected user
       for (const userId of selectedUsers) {
-        const user = users.find(u => u.id === userId);
-        if (user) {
-          if (action === 'ban' || action === 'activate') {
-            const newStatus = action === 'activate';
-            await adminApi.updateUserStatus(parseInt(userId), newStatus);
-          } else if (action === 'delete') {
-            await adminApi.deleteUser(parseInt(userId));
-          }
-        }
+        await adminApi.deleteUser(parseInt(userId));
       }
 
       // Update local state
-      if (action === 'delete') {
-        setUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
-        setTotalUsers(prev => prev - selectedUsers.length);
-      } else {
-        setUsers(prev => prev.map(user => {
-          if (selectedUsers.includes(user.id)) {
-            if (action === 'ban') {
-              return { ...user, status: 'inactive' as const, is_active: false };
-            } else if (action === 'activate') {
-              return { ...user, status: 'active' as const, is_active: true };
-            }
-          }
-          return user;
-        }));
-      }
+      setUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
+      setTotalUsers(prev => prev - selectedUsers.length);
 
       setSelectedUsers([]);
       
@@ -500,24 +424,6 @@ export default function Users() {
                   >
                     <Mail className="w-4 h-4 ml-2" />
                     ارسال پیام
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleBulkAction('activate')}
-                    className="text-success hover:bg-success/10"
-                  >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    فعال‌سازی
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleBulkAction('ban')}
-                    className="text-warning hover:bg-warning/10"
-                  >
-                    <Ban className="w-4 h-4 ml-2" />
-                    مسدودسازی
                   </Button>
                   <Button 
                     variant="outline" 
@@ -695,27 +601,6 @@ export default function Users() {
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          {user.status === 'active' ? (
-                            <Button 
-                              variant="ghost" 
-                              size="icon-sm"
-                              className="text-warning hover:bg-warning/10"
-                              onClick={() => handleToggleUserStatus(user.id, user.status)}
-                              title="غیرفعال کردن"
-                            >
-                              <Ban className="w-4 h-4" />
-                            </Button>
-                          ) : (
-                            <Button 
-                              variant="ghost" 
-                              size="icon-sm"
-                              className="text-success hover:bg-success/10"
-                              onClick={() => handleToggleUserStatus(user.id, user.status)}
-                              title="فعال کردن"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                          )}
                           <Button 
                             variant="ghost" 
                             size="icon-sm" 
