@@ -140,11 +140,6 @@ const ForgotPassword = () => {
                   اگر با ایمیل ثبت‌نام کرده‌اید، لطفاً با پشتیبانی تماس بگیرید.
                   <br />
                   <br />
-                  <strong>پشتیبانی تلفنی مجموعه:</strong>
-                  <br />
-                  ساعت پاسخگویی 9 تا 17
-                  <br />
-                  <a href="tel:09939408346" className="text-blue-300 hover:text-blue-200 hover:underline font-mono">09939408346</a>
                 </AlertDescription>
               </Alert>
 
