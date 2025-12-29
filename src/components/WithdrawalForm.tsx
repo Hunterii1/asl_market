@@ -81,9 +81,6 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
         description: response.message || "درخواست برداشت با موفقیت ثبت شد",
       });
       
-      // Show account details
-      setShowAccountDetails(true);
-      
       // Reset form
       setFormData({
         amount: "",
@@ -94,6 +91,13 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
         shebaNumber: "",
         bankName: ""
       });
+      
+      // Show account details after a short delay to ensure form is reset
+      setTimeout(() => {
+        setShowAccountDetails(true);
+        // Scroll to top to show account details
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
       
       onSuccess();
     } catch (error) {
@@ -112,97 +116,9 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Amount and Currency */}
-        <div>
-          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-green-400" />
-            مبلغ و ارز
-          </h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Input
-              placeholder="مبلغ"
-              value={formData.amount}
-              onChange={handleInputChange('amount')}
-              className="bg-muted border-border text-foreground rounded-2xl"
-              type="number"
-              min="1"
-              step="0.01"
-            />
-            <Select value={formData.currency} onValueChange={handleSelectChange('currency')}>
-              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
-                <SelectValue placeholder="انتخاب ارز" />
-              </SelectTrigger>
-              <SelectContent className="bg-muted border-border">
-                <SelectItem value="USD" className="text-foreground">دلار آمریکا (USD)</SelectItem>
-                <SelectItem value="AED" className="text-foreground">درهم امارات (AED)</SelectItem>
-                <SelectItem value="SAR" className="text-foreground">ریال سعودی (SAR)</SelectItem>
-                <SelectItem value="KWD" className="text-foreground">دینار کویت (KWD)</SelectItem>
-                <SelectItem value="QAR" className="text-foreground">ریال قطر (QAR)</SelectItem>
-                <SelectItem value="BHD" className="text-foreground">دینار بحرین (BHD)</SelectItem>
-                <SelectItem value="OMR" className="text-foreground">ریال عمان (OMR)</SelectItem>
-                <SelectItem value="IQD" className="text-foreground">دینار عراق (IQD)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Source Country */}
-        <div>
-          <h4 className="text-foreground font-medium mb-3">کشور مبدا</h4>
-          <Select value={formData.sourceCountry} onValueChange={handleSelectChange('sourceCountry')}>
-            <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
-              <SelectValue placeholder="انتخاب کشور مبدا" />
-            </SelectTrigger>
-            <SelectContent className="bg-muted border-border">
-              {countries.map((country) => (
-                <SelectItem key={country.code} value={country.code} className="text-foreground">
-                  {country.flag} {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Bank Card Information */}
-        <div>
-          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-green-400" />
-            اطلاعات کارت بانکی ایرانی
-          </h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Input
-              placeholder="شماره کارت (۱۶ رقم)"
-              value={formData.bankCardNumber}
-              onChange={handleInputChange('bankCardNumber')}
-              className="bg-muted border-border text-foreground rounded-2xl"
-              maxLength={19}
-            />
-            <Input
-              placeholder="نام صاحب کارت"
-              value={formData.cardHolderName}
-              onChange={handleInputChange('cardHolderName')}
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-          </div>
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
-            <Input
-              placeholder="شماره شبا (IR)"
-              value={formData.shebaNumber}
-              onChange={handleInputChange('shebaNumber')}
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-            <Input
-              placeholder="نام بانک"
-              value={formData.bankName}
-              onChange={handleInputChange('bankName')}
-              className="bg-muted border-border text-foreground rounded-2xl"
-            />
-          </div>
-        </div>
-
         {/* Account Details - Shown after successful request */}
         {showAccountDetails && (
-          <Alert className="border-green-500/50 bg-green-500/10 rounded-2xl">
+          <Alert className="border-green-500/50 bg-green-500/10 rounded-2xl mb-6">
             <CheckCircle className="h-5 w-5 text-green-600" />
             <AlertDescription className="space-y-4">
               <div>
@@ -336,6 +252,94 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
             </AlertDescription>
           </Alert>
         )}
+
+        {/* Amount and Currency */}
+        <div>
+          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
+            <DollarSign className="w-5 h-5 text-green-400" />
+            مبلغ و ارز
+          </h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Input
+              placeholder="مبلغ"
+              value={formData.amount}
+              onChange={handleInputChange('amount')}
+              className="bg-muted border-border text-foreground rounded-2xl"
+              type="number"
+              min="1"
+              step="0.01"
+            />
+            <Select value={formData.currency} onValueChange={handleSelectChange('currency')}>
+              <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
+                <SelectValue placeholder="انتخاب ارز" />
+              </SelectTrigger>
+              <SelectContent className="bg-muted border-border">
+                <SelectItem value="USD" className="text-foreground">دلار آمریکا (USD)</SelectItem>
+                <SelectItem value="AED" className="text-foreground">درهم امارات (AED)</SelectItem>
+                <SelectItem value="SAR" className="text-foreground">ریال سعودی (SAR)</SelectItem>
+                <SelectItem value="KWD" className="text-foreground">دینار کویت (KWD)</SelectItem>
+                <SelectItem value="QAR" className="text-foreground">ریال قطر (QAR)</SelectItem>
+                <SelectItem value="BHD" className="text-foreground">دینار بحرین (BHD)</SelectItem>
+                <SelectItem value="OMR" className="text-foreground">ریال عمان (OMR)</SelectItem>
+                <SelectItem value="IQD" className="text-foreground">دینار عراق (IQD)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Source Country */}
+        <div>
+          <h4 className="text-foreground font-medium mb-3">کشور مبدا</h4>
+          <Select value={formData.sourceCountry} onValueChange={handleSelectChange('sourceCountry')}>
+            <SelectTrigger className="bg-muted border-border text-foreground rounded-2xl">
+              <SelectValue placeholder="انتخاب کشور مبدا" />
+            </SelectTrigger>
+            <SelectContent className="bg-muted border-border">
+              {countries.map((country) => (
+                <SelectItem key={country.code} value={country.code} className="text-foreground">
+                  {country.flag} {country.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Bank Card Information */}
+        <div>
+          <h4 className="text-foreground font-medium mb-3 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-green-400" />
+            اطلاعات کارت بانکی ایرانی
+          </h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Input
+              placeholder="شماره کارت (۱۶ رقم)"
+              value={formData.bankCardNumber}
+              onChange={handleInputChange('bankCardNumber')}
+              className="bg-muted border-border text-foreground rounded-2xl"
+              maxLength={19}
+            />
+            <Input
+              placeholder="نام صاحب کارت"
+              value={formData.cardHolderName}
+              onChange={handleInputChange('cardHolderName')}
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+          </div>
+          <div className="grid md:grid-cols-2 gap-4 mt-4">
+            <Input
+              placeholder="شماره شبا (IR)"
+              value={formData.shebaNumber}
+              onChange={handleInputChange('shebaNumber')}
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+            <Input
+              placeholder="نام بانک"
+              value={formData.bankName}
+              onChange={handleInputChange('bankName')}
+              className="bg-muted border-border text-foreground rounded-2xl"
+            />
+          </div>
+        </div>
 
         {/* Additional Information */}
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">

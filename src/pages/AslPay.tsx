@@ -23,8 +23,11 @@ import {
   Shield,
   FileText,
   User,
-  Loader2
+  Loader2,
+  Copy,
+  ExternalLink
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AslPay = () => {
   const [activeTab, setActiveTab] = useState("request");
@@ -309,7 +312,149 @@ const AslPay = () => {
       </div>
 
       {/* Content */}
-      {activeTab === "request" ? <WithdrawalForm onSuccess={handleFormSuccess} /> : <PaymentHistory />}
+      {activeTab === "request" ? (
+        <div className="space-y-6">
+          {/* Account Details Card */}
+          <Card className="bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200/50 dark:border-blue-800/50 rounded-3xl">
+            <CardHeader>
+              <CardTitle className="text-foreground flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-blue-600" />
+                اطلاعات حساب برای واریز
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* PayPal */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  <h6 className="font-semibold text-foreground">پی پل (PayPal)</h6>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">لینک:</span>
+                    <a 
+                      href="https://paypal.me/Asllpay" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline font-mono text-sm flex items-center gap-1"
+                    >
+                      https://paypal.me/Asllpay
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText('https://paypal.me/Asllpay');
+                        toast({
+                          title: "کپی شد",
+                          description: "لینک پی پل کپی شد",
+                        });
+                      }}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visa Swift */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  <h6 className="font-semibold text-foreground">ویزا سوئیفت (Visa Swift)</h6>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground min-w-[100px]">Account Holder:</span>
+                    <span className="text-foreground font-mono">Asll Market</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground min-w-[100px]">Swift/BIC:</span>
+                    <span className="text-foreground font-mono">TRWIUS35XXX</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText('TRWIUS35XXX');
+                        toast({
+                          title: "کپی شد",
+                          description: "Swift/BIC کپی شد",
+                        });
+                      }}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wise Account Details */}
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 mb-2">
+                  <CreditCard className="w-5 h-5 text-blue-600" />
+                  <h6 className="font-semibold text-foreground">حساب Wise (USD)</h6>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground min-w-[100px]">Name:</span>
+                    <span className="text-foreground font-mono">Asll Market</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground min-w-[100px]">Account Number:</span>
+                    <span className="text-foreground font-mono">338866869696326</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText('338866869696326');
+                        toast({
+                          title: "کپی شد",
+                          description: "شماره حساب کپی شد",
+                        });
+                      }}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="text-muted-foreground min-w-[100px]">Swift/BIC:</span>
+                    <span className="text-foreground font-mono">TRWIUS35XXX</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText('TRWIUS35XXX');
+                        toast({
+                          title: "کپی شد",
+                          description: "Swift/BIC کپی شد",
+                        });
+                      }}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                  <div className="flex items-start gap-2 mt-2">
+                    <span className="text-muted-foreground min-w-[100px]">Address:</span>
+                    <span className="text-foreground text-xs">Wise US Inc, 108 W 13th St, Wilmington, DE, 19801, United States</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    <strong>نکته:</strong> برای ارسال از خارج از آمریکا از Swift transfer استفاده کنید.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <WithdrawalForm onSuccess={handleFormSuccess} />
+        </div>
+      ) : (
+        <PaymentHistory />
+      )}
 
       {/* Stats */}
       {stats && (
