@@ -12,8 +12,12 @@ import {
   DollarSign, 
   Plus,
   Shield,
-  Loader2
+  Loader2,
+  Copy,
+  ExternalLink,
+  CheckCircle
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface WithdrawalFormProps {
   onSuccess: () => void;
@@ -32,6 +36,7 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
     bankName: ""
   });
   const [loading, setLoading] = useState(false);
+  const [showAccountDetails, setShowAccountDetails] = useState(false);
 
   const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -75,6 +80,9 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
         title: "موفقیت",
         description: response.message || "درخواست برداشت با موفقیت ثبت شد",
       });
+      
+      // Show account details
+      setShowAccountDetails(true);
       
       // Reset form
       setFormData({
@@ -192,6 +200,143 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
           </div>
         </div>
 
+        {/* Account Details - Shown after successful request */}
+        {showAccountDetails && (
+          <Alert className="border-green-500/50 bg-green-500/10 rounded-2xl">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <AlertDescription className="space-y-4">
+              <div>
+                <h5 className="text-green-700 dark:text-green-300 font-bold mb-3 text-lg">اطلاعات حساب برای واریز:</h5>
+                
+                {/* PayPal */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <h6 className="font-semibold text-foreground">پی پل (PayPal)</h6>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">لینک:</span>
+                      <a 
+                        href="https://paypal.me/Asllpay" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline font-mono text-sm flex items-center gap-1"
+                      >
+                        https://paypal.me/Asllpay
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText('https://paypal.me/Asllpay');
+                          toast({
+                            title: "کپی شد",
+                            description: "لینک پی پل کپی شد",
+                          });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visa Swift */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <h6 className="font-semibold text-foreground">ویزا سوئیفت (Visa Swift)</h6>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Account Holder:</span>
+                      <span className="text-foreground font-mono">Asll Market</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Swift/BIC:</span>
+                      <span className="text-foreground font-mono">TRWIUS35XXX</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText('TRWIUS35XXX');
+                          toast({
+                            title: "کپی شد",
+                            description: "Swift/BIC کپی شد",
+                          });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Wise Account Details */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-green-200 dark:border-green-800">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CreditCard className="w-5 h-5 text-blue-600" />
+                    <h6 className="font-semibold text-foreground">حساب Wise (USD)</h6>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Name:</span>
+                      <span className="text-foreground font-mono">Asll Market</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Account Number:</span>
+                      <span className="text-foreground font-mono">338866869696326</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText('338866869696326');
+                          toast({
+                            title: "کپی شد",
+                            description: "شماره حساب کپی شد",
+                          });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-muted-foreground min-w-[100px]">Swift/BIC:</span>
+                      <span className="text-foreground font-mono">TRWIUS35XXX</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText('TRWIUS35XXX');
+                          toast({
+                            title: "کپی شد",
+                            description: "Swift/BIC کپی شد",
+                          });
+                        }}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                    <div className="flex items-start gap-2 mt-2">
+                      <span className="text-muted-foreground min-w-[100px]">Address:</span>
+                      <span className="text-foreground text-xs">Wise US Inc, 108 W 13th St, Wilmington, DE, 19801, United States</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <strong>نکته:</strong> برای ارسال از خارج از آمریکا از Swift transfer استفاده کنید.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Additional Information */}
         <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
           <div className="flex items-start gap-3">
@@ -200,7 +345,7 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
               <h5 className="text-blue-700 dark:text-blue-300 font-medium mb-2">نکات مهم:</h5>
               <ul className="text-blue-600 dark:text-blue-200 text-sm space-y-1">
                 <li>• درخواست شما پس از بررسی کارشناس تایید می‌شود</li>
-                <li>• شماره حساب مقصد پس از تایید ارسال می‌شود</li>
+                <li>• شماره حساب مقصد در بالا نمایش داده شده است</li>
                 <li>• پس از واریز، فیش را بارگذاری کنید</li>
                 <li>• پول به حساب شما تا ۲۴ ساعت واریز می‌شود</li>
               </ul>
@@ -208,14 +353,25 @@ export const WithdrawalForm: React.FC<WithdrawalFormProps> = ({ onSuccess }) => 
           </div>
         </div>
 
-        <Button 
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full bg-green-500 hover:bg-green-600 rounded-2xl"
-        >
-          {loading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Plus className="w-4 h-4 ml-2" />}
-          {loading ? "در حال ثبت..." : "ثبت درخواست"}
-        </Button>
+        <div className="space-y-2">
+          <Button 
+            onClick={handleSubmit}
+            disabled={loading}
+            className="w-full bg-green-500 hover:bg-green-600 rounded-2xl"
+          >
+            {loading ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Plus className="w-4 h-4 ml-2" />}
+            {loading ? "در حال ثبت..." : "ثبت درخواست"}
+          </Button>
+          {showAccountDetails && (
+            <Button
+              variant="outline"
+              onClick={() => setShowAccountDetails(false)}
+              className="w-full rounded-2xl"
+            >
+              بستن اطلاعات حساب
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

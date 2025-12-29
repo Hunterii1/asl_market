@@ -340,6 +340,11 @@ export function LicenseInfo() {
                       incoming_center
                     </p>
                   </div>
+                  <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-700/50">
+                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100 mb-1">پشتیبانی تلفنی مجموعه:</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300 mb-1">ساعت پاسخگویی 9 تا 17</p>
+                    <a href="tel:02188922936-9" className="text-blue-600 dark:text-blue-400 hover:underline font-mono font-bold text-xs">021-88922936-9</a>
+                  </div>
                 </div>
               </div>
               

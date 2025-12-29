@@ -192,6 +192,11 @@ export function LicenseCheck() {
                         @incoming_center
                       </p>
                     </div>
+                    <div className="mt-2 p-2 bg-muted/30 rounded-lg border border-border">
+                      <p className="text-xs font-semibold text-foreground mb-1">پشتیبانی تلفنی مجموعه:</p>
+                      <p className="text-xs text-muted-foreground mb-1">ساعت پاسخگویی 9 تا 17</p>
+                      <a href="tel:02188922936-9" className="text-blue-600 dark:text-blue-400 hover:underline font-mono font-bold text-xs">021-88922936-9</a>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       <strong>توجه:</strong> هر لایسنس فقط یک بار قابل استفاده است.
                     </p>

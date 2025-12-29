@@ -516,6 +516,13 @@ const RegistrationStatus: React.FC = () => {
                   متأسفانه درخواست شما رد شده است. در صورت نیاز به اطلاعات بیشتر، با پشتیبانی تماس بگیرید.
                   <br />
                   <br />
+                  <strong>پشتیبانی تلفنی مجموعه:</strong>
+                  <br />
+                  ساعت پاسخگویی 9 تا 17
+                  <br />
+                  <a href="tel:02188922936-9" className="text-blue-600 dark:text-blue-400 hover:underline font-mono">021-88922936-9</a>
+                  <br />
+                  <br />
                 </AlertDescription>
               </Alert>
             )}
