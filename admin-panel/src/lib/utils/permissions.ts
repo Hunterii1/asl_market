@@ -57,9 +57,20 @@ export const sidebarItemPermissions: Record<string, Permission[]> = {
 };
 
 /**
+ * Check if user is alireza (super admin)
+ */
+export function isSuperAdminUser(username?: string, role?: string): boolean {
+  if (username && username.toLowerCase() === 'alireza') return true;
+  return role === 'super_admin';
+}
+
+/**
  * Check if user has a specific permission
  */
-export function hasPermission(userPermissions: Permission[] | string[], permission: Permission): boolean {
+export function hasPermission(userPermissions: Permission[] | string[], permission: Permission, username?: string, role?: string): boolean {
+  // Alireza and super_admin have access to everything
+  if (isSuperAdminUser(username, role)) return true;
+  
   if (!userPermissions || userPermissions.length === 0) return false;
   
   // Super admin with 'all' permission has access to everything
@@ -71,7 +82,10 @@ export function hasPermission(userPermissions: Permission[] | string[], permissi
 /**
  * Check if user has any of the required permissions
  */
-export function hasAnyPermission(userPermissions: Permission[] | string[], requiredPermissions: Permission[]): boolean {
+export function hasAnyPermission(userPermissions: Permission[] | string[], requiredPermissions: Permission[], username?: string, role?: string): boolean {
+  // Alireza and super_admin have access to everything
+  if (isSuperAdminUser(username, role)) return true;
+  
   if (!userPermissions || userPermissions.length === 0) return false;
   if (!requiredPermissions || requiredPermissions.length === 0) return true; // No requirements = accessible
   
@@ -84,7 +98,10 @@ export function hasAnyPermission(userPermissions: Permission[] | string[], requi
 /**
  * Check if user has all of the required permissions
  */
-export function hasAllPermissions(userPermissions: Permission[] | string[], requiredPermissions: Permission[]): boolean {
+export function hasAllPermissions(userPermissions: Permission[] | string[], requiredPermissions: Permission[], username?: string, role?: string): boolean {
+  // Alireza and super_admin have access to everything
+  if (isSuperAdminUser(username, role)) return true;
+  
   if (!userPermissions || userPermissions.length === 0) return false;
   if (!requiredPermissions || requiredPermissions.length === 0) return true; // No requirements = accessible
   
@@ -97,7 +114,10 @@ export function hasAllPermissions(userPermissions: Permission[] | string[], requ
 /**
  * Check if user can access a route
  */
-export function canAccessRoute(userPermissions: Permission[] | string[], route: string): boolean {
+export function canAccessRoute(userPermissions: Permission[] | string[], route: string, username?: string, role?: string): boolean {
+  // Alireza and super_admin can access all routes
+  if (isSuperAdminUser(username, role)) return true;
+  
   const routePermission = routePermissions[route];
   if (!routePermission) return true; // Unknown route - allow access (should be protected separately)
   
@@ -106,19 +126,22 @@ export function canAccessRoute(userPermissions: Permission[] | string[], route: 
   }
   
   if (routePermission.requireAll) {
-    return hasAllPermissions(userPermissions, routePermission.requiredPermissions);
+    return hasAllPermissions(userPermissions, routePermission.requiredPermissions, username, role);
   }
   
-  return hasAnyPermission(userPermissions, routePermission.requiredPermissions);
+  return hasAnyPermission(userPermissions, routePermission.requiredPermissions, username, role);
 }
 
 /**
  * Check if user can see a sidebar item
  */
-export function canSeeSidebarItem(userPermissions: Permission[] | string[], itemPath: string): boolean {
+export function canSeeSidebarItem(userPermissions: Permission[] | string[], itemPath: string, username?: string, role?: string): boolean {
+  // Alireza and super_admin can see all sidebar items
+  if (isSuperAdminUser(username, role)) return true;
+  
   const permissions = sidebarItemPermissions[itemPath];
   if (!permissions || permissions.length === 0) return true; // No permission required
   
-  return hasAnyPermission(userPermissions, permissions);
+  return hasAnyPermission(userPermissions, permissions, username, role);
 }
 

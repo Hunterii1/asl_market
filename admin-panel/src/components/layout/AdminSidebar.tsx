@@ -47,8 +47,14 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
   // Check if user is support admin (moderator role)
   const isSupportAdmin = user?.role === 'moderator' || user?.role === 'support_admin';
   
-  // Get user permissions
+  // Get user permissions and info
   const userPermissions = user?.permissions || [];
+  const username = user?.username || user?.email || '';
+  const userRole = user?.role || '';
+  
+  // Check if user is alireza (super admin) - should see all menus
+  const isAlireza = username.toLowerCase() === 'alireza';
+  const isSuperAdmin = userRole === 'super_admin' || isAlireza;
   
   // Full admin navigation items with real stats and permission checks
   const allNavItems: NavItem[] = [
@@ -69,14 +75,17 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
   ];
   
   // Filter nav items based on permissions (only for non-support admins)
-  const fullAdminNavItems: NavItem[] = allNavItems.filter(item => {
-    // Dashboard is always accessible
-    if (item.href === '/') return true;
-    // If no permission key, allow access
-    if (!item.permissionKey) return true;
-    // Check permission
-    return canSeeSidebarItem(userPermissions, item.permissionKey);
-  });
+  // If user is alireza or super_admin, show all items
+  const fullAdminNavItems: NavItem[] = isSuperAdmin 
+    ? allNavItems 
+    : allNavItems.filter(item => {
+        // Dashboard is always accessible
+        if (item.href === '/') return true;
+        // If no permission key, allow access
+        if (!item.permissionKey) return true;
+        // Check permission
+        return canSeeSidebarItem(userPermissions, item.permissionKey, username, userRole);
+      });
 
   // Support admin navigation items (limited access - only tickets)
   const supportAdminNavItems: NavItem[] = [
