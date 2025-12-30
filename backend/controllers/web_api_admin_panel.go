@@ -1634,7 +1634,7 @@ func UpdateWebAdmin(c *gin.Context) {
 	}
 
 	// Check if admin exists
-	admin, err := models.GetWebAdminByID(db, uint(id))
+	_, err = models.GetWebAdminByID(db, uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "مدیر یافت نشد"})
 		return
