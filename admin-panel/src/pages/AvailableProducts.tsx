@@ -162,7 +162,11 @@ export default function AvailableProducts() {
             category: p.category || 'other',
             stock: p.available_quantity || 0,
             status: p.status || 'active',
-            tags: p.tags || [],
+            tags: Array.isArray(p.tags) 
+              ? p.tags 
+              : (typeof p.tags === 'string' && p.tags.trim() 
+                  ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+                  : []),
             imageUrl: p.image_urls?.[0] || p.imageUrl || '',
             discount: p.discount || 0,
             sku: p.sku || '',
@@ -292,7 +296,11 @@ export default function AvailableProducts() {
             category: p.category || 'other',
             stock: p.available_quantity || 0,
             status: p.status || 'active',
-            tags: p.tags || [],
+            tags: Array.isArray(p.tags) 
+              ? p.tags 
+              : (typeof p.tags === 'string' && p.tags.trim() 
+                  ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
+                  : []),
             imageUrl: p.image_urls?.[0] || '',
             discount: p.discount || 0,
             sku: p.sku || '',
@@ -590,7 +598,7 @@ export default function AvailableProducts() {
                   )}
                 </div>
 
-                {product.tags && product.tags.length > 0 && (
+                {product.tags && Array.isArray(product.tags) && product.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {product.tags.map((tag, tagIndex) => (
                       <Badge key={tagIndex} variant="outline" className="text-xs">
