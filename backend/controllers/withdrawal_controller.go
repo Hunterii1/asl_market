@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
@@ -125,38 +126,72 @@ func (wc *WithdrawalController) GetUserWithdrawalStats(c *gin.Context) {
 
 // GetAllWithdrawalRequests gets all withdrawal requests (admin only)
 func (wc *WithdrawalController) GetAllWithdrawalRequests(c *gin.Context) {
-	// Parse query parameters
-	limitStr := c.DefaultQuery("limit", "10")
-	offsetStr := c.DefaultQuery("offset", "0")
+	// Parse query parameters - support both page/per_page and limit/offset
+	pageStr := c.Query("page")
+	perPageStr := c.Query("per_page")
+	limitStr := c.Query("limit")
+	offsetStr := c.Query("offset")
 	statusStr := c.Query("status")
+	searchStr := c.Query("search")
 
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil || limit <= 0 {
-		limit = 10
-	}
+	var limit, offset int
 
-	offset, err := strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0
+	// Prefer page/per_page over limit/offset
+	if pageStr != "" || perPageStr != "" {
+		page, err := strconv.Atoi(pageStr)
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		perPage, err := strconv.Atoi(perPageStr)
+		if err != nil || perPage < 1 || perPage > 100 {
+			perPage = 10
+		}
+
+		limit = perPage
+		offset = (page - 1) * perPage
+	} else {
+		// Fallback to limit/offset
+		var err error
+		limit, err = strconv.Atoi(limitStr)
+		if err != nil || limit <= 0 {
+			limit = 10
+		}
+
+		offset, err = strconv.Atoi(offsetStr)
+		if err != nil || offset < 0 {
+			offset = 0
+		}
 	}
 
 	var status *models.WithdrawalStatus
-	if statusStr != "" {
+	if statusStr != "" && statusStr != "all" {
 		s := models.WithdrawalStatus(statusStr)
 		status = &s
 	}
 
-	requests, total, err := models.GetWithdrawalRequests(wc.db, nil, status, limit, offset)
+	requests, total, err := models.GetWithdrawalRequests(wc.db, nil, status, limit, offset, searchStr)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
 		return
 	}
 
+	// Calculate total pages if using page/per_page
+	totalPages := 0
+	if pageStr != "" || perPageStr != "" {
+		perPage := limit
+		if perPage > 0 {
+			totalPages = (int(total) + perPage - 1) / perPage
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"requests": requests,
-		"total":    total,
-		"limit":    limit,
-		"offset":   offset,
+		"requests":   requests,
+		"total":      total,
+		"limit":      limit,
+		"offset":     offset,
+		"per_page":   limit,
+		"total_pages": totalPages,
 	})
 }
 

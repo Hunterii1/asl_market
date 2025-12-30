@@ -70,7 +70,7 @@ func (s *TelegramService) showWithdrawalsList(chatID int64, status string, page 
 	limit := 5
 	offset := (page - 1) * limit
 
-	withdrawals, total, err := models.GetWithdrawalRequests(s.db, nil, statusFilter, limit, offset)
+	withdrawals, total, err := models.GetWithdrawalRequests(s.db, nil, statusFilter, limit, offset, "")
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست درخواست‌ها")
 		s.bot.Send(msg)

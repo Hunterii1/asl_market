@@ -235,17 +235,26 @@ export default function Withdrawals() {
         });
 
         if (response) {
-          // Backend returns: { requests: [...], total: 168, limit: 10, offset: 0 }
-          // Or wrapped in: { data: { requests: [...], total: ... } }
+          // Backend returns: { requests: [...], total: 168, per_page: 10, total_pages: 17 }
           const withdrawalsData = response.requests || response.data?.requests || [];
           const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
 
           setWithdrawals(transformedWithdrawals);
-          setTotalWithdrawals(response.total || response.data?.total || 0);
-          // Calculate total pages
+          
+          // Get total count
           const total = response.total || response.data?.total || 0;
-          const totalPagesCalc = Math.ceil(total / itemsPerPage);
-          setTotalPages(totalPagesCalc || 1);
+          setTotalWithdrawals(total);
+          
+          // Use total_pages from backend if available, otherwise calculate it
+          const totalPagesFromBackend = response.total_pages || response.data?.total_pages;
+          if (totalPagesFromBackend) {
+            setTotalPages(totalPagesFromBackend);
+          } else {
+            // Fallback: calculate from total and per_page
+            const perPage = response.per_page || response.data?.per_page || itemsPerPage;
+            const totalPagesCalc = perPage > 0 ? Math.ceil(total / perPage) : 1;
+            setTotalPages(totalPagesCalc);
+          }
         }
       } catch (error: any) {
         console.error('Error loading withdrawals:', error);

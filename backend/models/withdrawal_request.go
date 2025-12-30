@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -52,7 +53,7 @@ type WithdrawalRequest struct {
 }
 
 // GetWithdrawalRequests retrieves withdrawal requests with pagination and filtering
-func GetWithdrawalRequests(db *gorm.DB, userID *uint, status *WithdrawalStatus, limit, offset int) ([]WithdrawalRequest, int64, error) {
+func GetWithdrawalRequests(db *gorm.DB, userID *uint, status *WithdrawalStatus, limit, offset int, search ...string) ([]WithdrawalRequest, int64, error) {
 	var requests []WithdrawalRequest
 	var total int64
 
@@ -64,6 +65,31 @@ func GetWithdrawalRequests(db *gorm.DB, userID *uint, status *WithdrawalStatus, 
 
 	if status != nil {
 		query = query.Where("status = ?", *status)
+	}
+
+	// Apply search filter if provided
+	if len(search) > 0 && search[0] != "" {
+		searchQuery := search[0]
+		searchPattern := "%" + searchQuery + "%"
+		
+		// Try parsing as integer for exact ID match
+		var idInt int
+		hasIDMatch := false
+		if _, err := fmt.Sscanf(searchQuery, "%d", &idInt); err == nil && idInt > 0 {
+			hasIDMatch = true
+			// Search in ID, account info, and user fields
+			query = query.Where(
+				"id = ? OR bank_card_number LIKE ? OR sheba_number LIKE ? OR EXISTS (SELECT 1 FROM users WHERE users.id = withdrawal_requests.user_id AND (users.first_name LIKE ? OR users.last_name LIKE ? OR users.phone LIKE ?))",
+				uint(idInt), searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+			)
+		} else {
+			// Search only in account info and user fields (not ID)
+			query = query.Where(
+				"bank_card_number LIKE ? OR sheba_number LIKE ? OR EXISTS (SELECT 1 FROM users WHERE users.id = withdrawal_requests.user_id AND (users.first_name LIKE ? OR users.last_name LIKE ? OR users.phone LIKE ?))",
+				searchPattern, searchPattern, searchPattern, searchPattern, searchPattern,
+			)
+		}
+		_ = hasIDMatch // Suppress unused variable warning
 	}
 
 	// Count total
