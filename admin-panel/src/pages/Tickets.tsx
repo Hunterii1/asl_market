@@ -571,28 +571,33 @@ export default function Tickets() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">مدیریت تیکت‌ها</h1>
-            <p className="text-muted-foreground">لیست تمامی تیکت‌های سیستم</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت تیکت‌ها</h1>
+            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی تیکت‌های سیستم</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 ml-2" />
-              تیکت جدید
+            <Button 
+              size="sm" 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">تیکت جدید</span>
+              <span className="sm:hidden">جدید</span>
             </Button>
           </div>
         </div>
 
         {/* Filters & Search */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="جستجو بر اساس موضوع، نام کاربر، پیام یا شناسه..."
+                  placeholder="جستجو..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
@@ -614,8 +619,8 @@ export default function Tickets() {
         {/* Bulk Actions */}
         {selectedTickets.length > 0 && (
           <Card className="border-primary/50 bg-primary/5 animate-scale-in">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <span className="text-sm text-foreground font-medium">
                   {selectedTickets.length} تیکت انتخاب شده
                 </span>
@@ -624,19 +629,20 @@ export default function Tickets() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('open')}
-                    className="text-info hover:bg-info/10"
+                    className="text-info hover:bg-info/10 flex-1 md:flex-initial"
                   >
-                    <Clock className="w-4 h-4 ml-2" />
-                    باز کردن
+                    <Clock className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">باز کردن</span>
+                    <span className="sm:hidden">باز</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('close')}
-                    className="text-muted-foreground hover:bg-muted/80"
+                    className="text-muted-foreground hover:bg-muted/80 flex-1 md:flex-initial"
                   >
-                    <XCircle className="w-4 h-4 ml-2" />
-                    بستن
+                    <XCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">بستن</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -646,10 +652,10 @@ export default function Tickets() {
                         handleBulkAction('delete');
                       }
                     }}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
                   >
-                    <Trash2 className="w-4 h-4 ml-2" />
-                    حذف
+                    <Trash2 className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">حذف</span>
                   </Button>
                 </div>
               </div>
@@ -880,9 +886,9 @@ export default function Tickets() {
             )}
             {/* Pagination */}
             {!loading && (
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-4 p-3 md:p-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs md:text-sm text-muted-foreground text-center sm:text-right">
                   نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalTickets)} از {totalTickets} تیکت
                 </span>
                 <Select
@@ -892,7 +898,7 @@ export default function Tickets() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-20 h-8">
+                  <SelectTrigger className="w-20 h-8 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -903,16 +909,17 @@ export default function Tickets() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1 || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   قبلی
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number;
                     if (totalPages <= 5) {
@@ -931,7 +938,10 @@ export default function Tickets() {
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
                         disabled={loading}
-                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                        className={cn(
+                          "min-w-[2.5rem]",
+                          currentPage === pageNum && "gradient-primary text-primary-foreground"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -943,6 +953,7 @@ export default function Tickets() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   بعدی
                 </Button>

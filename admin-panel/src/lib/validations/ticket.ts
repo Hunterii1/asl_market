@@ -10,7 +10,7 @@ export const addTicketSchema = z.object({
     .min(5, "موضوع باید حداقل ۵ کاراکتر باشد")
     .max(200, "موضوع نمی‌تواند بیشتر از ۲۰۰ کاراکتر باشد"),
   
-  category: z.enum(["technical", "billing", "general", "bug", "feature", "other"], {
+  category: z.enum(["technical", "billing", "general", "license", "bug", "feature", "other"], {
     required_error: "دسته‌بندی تیکت را انتخاب کنید",
   }),
   
@@ -52,7 +52,7 @@ export const editTicketSchema = z.object({
     .string()
     .min(5, "موضوع باید حداقل ۵ کاراکتر باشد")
     .max(200, "موضوع نمی‌تواند بیشتر از ۲۰۰ کاراکتر باشد"),
-  category: z.enum(["technical", "billing", "general", "bug", "feature", "other"]),
+  category: z.enum(["technical", "billing", "general", "license", "bug", "feature", "other"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
   status: z.enum(["open", "in_progress", "resolved", "closed"]),
   assignedTo: z.string().optional(),

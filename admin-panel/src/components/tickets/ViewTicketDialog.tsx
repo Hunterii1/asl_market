@@ -48,7 +48,7 @@ interface TicketData {
   userId: string;
   userName: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other';
+  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   message: string;
   status: 'open' | 'in_progress' | 'resolved' | 'closed';

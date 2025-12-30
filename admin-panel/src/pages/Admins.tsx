@@ -431,8 +431,8 @@ export default function Admins() {
         {/* Bulk Actions */}
         {selectedAdmins.length > 0 && (
           <Card className="border-primary/50 bg-primary/5 animate-scale-in">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <span className="text-sm text-foreground font-medium">
                   {selectedAdmins.length} مدیر انتخاب شده
                 </span>
@@ -441,19 +441,20 @@ export default function Admins() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('activate')}
-                    className="text-success hover:bg-success/10"
+                    className="text-success hover:bg-success/10 flex-1 md:flex-initial"
                   >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    فعال‌سازی
+                    <CheckCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">فعال‌سازی</span>
+                    <span className="sm:hidden">فعال</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('suspend')}
-                    className="text-warning hover:bg-warning/10"
+                    className="text-warning hover:bg-warning/10 flex-1 md:flex-initial"
                   >
-                    <AlertCircle className="w-4 h-4 ml-2" />
-                    تعلیق
+                    <AlertCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">تعلیق</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -463,10 +464,10 @@ export default function Admins() {
                         handleBulkAction('delete');
                       }
                     }}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
                   >
-                    <Trash2 className="w-4 h-4 ml-2" />
-                    حذف
+                    <Trash2 className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">حذف</span>
                   </Button>
                 </div>
               </div>
@@ -658,9 +659,9 @@ export default function Admins() {
 
             {/* Pagination */}
             {!loading && (
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-4 p-3 md:p-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs md:text-sm text-muted-foreground text-center sm:text-right">
                   نمایش {startIndex + 1} تا {Math.min(endIndex, sortedAdmins.length)} از {sortedAdmins.length} مدیر
                 </span>
                 <Select
@@ -670,7 +671,7 @@ export default function Admins() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-20 h-8">
+                  <SelectTrigger className="w-20 h-8 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -681,16 +682,17 @@ export default function Admins() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
+                  className="flex-1 sm:flex-initial"
                 >
                   قبلی
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number;
                     if (totalPages <= 5) {
@@ -708,7 +710,10 @@ export default function Admins() {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                        className={cn(
+                          "min-w-[2.5rem]",
+                          currentPage === pageNum && "gradient-primary text-primary-foreground"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -720,6 +725,7 @@ export default function Admins() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
+                  className="flex-1 sm:flex-initial"
                 >
                   بعدی
                 </Button>

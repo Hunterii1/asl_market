@@ -34,7 +34,7 @@ import { toast } from '@/hooks/use-toast';
 interface Ticket {
   id: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other';
+  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   status: 'open' | 'in_progress' | 'resolved' | 'closed';
   assignedTo?: string | null;

@@ -25,7 +25,6 @@ import {
   Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
 import { AddLicenseDialog } from '@/components/licenses/AddLicenseDialog';
 import { EditLicenseDialog } from '@/components/licenses/EditLicenseDialog';
 import { ViewLicenseDialog } from '@/components/licenses/ViewLicenseDialog';
@@ -42,22 +41,22 @@ import {
 interface License {
   id: string;
   code?: string;
-  licenseKey?: string;
-  userId?: string;
-  userName?: string;
+  licenseKey: string;
+  userId: string;
+  userName: string;
   user?: any;
-  productId?: string;
-  productName?: string;
+  productId: string;
+  productName: string;
   type?: 'pro' | 'plus' | 'plus4';
-  licenseType?: 'trial' | 'monthly' | 'yearly' | 'lifetime' | 'pro' | 'plus' | 'plus4';
+  licenseType: 'trial' | 'monthly' | 'yearly' | 'lifetime';
   isUsed?: boolean;
   usedBy?: number;
   usedAt?: string;
   activatedAt?: string;
   expiresAt?: string;
-  status?: 'active' | 'expired' | 'suspended' | 'revoked' | 'used' | 'available';
-  maxActivations?: number;
-  currentActivations?: number;
+  status: 'active' | 'expired' | 'suspended' | 'revoked';
+  maxActivations: number;
+  currentActivations: number;
   notes?: string;
   createdAt: string;
 }
@@ -231,22 +230,26 @@ export default function Licenses() {
           const transformedLicenses: License[] = licensesData.map((l: any) => ({
             id: l.id?.toString() || l.ID?.toString() || '',
             code: l.code || l.license_key || '',
-            licenseKey: l.code || l.license_key || '',
-            userId: l.used_by?.toString() || l.user_id?.toString() || '',
+            licenseKey: l.code || l.license_key || 'N/A',
+            userId: l.used_by?.toString() || l.user_id?.toString() || '0',
             userName: l.user ? `${l.user.first_name || ''} ${l.user.last_name || ''}`.trim() : 'بدون کاربر',
+            productId: l.product_id?.toString() || l.productId?.toString() || '0',
+            productName: l.product?.name || l.productName || 'بدون محصول',
             type: l.type || 'plus',
-            licenseType: l.type === 'pro' ? 'yearly' : l.type === 'plus' ? 'yearly' : l.type === 'plus4' ? 'monthly' : 'yearly',
+            licenseType: (l.type === 'pro' ? 'yearly' : l.type === 'plus' ? 'yearly' : l.type === 'plus4' ? 'monthly' : 'yearly') as 'trial' | 'monthly' | 'yearly' | 'lifetime',
             isUsed: l.is_used || false,
             usedBy: l.used_by,
             usedAt: l.used_at || '',
             expiresAt: l.expires_at || '',
-            status: l.is_used ? 'active' : 'expired',
+            status: (l.is_used ? 'active' : 'expired') as 'active' | 'expired' | 'suspended' | 'revoked',
+            maxActivations: l.max_activations || 1,
+            currentActivations: l.current_activations || 0,
             createdAt: l.created_at || new Date().toISOString(),
           }));
 
-          // Apply type filter if needed
+          // Apply type filter if needed - filter by licenseType not type
           const filtered = typeFilterValue 
-            ? transformedLicenses.filter(l => l.type === typeFilterValue)
+            ? transformedLicenses.filter(l => l.licenseType === typeFilterValue)
             : transformedLicenses;
 
           setLicenses(filtered);
@@ -296,9 +299,11 @@ export default function Licenses() {
         const transformedLicenses: License[] = licensesData.map((l: any) => ({
           id: l.id?.toString() || l.ID?.toString() || '',
           code: l.code || l.license_key || '',
-          licenseKey: l.code || l.license_key || '',
-          userId: l.used_by?.toString() || l.user_id?.toString() || '',
+          licenseKey: l.code || l.license_key || 'N/A',
+          userId: l.used_by?.toString() || l.user_id?.toString() || '0',
           userName: l.user ? `${l.user.first_name || ''} ${l.user.last_name || ''}`.trim() : 'بدون کاربر',
+          productId: l.product_id?.toString() || l.productId?.toString() || '0',
+          productName: l.product?.name || l.productName || 'بدون محصول',
           type: l.type || 'plus',
           licenseType: l.type === 'pro' ? 'yearly' : l.type === 'plus' ? 'yearly' : l.type === 'plus4' ? 'monthly' : 'yearly',
           isUsed: l.is_used || false,
@@ -433,28 +438,33 @@ export default function Licenses() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">مدیریت لایسنس‌ها</h1>
-            <p className="text-muted-foreground">لیست تمامی لایسنس‌های سیستم</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت لایسنس‌ها</h1>
+            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی لایسنس‌های سیستم</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 ml-2" />
-              لایسنس جدید
+            <Button 
+              size="sm" 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">لایسنس جدید</span>
+              <span className="sm:hidden">جدید</span>
             </Button>
           </div>
         </div>
 
         {/* Filters & Search */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="جستجو بر اساس کد لایسنس، نام کاربر، محصول یا شناسه..."
+                  placeholder="جستجو..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
@@ -474,8 +484,8 @@ export default function Licenses() {
         {/* Bulk Actions */}
         {selectedLicenses.length > 0 && (
           <Card className="border-primary/50 bg-primary/5 animate-scale-in">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <span className="text-sm text-foreground font-medium">
                   {selectedLicenses.length} لایسنس انتخاب شده
                 </span>
@@ -484,28 +494,29 @@ export default function Licenses() {
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('activate')}
-                    className="text-success hover:bg-success/10"
+                    className="text-success hover:bg-success/10 flex-1 md:flex-initial"
                   >
-                    <CheckCircle className="w-4 h-4 ml-2" />
-                    فعال‌سازی
+                    <CheckCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">فعال‌سازی</span>
+                    <span className="sm:hidden">فعال</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('suspend')}
-                    className="text-warning hover:bg-warning/10"
+                    className="text-warning hover:bg-warning/10 flex-1 md:flex-initial"
                   >
-                    <AlertCircle className="w-4 h-4 ml-2" />
-                    تعلیق
+                    <AlertCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">تعلیق</span>
                   </Button>
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={() => handleBulkAction('revoke')}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
                   >
-                    <XCircle className="w-4 h-4 ml-2" />
-                    لغو
+                    <XCircle className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">لغو</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -515,10 +526,10 @@ export default function Licenses() {
                         handleBulkAction('delete');
                       }
                     }}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
                   >
-                    <Trash2 className="w-4 h-4 ml-2" />
-                    حذف
+                    <Trash2 className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">حذف</span>
                   </Button>
                 </div>
               </div>
@@ -733,9 +744,9 @@ export default function Licenses() {
 
             {/* Pagination */}
             {!loading && (
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-4 p-3 md:p-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs md:text-sm text-muted-foreground text-center sm:text-right">
                   نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalLicenses)} از {totalLicenses} لایسنس
                 </span>
                 <Select
@@ -745,7 +756,7 @@ export default function Licenses() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-20 h-8">
+                  <SelectTrigger className="w-20 h-8 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -756,16 +767,17 @@ export default function Licenses() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1 || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   قبلی
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number;
                     if (totalPages <= 5) {
@@ -784,7 +796,10 @@ export default function Licenses() {
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
                         disabled={loading}
-                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                        className={cn(
+                          "min-w-[2.5rem]",
+                          currentPage === pageNum && "gradient-primary text-primary-foreground"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -796,6 +811,7 @@ export default function Licenses() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   بعدی
                 </Button>
