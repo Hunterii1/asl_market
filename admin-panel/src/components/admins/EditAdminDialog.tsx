@@ -81,6 +81,7 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
       name: '',
       email: '',
       phone: '',
+      telegram_id: '',
       username: '',
       password: '',
       role: 'admin',
@@ -98,6 +99,7 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
         name: admin.name,
         email: admin.email,
         phone: admin.phone,
+        telegram_id: (admin as any).telegram_id?.toString() || '',
         username: admin.username,
         password: '',
         role: admin.role,
@@ -130,9 +132,11 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
         name: data.name,
         email: data.email,
         phone: data.phone,
+        username: data.username,
         role: data.role,
         permissions: data.permissions || [],
         is_active: data.status === 'active',
+        ...(data.telegram_id ? { telegram_id: parseInt(data.telegram_id) } : {}),
       };
       
       // Only update password if changePassword is true and password is provided
