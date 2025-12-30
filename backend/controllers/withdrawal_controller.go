@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
