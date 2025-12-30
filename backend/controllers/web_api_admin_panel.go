@@ -1,14 +1,17 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
+	"asl-market-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xuri/excelize/v2"
@@ -1363,5 +1366,369 @@ func RemoveTelegramAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "ادمین با موفقیت حذف شد",
+	})
+}
+
+// ============================================
+// WEB ADMIN MANAGEMENT (Panel Admins)
+// ============================================
+
+// GetWebAdmins returns all web panel admins with pagination and filters
+func GetWebAdmins(c *gin.Context) {
+	db := models.GetDB()
+
+	// Get query parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	role := c.Query("role")
+	status := c.Query("status")
+
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 {
+		perPage = 10
+	}
+
+	// Get admins
+	admins, total, err := models.GetAllWebAdmins(db, page, perPage, role, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست مدیران"})
+		return
+	}
+
+	// Format response
+	var response []gin.H
+	for _, admin := range admins {
+		// Parse permissions (stored as JSON string)
+		permissions := []string{}
+		if admin.Permissions != "" {
+			// Simple parsing - assuming comma-separated or JSON array
+			if admin.Permissions[0] == '[' {
+				// JSON array format
+				_ = json.Unmarshal([]byte(admin.Permissions), &permissions)
+			} else {
+				// Comma-separated format
+				parts := strings.Split(admin.Permissions, ",")
+				for _, part := range parts {
+					permissions = append(permissions, strings.TrimSpace(part))
+				}
+			}
+		}
+
+		statusStr := "active"
+		if !admin.IsActive {
+			statusStr = "inactive"
+		}
+
+		lastLoginStr := ""
+		if admin.LastLogin != nil {
+			lastLoginStr = admin.LastLogin.Format(time.RFC3339)
+		}
+
+		response = append(response, gin.H{
+			"id":            admin.ID,
+			"name":          admin.Name,
+			"email":         admin.Email,
+			"phone":         admin.Phone,
+			"username":      admin.Username,
+			"telegram_id":   admin.TelegramID,
+			"role":          admin.Role,
+			"permissions":   permissions,
+			"status":        statusStr,
+			"is_active":     admin.IsActive,
+			"last_login":    lastLoginStr,
+			"login_count":   admin.LoginCount,
+			"created_at":    admin.CreatedAt.Format(time.RFC3339),
+			"updated_at":    admin.UpdatedAt.Format(time.RFC3339),
+		})
+	}
+
+	totalPages := (int(total) + perPage - 1) / perPage
+	if totalPages == 0 {
+		totalPages = 1
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"admins":      response,
+			"total":       total,
+			"page":        page,
+			"per_page":    perPage,
+			"total_pages": totalPages,
+		},
+	})
+}
+
+// GetWebAdmin returns a single web admin by ID
+func GetWebAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه مدیر نامعتبر است"})
+		return
+	}
+
+	admin, err := models.GetWebAdminByID(db, uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "مدیر یافت نشد"})
+		return
+	}
+
+	// Parse permissions
+	permissions := []string{}
+	if admin.Permissions != "" {
+		if admin.Permissions[0] == '[' {
+			_ = json.Unmarshal([]byte(admin.Permissions), &permissions)
+		} else {
+			parts := strings.Split(admin.Permissions, ",")
+			for _, part := range parts {
+				permissions = append(permissions, strings.TrimSpace(part))
+			}
+		}
+	}
+
+	statusStr := "active"
+	if !admin.IsActive {
+		statusStr = "inactive"
+	}
+
+	lastLoginStr := ""
+	if admin.LastLogin != nil {
+		lastLoginStr = admin.LastLogin.Format(time.RFC3339)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"id":            admin.ID,
+			"name":          admin.Name,
+			"email":         admin.Email,
+			"phone":         admin.Phone,
+			"username":      admin.Username,
+			"telegram_id":   admin.TelegramID,
+			"role":          admin.Role,
+			"permissions":   permissions,
+			"status":        statusStr,
+			"is_active":     admin.IsActive,
+			"last_login":    lastLoginStr,
+			"login_count":   admin.LoginCount,
+			"created_at":    admin.CreatedAt.Format(time.RFC3339),
+			"updated_at":    admin.UpdatedAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// CreateWebAdmin creates a new web panel admin
+func CreateWebAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	var req struct {
+		Name        string   `json:"name" binding:"required"`
+		Email       string   `json:"email" binding:"required,email"`
+		Phone       string   `json:"phone" binding:"required"`
+		Username    string   `json:"username" binding:"required"`
+		Password    string   `json:"password" binding:"required,min=6"`
+		TelegramID  *int64   `json:"telegram_id"`
+		Role        string   `json:"role" binding:"required,oneof=super_admin admin moderator"`
+		Permissions []string `json:"permissions"`
+		IsActive    bool     `json:"is_active"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است: " + err.Error()})
+		return
+	}
+
+	// Check if username already exists
+	var existingUsername models.WebAdmin
+	if err := db.Where("username = ? AND deleted_at IS NULL", req.Username).First(&existingUsername).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
+		return
+	}
+
+	// Check if email already exists
+	var existingEmail models.WebAdmin
+	if err := db.Where("email = ? AND deleted_at IS NULL", req.Email).First(&existingEmail).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "ایمیل قبلاً استفاده شده است"})
+		return
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رمزگذاری رمز عبور"})
+		return
+	}
+
+	// Serialize permissions to JSON
+	permissionsJSON := "[]"
+	if len(req.Permissions) > 0 {
+		permissionsBytes, _ := json.Marshal(req.Permissions)
+		permissionsJSON = string(permissionsBytes)
+	}
+
+	// Create admin
+	admin := models.WebAdmin{
+		Name:        req.Name,
+		Email:       req.Email,
+		Phone:       req.Phone,
+		Username:    req.Username,
+		Password:    hashedPassword,
+		TelegramID:  req.TelegramID,
+		Role:        req.Role,
+		Permissions: permissionsJSON,
+		IsActive:    req.IsActive,
+		LoginCount:  0,
+	}
+
+	if err := models.CreateWebAdmin(db, &admin); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد مدیر: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "مدیر با موفقیت ایجاد شد",
+		"data": gin.H{
+			"id":          admin.ID,
+			"name":        admin.Name,
+			"email":       admin.Email,
+			"username":    admin.Username,
+			"role":        admin.Role,
+			"is_active":   admin.IsActive,
+			"created_at":  admin.CreatedAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// UpdateWebAdmin updates an existing web panel admin
+func UpdateWebAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه مدیر نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Name        string   `json:"name"`
+		Email       string   `json:"email"`
+		Phone       string   `json:"phone"`
+		Username    string   `json:"username"`
+		Password    string   `json:"password"`
+		TelegramID  *int64   `json:"telegram_id"`
+		Role        string   `json:"role"`
+		Permissions []string `json:"permissions"`
+		IsActive    *bool    `json:"is_active"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		return
+	}
+
+	// Check if admin exists
+	admin, err := models.GetWebAdminByID(db, uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "مدیر یافت نشد"})
+		return
+	}
+
+	// Build updates map
+	updates := make(map[string]interface{})
+
+	if req.Name != "" {
+		updates["name"] = req.Name
+	}
+	if req.Email != "" {
+		// Check if email is already taken by another admin
+		var existingEmail models.WebAdmin
+		if err := db.Where("email = ? AND id != ? AND deleted_at IS NULL", req.Email, id).First(&existingEmail).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "ایمیل قبلاً استفاده شده است"})
+			return
+		}
+		updates["email"] = req.Email
+	}
+	if req.Phone != "" {
+		updates["phone"] = req.Phone
+	}
+	if req.Username != "" {
+		// Check if username is already taken by another admin
+		var existingUsername models.WebAdmin
+		if err := db.Where("username = ? AND id != ? AND deleted_at IS NULL", req.Username, id).First(&existingUsername).Error; err == nil {
+			c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
+			return
+		}
+		updates["username"] = req.Username
+	}
+	if req.Password != "" {
+		hashedPassword, err := utils.HashPassword(req.Password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رمزگذاری رمز عبور"})
+			return
+		}
+		updates["password"] = hashedPassword
+	}
+	if req.TelegramID != nil {
+		updates["telegram_id"] = req.TelegramID
+	}
+	if req.Role != "" {
+		updates["role"] = req.Role
+	}
+	if req.Permissions != nil {
+		permissionsJSON := "[]"
+		if len(req.Permissions) > 0 {
+			permissionsBytes, _ := json.Marshal(req.Permissions)
+			permissionsJSON = string(permissionsBytes)
+		}
+		updates["permissions"] = permissionsJSON
+	}
+	if req.IsActive != nil {
+		updates["is_active"] = *req.IsActive
+	}
+
+	if err := models.UpdateWebAdmin(db, uint(id), updates); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی مدیر: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "مدیر با موفقیت به‌روزرسانی شد",
+	})
+}
+
+// DeleteWebAdmin deletes a web panel admin (soft delete)
+func DeleteWebAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه مدیر نامعتبر است"})
+		return
+	}
+
+	// Check if admin exists
+	_, err = models.GetWebAdminByID(db, uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "مدیر یافت نشد"})
+		return
+	}
+
+	if err := models.DeleteWebAdmin(db, uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف مدیر"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "مدیر با موفقیت حذف شد",
 	})
 }

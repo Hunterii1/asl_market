@@ -256,6 +256,13 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/telegram-admins", controllers.AddTelegramAdmin)
 		protected.DELETE("/admin/telegram-admins/:telegram_id", controllers.RemoveTelegramAdmin)
 
+		// Web Admin Management (Admin Panel Admins)
+		protected.GET("/admin/web-admins", controllers.GetWebAdmins)
+		protected.GET("/admin/web-admins/:id", controllers.GetWebAdmin)
+		protected.POST("/admin/web-admins", controllers.CreateWebAdmin)
+		protected.PUT("/admin/web-admins/:id", controllers.UpdateWebAdmin)
+		protected.DELETE("/admin/web-admins/:id", controllers.DeleteWebAdmin)
+
 		// Excel Export (Admin)
 		protected.GET("/admin/export/users", controllers.ExportUsersToExcel)
 		protected.GET("/admin/export/suppliers", controllers.ExportSuppliersToExcel)

@@ -35,6 +35,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { MessageSquare } from 'lucide-react';
 
 interface Admin {
   id: string;
@@ -48,6 +50,18 @@ interface Admin {
   createdAt: string;
   lastLogin: string | null;
   loginCount: number;
+}
+
+interface TelegramAdmin {
+  id: string;
+  telegram_id: string;
+  name: string;
+  username?: string;
+  role: 'super_admin' | 'moderator';
+  status: 'active' | 'inactive';
+  is_full_admin: boolean;
+  notes?: string;
+  createdAt: string;
 }
 
 // داده‌های اولیه
@@ -130,6 +144,7 @@ type SortField = 'name' | 'email' | 'role' | 'status' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
 export default function Admins() {
+  const [activeTab, setActiveTab] = useState<'web' | 'telegram'>('web');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -146,6 +161,11 @@ export default function Admins() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalAdmins, setTotalAdmins] = useState(0);
+  
+  // Telegram admins state
+  const [telegramAdmins, setTelegramAdmins] = useState<TelegramAdmin[]>([]);
+  const [telegramLoading, setTelegramLoading] = useState(false);
+  const [deleteTelegramAdmin, setDeleteTelegramAdmin] = useState<TelegramAdmin | null>(null);
 
   // Load admins from API - Note: Telegram admins are not displayed here
   // This page is for web panel admins only
@@ -203,8 +223,53 @@ export default function Admins() {
       }
     };
 
-    loadAdmins();
-  }, [currentPage, itemsPerPage]);
+    if (activeTab === 'web') {
+      loadAdmins();
+    }
+  }, [currentPage, itemsPerPage, activeTab]);
+
+  // Load telegram admins
+  useEffect(() => {
+    const loadTelegramAdmins = async () => {
+      if (activeTab !== 'telegram') return;
+      
+      try {
+        setTelegramLoading(true);
+        const response = await adminApi.getTelegramAdmins();
+        
+        if (response && (response.data || response.admins)) {
+          const adminsData = response.data?.admins || response.admins || [];
+          const transformedAdmins: TelegramAdmin[] = adminsData.map((a: any) => ({
+            id: a.id?.toString() || '',
+            telegram_id: a.telegram_id?.toString() || '',
+            name: a.name || a.first_name || 'بدون نام',
+            username: a.username || '',
+            role: a.is_full_admin ? 'super_admin' : 'moderator',
+            status: a.is_active ? 'active' : 'inactive',
+            is_full_admin: a.is_full_admin || false,
+            notes: a.notes || '',
+            createdAt: a.created_at || new Date().toISOString(),
+          }));
+          
+          setTelegramAdmins(transformedAdmins);
+        } else {
+          setTelegramAdmins([]);
+        }
+      } catch (error: any) {
+        console.error('Error loading telegram admins:', error);
+        toast({
+          title: 'خطا',
+          description: error.message || 'خطا در بارگذاری مدیران تلگرام',
+          variant: 'destructive',
+        });
+        setTelegramAdmins([]);
+      } finally {
+        setTelegramLoading(false);
+      }
+    };
+    
+    loadTelegramAdmins();
+  }, [activeTab]);
 
   // Use admins directly from API (filtering and sorting can be done client-side if needed)
   const filteredAdmins = admins.filter(admin => {
@@ -413,6 +478,41 @@ export default function Admins() {
     );
   };
 
+  // Handle telegram admin delete
+  const handleDeleteTelegramAdmin = async () => {
+    if (!deleteTelegramAdmin) return;
+    
+    setIsDeleting(true);
+    try {
+      await adminApi.removeTelegramAdmin(Number(deleteTelegramAdmin.telegram_id));
+      
+      setTelegramAdmins(prev => prev.filter(a => a.id !== deleteTelegramAdmin.id));
+      setDeleteTelegramAdmin(null);
+      
+      toast({
+        title: 'موفقیت',
+        description: 'مدیر تلگرام با موفقیت حذف شد.',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در حذف مدیر تلگرام',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Filter telegram admins
+  const filteredTelegramAdmins = telegramAdmins.filter(admin => {
+    const matchesSearch = 
+      admin.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      admin.telegram_id.includes(searchQuery) ||
+      (admin.username && admin.username.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
+  });
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -420,20 +520,38 @@ export default function Admins() {
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت مدیران</h1>
-            <p className="text-sm md:text-base text-muted-foreground">لیست مدیران پنل وب (مدیران تلگرام در اینجا نمایش داده نمی‌شوند)</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              size="sm" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <ShieldPlus className="w-4 h-4 md:ml-2" />
-              <span className="hidden sm:inline">مدیر جدید</span>
-              <span className="sm:hidden">جدید</span>
-            </Button>
+            <p className="text-sm md:text-base text-muted-foreground">مدیریت مدیران پنل وب و مدیران تلگرام</p>
           </div>
         </div>
+
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'web' | 'telegram')} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="web" className="flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">مدیران پنل وب</span>
+              <span className="sm:hidden">وب</span>
+            </TabsTrigger>
+            <TabsTrigger value="telegram" className="flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">مدیران تلگرام</span>
+              <span className="sm:hidden">تلگرام</span>
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Web Admins Tab */}
+          <TabsContent value="web" className="space-y-6 mt-6">
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                onClick={() => setIsAddDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <ShieldPlus className="w-4 h-4 md:ml-2" />
+                <span className="hidden sm:inline">مدیر جدید</span>
+                <span className="sm:hidden">جدید</span>
+              </Button>
+            </div>
 
         {/* Filters & Search */}
         <Card>
@@ -774,6 +892,138 @@ export default function Admins() {
             )}
           </CardContent>
         </Card>
+          </TabsContent>
+
+          {/* Telegram Admins Tab */}
+          <TabsContent value="telegram" className="space-y-6 mt-6">
+            {/* Filters & Search */}
+            <Card>
+              <CardContent className="p-3 md:p-4">
+                <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="جستجو در مدیران تلگرام..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Telegram Admins Table */}
+            <Card>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg">لیست مدیران تلگرام ({filteredTelegramAdmins.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {telegramLoading ? (
+                  <div className="flex items-center justify-center p-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-border">
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">نام</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">آیدی تلگرام</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">نام کاربری</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">نقش</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">وضعیت</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">تاریخ ثبت</th>
+                          <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredTelegramAdmins.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="p-12 text-center">
+                              <div className="flex flex-col items-center gap-2">
+                                <MessageSquare className="w-12 h-12 text-muted-foreground" />
+                                <p className="text-muted-foreground font-medium">هیچ مدیر تلگرامی یافت نشد</p>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredTelegramAdmins.map((admin, index) => {
+                            const StatusIcon = statusConfig[admin.status].icon;
+                            return (
+                              <tr
+                                key={admin.id}
+                                className="border-b border-border/50 hover:bg-muted/30 transition-colors animate-fade-in"
+                                style={{ animationDelay: `${index * 30}ms` }}
+                              >
+                                <td className="p-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-medium">
+                                      {admin.name.charAt(0)}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium text-foreground">{admin.name}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="text-sm text-foreground font-mono">{admin.telegram_id}</div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="text-sm text-muted-foreground">
+                                    {admin.username ? `@${admin.username}` : '-'}
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <span
+                                    className={cn(
+                                      'px-3 py-1 rounded-full text-xs font-medium',
+                                      roleConfig[admin.role].className
+                                    )}
+                                  >
+                                    {roleConfig[admin.role].label}
+                                  </span>
+                                </td>
+                                <td className="p-4">
+                                  <span
+                                    className={cn(
+                                      'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit',
+                                      statusConfig[admin.status].className
+                                    )}
+                                  >
+                                    <StatusIcon className="w-3 h-3" />
+                                    {statusConfig[admin.status].label}
+                                  </span>
+                                </td>
+                                <td className="p-4 text-sm text-muted-foreground">
+                                  {new Date(admin.createdAt).toLocaleDateString('fa-IR')}
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex items-center gap-1">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon-sm" 
+                                      className="text-destructive hover:bg-destructive/10"
+                                      onClick={() => setDeleteTelegramAdmin(admin)}
+                                      title="حذف"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Dialog افزودن مدیر */}
@@ -801,7 +1051,7 @@ export default function Admins() {
         }}
       />
 
-      {/* Dialog حذف مدیر */}
+      {/* Dialog حذف مدیر وب */}
       <DeleteAdminDialog
         open={!!deleteAdmin}
         onOpenChange={(open) => !open && setDeleteAdmin(null)}
@@ -809,6 +1059,26 @@ export default function Admins() {
         onConfirm={handleDeleteAdmin}
         isDeleting={isDeleting}
       />
+
+      {/* Dialog حذف مدیر تلگرام */}
+      {deleteTelegramAdmin && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setDeleteTelegramAdmin(null)}>
+          <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-4">حذف مدیر تلگرام</h3>
+            <p className="text-muted-foreground mb-6">
+              آیا از حذف مدیر تلگرام <strong>{deleteTelegramAdmin.name}</strong> (آیدی: {deleteTelegramAdmin.telegram_id}) اطمینان دارید؟
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteTelegramAdmin(null)}>
+                انصراف
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteTelegramAdmin} disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'حذف'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }
