@@ -707,14 +707,12 @@ export default function Admins() {
                       <td colSpan={7} className="p-12 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <ShieldIcon className="w-12 h-12 text-muted-foreground" />
-                          <p className="text-muted-foreground font-medium">هیچ مدیری یافت نشد</p>
+                          <p className="text-muted-foreground font-medium">هیچ مدیر وب پنلی یافت نشد</p>
                           <p className="text-sm text-muted-foreground mt-2 max-w-md">
-                            مدیران تلگرام در اینجا نمایش داده نمی‌شوند. این بخش برای مدیریت مدیران پنل وب است.
-                            {loading === false && (
-                              <span className="block mt-2 text-xs">
-                                توجه: endpoint مدیریت مدیران وب در بک‌اند باید پیاده‌سازی شود.
-                              </span>
-                            )}
+                            در حال حاضر هیچ مدیر وب پنلی ثبت نشده است. برای افزودن مدیر جدید از دکمه "مدیر جدید" استفاده کنید.
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            توجه: مدیران تلگرام در تب جداگانه "مدیران تلگرام" نمایش داده می‌شوند.
                           </p>
                         </div>
                       </td>
@@ -945,6 +943,9 @@ export default function Admins() {
                               <div className="flex flex-col items-center gap-2">
                                 <MessageSquare className="w-12 h-12 text-muted-foreground" />
                                 <p className="text-muted-foreground font-medium">هیچ مدیر تلگرامی یافت نشد</p>
+                                <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                                  در حال حاضر هیچ مدیر تلگرامی ثبت نشده است. مدیران تلگرام برای مدیریت ربات تلگرام استفاده می‌شوند.
+                                </p>
                               </div>
                             </td>
                           </tr>
