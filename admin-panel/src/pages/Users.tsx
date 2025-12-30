@@ -352,31 +352,38 @@ export default function Users() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">مدیریت کاربران</h1>
-            <p className="text-muted-foreground">لیست تمامی کاربران سیستم</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت کاربران</h1>
+            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی کاربران سیستم</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => setIsImportDialogOpen(true)}
+              className="flex-1 md:flex-initial"
             >
-              <Upload className="w-4 h-4 ml-2" />
-              واردسازی
+              <Upload className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">واردسازی</span>
             </Button>
             <Button 
               variant="outline" 
               size="sm"
               onClick={() => setIsExportDialogOpen(true)}
+              className="flex-1 md:flex-initial"
             >
-              <Download className="w-4 h-4 ml-2" />
-              خروجی
+              <Download className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">خروجی</span>
             </Button>
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <UserPlus className="w-4 h-4 ml-2" />
-              کاربر جدید
+            <Button 
+              size="sm" 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="flex-1 md:flex-initial"
+            >
+              <UserPlus className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">کاربر جدید</span>
+              <span className="sm:hidden">جدید</span>
             </Button>
           </div>
         </div>
@@ -411,8 +418,8 @@ export default function Users() {
         {/* Bulk Actions */}
         {selectedUsers.length > 0 && (
           <Card className="border-primary/50 bg-primary/5 animate-scale-in">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardContent className="p-3 md:p-4">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <span className="text-sm text-foreground font-medium">
                   {selectedUsers.length} کاربر انتخاب شده
                 </span>
@@ -421,9 +428,11 @@ export default function Users() {
                     variant="outline" 
                     size="sm"
                     onClick={() => setIsSendNotificationDialogOpen(true)}
+                    className="flex-1 md:flex-initial"
                   >
-                    <Mail className="w-4 h-4 ml-2" />
-                    ارسال پیام
+                    <Mail className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">ارسال پیام</span>
+                    <span className="sm:hidden">پیام</span>
                   </Button>
                   <Button 
                     variant="outline" 
@@ -433,10 +442,10 @@ export default function Users() {
                         handleBulkAction('delete');
                       }
                     }}
-                    className="text-destructive hover:bg-destructive/10"
+                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
                   >
-                    <Trash2 className="w-4 h-4 ml-2" />
-                    حذف
+                    <Trash2 className="w-4 h-4 md:ml-2" />
+                    <span className="hidden sm:inline">حذف</span>
                   </Button>
                 </div>
               </div>
@@ -463,7 +472,8 @@ export default function Users() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
@@ -619,15 +629,112 @@ export default function Users() {
               </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden">
+              {paginatedUsers.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <UsersIcon className="w-12 h-12 text-muted-foreground" />
+                    <p className="text-muted-foreground">هیچ کاربری یافت نشد</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-4">
+                  {paginatedUsers.map((user, index) => (
+                    <Card
+                      key={user.id}
+                      className="animate-fade-in"
+                      style={{ animationDelay: `${index * 30}ms` }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3 mb-3">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.includes(user.id)}
+                              onChange={() => toggleSelectUser(user.id)}
+                              className="w-4 h-4 rounded border-border text-primary focus:ring-primary mt-1 flex-shrink-0"
+                            />
+                            <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-medium flex-shrink-0">
+                              {user.name.charAt(0)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate">{user.name}</p>
+                              {user.telegramId && (
+                                <p className="text-xs text-muted-foreground truncate">{user.telegramId}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm"
+                              onClick={() => setViewUser(user)}
+                              title="مشاهده"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm"
+                              onClick={() => setEditUser(user)}
+                              title="ویرایش"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm" 
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteUser(user)}
+                              title="حذف"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2 border-t border-border pt-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-foreground truncate">{user.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-muted-foreground">{user.phone}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 pt-1">
+                            <span className="text-sm font-medium text-foreground">
+                              {(user.balance || 0).toLocaleString('fa-IR')} تومان
+                            </span>
+                            <span
+                              className={cn(
+                                'px-2 py-1 rounded-full text-xs font-medium',
+                                statusConfig[user.status]?.className || 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {statusConfig[user.status]?.label || user.status}
+                            </span>
+                          </div>
+                          <div className="text-xs text-muted-foreground pt-1">
+                            تاریخ ثبت: {user.createdAt}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Pagination */}
             {loading ? (
               <div className="flex items-center justify-center p-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
             ) : (
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-4 p-3 md:p-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs md:text-sm text-muted-foreground text-center sm:text-right">
                   نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalUsers)} از {totalUsers} کاربر
                 </span>
                 <Select
@@ -637,7 +744,7 @@ export default function Users() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-20 h-8">
+                  <SelectTrigger className="w-20 h-8 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -648,16 +755,17 @@ export default function Users() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
+                  className="flex-1 sm:flex-initial"
                 >
                   قبلی
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number;
                     if (totalPages <= 5) {
@@ -675,7 +783,10 @@ export default function Users() {
                         variant={currentPage === pageNum ? "default" : "outline"}
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
-                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                        className={cn(
+                          "min-w-[2.5rem]",
+                          currentPage === pageNum && "gradient-primary text-primary-foreground"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -687,6 +798,7 @@ export default function Users() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   بعدی
                 </Button>

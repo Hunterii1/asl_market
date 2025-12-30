@@ -27,12 +27,12 @@ export function AdminHeader({ sidebarCollapsed }: AdminHeaderProps) {
   return (
     <header
       className={cn(
-        'fixed top-0 left-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border z-40 transition-all duration-300 flex items-center justify-between px-4 sm:px-6',
-        sidebarCollapsed ? 'right-20' : 'right-64'
+        'fixed top-0 left-0 h-16 bg-background/80 backdrop-blur-xl border-b border-border z-40 transition-all duration-300 flex items-center justify-between px-3 md:px-6',
+        'right-0 md:right-64'
       )}
     >
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        <Button variant="ghost" size="icon" className="lg:hidden flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+        <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
           <Menu className="w-5 h-5" />
         </Button>
 

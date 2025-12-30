@@ -17,10 +17,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <main
         className={cn(
           'pt-16 min-h-screen transition-all duration-300',
-          sidebarCollapsed ? 'mr-20' : 'mr-64'
+          'md:mr-64 mr-0'
         )}
       >
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </main>

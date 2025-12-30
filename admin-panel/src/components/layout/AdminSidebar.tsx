@@ -70,6 +70,7 @@ export function AdminSidebar() {
     <aside
       className={cn(
         'fixed top-0 right-0 h-screen bg-sidebar border-l border-sidebar-border z-50 transition-all duration-300 flex flex-col',
+        'hidden md:flex',
         collapsed ? 'w-20' : 'w-64'
       )}
     >

@@ -209,12 +209,12 @@ export default function Dashboard() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">داشبورد</h1>
-            <p className="text-muted-foreground">خوش آمدید! نگاهی به وضعیت کلی سیستم بیندازید.</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">داشبورد</h1>
+            <p className="text-sm md:text-base text-muted-foreground">خوش آمدید! نگاهی به وضعیت کلی سیستم بیندازید.</p>
           </div>
-          <div className="text-sm text-muted-foreground">
+          <div className="text-xs md:text-sm text-muted-foreground">
             آخرین بروزرسانی: امروز، ۱۴:۳۰
           </div>
         </div>
