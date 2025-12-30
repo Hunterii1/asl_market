@@ -139,7 +139,7 @@ const statusConfig = {
   },
 };
 
-type SortField = 'name' | 'email' | 'balance' | 'createdAt' | 'status';
+type SortField = 'name' | 'email' | 'id' | 'createdAt' | 'status';
 type SortOrder = 'asc' | 'desc';
 
 export default function Users() {
@@ -497,11 +497,11 @@ export default function Users() {
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">تماس</th>
                     <th className="p-4 text-right">
                       <button
-                        onClick={() => handleSort('balance')}
+                        onClick={() => handleSort('id')}
                         className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        موجودی
-                        {getSortIcon('balance')}
+                        شماره کاربر
+                        {getSortIcon('id')}
                       </button>
                     </th>
                     <th className="p-4 text-right">
@@ -528,7 +528,7 @@ export default function Users() {
                 <tbody>
                   {paginatedUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-12 text-center">
+                      <td colSpan={6} className="p-12 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <UsersIcon className="w-12 h-12 text-muted-foreground" />
                           <p className="text-muted-foreground">هیچ کاربری یافت نشد</p>
@@ -564,20 +564,14 @@ export default function Users() {
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            {user.email}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="w-4 h-4" />
-                            {user.phone}
-                          </div>
+                        <div className="flex items-center gap-2 text-sm text-foreground">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          {user.phone}
                         </div>
                       </td>
                       <td className="p-4">
                         <span className="font-medium text-foreground">
-                          {(user.balance || 0).toLocaleString('fa-IR')} تومان
+                          {user.id}
                         </span>
                       </td>
                       <td className="p-4">
@@ -695,17 +689,14 @@ export default function Users() {
                         </div>
                         <div className="space-y-2 border-t border-border pt-3">
                           <div className="flex items-center gap-2 text-sm">
-                            <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            <span className="text-foreground truncate">{user.email}</span>
+                            <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            <span className="text-foreground">{user.phone}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">
-                            <Phone className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            <span className="text-muted-foreground">{user.phone}</span>
+                            <span className="text-muted-foreground text-xs">شماره کاربر:</span>
+                            <span className="text-foreground font-medium">{user.id}</span>
                           </div>
-                          <div className="flex items-center justify-between gap-2 pt-1">
-                            <span className="text-sm font-medium text-foreground">
-                              {(user.balance || 0).toLocaleString('fa-IR')} تومان
-                            </span>
+                          <div className="flex items-center justify-end gap-2 pt-1">
                             <span
                               className={cn(
                                 'px-2 py-1 rounded-full text-xs font-medium',

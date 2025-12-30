@@ -150,9 +150,36 @@ export default function AvailableProducts() {
         });
 
         if (response) {
-          // Backend returns: { products: [...], pagination: {...} }
-          const productsData = response.products || [];
-          const pagination = response.pagination || {};
+          // Backend returns: { products: [...], has_next, has_prev, page, per_page, total } 
+          // or { data: { products: [...], pagination: {...} } }
+          const responseData = response.data || response;
+          const productsData = responseData.products || response.products || [];
+          
+          // Handle different response structures
+          let total = 0;
+          let totalPages = 1;
+          
+          if (response.total !== undefined) {
+            // Direct response structure: { products: [...], total, page, per_page, has_next, has_prev }
+            total = response.total;
+            const perPage = response.per_page || itemsPerPage;
+            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+          } else if (responseData.pagination) {
+            // Nested pagination structure: { data: { products: [...], pagination: {...} } }
+            const pagination = responseData.pagination;
+            total = pagination.total || 0;
+            const perPage = pagination.per_page || pagination.perPage || itemsPerPage;
+            totalPages = pagination.total_pages || pagination.totalPages || (perPage > 0 ? Math.ceil(total / perPage) : 1);
+          } else if (responseData.total !== undefined) {
+            // Alternative structure: { data: { products: [...], total, ... } }
+            total = responseData.total;
+            const perPage = responseData.per_page || itemsPerPage;
+            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+          } else {
+            // Fallback: calculate from products length
+            total = productsData.length;
+            totalPages = 1;
+          }
           
           const transformedProducts: Product[] = productsData.map((p: any) => ({
             id: p.id?.toString() || p.ID?.toString() || '',
@@ -176,8 +203,8 @@ export default function AvailableProducts() {
           }));
 
           setProducts(transformedProducts);
-          setTotalProducts(pagination.total || response.total || 0);
-          setTotalPages(pagination.total_pages || response.total_pages || 1);
+          setTotalProducts(total);
+          setTotalPages(totalPages);
         }
       } catch (error: any) {
         console.error('Error loading products:', error);
@@ -287,8 +314,30 @@ export default function AvailableProducts() {
           page: currentPage,
           per_page: itemsPerPage,
         });
-        if (response && response.products) {
-          const transformedProducts: Product[] = response.products.map((p: any) => ({
+        if (response) {
+          const responseData = response.data || response;
+          const productsData = responseData.products || response.products || [];
+          
+          // Handle pagination
+          let total = 0;
+          let totalPages = 1;
+          
+          if (response.total !== undefined) {
+            total = response.total;
+            const perPage = response.per_page || itemsPerPage;
+            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+          } else if (responseData.pagination) {
+            const pagination = responseData.pagination;
+            total = pagination.total || 0;
+            const perPage = pagination.per_page || pagination.perPage || itemsPerPage;
+            totalPages = pagination.total_pages || pagination.totalPages || (perPage > 0 ? Math.ceil(total / perPage) : 1);
+          } else if (responseData.total !== undefined) {
+            total = responseData.total;
+            const perPage = responseData.per_page || itemsPerPage;
+            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+          }
+          
+          const transformedProducts: Product[] = productsData.map((p: any) => ({
             id: p.id?.toString() || '',
             name: p.product_name || p.name || 'بدون نام',
             description: p.description || '',
@@ -309,6 +358,8 @@ export default function AvailableProducts() {
             revenue: p.revenue || 0,
           }));
           setProducts(transformedProducts);
+          setTotalProducts(total);
+          setTotalPages(totalPages);
         }
       }
 
@@ -819,9 +870,9 @@ export default function AvailableProducts() {
             )}
 
             {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border-t border-border gap-4 mt-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">
+            <div className="flex flex-col gap-4 p-3 md:p-4 border-t border-border">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs md:text-sm text-muted-foreground text-center sm:text-right">
                   نمایش {((currentPage - 1) * itemsPerPage) + 1} تا {Math.min(currentPage * itemsPerPage, totalProducts)} از {totalProducts} محصول
                 </span>
                 <Select
@@ -831,7 +882,7 @@ export default function AvailableProducts() {
                     setCurrentPage(1);
                   }}
                 >
-                  <SelectTrigger className="w-20 h-8">
+                  <SelectTrigger className="w-20 h-8 text-xs md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -842,16 +893,17 @@ export default function AvailableProducts() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1 || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   قبلی
                 </Button>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 overflow-x-auto">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum: number;
                     if (totalPages <= 5) {
@@ -870,7 +922,10 @@ export default function AvailableProducts() {
                         size="sm"
                         onClick={() => setCurrentPage(pageNum)}
                         disabled={loading}
-                        className={currentPage === pageNum ? "gradient-primary text-primary-foreground" : ""}
+                        className={cn(
+                          "min-w-[2.5rem]",
+                          currentPage === pageNum && "gradient-primary text-primary-foreground"
+                        )}
                       >
                         {pageNum}
                       </Button>
@@ -882,6 +937,7 @@ export default function AvailableProducts() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages || loading}
+                  className="flex-1 sm:flex-initial"
                 >
                   بعدی
                 </Button>

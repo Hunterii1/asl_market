@@ -18,7 +18,7 @@ import {
   Eye,
   Megaphone,
   Bell,
-  FileSpreadsheet,
+  // FileSpreadsheet, // Commented out - Export page is not needed
   ChevronRight,
   ChevronLeft,
   LogOut,
@@ -60,7 +60,7 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
     { title: 'ویزیتورها', icon: Eye, href: '/visitors' },
     { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
     { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
-    { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
+    // { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
   ];
 
   // Support admin navigation items (limited access - only tickets)

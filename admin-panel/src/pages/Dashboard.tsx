@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { RecentActivity } from '@/components/dashboard/RecentActivity';
-import { QuickActions } from '@/components/dashboard/QuickActions';
+// import { QuickActions } from '@/components/dashboard/QuickActions';
 import { AddUserDialog } from '@/components/users/AddUserDialog';
 import { ImportUsersDialog } from '@/components/users/ImportUsersDialog';
 import { ExportUsersDialog } from '@/components/users/ExportUsersDialog';
@@ -239,8 +239,8 @@ export default function Dashboard() {
           <RecentActivity />
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+        {/* Quick Actions - Removed */}
+        {/* <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <QuickActions 
             onAddUser={handleAddUserClick}
             onImportUsers={handleImportUsersClick}
@@ -249,7 +249,7 @@ export default function Dashboard() {
             onAddProduct={handleAddProductClick}
             onGenerateReport={handleGenerateReportClick}
           />
-        </div>
+        </div> */}
       </div>
 
       {/* Dialog افزودن کاربر */}

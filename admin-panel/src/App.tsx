@@ -18,7 +18,7 @@ import Suppliers from "./pages/Suppliers";
 import Visitors from "./pages/Visitors";
 import Popups from "./pages/Popups";
 import Notifications from "./pages/Notifications";
-import Export from "./pages/Export";
+// import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { SupportAdminRoute } from "./components/auth/SupportAdminRoute";
@@ -158,14 +158,15 @@ const App = () => (
               </ProtectedRoute>
             }
           />
-          <Route
+          {/* Export route - Commented out */}
+          {/* <Route
             path="/export"
             element={
               <ProtectedRoute>
                 <Export />
               </ProtectedRoute>
             }
-          />
+          /> */}
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
