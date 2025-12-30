@@ -152,6 +152,13 @@ class AdminApiService {
     });
   }
 
+  async updateUser(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   async updateUserStatus(id: number, isActive: boolean): Promise<any> {
     // Ensure boolean is properly sent - backend expects is_active as boolean
     const payload = { is_active: isActive };

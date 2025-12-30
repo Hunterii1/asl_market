@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, UserPlus, Mail, Phone, MessageSquare, Wallet, Shield } from 'lucide-react';
+import { Loader2, UserPlus, Mail, Phone, Shield } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,14 +31,13 @@ import {
 } from '@/components/ui/form';
 import { editUserSchema, type EditUserFormData } from '@/lib/validations/user';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface User {
   id: string;
   name: string;
   email: string;
   phone: string;
-  telegramId: string;
-  balance: number;
   status: 'active' | 'inactive' | 'banned';
 }
 
@@ -49,25 +48,6 @@ interface EditUserDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updateUser = async (data: EditUserFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        // Update in localStorage
-        const users = JSON.parse(localStorage.getItem('asll-users') || '[]');
-        const index = users.findIndex((u: User) => u.id === data.id);
-        if (index !== -1) {
-          users[index] = { ...users[index], ...data };
-          localStorage.setItem('asll-users', JSON.stringify(users));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,8 +59,6 @@ export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUser
       name: '',
       email: '',
       phone: '',
-      telegramId: '',
-      balance: 0,
       status: 'active',
     },
   });
@@ -93,8 +71,6 @@ export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUser
         name: user.name,
         email: user.email,
         phone: user.phone,
-        telegramId: user.telegramId,
-        balance: user.balance,
         status: user.status,
       });
     }
@@ -103,7 +79,16 @@ export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUser
   const onSubmit = async (data: EditUserFormData) => {
     setIsSubmitting(true);
     try {
-      await updateUser(data);
+      // Prepare data for API (convert status to is_active boolean for backend)
+      const apiData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        is_active: data.status === 'active',
+      };
+
+      await adminApi.updateUser(Number(data.id), apiData);
+      
       toast({
         title: 'موفقیت',
         description: 'اطلاعات کاربر با موفقیت به‌روزرسانی شد.',
@@ -111,10 +96,10 @@ export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUser
       });
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        description: error?.message || 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
         variant: 'destructive',
       });
     } finally {
@@ -223,63 +208,6 @@ export function EditUserDialog({ open, onOpenChange, user, onSuccess }: EditUser
                   </FormControl>
                   <FormDescription>
                     شماره تلفن همراه کاربر (۱۰ یا ۱۱ رقم)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* آیدی تلگرام */}
-            <FormField
-              control={form.control}
-              name="telegramId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                    آیدی تلگرام
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="@username یا username"
-                      {...field}
-                      disabled={isSubmitting}
-                      dir="ltr"
-                      className="text-left"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    آیدی تلگرام کاربر (با یا بدون @)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* موجودی */}
-            <FormField
-              control={form.control}
-              name="balance"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4 text-muted-foreground" />
-                    موجودی (تومان)
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      placeholder="۰"
-                      {...field}
-                      onChange={(e) => field.onChange(Number(e.target.value))}
-                      disabled={isSubmitting}
-                      className="text-right"
-                      min="0"
-                      step="1000"
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    موجودی حساب کاربر
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

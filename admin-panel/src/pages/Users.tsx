@@ -855,19 +855,55 @@ export default function Users() {
           name: editUser.name,
           email: editUser.email,
           phone: editUser.phone,
-          telegramId: editUser.telegramId || '',
-          balance: editUser.balance || 0,
           status: editUser.status,
         } : null}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-users');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setUsers(parsed);
-            } catch {}
+        onSuccess={async () => {
+          // Reload users from API
+          try {
+            setLoading(true);
+            const response = await adminApi.getUsers({
+              page: currentPage,
+              per_page: itemsPerPage,
+            });
+            
+            if (response) {
+              const responseData = response.data || response;
+              const usersData = responseData.users || response.users || [];
+              
+              const transformedUsers: User[] = usersData.map((u: any) => ({
+                id: u.id?.toString() || u.ID?.toString() || '',
+                name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
+                email: u.email || '',
+                phone: u.phone || '',
+                telegramId: u.telegram_id || u.telegramId || undefined,
+                balance: u.balance || 0,
+                status: u.is_active === false ? 'inactive' : u.is_active === true ? 'active' : 'inactive',
+                createdAt: u.created_at ? new Date(u.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+                first_name: u.first_name,
+                last_name: u.last_name,
+                is_active: u.is_active,
+              }));
+              
+              setUsers(transformedUsers);
+              
+              const total = responseData.total || response.total || usersData.length;
+              const perPage = responseData.per_page || response.per_page || itemsPerPage;
+              const calculatedTotalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+              
+              setTotalUsers(total);
+              setTotalPages(calculatedTotalPages);
+            }
+          } catch (error: any) {
+            console.error('Error reloading users:', error);
+            toast({
+              title: 'خطا',
+              description: error.message || 'خطا در بارگذاری کاربران',
+              variant: 'destructive',
+            });
+          } finally {
+            setLoading(false);
+            setEditUser(null);
           }
-          setEditUser(null);
         }}
       />
 
