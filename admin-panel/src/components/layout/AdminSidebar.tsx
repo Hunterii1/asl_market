@@ -31,7 +31,12 @@ interface NavItem {
   badge?: number;
 }
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const user = getCurrentUser();
@@ -66,11 +71,19 @@ export function AdminSidebar() {
   // Use appropriate nav items based on user role
   const navItems = isSupportAdmin ? supportAdminNavItems : fullAdminNavItems;
 
+  // Close sidebar on mobile when clicking a link
+  const handleLinkClick = () => {
+    if (window.innerWidth < 768 && onMobileClose) {
+      onMobileClose();
+    }
+  };
+
   return (
     <aside
       className={cn(
         'fixed top-0 right-0 h-screen bg-sidebar border-l border-sidebar-border z-50 transition-all duration-300 flex flex-col',
-        'hidden md:flex',
+        'md:flex',
+        !mobileOpen && 'hidden',
         collapsed ? 'w-20' : 'w-64'
       )}
     >
@@ -102,6 +115,7 @@ export function AdminSidebar() {
               <li key={item.href}>
                 <NavLink
                   to={item.href}
+                  onClick={handleLinkClick}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative',
                     isActive

@@ -16,10 +16,10 @@ import { useNavigate } from 'react-router-dom';
 import { getCurrentUser, logout, clearSession } from '@/lib/utils/auth';
 
 interface AdminHeaderProps {
-  sidebarCollapsed?: boolean;
+  onMenuClick?: () => void;
 }
 
-export function AdminHeader({ sidebarCollapsed }: AdminHeaderProps) {
+export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
@@ -32,7 +32,12 @@ export function AdminHeader({ sidebarCollapsed }: AdminHeaderProps) {
       )}
     >
       <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
-        <Button variant="ghost" size="icon" className="md:hidden flex-shrink-0">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden flex-shrink-0"
+          onClick={onMenuClick}
+        >
           <Menu className="w-5 h-5" />
         </Button>
 

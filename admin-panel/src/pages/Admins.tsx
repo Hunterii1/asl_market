@@ -385,28 +385,33 @@ export default function Admins() {
     <AdminLayout>
       <div className="space-y-6">
         {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">مدیریت مدیران</h1>
-            <p className="text-muted-foreground">لیست تمامی مدیران سیستم</p>
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت مدیران</h1>
+            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی مدیران سیستم</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              <ShieldPlus className="w-4 h-4 ml-2" />
-              مدیر جدید
+            <Button 
+              size="sm" 
+              onClick={() => setIsAddDialogOpen(true)}
+              className="w-full sm:w-auto"
+            >
+              <ShieldPlus className="w-4 h-4 md:ml-2" />
+              <span className="hidden sm:inline">مدیر جدید</span>
+              <span className="sm:hidden">جدید</span>
             </Button>
           </div>
         </div>
 
         {/* Filters & Search */}
         <Card>
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   type="text"
-                  placeholder="جستجو بر اساس نام، ایمیل، نام کاربری یا شماره تلفن..."
+                  placeholder="جستجو..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
