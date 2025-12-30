@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser } from '@/lib/utils/auth';
 import { useSidebarStats } from '@/hooks/useSidebarStats';
+import { canSeeSidebarItem } from '@/lib/utils/permissions';
 import {
   LayoutDashboard,
   Users,
@@ -29,6 +30,7 @@ interface NavItem {
   icon: React.ElementType;
   href: string;
   badge?: number;
+  permissionKey?: string; // Key for permission checking (e.g., 'users', 'admins')
 }
 
 interface AdminSidebarProps {
@@ -45,23 +47,36 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
   // Check if user is support admin (moderator role)
   const isSupportAdmin = user?.role === 'moderator' || user?.role === 'support_admin';
   
-  // Full admin navigation items with real stats
-  const fullAdminNavItems: NavItem[] = [
-    { title: 'داشبورد', icon: LayoutDashboard, href: '/' },
-    { title: 'کاربران', icon: Users, href: '/users', badge: stats.users > 0 ? stats.users : undefined },
-    { title: 'مدیران', icon: Shield, href: '/admins' },
-    { title: 'آمار سیستم', icon: BarChart3, href: '/statistics' },
-    { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: stats.withdrawals > 0 ? stats.withdrawals : undefined },
-    { title: 'لایسنس‌ها', icon: Key, href: '/licenses' },
-    { title: 'تیکت‌ها', icon: MessageSquare, href: '/tickets', badge: stats.tickets > 0 ? stats.tickets : undefined },
-    { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers' },
-    { title: 'کالاهای موجود', icon: Package, href: '/products/available' },
-    { title: 'محصولات تحقیقی', icon: Box, href: '/products/research' },
-    { title: 'ویزیتورها', icon: Eye, href: '/visitors' },
-    { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups' },
-    { title: 'اعلان‌ها', icon: Bell, href: '/notifications' },
+  // Get user permissions
+  const userPermissions = user?.permissions || [];
+  
+  // Full admin navigation items with real stats and permission checks
+  const allNavItems: NavItem[] = [
+    { title: 'داشبورد', icon: LayoutDashboard, href: '/' }, // Always accessible
+    { title: 'کاربران', icon: Users, href: '/users', badge: stats.users > 0 ? stats.users : undefined, permissionKey: 'users' },
+    { title: 'مدیران', icon: Shield, href: '/admins', permissionKey: 'admins' },
+    { title: 'آمار سیستم', icon: BarChart3, href: '/statistics', permissionKey: 'statistics' },
+    { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: stats.withdrawals > 0 ? stats.withdrawals : undefined, permissionKey: 'withdrawals' },
+    { title: 'لایسنس‌ها', icon: Key, href: '/licenses', permissionKey: 'licenses' },
+    { title: 'تیکت‌ها', icon: MessageSquare, href: '/tickets', badge: stats.tickets > 0 ? stats.tickets : undefined, permissionKey: 'tickets' },
+    { title: 'تامین‌کنندگان', icon: Truck, href: '/suppliers', permissionKey: 'suppliers' },
+    { title: 'کالاهای موجود', icon: Package, href: '/products/available', permissionKey: 'products/available' },
+    { title: 'محصولات تحقیقی', icon: Box, href: '/products/research', permissionKey: 'products/research' },
+    { title: 'ویزیتورها', icon: Eye, href: '/visitors', permissionKey: 'visitors' },
+    { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups', permissionKey: 'popups' },
+    { title: 'اعلان‌ها', icon: Bell, href: '/notifications', permissionKey: 'notifications' },
     // { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
   ];
+  
+  // Filter nav items based on permissions (only for non-support admins)
+  const fullAdminNavItems: NavItem[] = allNavItems.filter(item => {
+    // Dashboard is always accessible
+    if (item.href === '/') return true;
+    // If no permission key, allow access
+    if (!item.permissionKey) return true;
+    // Check permission
+    return canSeeSidebarItem(userPermissions, item.permissionKey);
+  });
 
   // Support admin navigation items (limited access - only tickets)
   const supportAdminNavItems: NavItem[] = [

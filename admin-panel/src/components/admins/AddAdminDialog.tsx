@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Shield, Mail, Phone, User, Lock, Key, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Shield, Mail, Phone, User, Lock, Key, Eye, EyeOff, MessageSquare } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form';
 import { addAdminSchema, type AddAdminFormData } from '@/lib/validations/admin';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddAdminDialogProps {
   open: boolean;
@@ -39,28 +40,6 @@ interface AddAdminDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const createAdmin = async (data: AddAdminFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const admins = JSON.parse(localStorage.getItem('asll-admins') || '[]');
-        const newAdmin = {
-          id: Date.now().toString(),
-          ...data,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          lastLogin: null,
-          loginCount: 0,
-        };
-        admins.push(newAdmin);
-        localStorage.setItem('asll-admins', JSON.stringify(admins));
-        resolve();
-      }
-    }, 1500);
-  });
-};
 
 const roles = [
   { value: 'super_admin', label: 'مدیر کل', description: 'دسترسی کامل به تمام بخش‌ها' },
@@ -89,6 +68,7 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
       name: '',
       email: '',
       phone: '',
+      telegram_id: '',
       username: '',
       password: '',
       role: 'admin',
@@ -99,6 +79,15 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
 
   const { watch, setValue } = form;
   const selectedPermissions = watch('permissions') || [];
+  const telegramId = watch('telegram_id');
+  
+  // Auto-set username and password when telegram_id changes
+  useEffect(() => {
+    if (telegramId && /^\d+$/.test(telegramId)) {
+      setValue('username', telegramId, { shouldValidate: false });
+      setValue('password', telegramId, { shouldValidate: false });
+    }
+  }, [telegramId, setValue]);
 
   const handleTogglePermission = (permissionId: string) => {
     const current = selectedPermissions;
@@ -112,7 +101,21 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
   const onSubmit = async (data: AddAdminFormData) => {
     setIsSubmitting(true);
     try {
-      await createAdmin(data);
+      // If telegram_id is provided, use it as username and password
+      const finalData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        username: data.telegram_id || data.username || '',
+        password: data.telegram_id || data.password || '',
+        role: data.role,
+        permissions: data.permissions || [], // Ensure permissions are included
+        is_active: data.status === 'active',
+        ...(data.telegram_id ? { telegram_id: parseInt(data.telegram_id) } : {}),
+      };
+      
+      await adminApi.createWebAdmin(finalData);
+      
       toast({
         title: 'موفقیت',
         description: 'مدیر با موفقیت افزوده شد.',
@@ -121,10 +124,10 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
       form.reset();
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        description: error?.message || 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
         variant: 'destructive',
       });
     } finally {
@@ -235,6 +238,33 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* آیدی تلگرام */}
+              <FormField
+                control={form.control}
+                name="telegram_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                      آیدی تلگرام (اختیاری)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="276043481"
+                        {...field}
+                        disabled={isSubmitting}
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      اگر وارد شود، به عنوان username و password استفاده می‌شود
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* نام کاربری */}
               <FormField
                 control={form.control}
@@ -249,13 +279,13 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                       <Input
                         placeholder="username"
                         {...field}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !!telegramId}
                         dir="ltr"
                         className="text-left"
                       />
                     </FormControl>
                     <FormDescription>
-                      فقط حروف انگلیسی، اعداد و _
+                      {telegramId ? 'به صورت خودکار از آیدی تلگرام تنظیم می‌شود' : 'فقط حروف انگلیسی، اعداد و _'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -278,7 +308,7 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                           type={showPassword ? 'text' : 'password'}
                           placeholder="حداقل ۸ کاراکتر"
                           {...field}
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || !!telegramId}
                           dir="ltr"
                           className="text-left pr-10"
                         />
@@ -292,7 +322,7 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                       </div>
                     </FormControl>
                     <FormDescription>
-                      حداقل ۸ کاراکتر، شامل حروف بزرگ، کوچک و عدد
+                      {telegramId ? 'به صورت خودکار از آیدی تلگرام تنظیم می‌شود' : 'حداقل ۸ کاراکتر، شامل حروف بزرگ، کوچک و عدد'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

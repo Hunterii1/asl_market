@@ -104,17 +104,30 @@ export async function login(email: string, password: string, rememberMe: boolean
     // Import adminApi dynamically to avoid circular dependencies
     const { adminApi } = await import('../api/adminApi');
     
-    // Call real API
-    const response = await adminApi.login(email, password);
+    // Support login with telegram_id (username can be telegram_id)
+    // Try login with email/username first, if fails, try as telegram_id
+    let response;
+    try {
+      response = await adminApi.login(email, password);
+    } catch (error) {
+      // If login fails, try with telegram_id as both username and password
+      const telegramId = email.trim();
+      if (/^\d+$/.test(telegramId)) {
+        // If email looks like a number (telegram_id), try login with telegram_id/telegram_id
+        response = await adminApi.login(telegramId, telegramId);
+      } else {
+        throw error; // Re-throw original error
+      }
+    }
     
     // Transform backend user to AdminUser format
     const user: AdminUser = {
       id: response.user?.id?.toString() || response.user?.ID?.toString() || '0',
       name: response.user?.name || `${response.user?.first_name || ''} ${response.user?.last_name || ''}`.trim() || 'مدیر',
       email: response.user?.email || email,
-      username: response.user?.username || email,
-      role: response.user?.is_admin ? 'super_admin' : 'admin',
-      permissions: response.user?.is_admin ? ['all'] : [],
+      username: response.user?.username || response.user?.telegram_id?.toString() || email,
+      role: response.user?.role || (response.user?.is_admin ? 'super_admin' : 'admin'),
+      permissions: response.user?.permissions || (response.user?.is_admin ? ['all'] : []),
       lastLogin: new Date().toLocaleDateString('fa-IR'),
     };
 

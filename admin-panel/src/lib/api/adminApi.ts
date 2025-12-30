@@ -93,10 +93,24 @@ class AdminApiService {
   }
 
   // ==================== Authentication ====================
-  async login(email: string, password: string): Promise<{ user: any; token: string }> {
+  async login(emailOrUsername: string, password: string): Promise<{ user: any; token: string }> {
+    // Support login with email, username, or telegram_id
+    const payload: { email?: string; username?: string; password: string } = {
+      password,
+    };
+    
+    // Check if it's a telegram_id (numeric string)
+    if (/^\d+$/.test(emailOrUsername)) {
+      payload.username = emailOrUsername;
+    } else if (emailOrUsername.includes('@')) {
+      payload.email = emailOrUsername;
+    } else {
+      payload.username = emailOrUsername;
+    }
+    
     const data = await this.makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(payload),
     });
     
     // Store token in both formats for compatibility
@@ -848,6 +862,50 @@ class AdminApiService {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
     return { success: true };
+  }
+
+  // ==================== Web Admin Management ====================
+  async getWebAdmins(params: {
+    page?: number;
+    per_page?: number;
+    role?: string;
+    status?: string;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.role) queryParams.append('role', params.role);
+    if (params.status) queryParams.append('status', params.status);
+
+    return this.makeRequest(`${API_BASE_URL}/admin/web-admins?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getWebAdmin(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createWebAdmin(data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/web-admins`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateWebAdmin(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteWebAdmin(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
+      method: 'DELETE',
+    });
   }
 
   // ==================== Telegram Admin Management ====================

@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form';
 import { editAdminSchema, type EditAdminFormData } from '@/lib/validations/admin';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Admin {
   id: string;
@@ -51,28 +52,6 @@ interface EditAdminDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updateAdmin = async (data: EditAdminFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const admins = JSON.parse(localStorage.getItem('asll-admins') || '[]');
-        const index = admins.findIndex((a: Admin) => a.id === data.id);
-        if (index !== -1) {
-          const updatedAdmin = { ...admins[index], ...data };
-          if (!data.changePassword || !data.password) {
-            delete updatedAdmin.password;
-          }
-          admins[index] = updatedAdmin;
-          localStorage.setItem('asll-admins', JSON.stringify(admins));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 const roles = [
   { value: 'super_admin', label: 'مدیر کل', description: 'دسترسی کامل به تمام بخش‌ها' },
@@ -146,10 +125,23 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
   const onSubmit = async (data: EditAdminFormData) => {
     setIsSubmitting(true);
     try {
-      if (!data.changePassword) {
-        delete data.password;
+      // Prepare data for API
+      const apiData: any = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        permissions: data.permissions || [],
+        is_active: data.status === 'active',
+      };
+      
+      // Only update password if changePassword is true and password is provided
+      if (data.changePassword && data.password) {
+        apiData.password = data.password;
       }
-      await updateAdmin(data);
+      
+      await adminApi.updateWebAdmin(Number(data.id), apiData);
+      
       toast({
         title: 'موفقیت',
         description: 'اطلاعات مدیر با موفقیت به‌روزرسانی شد.',
@@ -157,10 +149,10 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
       });
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        description: error?.message || 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
         variant: 'destructive',
       });
     } finally {
@@ -416,37 +408,39 @@ export function EditAdminDialog({ open, onOpenChange, admin, onSuccess }: EditAd
             </div>
 
             {/* دسترسی‌ها */}
-            <FormField
-              control={form.control}
-              name="permissions"
-              render={() => (
-                <FormItem>
-                  <FormLabel>دسترسی‌ها</FormLabel>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
-                    {availablePermissions.map((permission) => (
-                      <div key={permission.id} className="flex items-center gap-2">
-                        <Checkbox
-                          id={`permission-${permission.id}`}
-                          checked={selectedPermissions.includes(permission.id)}
-                          onCheckedChange={() => handleTogglePermission(permission.id)}
-                          disabled={isSubmitting}
-                        />
-                        <Label
-                          htmlFor={`permission-${permission.id}`}
-                          className="text-sm font-normal cursor-pointer flex-1"
-                        >
-                          {permission.label}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                  <FormDescription>
-                    دسترسی‌های مورد نظر را انتخاب کنید
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="space-y-3">
+              <FormField
+                control={form.control}
+                name="permissions"
+                render={() => (
+                  <FormItem>
+                    <FormLabel className="text-base font-semibold">دسترسی‌ها</FormLabel>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2 p-4 border border-border rounded-lg bg-muted/30">
+                      {availablePermissions.map((permission) => (
+                        <div key={permission.id} className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 transition-colors">
+                          <Checkbox
+                            id={`permission-${permission.id}`}
+                            checked={selectedPermissions.includes(permission.id)}
+                            onCheckedChange={() => handleTogglePermission(permission.id)}
+                            disabled={isSubmitting}
+                          />
+                          <Label
+                            htmlFor={`permission-${permission.id}`}
+                            className="text-sm font-medium cursor-pointer flex-1"
+                          >
+                            {permission.label}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <FormDescription className="mt-2">
+                      دسترسی‌های مورد نظر را انتخاب کنید. بخش‌های ادمین پنل بر اساس این دسترسی‌ها فعال یا غیرفعال می‌شوند.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="gap-2 sm:gap-0 flex-row-reverse">
               <Button

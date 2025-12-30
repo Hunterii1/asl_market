@@ -147,12 +147,14 @@ export default function Admins() {
   const [loading, setLoading] = useState(true);
   const [totalAdmins, setTotalAdmins] = useState(0);
 
-  // Load admins from API
+  // Load admins from API - Note: Telegram admins are not displayed here
+  // This page is for web panel admins only
   useEffect(() => {
     const loadAdmins = async () => {
       try {
         setLoading(true);
-        const response = await adminApi.getTelegramAdmins();
+        // Load web panel admins (not telegram admins)
+        const response = await adminApi.getWebAdmins();
 
         if (response && (response.data || response.admins)) {
           const adminsData = response.data?.admins || response.admins || [];
@@ -161,25 +163,27 @@ export default function Admins() {
             name: a.name || a.first_name || 'بدون نام',
             email: a.email || '',
             phone: a.phone || '',
-            username: a.username || '',
-            role: a.role || (a.is_full_admin ? 'super_admin' : 'moderator'),
-            permissions: [], // Telegram admins don't have explicit permissions
+            username: a.username || a.telegram_id?.toString() || '',
+            role: a.role || 'admin',
+            permissions: a.permissions || [],
             status: a.status || (a.is_active ? 'active' : 'inactive'),
             createdAt: a.created_at || new Date().toISOString(),
-            lastLogin: null, // Telegram admins don't track login
-            loginCount: 0,
+            lastLogin: a.last_login ? new Date(a.last_login).toLocaleDateString('fa-IR') : null,
+            loginCount: a.login_count || 0,
           }));
 
           setAdmins(transformedAdmins);
           setTotalAdmins(response.data?.total || response.total || transformedAdmins.length);
+        } else {
+          // If no admins found, set empty array
+          setAdmins([]);
+          setTotalAdmins(0);
         }
       } catch (error: any) {
         console.error('Error loading admins:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری ادمین‌ها',
-          variant: 'destructive',
-        });
+        // Don't show error toast, just set empty state
+        setAdmins([]);
+        setTotalAdmins(0);
       } finally {
         setLoading(false);
       }
@@ -292,22 +296,7 @@ export default function Admins() {
     
     setIsDeleting(true);
     try {
-      // Extract telegram_id from admin data
-      const adminData = admins.find(a => a.id === deleteAdmin.id);
-      if (!adminData) {
-        throw new Error('ادمین یافت نشد');
-      }
-
-      // Try to get telegram_id from the original response
-      const response = await adminApi.getTelegramAdmins();
-      const adminsData = response?.data?.admins || response?.admins || [];
-      const adminToDelete = adminsData.find((a: any) => a.id?.toString() === deleteAdmin.id || a.ID?.toString() === deleteAdmin.id);
-      
-      if (!adminToDelete || !adminToDelete.telegram_id) {
-        throw new Error('شناسه تلگرام ادمین یافت نشد');
-      }
-
-      await adminApi.removeTelegramAdmin(adminToDelete.telegram_id);
+      await adminApi.deleteWebAdmin(Number(deleteAdmin.id));
       
       // Reload admins
       await handleAdminAdded();
@@ -334,19 +323,22 @@ export default function Admins() {
 
     try {
       if (action === 'delete') {
-        // Get telegram_ids for selected admins
-        const response = await adminApi.getTelegramAdmins();
-        const adminsData = response?.data?.admins || response?.admins || [];
-        
-        for (const adminId of selectedAdmins) {
-          const adminToDelete = adminsData.find((a: any) => a.id?.toString() === adminId || a.ID?.toString() === adminId);
-          if (adminToDelete?.telegram_id) {
-            await adminApi.removeTelegramAdmin(adminToDelete.telegram_id);
-          }
-        }
+        // Delete selected web admins
+        await Promise.all(
+          selectedAdmins.map(id => adminApi.deleteWebAdmin(Number(id)))
+        );
+      } else {
+        // Update status for selected admins
+        const statusMap: Record<string, string> = {
+          'activate': 'active',
+          'suspend': 'suspended',
+        };
+        await Promise.all(
+          selectedAdmins.map(id => 
+            adminApi.updateWebAdmin(Number(id), { is_active: action === 'activate' })
+          )
+        );
       }
-      // Note: activate/suspend operations are not available in backend for telegram admins
-      // They can only be added/removed
 
       // Reload admins
       await handleAdminAdded();
@@ -388,7 +380,7 @@ export default function Admins() {
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت مدیران</h1>
-            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی مدیران سیستم</p>
+            <p className="text-sm md:text-base text-muted-foreground">لیست مدیران پنل وب (مدیران تلگرام در اینجا نمایش داده نمی‌شوند)</p>
           </div>
           <div className="flex items-center gap-2">
             <Button 
@@ -557,7 +549,10 @@ export default function Admins() {
                       <td colSpan={7} className="p-12 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <ShieldIcon className="w-12 h-12 text-muted-foreground" />
-                          <p className="text-muted-foreground">هیچ مدیری یافت نشد</p>
+                          <p className="text-muted-foreground font-medium">هیچ مدیری یافت نشد</p>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            مدیران تلگرام در اینجا نمایش داده نمی‌شوند. این بخش برای مدیریت مدیران پنل وب است.
+                          </p>
                         </div>
                       </td>
                     </tr>
@@ -755,14 +750,8 @@ export default function Admins() {
         open={!!editAdmin}
         onOpenChange={(open) => !open && setEditAdmin(null)}
         admin={editAdmin}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-admins');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setAdmins(parsed);
-            } catch {}
-          }
+        onSuccess={async () => {
+          await handleAdminAdded();
           setEditAdmin(null);
         }}
       />
