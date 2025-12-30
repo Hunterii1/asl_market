@@ -176,6 +176,29 @@ const methodConfig = {
 type SortField = 'userName' | 'amount' | 'status' | 'method' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
+// Helper function to transform withdrawal data from API
+const transformWithdrawal = (w: any): Withdrawal => {
+  const validStatuses: Withdrawal['status'][] = ['pending', 'processing', 'completed', 'rejected', 'cancelled'];
+  const validMethods: Withdrawal['method'][] = ['bank_transfer', 'card', 'wallet', 'crypto'];
+  const status = validStatuses.includes(w.status) ? w.status : 'pending';
+  const method = validMethods.includes(w.method) ? w.method : 'bank_transfer';
+  
+  return {
+    id: w.id?.toString() || w.ID?.toString() || '',
+    userId: w.user_id?.toString() || w.userID?.toString() || '',
+    userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
+    amount: w.amount || 0,
+    method,
+    accountInfo: w.bank_card_number || w.sheba_number || w.account_info || w.accountInfo || '',
+    status,
+    description: w.admin_notes || w.description || '',
+    requestedAt: w.requested_at ? new Date(w.requested_at).toLocaleDateString('fa-IR') : (w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : ''),
+    createdAt: w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+    processedAt: w.completed_at || w.approved_at || null,
+    processedBy: w.admin?.name || w.processed_by || null,
+  };
+};
+
 export default function Withdrawals() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWithdrawals, setSelectedWithdrawals] = useState<string[]>([]);
@@ -215,20 +238,7 @@ export default function Withdrawals() {
           // Backend returns: { requests: [...], total: 168, limit: 10, offset: 0 }
           // Or wrapped in: { data: { requests: [...], total: ... } }
           const withdrawalsData = response.requests || response.data?.requests || [];
-          const transformedWithdrawals: Withdrawal[] = withdrawalsData.map((w: any) => ({
-            id: w.id?.toString() || w.ID?.toString() || '',
-            userId: w.user_id?.toString() || w.userID?.toString() || '',
-            userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
-            amount: w.amount || 0,
-            method: w.method || 'bank_transfer',
-            accountInfo: w.bank_card_number || w.sheba_number || w.account_info || w.accountInfo || '',
-            status: w.status || 'pending',
-            description: w.admin_notes || w.description || '',
-            requestedAt: w.requested_at ? new Date(w.requested_at).toLocaleDateString('fa-IR') : (w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : ''),
-            createdAt: w.created_at ? new Date(w.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-            processedAt: w.completed_at || w.approved_at || null,
-            processedBy: w.admin?.name || w.processed_by || null,
-          }));
+          const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
 
           setWithdrawals(transformedWithdrawals);
           setTotalWithdrawals(response.total || response.data?.total || 0);
@@ -311,21 +321,8 @@ export default function Withdrawals() {
         search: searchQuery || undefined,
       });
       if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map((w: any) => ({
-          id: w.id?.toString() || w.ID?.toString() || '',
-          userId: w.user_id?.toString() || w.userID?.toString() || '',
-          userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
-          amount: w.amount || 0,
-          method: w.method || 'bank_transfer',
-          accountInfo: w.account_info || w.accountInfo || '',
-          status: w.status || 'pending',
-          description: w.description || '',
-          requestedAt: w.requested_at || w.created_at || '',
-          createdAt: w.created_at || new Date().toISOString(),
-          processedAt: w.processed_at || null,
-          processedBy: w.processed_by || null,
-        }));
+        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
+        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
         setWithdrawals(transformedWithdrawals);
       }
     } catch (error: any) {
@@ -352,21 +349,8 @@ export default function Withdrawals() {
         search: searchQuery || undefined,
       });
       if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map((w: any) => ({
-          id: w.id?.toString() || w.ID?.toString() || '',
-          userId: w.user_id?.toString() || w.userID?.toString() || '',
-          userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
-          amount: w.amount || 0,
-          method: w.method || 'bank_transfer',
-          accountInfo: w.account_info || w.accountInfo || '',
-          status: w.status || 'pending',
-          description: w.description || '',
-          requestedAt: w.requested_at || w.created_at || '',
-          createdAt: w.created_at || new Date().toISOString(),
-          processedAt: w.processed_at || null,
-          processedBy: w.processed_by || null,
-        }));
+        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
+        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
         setWithdrawals(transformedWithdrawals);
       }
     } catch (error: any) {
@@ -425,21 +409,8 @@ export default function Withdrawals() {
         search: searchQuery || undefined,
       });
       if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map((w: any) => ({
-          id: w.id?.toString() || w.ID?.toString() || '',
-          userId: w.user_id?.toString() || w.userID?.toString() || '',
-          userName: w.user ? `${w.user.first_name || ''} ${w.user.last_name || ''}`.trim() : 'بدون نام',
-          amount: w.amount || 0,
-          method: w.method || 'bank_transfer',
-          accountInfo: w.account_info || w.accountInfo || '',
-          status: w.status || 'pending',
-          description: w.description || '',
-          requestedAt: w.requested_at || w.created_at || '',
-          createdAt: w.created_at || new Date().toISOString(),
-          processedAt: w.processed_at || null,
-          processedBy: w.processed_by || null,
-        }));
+        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
+        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
         setWithdrawals(transformedWithdrawals);
       }
 
@@ -670,7 +641,11 @@ export default function Withdrawals() {
                     </tr>
                   ) : (
                     paginatedWithdrawals.map((withdrawal, index) => {
-                      const StatusIcon = statusConfig[withdrawal.status].icon;
+                      const withdrawalStatus = withdrawal.status || 'pending';
+                      const withdrawalMethod = withdrawal.method || 'bank_transfer';
+                      const statusInfo = statusConfig[withdrawalStatus as keyof typeof statusConfig] || statusConfig.pending;
+                      const methodInfo = methodConfig[withdrawalMethod as keyof typeof methodConfig] || methodConfig.bank_transfer;
+                      const StatusIcon = statusInfo.icon;
                       return (
                         <tr
                           key={withdrawal.id}
@@ -700,10 +675,10 @@ export default function Withdrawals() {
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium',
-                                methodConfig[withdrawal.method].className
+                                methodInfo.className
                               )}
                             >
-                              {methodConfig[withdrawal.method].label}
+                              {methodInfo.label}
                             </span>
                           </td>
                           <td className="p-4">
@@ -715,11 +690,11 @@ export default function Withdrawals() {
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit',
-                                statusConfig[withdrawal.status].className
+                                statusInfo.className
                               )}
                             >
                               <StatusIcon className="w-3 h-3" />
-                              {statusConfig[withdrawal.status].label}
+                              {statusInfo.label}
                             </span>
                           </td>
                           <td className="p-4 text-sm text-muted-foreground">
