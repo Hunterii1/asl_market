@@ -154,7 +154,10 @@ export default function Admins() {
       try {
         setLoading(true);
         // Load web panel admins (not telegram admins)
-        const response = await adminApi.getWebAdmins();
+        const response = await adminApi.getWebAdmins({
+          page: currentPage,
+          per_page: itemsPerPage,
+        });
 
         if (response && (response.data || response.admins)) {
           const adminsData = response.data?.admins || response.admins || [];
@@ -180,17 +183,28 @@ export default function Admins() {
           setTotalAdmins(0);
         }
       } catch (error: any) {
-        console.error('Error loading admins:', error);
-        // Don't show error toast, just set empty state
-        setAdmins([]);
-        setTotalAdmins(0);
+        // Silently handle 404 errors (endpoint may not exist in backend yet)
+        if (error?.statusCode === 404 || error?.message?.includes('404') || error?.message?.includes('خطا در دریافت')) {
+          // Endpoint doesn't exist yet - silently return empty state
+          setAdmins([]);
+          setTotalAdmins(0);
+        } else {
+          console.error('Error loading admins:', error);
+          toast({
+            title: 'خطا',
+            description: error.message || 'خطا در بارگذاری مدیران',
+            variant: 'destructive',
+          });
+          setAdmins([]);
+          setTotalAdmins(0);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadAdmins();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   // Use admins directly from API (filtering and sorting can be done client-side if needed)
   const filteredAdmins = admins.filter(admin => {
@@ -242,7 +256,18 @@ export default function Admins() {
   const handleAdminAdded = async () => {
     // Reload admins from API
     try {
-      const response = await adminApi.getTelegramAdmins();
+      setLoading(true);
+      const response = await adminApi.getWebAdmins({
+        page: currentPage,
+        per_page: itemsPerPage,
+      }).catch((error: any) => {
+        // If 404, return empty response
+        if (error?.statusCode === 404 || error?.message?.includes('404')) {
+          return { data: { admins: [], total: 0 }, admins: [], total: 0 };
+        }
+        throw error;
+      });
+      
       if (response && (response.data || response.admins)) {
         const adminsData = response.data?.admins || response.admins || [];
         const transformedAdmins: Admin[] = adminsData.map((a: any) => ({
@@ -250,19 +275,34 @@ export default function Admins() {
           name: a.name || a.first_name || 'بدون نام',
           email: a.email || '',
           phone: a.phone || '',
-          username: a.username || '',
-          role: a.role || (a.is_full_admin ? 'super_admin' : 'moderator'),
-          permissions: [],
+          username: a.username || a.telegram_id?.toString() || '',
+          role: a.role || 'admin',
+          permissions: a.permissions || [],
           status: a.status || (a.is_active ? 'active' : 'inactive'),
           createdAt: a.created_at || new Date().toISOString(),
-          lastLogin: null,
-          loginCount: 0,
+          lastLogin: a.last_login ? new Date(a.last_login).toLocaleDateString('fa-IR') : null,
+          loginCount: a.login_count || 0,
         }));
         setAdmins(transformedAdmins);
         setTotalAdmins(response.data?.total || response.total || transformedAdmins.length);
+      } else {
+        setAdmins([]);
+        setTotalAdmins(0);
       }
-    } catch (error) {
-      console.error('Error reloading admins:', error);
+    } catch (error: any) {
+      // Silently handle 404 errors
+      if (!(error?.statusCode === 404 || error?.message?.includes('404'))) {
+        console.error('Error reloading admins:', error);
+        toast({
+          title: 'خطا',
+          description: error.message || 'خطا در بارگذاری مدیران',
+          variant: 'destructive',
+        });
+      }
+      setAdmins([]);
+      setTotalAdmins(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -550,8 +590,13 @@ export default function Admins() {
                         <div className="flex flex-col items-center gap-2">
                           <ShieldIcon className="w-12 h-12 text-muted-foreground" />
                           <p className="text-muted-foreground font-medium">هیچ مدیری یافت نشد</p>
-                          <p className="text-sm text-muted-foreground mt-2">
+                          <p className="text-sm text-muted-foreground mt-2 max-w-md">
                             مدیران تلگرام در اینجا نمایش داده نمی‌شوند. این بخش برای مدیریت مدیران پنل وب است.
+                            {loading === false && (
+                              <span className="block mt-2 text-xs">
+                                توجه: endpoint مدیریت مدیران وب در بک‌اند باید پیاده‌سازی شود.
+                              </span>
+                            )}
                           </p>
                         </div>
                       </td>

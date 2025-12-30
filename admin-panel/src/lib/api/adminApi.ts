@@ -64,7 +64,12 @@ class AdminApiService {
           statusCode: response.status 
         };
       }
-      throw new Error(errorData.error || errorData.message || 'خطا در درخواست به سرور');
+      
+      // Include status code in error message for 404 detection
+      const errorMessage = errorData.error || errorData.message || 'خطا در دریافت پاسخ از سرور';
+      const error = new Error(`${errorMessage} (${response.status})`);
+      (error as any).statusCode = response.status;
+      throw error;
     }
     const data = await response.json();
     // Backend may return { data: {...} } or { success: true, ... } or direct data
@@ -865,21 +870,30 @@ class AdminApiService {
   }
 
   // ==================== Web Admin Management ====================
+  // Note: These endpoints may not exist in backend yet
   async getWebAdmins(params: {
     page?: number;
     per_page?: number;
     role?: string;
     status?: string;
   } = {}): Promise<any> {
-    const queryParams = new URLSearchParams();
-    if (params.page) queryParams.append('page', params.page.toString());
-    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
-    if (params.role) queryParams.append('role', params.role);
-    if (params.status) queryParams.append('status', params.status);
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+      if (params.role) queryParams.append('role', params.role);
+      if (params.status) queryParams.append('status', params.status);
 
-    return this.makeRequest(`${API_BASE_URL}/admin/web-admins?${queryParams}`, {
-      method: 'GET',
-    });
+      return await this.makeRequest(`${API_BASE_URL}/admin/web-admins?${queryParams}`, {
+        method: 'GET',
+      });
+    } catch (error: any) {
+      // If endpoint doesn't exist (404), return empty response instead of throwing
+      if (error?.statusCode === 404 || error?.message?.includes('404') || error?.message?.includes('خطا در دریافت')) {
+        return { data: { admins: [], total: 0 }, admins: [], total: 0 };
+      }
+      throw error;
+    }
   }
 
   async getWebAdmin(id: number): Promise<any> {
@@ -889,23 +903,47 @@ class AdminApiService {
   }
 
   async createWebAdmin(data: any): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/web-admins`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.makeRequest(`${API_BASE_URL}/admin/web-admins`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    } catch (error: any) {
+      // If endpoint doesn't exist (404), throw meaningful error
+      if (error?.message?.includes('404') || error?.message?.includes('خطا در دریافت')) {
+        throw new Error('Endpoint مدیریت مدیران وب در بک‌اند پیاده‌سازی نشده است. لطفا با تیم توسعه تماس بگیرید.');
+      }
+      throw error;
+    }
   }
 
   async updateWebAdmin(id: number, data: any): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    try {
+      return await this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+    } catch (error: any) {
+      // If endpoint doesn't exist (404), throw meaningful error
+      if (error?.message?.includes('404') || error?.message?.includes('خطا در دریافت')) {
+        throw new Error('Endpoint مدیریت مدیران وب در بک‌اند پیاده‌سازی نشده است. لطفا با تیم توسعه تماس بگیرید.');
+      }
+      throw error;
+    }
   }
 
   async deleteWebAdmin(id: number): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
-      method: 'DELETE',
-    });
+    try {
+      return await this.makeRequest(`${API_BASE_URL}/admin/web-admins/${id}`, {
+        method: 'DELETE',
+      });
+    } catch (error: any) {
+      // If endpoint doesn't exist (404), throw meaningful error
+      if (error?.message?.includes('404') || error?.message?.includes('خطا در دریافت')) {
+        throw new Error('Endpoint مدیریت مدیران وب در بک‌اند پیاده‌سازی نشده است. لطفا با تیم توسعه تماس بگیرید.');
+      }
+      throw error;
+    }
   }
 
   // ==================== Telegram Admin Management ====================
