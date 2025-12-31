@@ -39,7 +39,7 @@ interface Withdrawal {
   amount: number;
   method: 'bank_transfer' | 'card' | 'wallet' | 'crypto';
   accountInfo: string;
-  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'processing' | 'completed' | 'rejected';
   description?: string;
   requestedAt?: string;
   processedAt?: string | null;
@@ -277,10 +277,10 @@ export function EditWithdrawalDialog({ open, onOpenChange, withdrawal, onSuccess
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="pending">در انتظار</SelectItem>
+                      <SelectItem value="approved">تایید شده</SelectItem>
                       <SelectItem value="processing">در حال پردازش</SelectItem>
                       <SelectItem value="completed">تکمیل شده</SelectItem>
                       <SelectItem value="rejected">رد شده</SelectItem>
-                      <SelectItem value="cancelled">لغو شده</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

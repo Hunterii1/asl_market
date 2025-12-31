@@ -16,8 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 interface WithdrawalsFiltersProps {
-  statusFilter: ('pending' | 'processing' | 'completed' | 'rejected' | 'cancelled')[];
-  onStatusFilterChange: (status: ('pending' | 'processing' | 'completed' | 'rejected' | 'cancelled')[]) => void;
+  statusFilter: ('pending' | 'approved' | 'processing' | 'completed' | 'rejected')[];
+  onStatusFilterChange: (status: ('pending' | 'approved' | 'processing' | 'completed' | 'rejected')[]) => void;
   methodFilter: ('bank_transfer' | 'card' | 'wallet' | 'crypto')[];
   onMethodFilterChange: (method: ('bank_transfer' | 'card' | 'wallet' | 'crypto')[]) => void;
   minAmount: string;
@@ -40,7 +40,7 @@ export function WithdrawalsFilters({
 }: WithdrawalsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'pending' | 'processing' | 'completed' | 'rejected' | 'cancelled') => {
+  const handleToggleStatus = (status: 'pending' | 'approved' | 'processing' | 'completed' | 'rejected') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -86,10 +86,10 @@ export function WithdrawalsFilters({
             <div className="space-y-2">
               {([
                 { value: 'pending', label: 'در انتظار' },
+                { value: 'approved', label: 'تایید شده' },
                 { value: 'processing', label: 'در حال پردازش' },
                 { value: 'completed', label: 'تکمیل شده' },
                 { value: 'rejected', label: 'رد شده' },
-                { value: 'cancelled', label: 'لغو شده' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
@@ -187,10 +187,10 @@ export function WithdrawalsFilters({
                   {statusFilter.map(status => (
                     <Badge key={status} variant="secondary" className="gap-1">
                       {status === 'pending' && 'در انتظار'}
+                      {status === 'approved' && 'تایید شده'}
                       {status === 'processing' && 'در حال پردازش'}
                       {status === 'completed' && 'تکمیل شده'}
                       {status === 'rejected' && 'رد شده'}
-                      {status === 'cancelled' && 'لغو شده'}
                       <button
                         onClick={() => handleToggleStatus(status)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"

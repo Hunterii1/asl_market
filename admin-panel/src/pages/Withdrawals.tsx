@@ -44,7 +44,7 @@ interface Withdrawal {
   amount: number;
   method: 'bank_transfer' | 'card' | 'wallet' | 'crypto';
   accountInfo: string;
-  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'processing' | 'completed' | 'rejected';
   description?: string;
   requestedAt?: string;
   createdAt: string;
@@ -117,8 +117,8 @@ const initialWithdrawals: Withdrawal[] = [
     amount: 300000,
     method: 'crypto',
     accountInfo: '0x1234567890abcdef',
-    status: 'cancelled',
-    description: 'لغو شده توسط کاربر',
+    status: 'approved',
+    description: 'تایید شده توسط ادمین',
     requestedAt: '۱۴۰۳/۰۹/۱۶',
     createdAt: '۱۴۰۳/۰۹/۱۶',
     processedAt: null,
@@ -131,6 +131,11 @@ const statusConfig = {
     label: 'در انتظار',
     className: 'bg-warning/10 text-warning',
     icon: Clock,
+  },
+  approved: {
+    label: 'تایید شده',
+    className: 'bg-primary/10 text-primary',
+    icon: CheckCircle,
   },
   processing: {
     label: 'در حال پردازش',
@@ -145,11 +150,6 @@ const statusConfig = {
   rejected: {
     label: 'رد شده',
     className: 'bg-destructive/10 text-destructive',
-    icon: XCircle,
-  },
-  cancelled: {
-    label: 'لغو شده',
-    className: 'bg-muted text-muted-foreground',
     icon: XCircle,
   },
 };
@@ -178,7 +178,7 @@ type SortOrder = 'asc' | 'desc';
 
 // Helper function to transform withdrawal data from API
 const transformWithdrawal = (w: any): Withdrawal => {
-  const validStatuses: Withdrawal['status'][] = ['pending', 'processing', 'completed', 'rejected', 'cancelled'];
+  const validStatuses: Withdrawal['status'][] = ['pending', 'approved', 'processing', 'completed', 'rejected'];
   const validMethods: Withdrawal['method'][] = ['bank_transfer', 'card', 'wallet', 'crypto'];
   const status = validStatuses.includes(w.status) ? w.status : 'pending';
   const method = validMethods.includes(w.method) ? w.method : 'bank_transfer';
@@ -207,7 +207,7 @@ export default function Withdrawals() {
   const [editWithdrawal, setEditWithdrawal] = useState<Withdrawal | null>(null);
   const [deleteWithdrawal, setDeleteWithdrawal] = useState<Withdrawal | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<('pending' | 'processing' | 'completed' | 'rejected' | 'cancelled')[]>([]);
+  const [statusFilter, setStatusFilter] = useState<('pending' | 'approved' | 'processing' | 'completed' | 'rejected')[]>([]);
   const [methodFilter, setMethodFilter] = useState<('bank_transfer' | 'card' | 'wallet' | 'crypto')[]>([]);
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
@@ -221,53 +221,53 @@ export default function Withdrawals() {
   const [totalPages, setTotalPages] = useState(0);
 
   // Load withdrawals from API
-  useEffect(() => {
-    const loadWithdrawals = async () => {
-      try {
-        setLoading(true);
-        const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : 'all';
+  const loadWithdrawals = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : 'all';
 
-        const response = await adminApi.getWithdrawals({
-          page: currentPage,
-          per_page: itemsPerPage,
-          status: statusFilterValue !== 'all' ? statusFilterValue : undefined,
-          search: searchQuery || undefined,
-        });
+      const response = await adminApi.getWithdrawals({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue !== 'all' ? statusFilterValue : undefined,
+        search: searchQuery || undefined,
+      });
 
-        if (response) {
-          // Backend returns: { requests: [...], total: 168, per_page: 10, total_pages: 17 }
-          const withdrawalsData = response.requests || response.data?.requests || [];
-          const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
+      if (response) {
+        // Backend returns: { requests: [...], total: 168, per_page: 10, total_pages: 17 }
+        const withdrawalsData = response.requests || response.data?.requests || [];
+        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
 
-          setWithdrawals(transformedWithdrawals);
-          
-          // Get total count
-          const total = response.total || response.data?.total || 0;
-          setTotalWithdrawals(total);
-          
-          // Use total_pages from backend if available, otherwise calculate it
-          const totalPagesFromBackend = response.total_pages || response.data?.total_pages;
-          if (totalPagesFromBackend) {
-            setTotalPages(totalPagesFromBackend);
-          } else {
-            // Fallback: calculate from total and per_page
-            const perPage = response.per_page || response.data?.per_page || itemsPerPage;
-            const totalPagesCalc = perPage > 0 ? Math.ceil(total / perPage) : 1;
-            setTotalPages(totalPagesCalc);
-          }
+        setWithdrawals(transformedWithdrawals);
+        
+        // Get total count
+        const total = response.total || response.data?.total || 0;
+        setTotalWithdrawals(total);
+        
+        // Use total_pages from backend if available, otherwise calculate it
+        const totalPagesFromBackend = response.total_pages || response.data?.total_pages;
+        if (totalPagesFromBackend) {
+          setTotalPages(totalPagesFromBackend);
+        } else {
+          // Fallback: calculate from total and per_page
+          const perPage = response.per_page || response.data?.per_page || itemsPerPage;
+          const totalPagesCalc = perPage > 0 ? Math.ceil(total / perPage) : 1;
+          setTotalPages(totalPagesCalc);
         }
-      } catch (error: any) {
-        console.error('Error loading withdrawals:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری درخواست‌های برداشت',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error: any) {
+      console.error('Error loading withdrawals:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری درخواست‌های برداشت',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadWithdrawals();
   }, [currentPage, itemsPerPage, statusFilter, searchQuery]);
 
@@ -322,18 +322,7 @@ export default function Withdrawals() {
         title: 'موفقیت',
         description: 'درخواست برداشت با موفقیت تأیید شد.',
       });
-      // Reload withdrawals
-      const response = await adminApi.getWithdrawals({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
-        setWithdrawals(transformedWithdrawals);
-      }
+      await loadWithdrawals();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -350,22 +339,51 @@ export default function Withdrawals() {
         title: 'موفقیت',
         description: 'درخواست برداشت با موفقیت رد شد.',
       });
-      // Reload withdrawals
-      const response = await adminApi.getWithdrawals({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
-        setWithdrawals(transformedWithdrawals);
-      }
+      await loadWithdrawals();
     } catch (error: any) {
       toast({
         title: 'خطا',
         description: error.message || 'خطا در رد درخواست برداشت',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleProcessWithdrawal = async (withdrawalId: string) => {
+    try {
+      await adminApi.updateWithdrawalStatus(parseInt(withdrawalId), { 
+        status: 'processing',
+        admin_notes: 'در حال پردازش'
+      });
+      toast({
+        title: 'موفقیت',
+        description: 'درخواست برداشت در حال پردازش است.',
+      });
+      await loadWithdrawals();
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تغییر وضعیت به پردازش',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCompleteWithdrawal = async (withdrawalId: string) => {
+    try {
+      await adminApi.updateWithdrawalStatus(parseInt(withdrawalId), { 
+        status: 'completed',
+        admin_notes: 'تکمیل شده'
+      });
+      toast({
+        title: 'موفقیت',
+        description: 'درخواست برداشت با موفقیت تکمیل شد.',
+      });
+      await loadWithdrawals();
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تکمیل درخواست برداشت',
         variant: 'destructive',
       });
     }
@@ -411,17 +429,7 @@ export default function Withdrawals() {
       }
 
       // Reload withdrawals
-      const response = await adminApi.getWithdrawals({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.withdrawals)) {
-        const withdrawalsData = response.data?.withdrawals || response.withdrawals || response.requests || [];
-        const transformedWithdrawals: Withdrawal[] = withdrawalsData.map(transformWithdrawal);
-        setWithdrawals(transformedWithdrawals);
-      }
+      await loadWithdrawals();
 
       setSelectedWithdrawals([]);
       
@@ -710,7 +718,7 @@ export default function Withdrawals() {
                             {withdrawal.requestedAt || withdrawal.createdAt}
                           </td>
                           <td className="p-4">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 flex-wrap">
                               <Button 
                                 variant="ghost" 
                                 size="icon-sm"
@@ -719,45 +727,76 @@ export default function Withdrawals() {
                               >
                                 <Eye className="w-4 h-4" />
                               </Button>
+                              {/* Pending: approve, reject */}
                               {withdrawal.status === 'pending' && (
+                                <>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon-sm"
+                                    className="text-success hover:bg-success/10"
+                                    onClick={() => handleApproveWithdrawal(withdrawal.id)}
+                                    title="تأیید"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon-sm"
+                                    className="text-destructive hover:bg-destructive/10"
+                                    onClick={() => handleRejectWithdrawal(withdrawal.id, 'رد شده توسط ادمین')}
+                                    title="رد"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </>
+                              )}
+                              {/* Approved: mark as processing */}
+                              {withdrawal.status === 'approved' && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon-sm"
+                                  className="text-info hover:bg-info/10"
+                                  onClick={() => handleProcessWithdrawal(withdrawal.id)}
+                                  title="علامت‌گذاری به عنوان در حال پردازش"
+                                >
+                                  <AlertCircle className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {/* Processing: complete */}
+                              {withdrawal.status === 'processing' && (
                                 <Button 
                                   variant="ghost" 
                                   size="icon-sm"
                                   className="text-success hover:bg-success/10"
-                                  onClick={() => handleApproveWithdrawal(withdrawal.id)}
-                                  title="تأیید"
+                                  onClick={() => handleCompleteWithdrawal(withdrawal.id)}
+                                  title="تکمیل"
                                 >
                                   <CheckCircle className="w-4 h-4" />
                                 </Button>
                               )}
-                              {withdrawal.status === 'pending' && (
+                              {/* Edit button - available for all statuses except completed */}
+                              {withdrawal.status !== 'completed' && (
                                 <Button 
                                   variant="ghost" 
                                   size="icon-sm"
-                                  className="text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleRejectWithdrawal(withdrawal.id, 'رد شده توسط ادمین')}
-                                  title="رد"
+                                  onClick={() => setEditWithdrawal(withdrawal)}
+                                  title="ویرایش"
                                 >
-                                  <XCircle className="w-4 h-4" />
+                                  <Edit className="w-4 h-4" />
                                 </Button>
                               )}
-                              <Button 
-                                variant="ghost" 
-                                size="icon-sm"
-                                onClick={() => setEditWithdrawal(withdrawal)}
-                                title="ویرایش"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon-sm" 
-                                className="text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleteWithdrawal(withdrawal)}
-                                title="حذف"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {/* Delete button - available for pending and rejected */}
+                              {(withdrawal.status === 'pending' || withdrawal.status === 'rejected') && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon-sm" 
+                                  className="text-destructive hover:bg-destructive/10"
+                                  onClick={() => setDeleteWithdrawal(withdrawal)}
+                                  title="حذف"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -868,13 +907,7 @@ export default function Withdrawals() {
         onOpenChange={(open) => !open && setEditWithdrawal(null)}
         withdrawal={editWithdrawal}
         onSuccess={() => {
-          const stored = localStorage.getItem('asll-withdrawals');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setWithdrawals(parsed);
-            } catch {}
-          }
+          loadWithdrawals();
           setEditWithdrawal(null);
         }}
       />

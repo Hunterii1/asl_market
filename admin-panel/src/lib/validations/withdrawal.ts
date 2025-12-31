@@ -15,7 +15,7 @@ export const addWithdrawalSchema = z.object({
   
   accountInfo: z.string().min(1, "اطلاعات حساب الزامی است"),
   
-  status: z.enum(["pending", "processing", "completed", "rejected", "cancelled"], {
+  status: z.enum(["pending", "approved", "processing", "completed", "rejected"], {
     required_error: "وضعیت برداشت را انتخاب کنید",
   }).default("pending"),
   

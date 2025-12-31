@@ -29,7 +29,7 @@ interface WithdrawalData {
   amount: number;
   method: 'bank_transfer' | 'card' | 'wallet' | 'crypto';
   accountInfo: string;
-  status: 'pending' | 'processing' | 'completed' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'processing' | 'completed' | 'rejected';
   description?: string;
   requestedAt?: string;
   createdAt?: string;
@@ -49,6 +49,11 @@ const statusConfig = {
     className: 'bg-warning/10 text-warning border-warning/20',
     icon: Clock,
   },
+  approved: {
+    label: 'تایید شده',
+    className: 'bg-primary/10 text-primary border-primary/20',
+    icon: CheckCircle,
+  },
   processing: {
     label: 'در حال پردازش',
     className: 'bg-info/10 text-info border-info/20',
@@ -62,11 +67,6 @@ const statusConfig = {
   rejected: {
     label: 'رد شده',
     className: 'bg-destructive/10 text-destructive border-destructive/20',
-    icon: XCircle,
-  },
-  cancelled: {
-    label: 'لغو شده',
-    className: 'bg-muted text-muted-foreground border-border',
     icon: XCircle,
   },
 };
