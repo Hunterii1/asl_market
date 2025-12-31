@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,8 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { adminApi } from '@/lib/api/adminApi';
+import { Loader2 } from 'lucide-react';
 import {
   Truck,
   Building2,
@@ -87,9 +90,49 @@ const categoryConfig = {
 };
 
 export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplierDialogProps) {
-  if (!supplier) return null;
+  const [loading, setLoading] = useState(false);
+  const [fullSupplier, setFullSupplier] = useState<SupplierData | null>(supplier);
+  
+  useEffect(() => {
+    const loadSupplierDetails = async () => {
+      if (!supplier || !open) return;
+      
+      try {
+        setLoading(true);
+        const response = await adminApi.getSupplier(parseInt(supplier.id));
+        if (response?.supplier) {
+          const s = response.supplier;
+          setFullSupplier({
+            id: s.id?.toString() || '',
+            name: s.full_name || 'بدون نام',
+            companyName: s.brand_name || '',
+            email: s.user?.email || '',
+            phone: s.mobile || '',
+            address: s.address || '',
+            city: s.city || '',
+            status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
+            rating: s.average_rating || 0,
+            notes: s.admin_notes || '',
+            totalOrders: 0,
+            totalAmount: 0,
+            createdAt: s.created_at || new Date().toISOString(),
+            updatedAt: s.updated_at || new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        console.error('Error loading supplier details:', error);
+        setFullSupplier(supplier);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const StatusIcon = statusConfig[supplier.status].icon;
+    loadSupplierDetails();
+  }, [supplier?.id, open]);
+
+  if (!supplier || !fullSupplier) return null;
+
+  const StatusIcon = statusConfig[fullSupplier.status].icon;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,7 +140,7 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Truck className="w-5 h-5 text-primary" />
-            {supplier.name}
+            {fullSupplier.name}
           </DialogTitle>
           <DialogDescription className="text-right">
             جزئیات کامل تامین‌کننده
@@ -105,35 +148,33 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
         </DialogHeader>
 
         <div className="space-y-6">
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+          {!loading && (
           {/* Header */}
           <Card>
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-foreground mb-2">{supplier.name}</h3>
-                  {supplier.companyName && (
-                    <p className="text-muted-foreground mb-2">{supplier.companyName}</p>
+                  <h3 className="text-xl font-bold text-foreground mb-2">{fullSupplier.name}</h3>
+                  {fullSupplier.companyName && (
+                    <p className="text-muted-foreground mb-2">{fullSupplier.companyName}</p>
                   )}
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className={cn('border-2', statusConfig[supplier.status].className)}
+                      className={cn('border-2', statusConfig[fullSupplier.status].className)}
                     >
                       <StatusIcon className="w-3 h-3 ml-1" />
-                      {statusConfig[supplier.status].label}
+                      {statusConfig[fullSupplier.status].label}
                     </Badge>
-                    {supplier.category && (
-                      <Badge
-                        variant="outline"
-                        className={cn('border-2', categoryConfig[supplier.category].className)}
-                      >
-                        {categoryConfig[supplier.category].label}
-                      </Badge>
-                    )}
-                    {supplier.rating !== undefined && supplier.rating > 0 && (
+                    {fullSupplier.rating !== undefined && fullSupplier.rating > 0 && (
                       <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">
                         <Star className="w-3 h-3 ml-1 fill-warning" />
-                        {supplier.rating.toFixed(1)}
+                        {fullSupplier.rating.toFixed(1)}
                       </Badge>
                     )}
                   </div>
@@ -147,50 +188,33 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">اطلاعات تماس</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {supplier.phone && (
+                {fullSupplier.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تلفن</p>
-                      <p className="text-sm font-medium text-foreground">{supplier.phone}</p>
+                      <p className="text-sm font-medium text-foreground">{fullSupplier.phone}</p>
                     </div>
                   </div>
                 )}
-                {supplier.email && (
+                {fullSupplier.email && (
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">ایمیل</p>
-                      <p className="text-sm font-medium text-foreground">{supplier.email}</p>
+                      <p className="text-sm font-medium text-foreground">{fullSupplier.email}</p>
                     </div>
                   </div>
                 )}
-                {supplier.website && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">وب‌سایت</p>
-                      <a
-                        href={supplier.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline"
-                        dir="ltr"
-                      >
-                        {supplier.website}
-                      </a>
-                    </div>
-                  </div>
-                )}
-                {supplier.address && (
+                {fullSupplier.address && (
                   <div className="flex items-start gap-2 sm:col-span-2">
                     <MapPin className="w-4 h-4 text-muted-foreground mt-1" />
                     <div>
                       <p className="text-xs text-muted-foreground">آدرس</p>
-                      <p className="text-sm font-medium text-foreground">{supplier.address}</p>
-                      {(supplier.city || supplier.country || supplier.postalCode) && (
+                      <p className="text-sm font-medium text-foreground">{fullSupplier.address}</p>
+                      {fullSupplier.city && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {[supplier.city, supplier.country, supplier.postalCode].filter(Boolean).join(' - ')}
+                          {fullSupplier.city}
                         </p>
                       )}
                     </div>
@@ -200,99 +224,34 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
             </CardContent>
           </Card>
 
-          {/* Contact Person */}
-          {(supplier.contactPerson || supplier.contactPhone || supplier.contactEmail) && (
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5 text-primary" />
-                  شخص تماس
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {supplier.contactPerson && (
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">نام</p>
-                        <p className="text-sm font-medium text-foreground">{supplier.contactPerson}</p>
-                      </div>
-                    </div>
-                  )}
-                  {supplier.contactPhone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">تلفن</p>
-                        <p className="text-sm font-medium text-foreground">{supplier.contactPhone}</p>
-                      </div>
-                    </div>
-                  )}
-                  {supplier.contactEmail && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">ایمیل</p>
-                        <p className="text-sm font-medium text-foreground">{supplier.contactEmail}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Statistics */}
+          {fullSupplier.rating !== undefined && fullSupplier.rating > 0 && (
           <Card>
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">آمار</h4>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Package className="w-4 h-4" />
-                    سفارشات
+                    <Star className="w-4 h-4" />
+                    امتیاز
                   </div>
-                  <p className="text-xl font-bold text-foreground">{supplier.totalOrders.toLocaleString('fa-IR')}</p>
+                  <p className="text-xl font-bold text-foreground">{fullSupplier.rating.toFixed(1)}</p>
                 </div>
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <DollarSign className="w-4 h-4" />
-                    مجموع مبلغ
-                  </div>
-                  <p className="text-xl font-bold text-foreground">
-                    {supplier.totalAmount.toLocaleString('fa-IR')} تومان
-                  </p>
-                </div>
-                {supplier.rating !== undefined && (
-                  <div className="bg-muted/50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Star className="w-4 h-4" />
-                      امتیاز
-                    </div>
-                    <p className="text-xl font-bold text-foreground">{supplier.rating.toFixed(1)}</p>
-                  </div>
-                )}
-                {supplier.taxId && (
-                  <div className="bg-muted/50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <FileText className="w-4 h-4" />
-                      شناسه مالیاتی
-                    </div>
-                    <p className="text-xl font-bold text-foreground">{supplier.taxId}</p>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
+          )}
 
           {/* Notes */}
-          {supplier.notes && (
+          {fullSupplier.notes && (
             <Card>
               <CardContent className="p-6">
                 <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-primary" />
-                  یادداشت
+                  یادداشت ادمین
                 </h4>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{supplier.notes}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{fullSupplier.notes}</p>
               </CardContent>
             </Card>
           )}
@@ -302,21 +261,21 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">زمان‌بندی</h4>
               <div className="grid grid-cols-2 gap-4">
-                {supplier.createdAt && (
+                {fullSupplier.createdAt && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
-                      <p className="text-sm font-medium text-foreground">{supplier.createdAt}</p>
+                      <p className="text-sm font-medium text-foreground">{new Date(fullSupplier.createdAt).toLocaleDateString('fa-IR')}</p>
                     </div>
                   </div>
                 )}
-                {supplier.updatedAt && (
+                {fullSupplier.updatedAt && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">آخرین بروزرسانی</p>
-                      <p className="text-sm font-medium text-foreground">{supplier.updatedAt}</p>
+                      <p className="text-sm font-medium text-foreground">{new Date(fullSupplier.updatedAt).toLocaleDateString('fa-IR')}</p>
                     </div>
                   </div>
                 )}

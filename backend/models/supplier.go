@@ -214,6 +214,12 @@ func GetSupplierByUserID(db *gorm.DB, userID uint) (*Supplier, error) {
 	return &supplier, err
 }
 
+func GetSupplierByID(db *gorm.DB, id uint) (*Supplier, error) {
+	var supplier Supplier
+	err := db.Preload("User").Preload("Products").Where("id = ?", id).First(&supplier).Error
+	return &supplier, err
+}
+
 func GetApprovedSuppliers(db *gorm.DB) ([]Supplier, error) {
 	var suppliers []Supplier
 	err := db.Preload("User").Preload("Products").Where("status = ?", "approved").Order("is_featured DESC, created_at DESC").Find(&suppliers).Error

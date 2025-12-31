@@ -137,6 +137,9 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 		// Admin supplier management routes
 		protected.GET("/admin/suppliers", controllers.GetSuppliersForAdmin)
+		protected.GET("/admin/suppliers/:id", controllers.GetSupplierForAdmin)
+		protected.PUT("/admin/suppliers/:id", controllers.UpdateSupplierForAdmin)
+		protected.DELETE("/admin/suppliers/:id", controllers.DeleteSupplierForAdmin)
 		protected.POST("/admin/suppliers/:id/approve", controllers.ApproveSupplier)
 		protected.POST("/admin/suppliers/:id/reject", controllers.RejectSupplier)
 

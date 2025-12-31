@@ -1,12 +1,14 @@
 package controllers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"asl-market-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // RegisterSupplier handles supplier registration
@@ -512,5 +514,328 @@ func DeleteMySupplier(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "اطلاعات تأمین‌کننده با موفقیت حذف شد",
+	})
+}
+
+// GetSupplierForAdmin returns a single supplier by ID (admin only)
+func GetSupplierForAdmin(c *gin.Context) {
+	supplierIDStr := c.Param("id")
+	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		return
+	}
+
+	supplier, err := models.GetSupplierByID(models.GetDB(), uint(supplierID))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "تأمین‌کننده یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات تأمین‌کننده"})
+		}
+		return
+	}
+
+	// Calculate average rating
+	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), supplier.UserID)
+	displayRating := avgRating
+	if supplier.IsFeatured {
+		displayRating = 5.0
+	}
+
+	// Load products
+	var products []models.SupplierProduct
+	models.GetDB().Where("supplier_id = ?", supplier.ID).Find(&products)
+
+	var productsResponse []models.SupplierProductResponse
+	for _, product := range products {
+		var productImages []string
+		var packagingImages []string
+		var processVideos []string
+
+		if product.ProductImages != "" {
+			json.Unmarshal([]byte(product.ProductImages), &productImages)
+		}
+		if product.PackagingImages != "" {
+			json.Unmarshal([]byte(product.PackagingImages), &packagingImages)
+		}
+		if product.ProcessVideos != "" {
+			json.Unmarshal([]byte(product.ProcessVideos), &processVideos)
+		}
+
+		productsResponse = append(productsResponse, models.SupplierProductResponse{
+			ID:                   product.ID,
+			ProductName:          product.ProductName,
+			ProductType:          product.ProductType,
+			Description:          product.Description,
+			NeedsExportLicense:   product.NeedsExportLicense,
+			RequiredLicenseType:  product.RequiredLicenseType,
+			MonthlyProductionMin: product.MonthlyProductionMin,
+			ProductImages:        productImages,
+			PackagingImages:      packagingImages,
+			ProcessVideos:        processVideos,
+			CreatedAt:            product.CreatedAt,
+		})
+	}
+
+	response := models.SupplierResponse{
+		ID:                       supplier.ID,
+		UserID:                   supplier.UserID,
+		FullName:                 supplier.FullName,
+		Mobile:                   supplier.Mobile,
+		BrandName:                supplier.BrandName,
+		ImageURL:                 supplier.ImageURL,
+		City:                     supplier.City,
+		Address:                  supplier.Address,
+		HasRegisteredBusiness:    supplier.HasRegisteredBusiness,
+		BusinessRegistrationNum:  supplier.BusinessRegistrationNum,
+		HasExportExperience:      supplier.HasExportExperience,
+		ExportPrice:              supplier.ExportPrice,
+		WholesaleMinPrice:        supplier.WholesaleMinPrice,
+		WholesaleHighVolumePrice: supplier.WholesaleHighVolumePrice,
+		CanProducePrivateLabel:   supplier.CanProducePrivateLabel,
+		Status:                   supplier.Status,
+		AdminNotes:               supplier.AdminNotes,
+		ApprovedAt:               supplier.ApprovedAt,
+		IsFeatured:               supplier.IsFeatured,
+		FeaturedAt:               supplier.FeaturedAt,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
+		CreatedAt:                supplier.CreatedAt,
+		Products:                 productsResponse,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"supplier": response,
+	})
+}
+
+// UpdateSupplierForAdmin updates a supplier by ID (admin only)
+func UpdateSupplierForAdmin(c *gin.Context) {
+	supplierIDStr := c.Param("id")
+	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		return
+	}
+
+	// Check if supplier exists
+	supplier, err := models.GetSupplierByID(models.GetDB(), uint(supplierID))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "تأمین‌کننده یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات تأمین‌کننده"})
+		}
+		return
+	}
+
+	var req struct {
+		FullName                 *string `json:"full_name"`
+		Mobile                   *string `json:"mobile"`
+		BrandName                *string `json:"brand_name"`
+		ImageURL                 *string `json:"image_url"`
+		City                     *string `json:"city"`
+		Address                  *string `json:"address"`
+		HasRegisteredBusiness    *bool   `json:"has_registered_business"`
+		BusinessRegistrationNum  *string `json:"business_registration_num"`
+		HasExportExperience      *bool   `json:"has_export_experience"`
+		ExportPrice              *string `json:"export_price"`
+		WholesaleMinPrice        *string `json:"wholesale_min_price"`
+		WholesaleHighVolumePrice *string `json:"wholesale_high_volume_price"`
+		CanProducePrivateLabel   *bool   `json:"can_produce_private_label"`
+		Status                   *string `json:"status"`
+		AdminNotes               *string `json:"admin_notes"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+	if req.FullName != nil {
+		updates["full_name"] = *req.FullName
+	}
+	if req.Mobile != nil {
+		updates["mobile"] = *req.Mobile
+	}
+	if req.BrandName != nil {
+		updates["brand_name"] = *req.BrandName
+	}
+	if req.ImageURL != nil {
+		updates["image_url"] = *req.ImageURL
+	}
+	if req.City != nil {
+		updates["city"] = *req.City
+	}
+	if req.Address != nil {
+		updates["address"] = *req.Address
+	}
+	if req.HasRegisteredBusiness != nil {
+		updates["has_registered_business"] = *req.HasRegisteredBusiness
+	}
+	if req.BusinessRegistrationNum != nil {
+		updates["business_registration_num"] = *req.BusinessRegistrationNum
+	}
+	if req.HasExportExperience != nil {
+		updates["has_export_experience"] = *req.HasExportExperience
+	}
+	if req.ExportPrice != nil {
+		updates["export_price"] = *req.ExportPrice
+	}
+	if req.WholesaleMinPrice != nil {
+		updates["wholesale_min_price"] = *req.WholesaleMinPrice
+	}
+	if req.WholesaleHighVolumePrice != nil {
+		updates["wholesale_high_volume_price"] = *req.WholesaleHighVolumePrice
+	}
+	if req.CanProducePrivateLabel != nil {
+		updates["can_produce_private_label"] = *req.CanProducePrivateLabel
+	}
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+	if req.AdminNotes != nil {
+		updates["admin_notes"] = *req.AdminNotes
+	}
+
+	err = models.GetDB().Model(&models.Supplier{}).Where("id = ?", supplier.ID).Updates(updates).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی اطلاعات تأمین‌کننده"})
+		return
+	}
+
+	// Get updated supplier
+	updatedSupplier, err := models.GetSupplierByID(models.GetDB(), uint(supplierID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات به‌روزرسانی شده"})
+		return
+	}
+
+	// Calculate average rating
+	avgRating, totalRatings, _ := models.GetAverageRatingForUser(models.GetDB(), updatedSupplier.UserID)
+	displayRating := avgRating
+	if updatedSupplier.IsFeatured {
+		displayRating = 5.0
+	}
+
+	// Load products
+	var products []models.SupplierProduct
+	models.GetDB().Where("supplier_id = ?", updatedSupplier.ID).Find(&products)
+
+	var productsResponse []models.SupplierProductResponse
+	for _, product := range products {
+		var productImages []string
+		var packagingImages []string
+		var processVideos []string
+
+		if product.ProductImages != "" {
+			json.Unmarshal([]byte(product.ProductImages), &productImages)
+		}
+		if product.PackagingImages != "" {
+			json.Unmarshal([]byte(product.PackagingImages), &packagingImages)
+		}
+		if product.ProcessVideos != "" {
+			json.Unmarshal([]byte(product.ProcessVideos), &processVideos)
+		}
+
+		productsResponse = append(productsResponse, models.SupplierProductResponse{
+			ID:                   product.ID,
+			ProductName:          product.ProductName,
+			ProductType:          product.ProductType,
+			Description:          product.Description,
+			NeedsExportLicense:   product.NeedsExportLicense,
+			RequiredLicenseType:  product.RequiredLicenseType,
+			MonthlyProductionMin: product.MonthlyProductionMin,
+			ProductImages:        productImages,
+			PackagingImages:      packagingImages,
+			ProcessVideos:        processVideos,
+			CreatedAt:            product.CreatedAt,
+		})
+	}
+
+	response := models.SupplierResponse{
+		ID:                       updatedSupplier.ID,
+		UserID:                   updatedSupplier.UserID,
+		FullName:                 updatedSupplier.FullName,
+		Mobile:                   updatedSupplier.Mobile,
+		BrandName:                updatedSupplier.BrandName,
+		ImageURL:                 updatedSupplier.ImageURL,
+		City:                     updatedSupplier.City,
+		Address:                  updatedSupplier.Address,
+		HasRegisteredBusiness:    updatedSupplier.HasRegisteredBusiness,
+		BusinessRegistrationNum:  updatedSupplier.BusinessRegistrationNum,
+		HasExportExperience:      updatedSupplier.HasExportExperience,
+		ExportPrice:              updatedSupplier.ExportPrice,
+		WholesaleMinPrice:        updatedSupplier.WholesaleMinPrice,
+		WholesaleHighVolumePrice: updatedSupplier.WholesaleHighVolumePrice,
+		CanProducePrivateLabel:   updatedSupplier.CanProducePrivateLabel,
+		Status:                   updatedSupplier.Status,
+		AdminNotes:               updatedSupplier.AdminNotes,
+		ApprovedAt:               updatedSupplier.ApprovedAt,
+		IsFeatured:               updatedSupplier.IsFeatured,
+		FeaturedAt:               updatedSupplier.FeaturedAt,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
+		CreatedAt:                updatedSupplier.CreatedAt,
+		Products:                 productsResponse,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "اطلاعات تأمین‌کننده با موفقیت به‌روزرسانی شد",
+		"supplier": response,
+	})
+}
+
+// DeleteSupplierForAdmin deletes a supplier by ID (admin only)
+func DeleteSupplierForAdmin(c *gin.Context) {
+	supplierIDStr := c.Param("id")
+	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		return
+	}
+
+	// Check if supplier exists
+	_, err = models.GetSupplierByID(models.GetDB(), uint(supplierID))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "تأمین‌کننده یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات تأمین‌کننده"})
+		}
+		return
+	}
+
+	// Start transaction to delete supplier and related products
+	tx := models.GetDB().Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در شروع تراکنش"})
+		return
+	}
+
+	// Delete related products first (due to foreign key constraints)
+	if err := tx.Where("supplier_id = ?", supplierID).Delete(&models.SupplierProduct{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف محصولات"})
+		return
+	}
+
+	// Delete supplier
+	if err := tx.Delete(&models.Supplier{}, supplierID).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف تأمین‌کننده"})
+		return
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در تأیید تراکنش"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "تأمین‌کننده با موفقیت حذف شد",
 	})
 }

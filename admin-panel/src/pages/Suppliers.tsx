@@ -209,60 +209,61 @@ export default function Suppliers() {
   const [totalSuppliers, setTotalSuppliers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  // Helper function to reload suppliers
+  const reloadSuppliers = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 
+        ? statusFilter[0] === 'active' ? 'approved' 
+          : statusFilter[0] === 'inactive' ? 'pending' 
+          : statusFilter[0] === 'suspended' ? 'rejected' 
+          : 'all'
+        : 'all';
+
+      const response = await adminApi.getSuppliers({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        search: searchQuery || undefined,
+      });
+
+      // Response structure: { suppliers: [...], total: ..., page: ..., per_page: ..., total_pages: ... }
+      const suppliersData = response.suppliers || [];
+      const transformedSuppliers: Supplier[] = suppliersData.map((s: any) => ({
+        id: s.id?.toString() || '',
+        name: s.full_name || 'بدون نام',
+        companyName: s.brand_name || '',
+        email: s.user?.email || '',
+        phone: s.mobile || '',
+        address: s.address || '',
+        city: s.city || '',
+        status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
+        rating: s.average_rating || 0,
+        notes: s.admin_notes || '',
+        totalOrders: 0,
+        totalAmount: 0,
+        createdAt: s.created_at || new Date().toISOString(),
+        updatedAt: s.updated_at || new Date().toISOString(),
+      }));
+
+      setSuppliers(transformedSuppliers);
+      setTotalSuppliers(response.total || 0);
+      setTotalPages(response.total_pages || 1);
+    } catch (error: any) {
+      console.error('Error loading suppliers:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری تأمین‌کنندگان',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load suppliers from API
   useEffect(() => {
-    const loadSuppliers = async () => {
-      try {
-        setLoading(true);
-        const statusFilterValue = statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all';
-
-        const response = await adminApi.getSuppliers({
-          page: currentPage,
-          per_page: itemsPerPage,
-          status: statusFilterValue,
-          search: searchQuery || undefined,
-        });
-
-        if (response && (response.data || response.suppliers)) {
-          const suppliersData = response.data?.suppliers || response.suppliers || [];
-          const transformedSuppliers: Supplier[] = suppliersData.map((s: any) => ({
-            id: s.id?.toString() || s.ID?.toString() || '',
-            name: s.full_name || s.name || 'بدون نام',
-            companyName: s.brand_name || s.company_name,
-            email: s.email || '',
-            phone: s.mobile || s.phone || '',
-            address: s.address || '',
-            city: s.city || '',
-            status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
-            rating: s.average_rating || s.rating || 0,
-            totalOrders: 0,
-            totalAmount: 0,
-            createdAt: s.created_at || new Date().toISOString(),
-            updatedAt: s.updated_at || new Date().toISOString(),
-          }));
-
-          setSuppliers(transformedSuppliers);
-          setTotalSuppliers(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
-        }
-      } catch (error: any) {
-        console.error('Error loading suppliers:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری تأمین‌کنندگان',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSuppliers();
+    reloadSuppliers();
   }, [currentPage, itemsPerPage, statusFilter, searchQuery]);
 
   // Use suppliers directly from API (already filtered and paginated)
@@ -308,37 +309,7 @@ export default function Suppliers() {
         title: 'موفقیت',
         description: 'تأمین‌کننده با موفقیت تأیید شد.',
       });
-      // Reload suppliers
-      const response = await adminApi.getSuppliers({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all',
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.suppliers)) {
-        const suppliersData = response.data?.suppliers || response.suppliers || [];
-        const transformedSuppliers: Supplier[] = suppliersData.map((s: any) => ({
-          id: s.id?.toString() || s.ID?.toString() || '',
-          name: s.full_name || s.name || 'بدون نام',
-          companyName: s.brand_name || s.company_name,
-          email: s.email || '',
-          phone: s.mobile || s.phone || '',
-          address: s.address || '',
-          city: s.city || '',
-          status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
-          rating: s.average_rating || s.rating || 0,
-          totalOrders: 0,
-          totalAmount: 0,
-          createdAt: s.created_at || new Date().toISOString(),
-          updatedAt: s.updated_at || new Date().toISOString(),
-        }));
-        setSuppliers(transformedSuppliers);
-      }
+      await reloadSuppliers();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -355,37 +326,7 @@ export default function Suppliers() {
         title: 'موفقیت',
         description: 'تأمین‌کننده با موفقیت رد شد.',
       });
-      // Reload suppliers
-      const response = await adminApi.getSuppliers({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all',
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.suppliers)) {
-        const suppliersData = response.data?.suppliers || response.suppliers || [];
-        const transformedSuppliers: Supplier[] = suppliersData.map((s: any) => ({
-          id: s.id?.toString() || s.ID?.toString() || '',
-          name: s.full_name || s.name || 'بدون نام',
-          companyName: s.brand_name || s.company_name,
-          email: s.email || '',
-          phone: s.mobile || s.phone || '',
-          address: s.address || '',
-          city: s.city || '',
-          status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
-          rating: s.average_rating || s.rating || 0,
-          totalOrders: 0,
-          totalAmount: 0,
-          createdAt: s.created_at || new Date().toISOString(),
-          updatedAt: s.updated_at || new Date().toISOString(),
-        }));
-        setSuppliers(transformedSuppliers);
-      }
+      await reloadSuppliers();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -401,16 +342,12 @@ export default function Suppliers() {
     setIsDeleting(true);
     try {
       await adminApi.deleteSupplier(parseInt(deleteSupplier.id));
-      
-      setSuppliers(prev => prev.filter(s => s.id !== deleteSupplier.id));
-      setSelectedSuppliers(prev => prev.filter(id => id !== deleteSupplier.id));
       setDeleteSupplier(null);
-      setTotalSuppliers(prev => prev - 1);
-      
       toast({
         title: 'موفقیت',
         description: 'تامین‌کننده با موفقیت حذف شد.',
       });
+      await reloadSuppliers();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -439,39 +376,8 @@ export default function Suppliers() {
         }
       }
 
-      // Reload suppliers
-      const response = await adminApi.getSuppliers({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all',
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.suppliers)) {
-        const suppliersData = response.data?.suppliers || response.suppliers || [];
-        const transformedSuppliers: Supplier[] = suppliersData.map((s: any) => ({
-          id: s.id?.toString() || s.ID?.toString() || '',
-          name: s.full_name || s.name || 'بدون نام',
-          companyName: s.brand_name || s.company_name,
-          email: s.email || '',
-          phone: s.mobile || s.phone || '',
-          address: s.address || '',
-          city: s.city || '',
-          status: s.status === 'approved' ? 'active' : s.status === 'pending' ? 'inactive' : 'suspended',
-          rating: s.average_rating || s.rating || 0,
-          totalOrders: 0,
-          totalAmount: 0,
-          createdAt: s.created_at || new Date().toISOString(),
-          updatedAt: s.updated_at || new Date().toISOString(),
-        }));
-        setSuppliers(transformedSuppliers);
-      }
-
       setSelectedSuppliers([]);
+      await reloadSuppliers();
       
       toast({
         title: 'موفقیت',
@@ -1034,15 +940,9 @@ export default function Suppliers() {
         open={!!editSupplier}
         onOpenChange={(open) => !open && setEditSupplier(null)}
         supplier={editSupplier}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-suppliers');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setSuppliers(parsed);
-            } catch {}
-          }
+        onSuccess={async () => {
           setEditSupplier(null);
+          await reloadSuppliers();
         }}
       />
 

@@ -63,25 +63,7 @@ interface EditSupplierDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updateSupplier = async (data: EditSupplierFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const suppliers = JSON.parse(localStorage.getItem('asll-suppliers') || '[]');
-        const index = suppliers.findIndex((s: Supplier) => s.id === data.id);
-        if (index !== -1) {
-          suppliers[index] = { ...suppliers[index], ...data };
-          suppliers[index].updatedAt = new Date().toLocaleDateString('fa-IR');
-          localStorage.setItem('asll-suppliers', JSON.stringify(suppliers));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
+import { adminApi } from '@/lib/api/adminApi';
 
 export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: EditSupplierDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,7 +127,19 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
   const onSubmit = async (data: EditSupplierFormData) => {
     setIsSubmitting(true);
     try {
-      await updateSupplier(data);
+      // Map frontend form data to backend API format
+      const apiData: any = {};
+      if (data.name) apiData.full_name = data.name;
+      if (data.companyName !== undefined) apiData.brand_name = data.companyName || '';
+      if (data.phone) apiData.mobile = data.phone;
+      if (data.address !== undefined) apiData.address = data.address || '';
+      if (data.city !== undefined) apiData.city = data.city || '';
+      if (data.notes !== undefined) apiData.admin_notes = data.notes || '';
+      if (data.status) {
+        apiData.status = data.status === 'active' ? 'approved' : data.status === 'inactive' ? 'pending' : 'rejected';
+      }
+
+      await adminApi.updateSupplier(parseInt(data.id), apiData);
       toast({
         title: 'موفقیت',
         description: 'اطلاعات تامین‌کننده با موفقیت به‌روزرسانی شد.',
