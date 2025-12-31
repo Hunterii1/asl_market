@@ -187,11 +187,31 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
             </CardContent>
           </Card>
 
-          {/* Dates & Activations */}
+          {/* Admin Information */}
+          {license.admin && (
+            <Card>
+              <CardContent className="p-6 space-y-4">
+                <h4 className="font-semibold text-foreground mb-4">مدیر ایجادکننده</h4>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">مدیر</p>
+                    <p className="font-medium text-foreground">
+                      {license.admin.first_name} {license.admin.last_name}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Dates & Duration */}
           <Card>
             <CardContent className="p-6 space-y-4">
-              <h4 className="font-semibold text-foreground mb-4">زمان‌بندی و فعال‌سازی</h4>
-              <div className="grid grid-cols-2 gap-4">
+              <h4 className="font-semibold text-foreground mb-4">زمان‌بندی و مدت زمان</h4>
+              <div className="grid grid-cols-3 gap-4">
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <Calendar className="w-4 h-4" />
@@ -212,19 +232,10 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                 </div>
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Calendar className="w-4 h-4" />
+                    <Clock className="w-4 h-4" />
                     مدت زمان (ماه)
                   </div>
                   <p className="text-xl font-bold text-foreground">{license.duration}</p>
-                </div>
-                <div className="bg-muted/50 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Calendar className="w-4 h-4" />
-                    تاریخ ایجاد
-                  </div>
-                  <p className="text-lg font-semibold text-foreground">
-                    {new Date(license.created_at).toLocaleDateString('fa-IR')}
-                  </p>
                 </div>
               </div>
             </CardContent>

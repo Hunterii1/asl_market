@@ -90,7 +90,7 @@ const typeConfig = {
 
 
 
-type SortField = 'code' | 'type' | 'is_used' | 'created_at';
+type SortField = 'code' | 'type' | 'is_used';
 type SortOrder = 'asc' | 'desc';
 
 export default function Licenses() {
@@ -100,7 +100,7 @@ export default function Licenses() {
   const [viewLicense, setViewLicense] = useState<License | null>(null);
   const [statusFilter, setStatusFilter] = useState<('used' | 'available')[]>([]);
   const [typeFilter, setTypeFilter] = useState<('pro' | 'plus' | 'plus4')[]>([]);
-  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortField, setSortField] = useState<SortField>('code');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -340,22 +340,13 @@ export default function Licenses() {
                     </th>
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">تاریخ استفاده</th>
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">انقضا</th>
-                    <th className="p-4 text-right">
-                      <button
-                        onClick={() => handleSort('created_at')}
-                        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        تاریخ ایجاد
-                        {getSortIcon('created_at')}
-                      </button>
-                    </th>
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedLicenses.length === 0 ? (
                     <tr>
-                      <td colSpan={9} className="p-12 text-center">
+                      <td colSpan={8} className="p-12 text-center">
                         <div className="flex flex-col items-center gap-2">
                           <KeyIcon className="w-12 h-12 text-muted-foreground" />
                           <p className="text-muted-foreground">هیچ لایسنسی یافت نشد</p>
@@ -433,16 +424,15 @@ export default function Licenses() {
                             {license.expires_at ? new Date(license.expires_at).toLocaleDateString('fa-IR') : '-'}
                           </td>
                           <td className="p-4">
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="ghost" 
-                                size="icon-sm"
-                                onClick={() => setViewLicense(license)}
-                                title="مشاهده جزئیات"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="icon-sm"
+                              onClick={() => setViewLicense(license)}
+                              title="مشاهده جزئیات"
+                              className="h-8 w-8"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
                           </td>
                         </tr>
                       );
