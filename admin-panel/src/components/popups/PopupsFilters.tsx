@@ -15,23 +15,19 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 interface PopupsFiltersProps {
-  statusFilter: ('active' | 'inactive' | 'scheduled')[];
-  onStatusFilterChange: (status: ('active' | 'inactive' | 'scheduled')[]) => void;
-  typeFilter: ('modal' | 'banner' | 'toast' | 'slide_in')[];
-  onTypeFilterChange: (type: ('modal' | 'banner' | 'toast' | 'slide_in')[]) => void;
+  statusFilter: ('active' | 'inactive')[];
+  onStatusFilterChange: (status: ('active' | 'inactive')[]) => void;
   onReset: () => void;
 }
 
 export function PopupsFilters({
   statusFilter,
   onStatusFilterChange,
-  typeFilter,
-  onTypeFilterChange,
   onReset,
 }: PopupsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'active' | 'inactive' | 'scheduled') => {
+  const handleToggleStatus = (status: 'active' | 'inactive') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -39,15 +35,7 @@ export function PopupsFilters({
     }
   };
 
-  const handleToggleType = (type: 'modal' | 'banner' | 'toast' | 'slide_in') => {
-    if (typeFilter.includes(type)) {
-      onTypeFilterChange(typeFilter.filter(t => t !== type));
-    } else {
-      onTypeFilterChange([...typeFilter, type]);
-    }
-  };
-
-  const hasActiveFilters = statusFilter.length > 0 || typeFilter.length > 0;
+  const hasActiveFilters = statusFilter.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -57,7 +45,7 @@ export function PopupsFilters({
           فیلترها
           {hasActiveFilters && (
             <Badge variant="destructive" className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs">
-              {statusFilter.length + typeFilter.length}
+              {statusFilter.length}
             </Badge>
           )}
         </Button>
@@ -78,7 +66,6 @@ export function PopupsFilters({
               {([
                 { value: 'active', label: 'فعال' },
                 { value: 'inactive', label: 'غیرفعال' },
-                { value: 'scheduled', label: 'زمان‌بندی شده' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
@@ -88,35 +75,6 @@ export function PopupsFilters({
                   />
                   <Label
                     htmlFor={`filter-status-${value}`}
-                    className="text-sm font-normal cursor-pointer flex-1"
-                  >
-                    {label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Type Filter */}
-          <div className="space-y-3">
-            <Label className="text-base font-semibold">نوع پاپ‌آپ</Label>
-            <div className="space-y-2">
-              {([
-                { value: 'modal', label: 'Modal (پنجره)' },
-                { value: 'banner', label: 'Banner (بنر)' },
-                { value: 'toast', label: 'Toast (اعلان)' },
-                { value: 'slide_in', label: 'Slide-in (کشویی)' },
-              ] as const).map(({ value, label }) => (
-                <div key={value} className="flex items-center gap-2">
-                  <Checkbox
-                    id={`filter-type-${value}`}
-                    checked={typeFilter.includes(value)}
-                    onCheckedChange={() => handleToggleType(value)}
-                  />
-                  <Label
-                    htmlFor={`filter-type-${value}`}
                     className="text-sm font-normal cursor-pointer flex-1"
                   >
                     {label}
@@ -148,23 +106,8 @@ export function PopupsFilters({
                     <Badge key={status} variant="secondary" className="gap-1">
                       {status === 'active' && 'فعال'}
                       {status === 'inactive' && 'غیرفعال'}
-                      {status === 'scheduled' && 'زمان‌بندی شده'}
                       <button
                         onClick={() => handleToggleStatus(status)}
-                        className="hover:bg-destructive/20 rounded-full p-0.5"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                  {typeFilter.map(type => (
-                    <Badge key={type} variant="secondary" className="gap-1">
-                      {type === 'modal' && 'Modal'}
-                      {type === 'banner' && 'Banner'}
-                      {type === 'toast' && 'Toast'}
-                      {type === 'slide_in' && 'Slide-in'}
-                      <button
-                        onClick={() => handleToggleType(type)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"
                       >
                         <X className="w-3 h-3" />
@@ -204,4 +147,3 @@ export function PopupsFilters({
     </Sheet>
   );
 }
-

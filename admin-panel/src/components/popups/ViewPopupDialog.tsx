@@ -10,50 +10,21 @@ import { Badge } from '@/components/ui/badge';
 import {
   Megaphone,
   FileText,
-  Layout,
   Calendar,
-  Users,
   Link,
-  Palette,
-  Clock,
   CheckCircle,
   XCircle,
-  Calendar as CalendarIcon,
   Eye,
   MousePointerClick,
+  User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface PopupData {
-  id: string;
-  title: string;
-  content: string;
-  type: 'modal' | 'banner' | 'toast' | 'slide_in';
-  position?: 'top' | 'bottom' | 'center' | 'left' | 'right';
-  status: 'active' | 'inactive' | 'scheduled';
-  startDate?: string;
-  endDate?: string;
-  showOnPages?: string[];
-  showToUsers: 'all' | 'logged_in' | 'logged_out' | 'specific';
-  specificUserIds?: string[];
-  buttonText?: string;
-  buttonLink?: string;
-  closeButton: boolean;
-  showDelay?: number;
-  backgroundColor?: string;
-  textColor?: string;
-  width?: number;
-  height?: number;
-  displayCount?: number;
-  clickCount?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { Popup } from '@/types/popup';
 
 interface ViewPopupDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  popup: PopupData | null;
+  popup: Popup | null;
 }
 
 const statusConfig = {
@@ -67,39 +38,17 @@ const statusConfig = {
     className: 'bg-muted text-muted-foreground border-border',
     icon: XCircle,
   },
-  scheduled: {
-    label: 'زمان‌بندی شده',
-    className: 'bg-info/10 text-info border-info/20',
-    icon: CalendarIcon,
-  },
-};
-
-const typeConfig = {
-  modal: { label: 'Modal (پنجره)', className: 'bg-primary/10 text-primary' },
-  banner: { label: 'Banner (بنر)', className: 'bg-info/10 text-info' },
-  toast: { label: 'Toast (اعلان)', className: 'bg-success/10 text-success' },
-  slide_in: { label: 'Slide-in (کشویی)', className: 'bg-warning/10 text-warning' },
-};
-
-const positionConfig = {
-  top: 'بالا',
-  bottom: 'پایین',
-  center: 'وسط',
-  left: 'چپ',
-  right: 'راست',
-};
-
-const showToUsersConfig = {
-  all: 'همه کاربران',
-  logged_in: 'فقط کاربران وارد شده',
-  logged_out: 'فقط کاربران خارج شده',
-  specific: 'کاربران خاص',
 };
 
 export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogProps) {
   if (!popup) return null;
 
-  const StatusIcon = statusConfig[popup.status].icon;
+  const statusKey = popup.is_active ? 'active' : 'inactive';
+  const statusInfo = statusConfig[statusKey];
+  const StatusIcon = statusInfo.icon;
+  const clickRate = popup.show_count > 0 
+    ? ((popup.click_count || 0) / popup.show_count * 100).toFixed(2)
+    : '0.00';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,22 +73,14 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge
                       variant="outline"
-                      className={cn('border-2', statusConfig[popup.status].className)}
+                      className={cn('border-2', statusInfo.className)}
                     >
                       <StatusIcon className="w-3 h-3 ml-1" />
-                      {statusConfig[popup.status].label}
+                      {statusInfo.label}
                     </Badge>
-                    <Badge
-                      variant="outline"
-                      className={cn('border-2', typeConfig[popup.type].className)}
-                    >
-                      {typeConfig[popup.type].label}
+                    <Badge variant="outline" className="bg-muted text-muted-foreground">
+                      اولویت: {popup.priority}
                     </Badge>
-                    {popup.position && (
-                      <Badge variant="outline" className="bg-muted text-muted-foreground">
-                        {positionConfig[popup.position]}
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
@@ -149,27 +90,17 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
           {/* Content Preview */}
           <Card>
             <CardContent className="p-6">
-              <h4 className="font-semibold text-foreground mb-4">پیش‌نمایش محتوا</h4>
-              <div
-                className="rounded-lg p-6 mx-auto border border-border"
-                style={{
-                  backgroundColor: popup.backgroundColor || '#ffffff',
-                  color: popup.textColor || '#000000',
-                  width: popup.width ? `${popup.width}px` : '500px',
-                  minHeight: popup.height ? `${popup.height}px` : '300px',
-                  maxWidth: '100%',
-                }}
-              >
+              <h4 className="font-semibold text-foreground mb-4">محتوا</h4>
+              <div className="rounded-lg p-6 border border-border bg-muted/30">
                 <h3 className="font-bold text-lg mb-2">{popup.title}</h3>
-                <p className="text-sm mb-4 whitespace-pre-wrap">{popup.content}</p>
-                {popup.buttonText && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={(e) => e.preventDefault()}
-                  >
-                    {popup.buttonText}
-                  </Button>
+                <p className="text-sm mb-4 whitespace-pre-wrap">{popup.message}</p>
+                {popup.button_text && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{popup.button_text}</span>
+                    {popup.discount_url && (
+                      <Link className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -178,50 +109,30 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
           {/* Display Settings */}
           <Card>
             <CardContent className="p-6">
-              <h4 className="font-semibold text-foreground mb-4">تنظیمات نمایش</h4>
+              <h4 className="font-semibold text-foreground mb-4">تنظیمات</h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-xs text-muted-foreground">نمایش به</p>
-                    <p className="text-sm font-medium text-foreground">
-                      {showToUsersConfig[popup.showToUsers]}
-                    </p>
-                  </div>
-                </div>
-                {popup.showDelay !== undefined && (
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">تاخیر نمایش</p>
-                      <p className="text-sm font-medium text-foreground">
-                        {popup.showDelay} ثانیه
-                      </p>
-                    </div>
-                  </div>
-                )}
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <div>
-                    <p className="text-xs text-muted-foreground">دکمه بستن</p>
+                    <p className="text-xs text-muted-foreground">متن دکمه</p>
                     <p className="text-sm font-medium text-foreground">
-                      {popup.closeButton ? 'فعال' : 'غیرفعال'}
+                      {popup.button_text || 'تعریف نشده'}
                     </p>
                   </div>
                 </div>
-                {popup.buttonLink && (
+                {popup.discount_url && (
                   <div className="flex items-center gap-2">
                     <Link className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="text-xs text-muted-foreground">لینک دکمه</p>
+                      <p className="text-xs text-muted-foreground">لینک</p>
                       <a
-                        href={popup.buttonLink}
+                        href={popup.discount_url}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-medium text-primary hover:underline break-all"
                         dir="ltr"
                       >
-                        {popup.buttonLink}
+                        {popup.discount_url}
                       </a>
                     </div>
                   </div>
@@ -241,7 +152,7 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
                     تعداد نمایش
                   </div>
                   <p className="text-xl font-bold text-foreground">
-                    {(popup.displayCount || 0).toLocaleString('fa-IR')}
+                    {(popup.show_count || 0).toLocaleString('fa-IR')}
                   </p>
                 </div>
                 <div className="bg-muted/50 rounded-xl p-4">
@@ -250,86 +161,18 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
                     تعداد کلیک
                   </div>
                   <p className="text-xl font-bold text-foreground">
-                    {(popup.clickCount || 0).toLocaleString('fa-IR')}
+                    {(popup.click_count || 0).toLocaleString('fa-IR')}
                   </p>
                 </div>
               </div>
-              {popup.displayCount && popup.displayCount > 0 && (
+              {popup.show_count > 0 && (
                 <div className="mt-4">
                   <p className="text-xs text-muted-foreground mb-1">نرخ کلیک:</p>
                   <p className="text-lg font-bold text-primary">
-                    {((popup.clickCount || 0) / popup.displayCount * 100).toFixed(2)}%
+                    {clickRate}%
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
-          {/* Design Settings */}
-          <Card>
-            <CardContent className="p-6">
-              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Palette className="w-5 h-5 text-primary" />
-                تنظیمات طراحی
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                {popup.backgroundColor && (
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">رنگ پس‌زمینه</p>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-6 h-6 rounded border border-border"
-                          style={{ backgroundColor: popup.backgroundColor }}
-                        />
-                        <p className="text-sm font-medium text-foreground font-mono" dir="ltr">
-                          {popup.backgroundColor}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {popup.textColor && (
-                  <div className="flex items-center gap-2">
-                    <Palette className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">رنگ متن</p>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-6 h-6 rounded border border-border"
-                          style={{ backgroundColor: popup.textColor }}
-                        />
-                        <p className="text-sm font-medium text-foreground font-mono" dir="ltr">
-                          {popup.textColor}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {popup.width && (
-                  <div className="flex items-center gap-2">
-                    <Layout className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">عرض</p>
-                      <p className="text-sm font-medium text-foreground">
-                        {popup.width} پیکسل
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {popup.height && (
-                  <div className="flex items-center gap-2">
-                    <Layout className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">ارتفاع</p>
-                      <p className="text-sm font-medium text-foreground">
-                        {popup.height} پیکسل
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
             </CardContent>
           </Card>
 
@@ -338,48 +181,73 @@ export function ViewPopupDialog({ open, onOpenChange, popup }: ViewPopupDialogPr
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">زمان‌بندی</h4>
               <div className="grid grid-cols-2 gap-4">
-                {popup.startDate && (
+                {popup.start_date && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ شروع</p>
-                      <p className="text-sm font-medium text-foreground">{popup.startDate}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(popup.start_date).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}
-                {popup.endDate && (
+                {popup.end_date && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ پایان</p>
-                      <p className="text-sm font-medium text-foreground">{popup.endDate}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(popup.end_date).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}
-                {popup.createdAt && (
+                {popup.created_at && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
-                      <p className="text-sm font-medium text-foreground">{popup.createdAt}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(popup.created_at).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}
-                {popup.updatedAt && (
+                {popup.updated_at && (
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">آخرین بروزرسانی</p>
-                      <p className="text-sm font-medium text-foreground">{popup.updatedAt}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(popup.updated_at).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Added By */}
+          {popup.added_by && (
+            <Card>
+              <CardContent className="p-6">
+                <h4 className="font-semibold text-foreground mb-4">ایجاد شده توسط</h4>
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {popup.added_by.first_name} {popup.added_by.last_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{popup.added_by.email}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
-

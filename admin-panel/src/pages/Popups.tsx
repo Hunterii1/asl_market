@@ -17,13 +17,8 @@ import {
   Megaphone as MegaphoneIcon,
   CheckCircle,
   XCircle,
-  Calendar as CalendarIcon,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   Eye as EyeIcon,
   MousePointerClick,
-  Layout,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -40,117 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface Popup {
-  id: string;
-  title: string;
-  content: string;
-  type: 'modal' | 'banner' | 'toast' | 'slide_in';
-  position?: 'top' | 'bottom' | 'center' | 'left' | 'right';
-  status: 'active' | 'inactive' | 'scheduled';
-  startDate?: string;
-  endDate?: string;
-  showOnPages?: string[];
-  showToUsers: 'all' | 'logged_in' | 'logged_out' | 'specific';
-  specificUserIds?: string[];
-  buttonText?: string;
-  buttonLink?: string;
-  closeButton: boolean;
-  showDelay?: number;
-  backgroundColor?: string;
-  textColor?: string;
-  width?: number;
-  height?: number;
-  displayCount?: number;
-  clickCount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// داده‌های اولیه
-const initialPopups: Popup[] = [
-  {
-    id: '1',
-    title: 'تخفیف ویژه ۵۰٪',
-    content: 'از تخفیف ویژه ما استفاده کنید و تا ۵۰٪ تخفیف بگیرید!',
-    type: 'modal',
-    position: 'center',
-    status: 'active',
-    buttonText: 'مشاهده محصولات',
-    buttonLink: 'https://example.com/products',
-    closeButton: true,
-    showDelay: 3,
-    backgroundColor: '#ffffff',
-    textColor: '#000000',
-    width: 500,
-    height: 300,
-    displayCount: 1250,
-    clickCount: 234,
-    showToUsers: 'all',
-    createdAt: '۱۴۰۳/۰۹/۱۵',
-    updatedAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '2',
-    title: 'خوش آمدید',
-    content: 'به فروشگاه ما خوش آمدید!',
-    type: 'banner',
-    position: 'top',
-    status: 'active',
-    closeButton: true,
-    showDelay: 0,
-    backgroundColor: '#3b82f6',
-    textColor: '#ffffff',
-    width: 1000,
-    height: 100,
-    displayCount: 3450,
-    clickCount: 0,
-    showToUsers: 'all',
-    createdAt: '۱۴۰۳/۰۹/۱۴',
-    updatedAt: '۱۴۰۳/۰۹/۱۹',
-  },
-  {
-    id: '3',
-    title: 'اعلان جدید',
-    content: 'محصول جدید اضافه شد!',
-    type: 'toast',
-    position: 'top',
-    status: 'inactive',
-    closeButton: true,
-    showDelay: 2,
-    backgroundColor: '#10b981',
-    textColor: '#ffffff',
-    width: 400,
-    height: 80,
-    displayCount: 890,
-    clickCount: 45,
-    showToUsers: 'logged_in',
-    createdAt: '۱۴۰۳/۰۹/۱۲',
-    updatedAt: '۱۴۰۳/۰۹/۱۸',
-  },
-  {
-    id: '4',
-    title: 'پیشنهاد ویژه',
-    content: 'پیشنهاد ویژه برای شما!',
-    type: 'slide_in',
-    position: 'right',
-    status: 'scheduled',
-    startDate: '2024-01-01T00:00:00',
-    endDate: '2024-12-31T23:59:59',
-    buttonText: 'خرید',
-    buttonLink: 'https://example.com/checkout',
-    closeButton: true,
-    showDelay: 5,
-    backgroundColor: '#f59e0b',
-    textColor: '#ffffff',
-    width: 350,
-    height: 200,
-    displayCount: 0,
-    clickCount: 0,
-    showToUsers: 'all',
-    createdAt: '۱۴۰۳/۰۹/۱۰',
-    updatedAt: '۱۴۰۳/۰۹/۱۷',
-  },
-];
+import { Popup } from '@/types/popup';
 
 const statusConfig: Record<string, { label: string; className: string; icon: any }> = {
   active: {
@@ -163,22 +48,8 @@ const statusConfig: Record<string, { label: string; className: string; icon: any
     className: 'bg-muted text-muted-foreground',
     icon: XCircle,
   },
-  scheduled: {
-    label: 'زمان‌بندی شده',
-    className: 'bg-info/10 text-info',
-    icon: CalendarIcon,
-  },
 };
 
-const typeConfig: Record<string, { label: string; className: string }> = {
-  modal: { label: 'Modal', className: 'bg-primary/10 text-primary' },
-  banner: { label: 'Banner', className: 'bg-info/10 text-info' },
-  toast: { label: 'Toast', className: 'bg-success/10 text-success' },
-  slide_in: { label: 'Slide-in', className: 'bg-warning/10 text-warning' },
-};
-
-type SortField = 'title' | 'type' | 'status' | 'displayCount' | 'clickCount' | 'createdAt';
-type SortOrder = 'asc' | 'desc';
 
 export default function Popups() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -188,10 +59,7 @@ export default function Popups() {
   const [editPopup, setEditPopup] = useState<Popup | null>(null);
   const [deletePopup, setDeletePopup] = useState<Popup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive' | 'scheduled')[]>([]);
-  const [typeFilter, setTypeFilter] = useState<('modal' | 'banner' | 'toast' | 'slide_in')[]>([]);
-  const [sortField, setSortField] = useState<SortField>('createdAt');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive')[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [popups, setPopups] = useState<Popup[]>([]);
@@ -200,62 +68,33 @@ export default function Popups() {
   const [totalPages, setTotalPages] = useState(0);
 
   // Load popups from API
-  useEffect(() => {
-    const loadPopups = async () => {
-      try {
-        setLoading(true);
-        const response = await adminApi.getPopups({
-          page: currentPage,
-          per_page: itemsPerPage,
-          active_only: statusFilter.length === 1 && statusFilter[0] === 'active',
-        });
+  const loadPopups = async () => {
+    try {
+      setLoading(true);
+      const response = await adminApi.getPopups({
+        page: currentPage,
+        per_page: itemsPerPage,
+        active_only: statusFilter.length === 1 && statusFilter[0] === 'active',
+      });
 
-        if (response) {
-          // Backend returns: { popups: [], total: 0, page: 1, per_page: 10, total_pages: 0 }
-          // Or wrapped in: { data: { popups: [], total: 0, ... } }
-          const popupsData = response.data?.popups || response.popups || [];
-          const transformedPopups: Popup[] = popupsData.map((p: any) => ({
-            id: p.id?.toString() || p.ID?.toString() || '',
-            title: p.title || 'بدون عنوان',
-            content: p.content || p.message || '',
-            type: p.type || 'modal',
-            position: p.position || 'center',
-            status: p.is_active ? 'active' : 'inactive',
-            startDate: p.start_date || p.startDate || undefined,
-            endDate: p.end_date || p.endDate || undefined,
-            showOnPages: p.show_on_pages || p.showOnPages || [],
-            showToUsers: p.show_to_users || p.showToUsers || 'all',
-            specificUserIds: p.specific_user_ids || p.specificUserIds || [],
-            buttonText: p.button_text || p.buttonText || undefined,
-            buttonLink: p.button_link || p.buttonLink || p.discount_url || undefined,
-            closeButton: p.close_button !== undefined ? p.close_button : true,
-            showDelay: p.show_delay || p.showDelay || 0,
-            backgroundColor: p.background_color || p.backgroundColor || undefined,
-            textColor: p.text_color || p.textColor || undefined,
-            width: p.width || undefined,
-            height: p.height || undefined,
-            displayCount: p.display_count || p.displayCount || p.show_count || 0,
-            clickCount: p.click_count || p.clickCount || 0,
-            createdAt: p.created_at ? new Date(p.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-            updatedAt: p.updated_at ? new Date(p.updated_at).toLocaleDateString('fa-IR') : (p.created_at ? new Date(p.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR')),
-          }));
-
-          setPopups(transformedPopups);
-          setTotalPopups(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
-        }
-      } catch (error: any) {
-        console.error('Error loading popups:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری پاپ‌آپ‌ها',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
+      if (response && response.popups) {
+        setPopups(response.popups);
+        setTotalPopups(response.total || 0);
+        setTotalPages(response.total_pages || 1);
       }
-    };
+    } catch (error: any) {
+      console.error('Error loading popups:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری پاپ‌آپ‌ها',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadPopups();
   }, [currentPage, itemsPerPage, statusFilter]);
 
@@ -269,13 +108,7 @@ export default function Popups() {
   }, [totalPages, currentPage]);
 
   const handlePopupAdded = () => {
-    const stored = localStorage.getItem('asll-popups');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setPopups(parsed);
-      } catch {}
-    }
+    loadPopups();
   };
 
   const toggleSelectPopup = (popupId: string) => {
@@ -286,26 +119,14 @@ export default function Popups() {
     );
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
   const handleDeletePopup = async () => {
     if (!deletePopup) return;
     
     setIsDeleting(true);
     try {
-      await adminApi.deletePopup(parseInt(deletePopup.id));
-      
-      setPopups(prev => prev.filter(p => p.id !== deletePopup.id));
-      setSelectedPopups(prev => prev.filter(id => id !== deletePopup.id));
+      await adminApi.deletePopup(deletePopup.id);
       setDeletePopup(null);
-      setTotalPopups(prev => prev - 1);
+      await loadPopups();
       
       toast({
         title: 'موفقیت',
@@ -326,55 +147,18 @@ export default function Popups() {
     if (selectedPopups.length === 0) return;
 
     try {
-      for (const popupId of selectedPopups) {
+      for (const popupIdStr of selectedPopups) {
+        const popupId = parseInt(popupIdStr);
         if (action === 'delete') {
-          await adminApi.deletePopup(parseInt(popupId));
+          await adminApi.deletePopup(popupId);
         } else {
-          const popup = popups.find(p => p.id === popupId);
-          if (popup) {
-            await adminApi.updatePopup(parseInt(popupId), {
-              is_active: action === 'activate',
-            });
-          }
+          await adminApi.updatePopup(popupId, {
+            is_active: action === 'activate',
+          });
         }
       }
 
-      // Reload popups
-      const response = await adminApi.getPopups({
-        page: currentPage,
-        per_page: itemsPerPage,
-        active_only: statusFilter.length === 1 && statusFilter[0] === 'active',
-      });
-      if (response && (response.data || response.popups)) {
-        const popupsData = response.data?.popups || response.popups || [];
-        const transformedPopups: Popup[] = popupsData.map((p: any) => ({
-          id: p.id?.toString() || p.ID?.toString() || '',
-          title: p.title || 'بدون عنوان',
-          content: p.content || p.message || '',
-          type: p.type || 'modal',
-          position: p.position || 'center',
-          status: p.is_active ? 'active' : 'inactive',
-          startDate: p.start_date || p.startDate || undefined,
-          endDate: p.end_date || p.endDate || undefined,
-          showOnPages: p.show_on_pages || p.showOnPages || [],
-          showToUsers: p.show_to_users || p.showToUsers || 'all',
-          specificUserIds: p.specific_user_ids || p.specificUserIds || [],
-          buttonText: p.button_text || p.buttonText || undefined,
-          buttonLink: p.button_link || p.buttonLink || undefined,
-          closeButton: p.close_button !== undefined ? p.close_button : true,
-          showDelay: p.show_delay || p.showDelay || 0,
-          backgroundColor: p.background_color || p.backgroundColor || undefined,
-          textColor: p.text_color || p.textColor || undefined,
-          width: p.width || undefined,
-          height: p.height || undefined,
-          displayCount: p.display_count || p.displayCount || 0,
-          clickCount: p.click_count || p.clickCount || 0,
-          createdAt: p.created_at || new Date().toISOString(),
-          updatedAt: p.updated_at || p.created_at || new Date().toISOString(),
-        }));
-        setPopups(transformedPopups);
-      }
-
+      await loadPopups();
       setSelectedPopups([]);
       
       toast({
@@ -392,19 +176,8 @@ export default function Popups() {
 
   const handleResetFilters = () => {
     setStatusFilter([]);
-    setTypeFilter([]);
   };
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="w-4 h-4 text-muted-foreground" />;
-    }
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="w-4 h-4 text-primary" />
-    ) : (
-      <ArrowDown className="w-4 h-4 text-primary" />
-    );
-  };
 
   return (
     <AdminLayout>
@@ -446,12 +219,10 @@ export default function Popups() {
                 <PopupsFilters
                   statusFilter={statusFilter}
                   onStatusFilterChange={setStatusFilter}
-                  typeFilter={typeFilter}
-                  onTypeFilterChange={setTypeFilter}
                   onReset={handleResetFilters}
                 />
               </div>
-              {(statusFilter.length > 0 || typeFilter.length > 0) && (
+              {statusFilter.length > 0 && (
                 <div className="flex items-center justify-end">
                   <Button
                     variant="ghost"
@@ -542,7 +313,7 @@ export default function Popups() {
                           checked={selectedPopups.length === paginatedPopups.length && paginatedPopups.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedPopups(paginatedPopups.map(p => p.id));
+                              setSelectedPopups(paginatedPopups.map(p => p.id.toString()));
                             } else {
                               setSelectedPopups([]);
                             }
@@ -550,78 +321,31 @@ export default function Popups() {
                           className="w-4 h-4 rounded border-border"
                         />
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('title')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          عنوان
-                          {getSortIcon('title')}
-                        </button>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                        عنوان
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('type')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          نوع
-                          {getSortIcon('type')}
-                        </button>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                        وضعیت
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('status')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          وضعیت
-                          {getSortIcon('status')}
-                        </button>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                        اولویت
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('displayCount')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          نمایش
-                          {getSortIcon('displayCount')}
-                        </button>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                        نمایش
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('clickCount')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          کلیک
-                          {getSortIcon('clickCount')}
-                        </button>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">
+                        کلیک
                       </th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedPopups.map((popup, index) => {
-                      // Safe access to statusConfig with fallback
-                      const statusKey = (popup.status && ['active', 'inactive', 'scheduled'].includes(popup.status)) 
-                        ? popup.status as 'active' | 'inactive' | 'scheduled'
-                        : 'inactive';
-                      const statusInfo = statusConfig[statusKey] || {
-                        label: popup.status || 'نامشخص',
-                        className: 'bg-muted text-muted-foreground',
-                        icon: XCircle,
-                      };
-                      
-                      // Safe access to typeConfig with fallback
-                      const typeKey = (popup.type && ['modal', 'banner', 'toast', 'slide_in'].includes(popup.type))
-                        ? popup.type as 'modal' | 'banner' | 'toast' | 'slide_in'
-                        : 'modal';
-                      const typeInfo = typeConfig[typeKey] || {
-                        label: popup.type || 'نامشخص',
-                        className: 'bg-muted text-muted-foreground',
-                      };
-                      
-                      const StatusIcon = statusInfo.icon || XCircle;
-                      const clickRate = popup.displayCount > 0 
-                        ? ((popup.clickCount || 0) / popup.displayCount * 100).toFixed(2)
+                      const statusKey = popup.is_active ? 'active' : 'inactive';
+                      const statusInfo = statusConfig[statusKey];
+                      const StatusIcon = statusInfo.icon;
+                      const clickRate = popup.show_count > 0 
+                        ? ((popup.click_count || 0) / popup.show_count * 100).toFixed(2)
                         : '0.00';
                       return (
                         <tr
@@ -632,8 +356,8 @@ export default function Popups() {
                           <td className="p-4">
                             <input
                               type="checkbox"
-                              checked={selectedPopups.includes(popup.id)}
-                              onChange={() => toggleSelectPopup(popup.id)}
+                              checked={selectedPopups.includes(popup.id.toString())}
+                              onChange={() => toggleSelectPopup(popup.id.toString())}
                               className="w-4 h-4 rounded border-border"
                             />
                           </td>
@@ -641,33 +365,29 @@ export default function Popups() {
                             <div>
                               <p className="font-medium text-foreground">{popup.title}</p>
                               <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                                {popup.content}
+                                {popup.message}
                               </p>
                             </div>
                           </td>
                           <td className="p-4">
                             <Badge
                               variant="outline"
-                              className={cn('text-xs', typeInfo?.className || 'bg-muted text-muted-foreground')}
+                              className={cn('text-xs', statusInfo.className)}
                             >
-                              <Layout className="w-3 h-3 ml-1" />
-                              {typeInfo?.label || popup.type}
+                              <StatusIcon className="w-3 h-3 ml-1" />
+                              {statusInfo.label}
                             </Badge>
                           </td>
                           <td className="p-4">
-                            <Badge
-                              variant="outline"
-                              className={cn('text-xs', statusInfo?.className || 'bg-muted text-muted-foreground')}
-                            >
-                              <StatusIcon className="w-3 h-3 ml-1" />
-                              {statusInfo?.label || popup.status}
-                            </Badge>
+                            <span className="text-sm font-medium text-foreground">
+                              {popup.priority}
+                            </span>
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1">
                               <EyeIcon className="w-3 h-3 text-muted-foreground" />
                               <span className="text-sm font-medium text-foreground">
-                                {(popup.displayCount || 0).toLocaleString('fa-IR')}
+                                {(popup.show_count || 0).toLocaleString('fa-IR')}
                               </span>
                             </div>
                           </td>
@@ -676,7 +396,7 @@ export default function Popups() {
                               <div className="flex items-center gap-1">
                                 <MousePointerClick className="w-3 h-3 text-muted-foreground" />
                                 <span className="text-sm font-medium text-foreground">
-                                  {(popup.clickCount || 0).toLocaleString('fa-IR')}
+                                  {(popup.click_count || 0).toLocaleString('fa-IR')}
                                 </span>
                               </div>
                               <span className="text-xs text-muted-foreground">
@@ -821,13 +541,7 @@ export default function Popups() {
         onOpenChange={(open) => !open && setEditPopup(null)}
         popup={editPopup}
         onSuccess={() => {
-          const stored = localStorage.getItem('asll-popups');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setPopups(parsed);
-            } catch {}
-          }
+          loadPopups();
           setEditPopup(null);
         }}
       />
@@ -836,7 +550,7 @@ export default function Popups() {
       <DeletePopupDialog
         open={!!deletePopup}
         onOpenChange={(open) => !open && setDeletePopup(null)}
-        popup={deletePopup}
+        popup={deletePopup ? { id: deletePopup.id.toString(), title: deletePopup.title } : null}
         onConfirm={handleDeletePopup}
         isDeleting={isDeleting}
       />

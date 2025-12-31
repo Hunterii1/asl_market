@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Megaphone, FileText, Layout, Calendar, Users, Link, Palette, Clock } from 'lucide-react';
+import { Loader2, Megaphone, FileText, Calendar, Link, CheckCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -13,13 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -31,35 +24,10 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { editPopupSchema, type EditPopupFormData } from '@/lib/validations/popup';
 import { toast } from '@/hooks/use-toast';
-
-interface Popup {
-  id: string;
-  title: string;
-  content: string;
-  type: 'modal' | 'banner' | 'toast' | 'slide_in';
-  position?: 'top' | 'bottom' | 'center' | 'left' | 'right';
-  status: 'active' | 'inactive' | 'scheduled';
-  startDate?: string;
-  endDate?: string;
-  showOnPages?: string[];
-  showToUsers: 'all' | 'logged_in' | 'logged_out' | 'specific';
-  specificUserIds?: string[];
-  buttonText?: string;
-  buttonLink?: string;
-  closeButton: boolean;
-  showDelay?: number;
-  backgroundColor?: string;
-  textColor?: string;
-  width?: number;
-  height?: number;
-  displayCount?: number;
-  clickCount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Popup } from '@/types/popup';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface EditPopupDialogProps {
   open: boolean;
@@ -68,54 +36,21 @@ interface EditPopupDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updatePopup = async (data: EditPopupFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const popups = JSON.parse(localStorage.getItem('asll-popups') || '[]');
-        const index = popups.findIndex((p: Popup) => p.id === data.id);
-        if (index !== -1) {
-          popups[index] = { ...popups[index], ...data };
-          popups[index].updatedAt = new Date().toLocaleDateString('fa-IR');
-          localStorage.setItem('asll-popups', JSON.stringify(popups));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
-
 export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPopupDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTab, setCurrentTab] = useState('basic');
 
   const form = useForm<EditPopupFormData>({
     resolver: zodResolver(editPopupSchema),
     defaultValues: {
-      id: '',
+      id: 0,
       title: '',
-      content: '',
-      type: 'modal',
-      position: 'center',
-      status: 'inactive',
-      startDate: '',
-      endDate: '',
-      showOnPages: [],
-      showToUsers: 'all',
-      specificUserIds: [],
-      buttonText: '',
-      buttonLink: '',
-      closeButton: true,
-      showDelay: 0,
-      backgroundColor: '#ffffff',
-      textColor: '#000000',
-      width: 500,
-      height: 300,
-      displayCount: 0,
-      clickCount: 0,
+      message: '',
+      discount_url: '',
+      button_text: '',
+      is_active: true,
+      start_date: '',
+      end_date: '',
+      priority: 1,
     },
   });
 
@@ -125,37 +60,38 @@ export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPo
       form.reset({
         id: popup.id,
         title: popup.title,
-        content: popup.content,
-        type: popup.type,
-        position: popup.position || 'center',
-        status: popup.status,
-        startDate: popup.startDate || '',
-        endDate: popup.endDate || '',
-        showOnPages: popup.showOnPages || [],
-        showToUsers: popup.showToUsers,
-        specificUserIds: popup.specificUserIds || [],
-        buttonText: popup.buttonText || '',
-        buttonLink: popup.buttonLink || '',
-        closeButton: popup.closeButton,
-        showDelay: popup.showDelay || 0,
-        backgroundColor: popup.backgroundColor || '#ffffff',
-        textColor: popup.textColor || '#000000',
-        width: popup.width || 500,
-        height: popup.height || 300,
-        displayCount: popup.displayCount || 0,
-        clickCount: popup.clickCount || 0,
+        message: popup.message,
+        discount_url: popup.discount_url || '',
+        button_text: popup.button_text || '',
+        is_active: popup.is_active,
+        start_date: popup.start_date ? new Date(popup.start_date).toISOString().slice(0, 16) : '',
+        end_date: popup.end_date ? new Date(popup.end_date).toISOString().slice(0, 16) : '',
+        priority: popup.priority || 1,
       });
-      setCurrentTab('basic');
     }
   }, [popup, open, form]);
-
-  const { watch } = form;
-  const type = watch('type');
 
   const onSubmit = async (data: EditPopupFormData) => {
     setIsSubmitting(true);
     try {
-      await updatePopup(data);
+      // Transform data for backend
+      const payload: any = {
+        title: data.title,
+        message: data.message,
+        discount_url: data.discount_url || '',
+        button_text: data.button_text || '',
+        is_active: data.is_active,
+        priority: data.priority,
+      };
+
+      if (data.start_date) {
+        payload.start_date = new Date(data.start_date).toISOString();
+      }
+      if (data.end_date) {
+        payload.end_date = new Date(data.end_date).toISOString();
+      }
+
+      await adminApi.updatePopup(data.id, payload);
       toast({
         title: 'موفقیت',
         description: 'اطلاعات پاپ‌آپ با موفقیت به‌روزرسانی شد.',
@@ -178,7 +114,6 @@ export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPo
     if (!isSubmitting) {
       if (!newOpen) {
         form.reset();
-        setCurrentTab('basic');
       }
       onOpenChange(newOpen);
     }
@@ -188,7 +123,7 @@ export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPo
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Megaphone className="w-5 h-5 text-primary" />
@@ -201,453 +136,197 @@ export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPo
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">اطلاعات پایه</TabsTrigger>
-                <TabsTrigger value="display">نمایش</TabsTrigger>
-                <TabsTrigger value="design">طراحی</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        عنوان *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={isSubmitting}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {field.value?.length || 0} / 200 کاراکتر
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>محتوا *</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          className="min-h-[150px]"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {field.value?.length || 0} / 5000 کاراکتر
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Layout className="w-4 h-4 text-muted-foreground" />
-                          نوع پاپ‌آپ *
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isSubmitting}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-right">
-                              <SelectValue placeholder="نوع را انتخاب کنید" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="modal">Modal (پنجره)</SelectItem>
-                            <SelectItem value="banner">Banner (بنر)</SelectItem>
-                            <SelectItem value="toast">Toast (اعلان)</SelectItem>
-                            <SelectItem value="slide_in">Slide-in (کشویی)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {type !== 'modal' && (
-                    <FormField
-                      control={form.control}
-                      name="position"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>موقعیت نمایش</FormLabel>
-                          <Select
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            disabled={isSubmitting}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="text-right">
-                                <SelectValue placeholder="موقعیت را انتخاب کنید" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="top">بالا</SelectItem>
-                              <SelectItem value="bottom">پایین</SelectItem>
-                              <SelectItem value="left">چپ</SelectItem>
-                              <SelectItem value="right">راست</SelectItem>
-                              <SelectItem value="center">وسط</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+            {/* Title */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    عنوان *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right"
                     />
-                  )}
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0} / 255 کاراکتر
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>وضعیت</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isSubmitting}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-right">
-                              <SelectValue placeholder="وضعیت را انتخاب کنید" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="active">فعال</SelectItem>
-                            <SelectItem value="inactive">غیرفعال</SelectItem>
-                            <SelectItem value="scheduled">زمان‌بندی شده</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+            {/* Message */}
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>محتوا *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      className="min-h-[150px]"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0} / 5000 کاراکتر
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="startDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          تاریخ شروع
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            {...field}
-                            disabled={isSubmitting}
-                            className="text-right"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="endDate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-muted-foreground" />
-                          تاریخ پایان
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="datetime-local"
-                            {...field}
-                            disabled={isSubmitting}
-                            className="text-right"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="display" className="space-y-4 mt-4">
-                <FormField
-                  control={form.control}
-                  name="showToUsers"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        نمایش به کاربران
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Button Text */}
+              <FormField
+                control={form.control}
+                name="button_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>متن دکمه</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="مثال: مشاهده تخفیف"
+                        {...field}
                         disabled={isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="text-right">
-                            <SelectValue placeholder="نوع کاربران را انتخاب کنید" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="all">همه کاربران</SelectItem>
-                          <SelectItem value="logged_in">فقط کاربران وارد شده</SelectItem>
-                          <SelectItem value="logged_out">فقط کاربران خارج شده</SelectItem>
-                          <SelectItem value="specific">کاربران خاص</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="showDelay"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        تاخیر نمایش (ثانیه)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          disabled={isSubmitting}
-                          className="text-right"
-                          min="0"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* Discount URL */}
+              <FormField
+                control={form.control}
+                name="discount_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Link className="w-4 h-4 text-muted-foreground" />
+                      آدرس لینک
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://example.com"
+                        {...field}
+                        disabled={isSubmitting}
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="closeButton"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="closeButton"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
-                        <Label htmlFor="closeButton" className="cursor-pointer">
-                          نمایش دکمه بستن
-                        </Label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Start Date */}
+              <FormField
+                control={form.control}
+                name="start_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      تاریخ شروع
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="buttonText"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>متن دکمه</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={isSubmitting}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              {/* End Date */}
+              <FormField
+                control={form.control}
+                name="end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      تاریخ پایان
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <FormField
-                  control={form.control}
-                  name="buttonLink"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Link className="w-4 h-4 text-muted-foreground" />
-                        آدرس دکمه
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={isSubmitting}
-                          dir="ltr"
-                          className="text-left"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Priority */}
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اولویت</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="1"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                        disabled={isSubmitting}
+                        className="text-right"
+                        min="1"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      عدد بالاتر = اولویت بیشتر
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <TabsContent value="design" className="space-y-4 mt-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="backgroundColor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-muted-foreground" />
-                          رنگ پس‌زمینه
-                        </FormLabel>
-                        <FormControl>
-                          <div className="flex gap-2">
-                            <Input
-                              type="color"
-                              {...field}
-                              disabled={isSubmitting}
-                              className="w-16 h-10"
-                            />
-                            <Input
-                              {...field}
-                              disabled={isSubmitting}
-                              dir="ltr"
-                              className="text-left flex-1"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="textColor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Palette className="w-4 h-4 text-muted-foreground" />
-                          رنگ متن
-                        </FormLabel>
-                        <FormControl>
-                          <div className="flex gap-2">
-                            <Input
-                              type="color"
-                              {...field}
-                              disabled={isSubmitting}
-                              className="w-16 h-10"
-                            />
-                            <Input
-                              {...field}
-                              disabled={isSubmitting}
-                              dir="ltr"
-                              className="text-left flex-1"
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="width"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>عرض (پیکسل)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 500)}
-                            disabled={isSubmitting}
-                            className="text-right"
-                            min="100"
-                            max="2000"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="height"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ارتفاع (پیکسل)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 300)}
-                            disabled={isSubmitting}
-                            className="text-right"
-                            min="100"
-                            max="2000"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Preview */}
-                <div className="border border-border rounded-lg p-4 bg-muted/30">
-                  <Label className="text-sm font-semibold mb-2 block">پیش‌نمایش</Label>
-                  <div
-                    className="rounded-lg p-4 mx-auto"
-                    style={{
-                      backgroundColor: watch('backgroundColor') || '#ffffff',
-                      color: watch('textColor') || '#000000',
-                      width: `${watch('width') || 500}px`,
-                      minHeight: `${watch('height') || 300}px`,
-                      maxWidth: '100%',
-                    }}
-                  >
-                    <h3 className="font-bold text-lg mb-2">{watch('title') || 'عنوان پاپ‌آپ'}</h3>
-                    <p className="text-sm mb-4">{watch('content') || 'محتوا...'}</p>
-                    {watch('buttonText') && (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="mt-2"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        {watch('buttonText')}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+              {/* Is Active */}
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2 pt-8">
+                      <Checkbox
+                        id="is_active"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
+                      <Label htmlFor="is_active" className="cursor-pointer flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-success" />
+                        پاپ‌آپ فعال است
+                      </Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="gap-2 sm:gap-0 flex-row-reverse">
               <Button
@@ -682,4 +361,3 @@ export function EditPopupDialog({ open, onOpenChange, popup, onSuccess }: EditPo
     </Dialog>
   );
 }
-
