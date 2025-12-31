@@ -76,6 +76,13 @@ func AuthMiddleware() gin.HandlerFunc {
 		c.Set("user_email", claims.Email)
 		c.Set("user", user)
 
+		// Set user_role based on IsAdmin flag
+		if user.IsAdmin {
+			c.Set("user_role", "admin")
+		} else {
+			c.Set("user_role", "user")
+		}
+
 		c.Next()
 	}
 }
@@ -101,6 +108,13 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 						c.Set("user_id", claims.UserID)
 						c.Set("user_email", claims.Email)
 						c.Set("user", user)
+
+						// Set user_role based on IsAdmin flag
+						if user.IsAdmin {
+							c.Set("user_role", "admin")
+						} else {
+							c.Set("user_role", "user")
+						}
 					}
 				}
 			}

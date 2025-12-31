@@ -303,3 +303,14 @@ func DeleteVisitorByUserID(db *gorm.DB, userID uint) error {
 	// Delete the visitor (soft delete with GORM)
 	return db.Delete(&visitor).Error
 }
+
+// DeleteVisitorByID deletes a visitor by ID (admin only)
+func DeleteVisitorByID(db *gorm.DB, visitorID uint) error {
+	var visitor Visitor
+	if err := db.Where("id = ?", visitorID).First(&visitor).Error; err != nil {
+		return err
+	}
+
+	// Delete the visitor (soft delete with GORM)
+	return db.Delete(&visitor).Error
+}

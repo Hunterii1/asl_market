@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"asl-market-backend/models"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 // RegisterVisitor handles visitor registration
@@ -260,6 +262,13 @@ func GetApprovedVisitors(c *gin.Context) {
 
 // GetVisitorsForAdmin returns paginated list of visitors for admin panel
 func GetVisitorsForAdmin(c *gin.Context) {
+	// Check if user is admin
+	userRole, exists := c.Get("user_role")
+	if !exists || userRole != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
 	// Parse query parameters
 	status := c.DefaultQuery("status", "all")
 	pageStr := c.DefaultQuery("page", "1")
@@ -591,6 +600,13 @@ func UpdateVisitorStatus(c *gin.Context) {
 
 // UpdateVisitorByAdmin allows admin to update visitor information
 func UpdateVisitorByAdmin(c *gin.Context) {
+	// Check if user is admin
+	userRole, exists := c.Get("user_role")
+	if !exists || userRole != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
@@ -839,5 +855,36 @@ func DeleteMyVisitor(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "اطلاعات ویزیتور با موفقیت حذف شد",
+	})
+}
+
+// DeleteVisitorByAdmin deletes a visitor by ID (admin only)
+func DeleteVisitorByAdmin(c *gin.Context) {
+	// Check if user is admin
+	userRole, exists := c.Get("user_role")
+	if !exists || userRole != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	visitorIDStr := c.Param("id")
+	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		return
+	}
+
+	err = models.DeleteVisitorByID(models.GetDB(), uint(visitorID))
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "ویزیتور یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف ویزیتور"})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ویزیتور با موفقیت حذف شد",
 	})
 }

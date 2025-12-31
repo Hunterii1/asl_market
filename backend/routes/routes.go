@@ -161,6 +161,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/visitors/:id/reject", controllers.RejectVisitorByAdmin)
 		protected.PUT("/admin/visitors/:id/status", controllers.UpdateVisitorStatus)
 		protected.PUT("/admin/visitors/:id", controllers.UpdateVisitorByAdmin)
+		protected.DELETE("/admin/visitors/:id", controllers.DeleteVisitorByAdmin)
 
 		// Research products routes (public access)
 		protected.GET("/research-products", controllers.GetResearchProducts)
