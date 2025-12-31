@@ -154,6 +154,7 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
             </div>
           )}
           {!loading && (
+            <>
           {/* Header */}
           <Card>
             <CardContent className="p-6">
@@ -282,6 +283,8 @@ export function ViewSupplierDialog({ open, onOpenChange, supplier }: ViewSupplie
               </div>
             </CardContent>
           </Card>
+          </>
+          )}
         </div>
       </DialogContent>
     </Dialog>
