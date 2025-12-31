@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-// Schema برای ورود (پشتیبانی از ایمیل، نام کاربری یا آیدی تلگرام)
+// Schema برای ورود (با نام کاربری)
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, "ایمیل، نام کاربری یا آیدی تلگرام الزامی است"),
+    .min(1, "نام کاربری الزامی است"),
   password: z
     .string()
     .min(1, "رمز عبور الزامی است")

@@ -194,6 +194,14 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
             'w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10',
             collapsed ? 'justify-center' : 'justify-start'
           )}
+          onClick={async () => {
+            if (confirm('آیا از خروج اطمینان دارید؟')) {
+              const { logout, clearSession } = await import('@/lib/utils/auth');
+              await logout();
+              clearSession();
+              window.location.href = '/login';
+            }
+          }}
         >
           <LogOut className="w-5 h-5" />
           {!collapsed && <span>خروج</span>}

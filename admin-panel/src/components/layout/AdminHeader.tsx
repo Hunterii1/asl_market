@@ -1,19 +1,10 @@
-import { Moon, Sun, Menu, User, LogOut } from 'lucide-react';
+import { Moon, Sun, Menu, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { cn } from '@/lib/utils';
 import { SearchBox } from '@/components/header/SearchBox';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
-import { getCurrentUser, logout, clearSession } from '@/lib/utils/auth';
+import { logout, clearSession } from '@/lib/utils/auth';
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
@@ -22,7 +13,6 @@ interface AdminHeaderProps {
 export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
-  const currentUser = getCurrentUser();
 
   return (
     <header
@@ -71,46 +61,20 @@ export function AdminHeader({ onMenuClick }: AdminHeaderProps) {
         </Button>
 
         {/* User Menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-primary-foreground">
-                  <User className="w-4 h-4" />
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56 rounded-2xl">
-            <DropdownMenuLabel>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{currentUser?.name || 'مدیر سیستم'}</p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {currentUser?.email || 'admin@example.com'}
-                </p>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate('/admins')}>
-              <User className="w-4 h-4 ml-2" />
-              پروفایل
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              onClick={async () => {
-                if (confirm('آیا از خروج اطمینان دارید؟')) {
-                  await logout();
-                  clearSession();
-                  navigate('/login', { replace: true });
-                }
-              }}
-            >
-              <LogOut className="w-4 h-4 ml-2" />
-              خروج
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          onClick={async () => {
+            if (confirm('آیا از خروج اطمینان دارید؟')) {
+              await logout();
+              clearSession();
+              navigate('/login', { replace: true });
+            }
+          }}
+        >
+          <LogOut className="w-5 h-5" />
+        </Button>
       </div>
     </header>
   );

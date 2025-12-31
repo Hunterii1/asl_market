@@ -113,37 +113,24 @@ export function getAuthToken(): string | null {
 /**
  * Login function - connects to real backend API
  */
-export async function login(email: string, password: string, rememberMe: boolean = false): Promise<{ user: AdminUser; token: string }> {
+export async function login(username: string, password: string, rememberMe: boolean = false): Promise<{ user: AdminUser; token: string }> {
   try {
     // Import adminApi dynamically to avoid circular dependencies
     const { adminApi } = await import('../api/adminApi');
     
-    // Support login with telegram_id (username can be telegram_id)
-    // Try login with email/username first, if fails, try as telegram_id
-    let response;
-    try {
-      response = await adminApi.login(email, password);
-    } catch (error) {
-      // If login fails, try with telegram_id as both username and password
-      const telegramId = email.trim();
-      if (/^\d+$/.test(telegramId)) {
-        // If email looks like a number (telegram_id), try login with telegram_id/telegram_id
-        response = await adminApi.login(telegramId, telegramId);
-      } else {
-        throw error; // Re-throw original error
-      }
-    }
+    // Login only with username
+    const response = await adminApi.login(username, password);
     
     // Transform backend user to AdminUser format
-    const username = response.user?.username || response.user?.telegram_id?.toString() || email;
-    const isAlireza = username.toLowerCase() === 'alireza';
+    const userUsername = response.user?.username || response.user?.telegram_id?.toString() || username;
+    const isAlireza = userUsername.toLowerCase() === 'alireza';
     const isSuperAdmin = response.user?.is_admin || response.user?.role === 'super_admin' || isAlireza;
     
     const user: AdminUser = {
       id: response.user?.id?.toString() || response.user?.ID?.toString() || '0',
       name: response.user?.name || `${response.user?.first_name || ''} ${response.user?.last_name || ''}`.trim() || 'مدیر',
-      email: response.user?.email || email,
-      username: username,
+      email: response.user?.email || '',
+      username: userUsername,
       role: isAlireza ? 'super_admin' : (response.user?.role || (isSuperAdmin ? 'super_admin' : 'admin')),
       permissions: isAlireza ? ['all'] : (response.user?.permissions || (isSuperAdmin ? ['all'] : [])),
       lastLogin: new Date().toLocaleDateString('fa-IR'),
@@ -151,7 +138,7 @@ export async function login(email: string, password: string, rememberMe: boolean
 
     return { user, token: response.token };
   } catch (error: any) {
-    throw new Error(error.message || 'ایمیل یا رمز عبور اشتباه است');
+    throw new Error(error.message || 'نام کاربری یا رمز عبور اشتباه است');
   }
 }
 
@@ -166,6 +153,10 @@ export async function logout(): Promise<void> {
     console.error('Error during logout:', error);
   } finally {
     clearSession();
+  }
+  // Redirect to login page
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
   }
 }
 

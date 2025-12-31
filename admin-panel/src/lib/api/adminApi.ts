@@ -98,20 +98,12 @@ class AdminApiService {
   }
 
   // ==================== Authentication ====================
-  async login(emailOrUsername: string, password: string): Promise<{ user: any; token: string }> {
-    // Support login with email, username, or telegram_id
-    const payload: { email?: string; username?: string; password: string } = {
+  async login(username: string, password: string): Promise<{ user: any; token: string }> {
+    // Login only with username
+    const payload: { username: string; password: string } = {
+      username,
       password,
     };
-    
-    // Check if it's a telegram_id (numeric string)
-    if (/^\d+$/.test(emailOrUsername)) {
-      payload.username = emailOrUsername;
-    } else if (emailOrUsername.includes('@')) {
-      payload.email = emailOrUsername;
-    } else {
-      payload.username = emailOrUsername;
-    }
     
     const data = await this.makeRequest(`${API_BASE_URL}/auth/login`, {
       method: 'POST',
@@ -134,6 +126,7 @@ class AdminApiService {
 
   logout() {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('asll-session');
   }
 
   isAuthenticated(): boolean {

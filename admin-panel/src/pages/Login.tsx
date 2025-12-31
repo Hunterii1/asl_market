@@ -84,7 +84,7 @@ export default function Login() {
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl text-center">ورود</CardTitle>
             <CardDescription className="text-center">
-              ایمیل و رمز عبور خود را وارد کنید
+              نام کاربری و رمز عبور خود را وارد کنید
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -98,12 +98,12 @@ export default function Login() {
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-muted-foreground" />
-                        ایمیل یا نام کاربری
+                        نام کاربری
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="text"
-                          placeholder="admin@example.com یا admin"
+                          placeholder="نام کاربری"
                           {...field}
                           disabled={isSubmitting}
                           className="h-12 text-right"

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Bell, FileText, AlertCircle, Users, Calendar, Link, CheckCircle } from 'lucide-react';
+import { Loader2, Bell, FileText, AlertCircle, Users, Calendar, CheckCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -56,8 +56,6 @@ export function EditNotificationDialog({ open, onOpenChange, notification, onSuc
       priority: 'normal',
       user_id: null,
       expires_at: '',
-      action_url: '',
-      action_text: '',
       is_active: true,
     },
   });
@@ -73,8 +71,6 @@ export function EditNotificationDialog({ open, onOpenChange, notification, onSuc
         priority: notification.priority,
         user_id: notification.user_id,
         expires_at: notification.expires_at ? new Date(notification.expires_at).toISOString().slice(0, 16) : '',
-        action_url: notification.action_url || '',
-        action_text: notification.action_text || '',
         is_active: notification.is_active,
       });
     }
@@ -91,8 +87,6 @@ export function EditNotificationDialog({ open, onOpenChange, notification, onSuc
       if (data.type !== undefined) payload.type = data.type;
       if (data.priority !== undefined) payload.priority = data.priority;
       if (data.is_active !== undefined) payload.is_active = data.is_active;
-      if (data.action_url !== undefined) payload.action_url = data.action_url || '';
-      if (data.action_text !== undefined) payload.action_text = data.action_text || '';
       
       if (data.user_id !== undefined) {
         payload.user_id = data.user_id;
@@ -290,52 +284,6 @@ export function EditNotificationDialog({ open, onOpenChange, notification, onSuc
                 </FormItem>
               )}
             />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Action URL */}
-              <FormField
-                control={form.control}
-                name="action_url"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Link className="w-4 h-4 text-muted-foreground" />
-                      آدرس لینک
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="https://example.com"
-                        {...field}
-                        disabled={isSubmitting}
-                        dir="ltr"
-                        className="text-left"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Action Text */}
-              <FormField
-                control={form.control}
-                name="action_text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>متن دکمه</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="مثال: مشاهده"
-                        {...field}
-                        disabled={isSubmitting}
-                        className="text-right"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Expires At */}
