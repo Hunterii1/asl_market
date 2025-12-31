@@ -23,7 +23,6 @@ import {
   ArrowDown,
   Star,
   Package,
-  DollarSign,
   Mail,
   Phone,
 } from 'lucide-react';
@@ -187,7 +186,7 @@ const categoryConfig = {
   other: { label: 'سایر', className: 'bg-muted text-muted-foreground' },
 };
 
-type SortField = 'name' | 'category' | 'status' | 'totalOrders' | 'totalAmount' | 'rating' | 'createdAt';
+type SortField = 'name' | 'category' | 'status' | 'totalOrders' | 'rating' | 'createdAt';
 type SortOrder = 'asc' | 'desc';
 
 export default function Suppliers() {
@@ -602,15 +601,6 @@ export default function Suppliers() {
                           {getSortIcon('totalOrders')}
                         </button>
                       </th>
-                      <th className="p-4 text-right">
-                        <button
-                          onClick={() => handleSort('totalAmount')}
-                          className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                          مجموع مبلغ
-                          {getSortIcon('totalAmount')}
-                        </button>
-                      </th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
                     </tr>
                   </thead>
@@ -679,14 +669,6 @@ export default function Suppliers() {
                               <Package className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm font-medium text-foreground">
                                 {supplier.totalOrders.toLocaleString('fa-IR')}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-4 h-4 text-muted-foreground" />
-                              <span className="text-sm font-medium text-foreground">
-                                {supplier.totalAmount.toLocaleString('fa-IR')} تومان
                               </span>
                             </div>
                           </td>
