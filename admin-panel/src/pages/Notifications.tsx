@@ -59,6 +59,7 @@ const typeConfig: Record<string, { label: string; className: string }> = {
   warning: { label: 'هشدار', className: 'bg-warning/10 text-warning' },
   success: { label: 'موفقیت', className: 'bg-success/10 text-success' },
   error: { label: 'خطا', className: 'bg-destructive/10 text-destructive' },
+  matching: { label: 'Matching', className: 'bg-purple-500/10 text-purple-500' },
 };
 
 const priorityConfig: Record<string, { label: string; className: string }> = {
@@ -105,14 +106,15 @@ export default function Notifications() {
         type: typeFilterValue,
       });
 
-      if (response && response.success) {
-        // Backend returns: { success: true, data: { notifications: [], total: 0, ... } }
-        const data = response.data;
-        const notificationsData = data?.notifications || [];
+      // handleResponse returns data.data, so response is already the data object
+      // Backend returns: { success: true, data: { notifications: [], total: 0, ... } }
+      // After handleResponse: { notifications: [], total: 0, ... }
+      if (response) {
+        const notificationsData = response?.notifications || [];
         
         setNotifications(notificationsData);
-        setTotalNotifications(data?.total || 0);
-        setTotalPages(data?.total_pages || 1);
+        setTotalNotifications(response?.total || 0);
+        setTotalPages(response?.total_pages || 1);
       }
     } catch (error: any) {
       console.error('Error loading notifications:', error);

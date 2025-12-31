@@ -12,7 +12,7 @@ export const addNotificationSchema = z.object({
     .min(10, "محتوا باید حداقل ۱۰ کاراکتر باشد")
     .max(5000, "محتوا نمی‌تواند بیشتر از ۵۰۰۰ کاراکتر باشد"),
 
-  type: z.enum(["info", "warning", "success", "error"], {
+  type: z.enum(["info", "warning", "success", "error", "matching"], {
     required_error: "نوع اعلان را انتخاب کنید",
   }).default("info"),
 
@@ -64,7 +64,7 @@ export const editNotificationSchema = z.object({
     .max(5000, "محتوا نمی‌تواند بیشتر از ۵۰۰۰ کاراکتر باشد")
     .optional(),
 
-  type: z.enum(["info", "warning", "success", "error"]).optional(),
+  type: z.enum(["info", "warning", "success", "error", "matching"]).optional(),
 
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 

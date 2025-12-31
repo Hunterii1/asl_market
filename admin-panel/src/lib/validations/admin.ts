@@ -55,11 +55,14 @@ export const addAdminSchema = z.object({
   if (data.telegram_id) {
     return true; // telegram_id provided, username and password will be set automatically
   }
-  // If no telegram_id, username and password are required
-  return !!(data.username && data.password);
+  // If no telegram_id, username and password are required for web admin
+  if (!data.username || !data.password) {
+    return false;
+  }
+  return true;
 }, {
   message: "لطفا آیدی تلگرام را وارد کنید یا نام کاربری و رمز عبور را وارد کنید",
-  path: ["telegram_id"], // Show error on telegram_id field
+  path: ["username"], // Show error on username field
 });
 
 export type AddAdminFormData = z.infer<typeof addAdminSchema>;

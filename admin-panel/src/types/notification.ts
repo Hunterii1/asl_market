@@ -2,7 +2,7 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: 'info' | 'warning' | 'success' | 'error' | 'matching';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   is_active: boolean;
   is_read: boolean;

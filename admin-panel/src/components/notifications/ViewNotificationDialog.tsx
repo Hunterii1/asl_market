@@ -45,6 +45,7 @@ const typeConfig: Record<string, { label: string; className: string }> = {
   warning: { label: 'هشدار', className: 'bg-warning/10 text-warning' },
   success: { label: 'موفقیت', className: 'bg-success/10 text-success' },
   error: { label: 'خطا', className: 'bg-destructive/10 text-destructive' },
+  matching: { label: 'Matching', className: 'bg-purple-500/10 text-purple-500' },
 };
 
 const priorityConfig: Record<string, { label: string; className: string }> = {

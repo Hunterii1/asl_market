@@ -81,13 +81,20 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
   const selectedPermissions = watch('permissions') || [];
   const telegramId = watch('telegram_id');
   
-  // Auto-set username and password when telegram_id changes
+  // Auto-set username and password when telegram_id changes (optional, user can override)
   useEffect(() => {
     if (telegramId && /^\d+$/.test(telegramId)) {
-      setValue('username', telegramId, { shouldValidate: false });
-      setValue('password', telegramId, { shouldValidate: false });
+      const currentUsername = form.getValues('username');
+      const currentPassword = form.getValues('password');
+      // Only auto-set if fields are empty
+      if (!currentUsername) {
+        setValue('username', telegramId, { shouldValidate: false });
+      }
+      if (!currentPassword) {
+        setValue('password', telegramId, { shouldValidate: false });
+      }
     }
-  }, [telegramId, setValue]);
+  }, [telegramId, setValue, form]);
 
   const handleTogglePermission = (permissionId: string) => {
     const current = selectedPermissions;
@@ -101,18 +108,27 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
   const onSubmit = async (data: AddAdminFormData) => {
     setIsSubmitting(true);
     try {
-      // If telegram_id is provided, use it as username and password
-      const finalData = {
+      // For web admin: use username and password that user entered
+      // If telegram_id is provided, use it as username and password (for telegram admins)
+      const finalData: any = {
         name: data.name,
         email: data.email,
         phone: data.phone,
-        username: data.telegram_id || data.username || '',
-        password: data.telegram_id || data.password || '',
         role: data.role,
-        permissions: data.permissions || [], // Ensure permissions are included
+        permissions: data.permissions || [],
         is_active: data.status === 'active',
-        ...(data.telegram_id ? { telegram_id: parseInt(data.telegram_id) } : {}),
       };
+      
+      if (data.telegram_id) {
+        // Telegram admin: use telegram_id as username and password
+        finalData.username = data.telegram_id;
+        finalData.password = data.telegram_id;
+        finalData.telegram_id = parseInt(data.telegram_id);
+      } else {
+        // Web admin: use provided username and password
+        finalData.username = data.username || '';
+        finalData.password = data.password || '';
+      }
       
       await adminApi.createWebAdmin(finalData);
       
@@ -279,13 +295,13 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                       <Input
                         placeholder="username"
                         {...field}
-                        disabled={isSubmitting || !!telegramId}
+                        disabled={isSubmitting}
                         dir="ltr"
                         className="text-left"
                       />
                     </FormControl>
                     <FormDescription>
-                      {telegramId ? 'به صورت خودکار از آیدی تلگرام تنظیم می‌شود' : 'فقط حروف انگلیسی، اعداد و _'}
+                      {telegramId ? 'اگر آیدی تلگرام وارد شده، به صورت پیش‌فرض از آن استفاده می‌شود' : 'فقط حروف انگلیسی، اعداد و _'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -308,7 +324,7 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                           type={showPassword ? 'text' : 'password'}
                           placeholder="حداقل ۸ کاراکتر"
                           {...field}
-                          disabled={isSubmitting || !!telegramId}
+                          disabled={isSubmitting}
                           dir="ltr"
                           className="text-left pr-10"
                         />
@@ -322,7 +338,7 @@ export function AddAdminDialog({ open, onOpenChange, onSuccess }: AddAdminDialog
                       </div>
                     </FormControl>
                     <FormDescription>
-                      {telegramId ? 'به صورت خودکار از آیدی تلگرام تنظیم می‌شود' : 'حداقل ۸ کاراکتر، شامل حروف بزرگ، کوچک و عدد'}
+                      {telegramId ? 'اگر آیدی تلگرام وارد شده، به صورت پیش‌فرض از آن استفاده می‌شود' : 'حداقل ۸ کاراکتر، شامل حروف بزرگ، کوچک و عدد'}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
