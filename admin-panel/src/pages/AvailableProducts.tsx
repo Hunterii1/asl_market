@@ -181,26 +181,58 @@ export default function AvailableProducts() {
             totalPages = 1;
           }
           
-          const transformedProducts: Product[] = productsData.map((p: any) => ({
-            id: p.id?.toString() || p.ID?.toString() || '',
-            name: p.product_name || p.name || 'بدون نام',
-            description: p.description || '',
-            price: p.wholesale_price || p.retail_price || p.export_price || 0,
-            category: p.category || 'other',
-            stock: p.available_quantity || 0,
-            status: p.status || 'active',
-            tags: Array.isArray(p.tags) 
-              ? p.tags 
-              : (typeof p.tags === 'string' && p.tags.trim() 
-                  ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-                  : []),
-            imageUrl: p.image_urls?.[0] || p.imageUrl || '',
-            discount: p.discount || 0,
-            sku: p.sku || '',
-            createdAt: p.created_at || new Date().toISOString(),
-            sales: p.sales || 0,
-            revenue: p.revenue || 0,
-          }));
+          const transformedProducts: Product[] = productsData.map((p: any) => {
+            // Parse image_urls from JSON string if needed
+            let imageUrls: string[] = [];
+            if (p.image_urls) {
+              if (typeof p.image_urls === 'string') {
+                try {
+                  imageUrls = JSON.parse(p.image_urls);
+                } catch {
+                  // If not valid JSON, treat as comma-separated
+                  imageUrls = p.image_urls.split(',').map((url: string) => url.trim()).filter(Boolean);
+                }
+              } else if (Array.isArray(p.image_urls)) {
+                imageUrls = p.image_urls;
+              }
+            }
+            
+            // Parse tags from string if needed
+            let tags: string[] = [];
+            if (p.tags) {
+              if (typeof p.tags === 'string' && p.tags.trim()) {
+                tags = p.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+              } else if (Array.isArray(p.tags)) {
+                tags = p.tags;
+              }
+            }
+            
+            // Determine price (prefer wholesale, fallback to retail or export)
+            const price = p.wholesale_price 
+              ? (typeof p.wholesale_price === 'string' ? parseFloat(p.wholesale_price.replace(/,/g, '')) || 0 : p.wholesale_price)
+              : (p.retail_price 
+                ? (typeof p.retail_price === 'string' ? parseFloat(p.retail_price.replace(/,/g, '')) || 0 : p.retail_price)
+                : (p.export_price 
+                  ? (typeof p.export_price === 'string' ? parseFloat(p.export_price.replace(/,/g, '')) || 0 : p.export_price)
+                  : 0));
+            
+            return {
+              id: p.id?.toString() || p.ID?.toString() || '',
+              name: p.product_name || p.name || 'بدون نام',
+              description: p.description || '',
+              price: price,
+              category: p.category || 'other',
+              stock: p.available_quantity || 0,
+              status: (p.status || 'active') as 'active' | 'inactive' | 'out_of_stock',
+              tags: tags,
+              imageUrl: imageUrls[0] || '',
+              discount: 0, // discount not in backend model
+              sku: '', // sku not in backend model
+              createdAt: p.created_at || new Date().toISOString(),
+              sales: 0, // sales not in backend model
+              revenue: 0, // revenue not in backend model
+            };
+          });
 
           setProducts(transformedProducts);
           setTotalProducts(total);
@@ -234,14 +266,111 @@ export default function AvailableProducts() {
     return productCategories.find(cat => cat.value === category)?.label || category;
   };
 
-  const handleProductAdded = () => {
-    const stored = localStorage.getItem('asll-products');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setProducts(parsed);
-      } catch {}
+  const reloadProducts = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : undefined;
+      const categoryFilterValue = categoryFilter.length === 1 ? categoryFilter[0] : undefined;
+
+      const response = await adminApi.getAvailableProducts({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        category: categoryFilterValue,
+      });
+
+      if (response) {
+        const responseData = response.data || response;
+        const productsData = responseData.products || response.products || [];
+        
+        let total = 0;
+        let totalPages = 1;
+        
+        if (response.total !== undefined) {
+          total = response.total;
+          const perPage = response.per_page || itemsPerPage;
+          totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+        } else if (responseData.pagination) {
+          const pagination = responseData.pagination;
+          total = pagination.total || 0;
+          const perPage = pagination.per_page || pagination.perPage || itemsPerPage;
+          totalPages = pagination.total_pages || pagination.totalPages || (perPage > 0 ? Math.ceil(total / perPage) : 1);
+        } else if (responseData.total !== undefined) {
+          total = responseData.total;
+          const perPage = responseData.per_page || itemsPerPage;
+          totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
+        } else {
+          total = productsData.length;
+          totalPages = 1;
+        }
+        
+        const transformedProducts: Product[] = productsData.map((p: any) => {
+          let imageUrls: string[] = [];
+          if (p.image_urls) {
+            if (typeof p.image_urls === 'string') {
+              try {
+                imageUrls = JSON.parse(p.image_urls);
+              } catch {
+                imageUrls = p.image_urls.split(',').map((url: string) => url.trim()).filter(Boolean);
+              }
+            } else if (Array.isArray(p.image_urls)) {
+              imageUrls = p.image_urls;
+            }
+          }
+          
+          let tags: string[] = [];
+          if (p.tags) {
+            if (typeof p.tags === 'string' && p.tags.trim()) {
+              tags = p.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+            } else if (Array.isArray(p.tags)) {
+              tags = p.tags;
+            }
+          }
+          
+          const price = p.wholesale_price 
+            ? (typeof p.wholesale_price === 'string' ? parseFloat(p.wholesale_price.replace(/,/g, '')) || 0 : p.wholesale_price)
+            : (p.retail_price 
+              ? (typeof p.retail_price === 'string' ? parseFloat(p.retail_price.replace(/,/g, '')) || 0 : p.retail_price)
+              : (p.export_price 
+                ? (typeof p.export_price === 'string' ? parseFloat(p.export_price.replace(/,/g, '')) || 0 : p.export_price)
+                : 0));
+          
+          return {
+            id: p.id?.toString() || '',
+            name: p.product_name || 'بدون نام',
+            description: p.description || '',
+            price: price,
+            category: p.category || 'other',
+            stock: p.available_quantity || 0,
+            status: (p.status || 'active') as 'active' | 'inactive' | 'out_of_stock',
+            tags: tags,
+            imageUrl: imageUrls[0] || '',
+            discount: 0,
+            sku: '',
+            createdAt: p.created_at || new Date().toISOString(),
+            sales: 0,
+            revenue: 0,
+          };
+        });
+
+        setProducts(transformedProducts);
+        setTotalProducts(total);
+        setTotalPages(totalPages);
+      }
+    } catch (error: any) {
+      console.error('Error reloading products:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری محصولات',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleProductAdded = () => {
+    reloadProducts();
   };
 
   const toggleSelectProduct = (productId: string) => {
@@ -267,15 +396,15 @@ export default function AvailableProducts() {
     setIsDeleting(true);
     try {
       await adminApi.deleteAvailableProduct(Number(deleteProduct.id));
-      
-      setProducts(prev => prev.filter(p => p.id !== deleteProduct.id));
-      setSelectedProducts(prev => prev.filter(id => id !== deleteProduct.id));
       setDeleteProduct(null);
       
       toast({
         title: 'موفقیت',
         description: 'کالا با موفقیت حذف شد.',
       });
+      
+      // Reload products from API
+      await reloadProducts();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -296,7 +425,7 @@ export default function AvailableProducts() {
         await Promise.all(
           selectedProducts.map(id => adminApi.deleteAvailableProduct(Number(id)))
         );
-        setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+        await reloadProducts();
       } else {
         // Update status for all selected products
         const statusMap: Record<string, string> = {
@@ -310,57 +439,7 @@ export default function AvailableProducts() {
           )
         );
         // Reload products to get updated status
-        const response = await adminApi.getAvailableProducts({
-          page: currentPage,
-          per_page: itemsPerPage,
-        });
-        if (response) {
-          const responseData = response.data || response;
-          const productsData = responseData.products || response.products || [];
-          
-          // Handle pagination
-          let total = 0;
-          let totalPages = 1;
-          
-          if (response.total !== undefined) {
-            total = response.total;
-            const perPage = response.per_page || itemsPerPage;
-            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
-          } else if (responseData.pagination) {
-            const pagination = responseData.pagination;
-            total = pagination.total || 0;
-            const perPage = pagination.per_page || pagination.perPage || itemsPerPage;
-            totalPages = pagination.total_pages || pagination.totalPages || (perPage > 0 ? Math.ceil(total / perPage) : 1);
-          } else if (responseData.total !== undefined) {
-            total = responseData.total;
-            const perPage = responseData.per_page || itemsPerPage;
-            totalPages = perPage > 0 ? Math.ceil(total / perPage) : 1;
-          }
-          
-          const transformedProducts: Product[] = productsData.map((p: any) => ({
-            id: p.id?.toString() || '',
-            name: p.product_name || p.name || 'بدون نام',
-            description: p.description || '',
-            price: p.wholesale_price || p.retail_price || 0,
-            category: p.category || 'other',
-            stock: p.available_quantity || 0,
-            status: p.status || 'active',
-            tags: Array.isArray(p.tags) 
-              ? p.tags 
-              : (typeof p.tags === 'string' && p.tags.trim() 
-                  ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean)
-                  : []),
-            imageUrl: p.image_urls?.[0] || '',
-            discount: p.discount || 0,
-            sku: p.sku || '',
-            createdAt: p.created_at || new Date().toISOString(),
-            sales: p.sales || 0,
-            revenue: p.revenue || 0,
-          }));
-          setProducts(transformedProducts);
-          setTotalProducts(total);
-          setTotalPages(totalPages);
-        }
+        await reloadProducts();
       }
 
       setSelectedProducts([]);
@@ -967,13 +1046,7 @@ export default function AvailableProducts() {
         onOpenChange={(open) => !open && setEditProduct(null)}
         product={editProduct}
         onSuccess={() => {
-          const stored = localStorage.getItem('asll-products');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setProducts(parsed);
-            } catch {}
-          }
+          reloadProducts();
           setEditProduct(null);
         }}
       />

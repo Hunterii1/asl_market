@@ -73,9 +73,7 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
 
   const StatusIcon = statusConfig[product.status].icon;
   const categoryLabel = productCategories.find(cat => cat.value === product.category)?.label || product.category;
-  const finalPrice = product.discount && product.discount > 0
-    ? product.price * (1 - product.discount / 100)
-    : product.price;
+  const finalPrice = product.price;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,12 +106,6 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
                     <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                       {categoryLabel}
                     </Badge>
-                    {product.discount && product.discount > 0 && (
-                      <Badge variant="destructive" className="gap-1">
-                        <Percent className="w-3 h-3" />
-                        {product.discount}% تخفیف
-                      </Badge>
-                    )}
                   </div>
                 </div>
                 {product.imageUrl && (
@@ -142,7 +134,7 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
           <Card>
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">قیمت و موجودی</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <DollarSign className="w-4 h-4" />
@@ -152,15 +144,6 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
                     {product.price.toLocaleString('fa-IR')} تومان
                   </p>
                 </div>
-                {product.discount && product.discount > 0 && (
-                  <div className="bg-muted/50 rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                      <Percent className="w-4 h-4" />
-                      تخفیف
-                    </div>
-                    <p className="text-xl font-bold text-destructive">{product.discount}%</p>
-                  </div>
-                )}
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <DollarSign className="w-4 h-4" />
@@ -186,56 +169,12 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
             </CardContent>
           </Card>
 
-          {/* Statistics */}
-          {(product.sales !== undefined || product.revenue !== undefined) && (
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary" />
-                  آمار فروش
-                </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {product.sales !== undefined && (
-                    <div className="bg-muted/50 rounded-xl p-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <Package className="w-4 h-4" />
-                        تعداد فروش
-                      </div>
-                      <p className="text-xl font-bold text-foreground">
-                        {product.sales.toLocaleString('fa-IR')} عدد
-                      </p>
-                    </div>
-                  )}
-                  {product.revenue !== undefined && (
-                    <div className="bg-muted/50 rounded-xl p-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <DollarSign className="w-4 h-4" />
-                        درآمد
-                      </div>
-                      <p className="text-xl font-bold text-success">
-                        {product.revenue.toLocaleString('fa-IR')} تومان
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Additional Info */}
           <Card>
             <CardContent className="p-6">
               <h4 className="font-semibold text-foreground mb-4">اطلاعات تکمیلی</h4>
               <div className="grid grid-cols-2 gap-4">
-                {product.sku && (
-                  <div className="flex items-center gap-2">
-                    <Hash className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs text-muted-foreground">SKU</p>
-                      <p className="text-sm font-medium text-foreground font-mono">{product.sku}</p>
-                    </div>
-                  </div>
-                )}
                 <div className="flex items-center gap-2">
                   <Folder className="w-4 h-4 text-muted-foreground" />
                   <div>
@@ -248,7 +187,9 @@ export function ViewProductDialog({ open, onOpenChange, product }: ViewProductDi
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
                       <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
-                      <p className="text-sm font-medium text-foreground">{product.createdAt}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {new Date(product.createdAt).toLocaleDateString('fa-IR')}
+                      </p>
                     </div>
                   </div>
                 )}

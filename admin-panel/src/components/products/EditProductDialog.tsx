@@ -47,6 +47,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Product {
   id: string;
@@ -72,25 +73,6 @@ interface EditProductDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updateProduct = async (data: AddProductFormData & { id: string }): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const products = JSON.parse(localStorage.getItem('asll-products') || '[]');
-        const index = products.findIndex((p: Product) => p.id === data.id);
-        if (index !== -1) {
-          const { id, ...productData } = data;
-          products[index] = { ...products[index], ...productData };
-          localStorage.setItem('asll-products', JSON.stringify(products));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function EditProductDialog({ open, onOpenChange, product, onSuccess }: EditProductDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -163,7 +145,30 @@ export function EditProductDialog({ open, onOpenChange, product, onSuccess }: Ed
     
     setIsSubmitting(true);
     try {
-      await updateProduct({ ...data, id: product.id });
+      // Convert tags array to comma-separated string
+      const tagsString = (data.tags || []).join(',');
+      
+      // Convert imageUrl to JSON array string (backend expects JSON string)
+      const imageUrlsString = data.imageUrl 
+        ? JSON.stringify([data.imageUrl])
+        : '';
+      
+      // Prepare update data according to backend UpdateAvailableProductRequest
+      const updateData = {
+        product_name: data.name,
+        description: data.description || '',
+        category: data.category,
+        wholesale_price: data.price.toString(),
+        retail_price: '',
+        export_price: '',
+        available_quantity: data.stock,
+        status: data.status,
+        tags: tagsString,
+        image_urls: imageUrlsString,
+      };
+      
+      await adminApi.updateAvailableProduct(Number(product.id), updateData);
+      
       toast({
         title: 'موفقیت',
         description: 'اطلاعات محصول با موفقیت به‌روزرسانی شد.',
@@ -171,10 +176,10 @@ export function EditProductDialog({ open, onOpenChange, product, onSuccess }: Ed
       });
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        description: error.message || 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
         variant: 'destructive',
       });
     } finally {
