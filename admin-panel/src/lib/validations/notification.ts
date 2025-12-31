@@ -5,81 +5,93 @@ export const addNotificationSchema = z.object({
   title: z
     .string()
     .min(3, "عنوان باید حداقل ۳ کاراکتر باشد")
-    .max(200, "عنوان نمی‌تواند بیشتر از ۲۰۰ کاراکتر باشد"),
-  
-  content: z
+    .max(255, "عنوان نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد"),
+
+  message: z
     .string()
     .min(10, "محتوا باید حداقل ۱۰ کاراکتر باشد")
     .max(5000, "محتوا نمی‌تواند بیشتر از ۵۰۰۰ کاراکتر باشد"),
-  
-  type: z.enum(["system", "email", "sms", "telegram", "push"], {
+
+  type: z.enum(["info", "warning", "success", "error"], {
     required_error: "نوع اعلان را انتخاب کنید",
-  }),
-  
-  status: z.enum(["sent", "pending", "failed", "draft"], {
-    required_error: "وضعیت اعلان را انتخاب کنید",
-  }).default("draft"),
-  
-  priority: z.enum(["low", "medium", "high", "urgent"], {
+  }).default("info"),
+
+  priority: z.enum(["low", "normal", "high", "urgent"], {
     required_error: "اولویت را انتخاب کنید",
-  }).default("medium"),
-  
-  recipientType: z.enum(["all", "specific", "group"], {
-    required_error: "نوع گیرنده را انتخاب کنید",
-  }).default("all"),
-  
-  recipientIds: z
-    .array(z.string())
+  }).default("normal"),
+
+  user_id: z
+    .number()
+    .int("شناسه کاربر باید عدد صحیح باشد")
+    .positive("شناسه کاربر باید مثبت باشد")
     .optional()
-    .default([]),
-  
-  scheduledAt: z
+    .nullable(),
+
+  expires_at: z
     .string()
-    .optional(),
-  
-  actionUrl: z
+    .optional()
+    .nullable(),
+
+  action_url: z
     .string()
     .url("آدرس نامعتبر است")
     .optional()
     .or(z.literal('')),
-  
-  actionText: z
+
+  action_text: z
     .string()
     .max(100, "متن دکمه نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد")
     .optional(),
-  
-  icon: z
-    .string()
-    .max(100, "نام آیکون نامعتبر است")
-    .optional(),
-  
-  imageUrl: z
-    .string()
-    .url("آدرس تصویر نامعتبر است")
-    .optional()
-    .or(z.literal('')),
-  
-  sound: z.boolean().default(false),
-  
-  vibrate: z.boolean().default(false),
-  
-  silent: z.boolean().default(false),
-  
-  expiresAt: z
-    .string()
-    .optional(),
-  
-  metadata: z
-    .record(z.any())
-    .optional(),
+
+  is_active: z.boolean().default(true),
 });
 
 export type AddNotificationFormData = z.infer<typeof addNotificationSchema>;
 
 // Schema برای ویرایش اعلان
-export const editNotificationSchema = addNotificationSchema.extend({
-  id: z.string().min(1, "شناسه اعلان الزامی است"),
+export const editNotificationSchema = z.object({
+  id: z.number().int("شناسه اعلان باید عدد صحیح باشد").min(1, "شناسه اعلان الزامی است"),
+
+  title: z
+    .string()
+    .min(3, "عنوان باید حداقل ۳ کاراکتر باشد")
+    .max(255, "عنوان نمی‌تواند بیشتر از ۲۵۵ کاراکتر باشد")
+    .optional(),
+
+  message: z
+    .string()
+    .min(10, "محتوا باید حداقل ۱۰ کاراکتر باشد")
+    .max(5000, "محتوا نمی‌تواند بیشتر از ۵۰۰۰ کاراکتر باشد")
+    .optional(),
+
+  type: z.enum(["info", "warning", "success", "error"]).optional(),
+
+  priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+
+  user_id: z
+    .number()
+    .int("شناسه کاربر باید عدد صحیح باشد")
+    .positive("شناسه کاربر باید مثبت باشد")
+    .optional()
+    .nullable(),
+
+  expires_at: z
+    .string()
+    .optional()
+    .nullable(),
+
+  action_url: z
+    .string()
+    .url("آدرس نامعتبر است")
+    .optional()
+    .or(z.literal('')),
+
+  action_text: z
+    .string()
+    .max(100, "متن دکمه نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد")
+    .optional(),
+
+  is_active: z.boolean().optional(),
 });
 
 export type EditNotificationFormData = z.infer<typeof editNotificationSchema>;
-

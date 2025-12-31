@@ -15,12 +15,12 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 interface NotificationsFiltersProps {
-  statusFilter: ('sent' | 'pending' | 'failed' | 'draft')[];
-  onStatusFilterChange: (status: ('sent' | 'pending' | 'failed' | 'draft')[]) => void;
-  typeFilter: ('system' | 'email' | 'sms' | 'telegram' | 'push')[];
-  onTypeFilterChange: (type: ('system' | 'email' | 'sms' | 'telegram' | 'push')[]) => void;
-  priorityFilter: ('low' | 'medium' | 'high' | 'urgent')[];
-  onPriorityFilterChange: (priority: ('low' | 'medium' | 'high' | 'urgent')[]) => void;
+  statusFilter: ('active' | 'inactive')[];
+  onStatusFilterChange: (status: ('active' | 'inactive')[]) => void;
+  typeFilter: ('info' | 'warning' | 'success' | 'error')[];
+  onTypeFilterChange: (type: ('info' | 'warning' | 'success' | 'error')[]) => void;
+  priorityFilter: ('low' | 'normal' | 'high' | 'urgent')[];
+  onPriorityFilterChange: (priority: ('low' | 'normal' | 'high' | 'urgent')[]) => void;
   onReset: () => void;
 }
 
@@ -35,7 +35,7 @@ export function NotificationsFilters({
 }: NotificationsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'sent' | 'pending' | 'failed' | 'draft') => {
+  const handleToggleStatus = (status: 'active' | 'inactive') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -43,7 +43,7 @@ export function NotificationsFilters({
     }
   };
 
-  const handleToggleType = (type: 'system' | 'email' | 'sms' | 'telegram' | 'push') => {
+  const handleToggleType = (type: 'info' | 'warning' | 'success' | 'error') => {
     if (typeFilter.includes(type)) {
       onTypeFilterChange(typeFilter.filter(t => t !== type));
     } else {
@@ -51,7 +51,7 @@ export function NotificationsFilters({
     }
   };
 
-  const handleTogglePriority = (priority: 'low' | 'medium' | 'high' | 'urgent') => {
+  const handleTogglePriority = (priority: 'low' | 'normal' | 'high' | 'urgent') => {
     if (priorityFilter.includes(priority)) {
       onPriorityFilterChange(priorityFilter.filter(p => p !== priority));
     } else {
@@ -88,11 +88,9 @@ export function NotificationsFilters({
             <Label className="text-base font-semibold">وضعیت</Label>
             <div className="space-y-2">
               {([
-                { value: 'sent', label: 'ارسال شده' },
-                { value: 'pending', label: 'در انتظار' },
-                { value: 'failed', label: 'ناموفق' },
-                { value: 'draft', label: 'پیش‌نویس' },
-              ] as const).map(({ value, label }) => (
+                { value: 'active' as const, label: 'فعال' },
+                { value: 'inactive' as const, label: 'غیرفعال' },
+              ]).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
                     id={`filter-status-${value}`}
@@ -117,12 +115,11 @@ export function NotificationsFilters({
             <Label className="text-base font-semibold">نوع اعلان</Label>
             <div className="space-y-2">
               {([
-                { value: 'system', label: 'سیستمی' },
-                { value: 'email', label: 'ایمیل' },
-                { value: 'sms', label: 'پیامک' },
-                { value: 'telegram', label: 'تلگرام' },
-                { value: 'push', label: 'Push' },
-              ] as const).map(({ value, label }) => (
+                { value: 'info' as const, label: 'اطلاعات' },
+                { value: 'warning' as const, label: 'هشدار' },
+                { value: 'success' as const, label: 'موفقیت' },
+                { value: 'error' as const, label: 'خطا' },
+              ]).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
                     id={`filter-type-${value}`}
@@ -147,11 +144,11 @@ export function NotificationsFilters({
             <Label className="text-base font-semibold">اولویت</Label>
             <div className="space-y-2">
               {([
-                { value: 'low', label: 'پایین' },
-                { value: 'medium', label: 'متوسط' },
-                { value: 'high', label: 'بالا' },
-                { value: 'urgent', label: 'فوری' },
-              ] as const).map(({ value, label }) => (
+                { value: 'low' as const, label: 'پایین' },
+                { value: 'normal' as const, label: 'عادی' },
+                { value: 'high' as const, label: 'بالا' },
+                { value: 'urgent' as const, label: 'فوری' },
+              ]).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
                     id={`filter-priority-${value}`}
@@ -189,10 +186,8 @@ export function NotificationsFilters({
                 <div className="flex flex-wrap gap-2">
                   {statusFilter.map(status => (
                     <Badge key={status} variant="secondary" className="gap-1">
-                      {status === 'sent' && 'ارسال شده'}
-                      {status === 'pending' && 'در انتظار'}
-                      {status === 'failed' && 'ناموفق'}
-                      {status === 'draft' && 'پیش‌نویس'}
+                      {status === 'active' && 'فعال'}
+                      {status === 'inactive' && 'غیرفعال'}
                       <button
                         onClick={() => handleToggleStatus(status)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"
@@ -203,11 +198,10 @@ export function NotificationsFilters({
                   ))}
                   {typeFilter.map(type => (
                     <Badge key={type} variant="secondary" className="gap-1">
-                      {type === 'system' && 'سیستمی'}
-                      {type === 'email' && 'ایمیل'}
-                      {type === 'sms' && 'پیامک'}
-                      {type === 'telegram' && 'تلگرام'}
-                      {type === 'push' && 'Push'}
+                      {type === 'info' && 'اطلاعات'}
+                      {type === 'warning' && 'هشدار'}
+                      {type === 'success' && 'موفقیت'}
+                      {type === 'error' && 'خطا'}
                       <button
                         onClick={() => handleToggleType(type)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"
@@ -219,7 +213,7 @@ export function NotificationsFilters({
                   {priorityFilter.map(priority => (
                     <Badge key={priority} variant="secondary" className="gap-1">
                       {priority === 'low' && 'پایین'}
-                      {priority === 'medium' && 'متوسط'}
+                      {priority === 'normal' && 'عادی'}
                       {priority === 'high' && 'بالا'}
                       {priority === 'urgent' && 'فوری'}
                       <button
@@ -263,4 +257,3 @@ export function NotificationsFilters({
     </Sheet>
   );
 }
-

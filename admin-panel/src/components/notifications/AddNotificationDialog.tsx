@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Bell, FileText, AlertCircle, Users, Calendar, Link, Image, Volume2, Vibrate, VolumeX } from 'lucide-react';
+import { Loader2, Bell, FileText, AlertCircle, Users, Calendar, Link, CheckCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,9 +31,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { addNotificationSchema, type AddNotificationFormData } from '@/lib/validations/notification';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddNotificationDialogProps {
   open: boolean;
@@ -41,72 +41,53 @@ interface AddNotificationDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const createNotification = async (data: AddNotificationFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const notifications = JSON.parse(localStorage.getItem('asll-notifications') || '[]');
-        const newNotification = {
-          id: Date.now().toString(),
-          ...data,
-          sentAt: data.status === 'sent' ? new Date().toLocaleDateString('fa-IR') : null,
-          readCount: 0,
-          clickCount: 0,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          updatedAt: new Date().toLocaleDateString('fa-IR'),
-        };
-        notifications.push(newNotification);
-        localStorage.setItem('asll-notifications', JSON.stringify(notifications));
-        resolve();
-      }
-    }, 1500);
-  });
-};
-
 export function AddNotificationDialog({ open, onOpenChange, onSuccess }: AddNotificationDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [currentTab, setCurrentTab] = useState('basic');
 
   const form = useForm<AddNotificationFormData>({
     resolver: zodResolver(addNotificationSchema),
     defaultValues: {
       title: '',
-      content: '',
-      type: 'system',
-      status: 'draft',
-      priority: 'medium',
-      recipientType: 'all',
-      recipientIds: [],
-      scheduledAt: '',
-      actionUrl: '',
-      actionText: '',
-      icon: '',
-      imageUrl: '',
-      sound: false,
-      vibrate: false,
-      silent: false,
-      expiresAt: '',
-      metadata: {},
+      message: '',
+      type: 'info',
+      priority: 'normal',
+      user_id: null,
+      expires_at: '',
+      action_url: '',
+      action_text: '',
+      is_active: true,
     },
   });
-
-  const { watch } = form;
-  const recipientType = watch('recipientType');
 
   const onSubmit = async (data: AddNotificationFormData) => {
     setIsSubmitting(true);
     try {
-      await createNotification(data);
+      // Transform data for backend
+      const payload: any = {
+        title: data.title,
+        message: data.message,
+        type: data.type,
+        priority: data.priority,
+        is_active: data.is_active,
+        action_url: data.action_url || '',
+        action_text: data.action_text || '',
+      };
+
+      if (data.user_id) {
+        payload.user_id = data.user_id;
+      }
+
+      if (data.expires_at) {
+        payload.expires_at = new Date(data.expires_at).toISOString();
+      }
+
+      await adminApi.createNotification(payload);
       toast({
         title: 'موفقیت',
         description: 'اعلان با موفقیت ایجاد شد.',
         variant: 'default',
       });
       form.reset();
-      setCurrentTab('basic');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -124,7 +105,6 @@ export function AddNotificationDialog({ open, onOpenChange, onSuccess }: AddNoti
     if (!isSubmitting) {
       if (!newOpen) {
         form.reset();
-        setCurrentTab('basic');
       }
       onOpenChange(newOpen);
     }
@@ -132,7 +112,7 @@ export function AddNotificationDialog({ open, onOpenChange, onSuccess }: AddNoti
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto rounded-2xl">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Bell className="w-5 h-5 text-primary" />
@@ -145,398 +125,244 @@ export function AddNotificationDialog({ open, onOpenChange, onSuccess }: AddNoti
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">اطلاعات پایه</TabsTrigger>
-                <TabsTrigger value="recipients">گیرنده‌ها</TabsTrigger>
-                <TabsTrigger value="settings">تنظیمات</TabsTrigger>
-              </TabsList>
+            {/* Title */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    عنوان *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="مثال: اطلاعیه مهم"
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0} / 255 کاراکتر
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                {/* Title */}
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        عنوان *
-                      </FormLabel>
+            {/* Message */}
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>محتوا *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="متن اعلان..."
+                      className="min-h-[150px]"
+                      {...field}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0} / 5000 کاراکتر
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Type */}
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                      نوع اعلان
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
-                        <Input
-                          placeholder="مثال: اعلان مهم"
-                          {...field}
-                          disabled={isSubmitting}
-                          className="text-right"
-                        />
+                        <SelectTrigger className="text-right">
+                          <SelectValue placeholder="انتخاب نوع" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormDescription>
-                        {field.value?.length || 0} / 200 کاراکتر
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="info">اطلاعات</SelectItem>
+                        <SelectItem value="warning">هشدار</SelectItem>
+                        <SelectItem value="success">موفقیت</SelectItem>
+                        <SelectItem value="error">خطا</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Content */}
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>محتوا *</FormLabel>
+              {/* Priority */}
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>اولویت</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
                       <FormControl>
-                        <Textarea
-                          placeholder="متن اعلان..."
-                          className="min-h-[150px]"
-                          {...field}
-                          disabled={isSubmitting}
-                        />
+                        <SelectTrigger className="text-right">
+                          <SelectValue placeholder="انتخاب اولویت" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormDescription>
-                        {field.value?.length || 0} / 5000 کاراکتر
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="low">پایین</SelectItem>
+                        <SelectItem value="normal">عادی</SelectItem>
+                        <SelectItem value="high">بالا</SelectItem>
+                        <SelectItem value="urgent">فوری</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Type */}
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Bell className="w-4 h-4 text-muted-foreground" />
-                          نوع اعلان *
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isSubmitting}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-right">
-                              <SelectValue placeholder="نوع را انتخاب کنید" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="system">سیستمی</SelectItem>
-                            <SelectItem value="email">ایمیل</SelectItem>
-                            <SelectItem value="sms">پیامک</SelectItem>
-                            <SelectItem value="telegram">تلگرام</SelectItem>
-                            <SelectItem value="push">Push Notification</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+            {/* User ID (optional - null = broadcast) */}
+            <FormField
+              control={form.control}
+              name="user_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    شناسه کاربر (اختیاری)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="خالی بگذارید برای ارسال به همه کاربران"
+                      {...field}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        field.onChange(value ? parseInt(value) : null);
+                      }}
+                      value={field.value || ''}
+                      disabled={isSubmitting}
+                      className="text-right"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    اگر خالی بگذارید، اعلان به همه کاربران ارسال می‌شود
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-                  {/* Status */}
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>وضعیت</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isSubmitting}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-right">
-                              <SelectValue placeholder="وضعیت را انتخاب کنید" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="draft">پیش‌نویس</SelectItem>
-                            <SelectItem value="pending">در انتظار</SelectItem>
-                            <SelectItem value="sent">ارسال شده</SelectItem>
-                            <SelectItem value="failed">ناموفق</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Priority */}
-                  <FormField
-                    control={form.control}
-                    name="priority"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 text-muted-foreground" />
-                          اولویت
-                        </FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isSubmitting}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="text-right">
-                              <SelectValue placeholder="اولویت را انتخاب کنید" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="low">پایین</SelectItem>
-                            <SelectItem value="medium">متوسط</SelectItem>
-                            <SelectItem value="high">بالا</SelectItem>
-                            <SelectItem value="urgent">فوری</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Image URL */}
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Image className="w-4 h-4 text-muted-foreground" />
-                        آدرس تصویر
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://example.com/image.jpg"
-                          {...field}
-                          disabled={isSubmitting}
-                          dir="ltr"
-                          className="text-left"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Action */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="actionText"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          <Link className="w-4 h-4 text-muted-foreground" />
-                          متن دکمه
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="مثال: مشاهده بیشتر"
-                            {...field}
-                            disabled={isSubmitting}
-                            className="text-right"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="actionUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>آدرس دکمه</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://example.com"
-                            {...field}
-                            disabled={isSubmitting}
-                            dir="ltr"
-                            className="text-left"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="recipients" className="space-y-4 mt-4">
-                {/* Recipient Type */}
-                <FormField
-                  control={form.control}
-                  name="recipientType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        نوع گیرنده
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Action URL */}
+              <FormField
+                control={form.control}
+                name="action_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Link className="w-4 h-4 text-muted-foreground" />
+                      آدرس لینک
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://example.com"
+                        {...field}
                         disabled={isSubmitting}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="text-right">
-                            <SelectValue placeholder="نوع گیرنده را انتخاب کنید" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="all">همه کاربران</SelectItem>
-                          <SelectItem value="specific">کاربران خاص</SelectItem>
-                          <SelectItem value="group">گروه خاص</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {recipientType === 'specific' && (
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      انتخاب کاربران خاص در نسخه بعدی اضافه خواهد شد
-                    </p>
-                  </div>
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
+              />
 
-                {recipientType === 'group' && (
-                  <div className="bg-muted/50 rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-2">
-                      انتخاب گروه در نسخه بعدی اضافه خواهد شد
-                    </p>
-                  </div>
+              {/* Action Text */}
+              <FormField
+                control={form.control}
+                name="action_text"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>متن دکمه</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="مثال: مشاهده"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </TabsContent>
+              />
+            </div>
 
-              <TabsContent value="settings" className="space-y-4 mt-4">
-                {/* Scheduled At */}
-                <FormField
-                  control={form.control}
-                  name="scheduledAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        زمان‌بندی ارسال
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="datetime-local"
-                          {...field}
-                          disabled={isSubmitting}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        در صورت خالی بودن، بلافاصله ارسال می‌شود
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Expires At */}
+              <FormField
+                control={form.control}
+                name="expires_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      تاریخ انقضا
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="datetime-local"
+                        {...field}
+                        value={field.value || ''}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                {/* Expires At */}
-                <FormField
-                  control={form.control}
-                  name="expiresAt"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-muted-foreground" />
-                        تاریخ انقضا
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="datetime-local"
-                          {...field}
-                          disabled={isSubmitting}
-                          className="text-right"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Sound */}
-                <FormField
-                  control={form.control}
-                  name="sound"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="sound"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
-                        <Label htmlFor="sound" className="cursor-pointer flex items-center gap-2">
-                          <Volume2 className="w-4 h-4 text-muted-foreground" />
-                          پخش صدا
-                        </Label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Vibrate */}
-                <FormField
-                  control={form.control}
-                  name="vibrate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="vibrate"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
-                        <Label htmlFor="vibrate" className="cursor-pointer flex items-center gap-2">
-                          <Vibrate className="w-4 h-4 text-muted-foreground" />
-                          لرزش
-                        </Label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Silent */}
-                <FormField
-                  control={form.control}
-                  name="silent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="silent"
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isSubmitting}
-                        />
-                        <Label htmlFor="silent" className="cursor-pointer flex items-center gap-2">
-                          <VolumeX className="w-4 h-4 text-muted-foreground" />
-                          بی‌صدا
-                        </Label>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </TabsContent>
-            </Tabs>
+              {/* Is Active */}
+              <FormField
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2 pt-8">
+                      <Checkbox
+                        id="is_active"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isSubmitting}
+                      />
+                      <Label htmlFor="is_active" className="cursor-pointer flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-success" />
+                        اعلان فعال است
+                      </Label>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <DialogFooter className="gap-2 sm:gap-0 flex-row-reverse">
               <Button
@@ -571,4 +397,3 @@ export function AddNotificationDialog({ open, onOpenChange, onSuccess }: AddNoti
     </Dialog>
   );
 }
-

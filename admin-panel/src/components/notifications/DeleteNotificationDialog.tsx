@@ -9,11 +9,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Loader2, AlertTriangle } from 'lucide-react';
+import { Notification } from '@/types/notification';
 
 interface DeleteNotificationDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  notification: { id: string; title: string } | null;
+  notification: Notification | null;
   onConfirm: () => void;
   isDeleting?: boolean;
 }
@@ -66,4 +67,3 @@ export function DeleteNotificationDialog({
     </AlertDialog>
   );
 }
-
