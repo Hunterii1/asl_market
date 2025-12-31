@@ -8,6 +8,10 @@ import { adminApi } from '@/lib/api/adminApi';
 import { Loader2, Search, Plus, Box, Edit, Trash2, Eye, X, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { ViewResearchProductDialog } from '@/components/research-products/ViewResearchProductDialog';
+import { EditResearchProductDialog } from '@/components/research-products/EditResearchProductDialog';
+import { AddResearchProductDialog } from '@/components/research-products/AddResearchProductDialog';
+import { DeleteResearchProductDialog } from '@/components/research-products/DeleteResearchProductDialog';
 import {
   Select,
   SelectContent,
@@ -22,11 +26,24 @@ interface ResearchProduct {
   hs_code?: string;
   category: string;
   description?: string;
+  export_value?: string;
+  import_value?: string;
+  market_demand?: 'high' | 'medium' | 'low';
+  profit_potential?: 'high' | 'medium' | 'low';
+  competition_level?: 'high' | 'medium' | 'low';
   target_country?: string;
+  target_countries?: string;
+  iran_purchase_price?: string;
+  target_country_price?: string;
+  price_currency?: string;
   profit_margin?: string;
-  market_demand?: string;
-  profit_potential?: string;
+  seasonal_factors?: string;
+  required_licenses?: string;
+  quality_standards?: string;
   status: 'active' | 'inactive';
+  priority?: number;
+  created_at?: string;
+  updated_at?: string;
   createdAt: string;
 }
 
@@ -46,8 +63,11 @@ const statusConfig = {
 export default function ResearchProducts() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [viewProduct, setViewProduct] = useState<ResearchProduct | null>(null);
+  const [editProduct, setEditProduct] = useState<ResearchProduct | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<ResearchProduct | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<('active' | 'inactive')[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,16 +99,29 @@ export default function ResearchProducts() {
           const pagination = response.pagination || {};
           
           const transformedProducts: ResearchProduct[] = productsData.map((p: any) => ({
-            id: p.id?.toString() || p.ID?.toString() || '',
+            id: p.id?.toString() || '',
             name: p.name || 'بدون نام',
             hs_code: p.hs_code || '',
             category: p.category || 'other',
             description: p.description || '',
+            export_value: p.export_value || '',
+            import_value: p.import_value || '',
+            market_demand: p.market_demand || undefined,
+            profit_potential: p.profit_potential || undefined,
+            competition_level: p.competition_level || undefined,
             target_country: p.target_country || '',
+            target_countries: p.target_countries || '',
+            iran_purchase_price: p.iran_purchase_price || '',
+            target_country_price: p.target_country_price || '',
+            price_currency: p.price_currency || 'USD',
             profit_margin: p.profit_margin || '',
-            market_demand: p.market_demand || '',
-            profit_potential: p.profit_potential || '',
-            status: p.status || 'active',
+            seasonal_factors: p.seasonal_factors || '',
+            required_licenses: p.required_licenses || '',
+            quality_standards: p.quality_standards || '',
+            status: (p.status || 'active') as 'active' | 'inactive',
+            priority: p.priority || 0,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
             createdAt: p.created_at || new Date().toISOString(),
           }));
 
@@ -127,21 +160,81 @@ export default function ResearchProducts() {
     );
   };
 
+  const reloadProducts = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : undefined;
+      const categoryFilterValue = categoryFilter.length === 1 ? categoryFilter[0] : undefined;
+
+      const response = await adminApi.getResearchProducts({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        category: categoryFilterValue,
+        hs_code: searchQuery || undefined,
+      });
+
+      if (response) {
+        const productsData = response.products || [];
+        const pagination = response.pagination || {};
+        
+        const transformedProducts: ResearchProduct[] = productsData.map((p: any) => ({
+          id: p.id?.toString() || '',
+          name: p.name || 'بدون نام',
+          hs_code: p.hs_code || '',
+          category: p.category || 'other',
+          description: p.description || '',
+          export_value: p.export_value || '',
+          import_value: p.import_value || '',
+          market_demand: p.market_demand || undefined,
+          profit_potential: p.profit_potential || undefined,
+          competition_level: p.competition_level || undefined,
+          target_country: p.target_country || '',
+          target_countries: p.target_countries || '',
+          iran_purchase_price: p.iran_purchase_price || '',
+          target_country_price: p.target_country_price || '',
+          price_currency: p.price_currency || 'USD',
+          profit_margin: p.profit_margin || '',
+          seasonal_factors: p.seasonal_factors || '',
+          required_licenses: p.required_licenses || '',
+          quality_standards: p.quality_standards || '',
+          status: (p.status || 'active') as 'active' | 'inactive',
+          priority: p.priority || 0,
+          created_at: p.created_at,
+          updated_at: p.updated_at,
+          createdAt: p.created_at || new Date().toISOString(),
+        }));
+
+        setProducts(transformedProducts);
+        setTotalProducts(pagination.total || response.total || 0);
+        setTotalPages(pagination.total_pages || response.total_pages || 1);
+      }
+    } catch (error: any) {
+      console.error('Error reloading research products:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری محصولات تحقیقی',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteProduct = async () => {
     if (!deleteProduct) return;
     
     setIsDeleting(true);
     try {
       await adminApi.deleteResearchProduct(Number(deleteProduct.id));
-      
-      setProducts(prev => prev.filter(p => p.id !== deleteProduct.id));
-      setSelectedProducts(prev => prev.filter(id => id !== deleteProduct.id));
       setDeleteProduct(null);
       
       toast({
         title: 'موفقیت',
         description: 'محصول تحقیقی با موفقیت حذف شد.',
       });
+      
+      await reloadProducts();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -161,7 +254,6 @@ export default function ResearchProducts() {
         await Promise.all(
           selectedProducts.map(id => adminApi.deleteResearchProduct(Number(id)))
         );
-        setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
       } else {
         const statusMap: Record<string, string> = {
           'activate': 'active',
@@ -172,30 +264,10 @@ export default function ResearchProducts() {
             adminApi.updateResearchProductStatus(Number(id), statusMap[action])
           )
         );
-        // Reload products
-        const response = await adminApi.getResearchProducts({
-          page: currentPage,
-          per_page: itemsPerPage,
-        });
-        if (response && response.products) {
-          const transformedProducts: ResearchProduct[] = response.products.map((p: any) => ({
-            id: p.id?.toString() || '',
-            name: p.name || 'بدون نام',
-            hs_code: p.hs_code || '',
-            category: p.category || 'other',
-            description: p.description || '',
-            target_country: p.target_country || '',
-            profit_margin: p.profit_margin || '',
-            market_demand: p.market_demand || '',
-            profit_potential: p.profit_potential || '',
-            status: p.status || 'active',
-            createdAt: p.created_at || new Date().toISOString(),
-          }));
-          setProducts(transformedProducts);
-        }
       }
 
       setSelectedProducts([]);
+      await reloadProducts();
       
       toast({
         title: 'موفقیت',
@@ -220,7 +292,7 @@ export default function ResearchProducts() {
             <p className="text-muted-foreground">لیست تمامی محصولات تحقیقی در سیستم</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="w-4 h-4 ml-2" />
               محصول جدید
             </Button>
@@ -391,9 +463,7 @@ export default function ResearchProducts() {
                               <Button 
                                 variant="ghost" 
                                 size="icon-sm"
-                                onClick={() => {
-                                  // TODO: Implement view dialog
-                                }}
+                                onClick={() => setViewProduct(product)}
                                 title="مشاهده"
                               >
                                 <Eye className="w-4 h-4" />
@@ -401,9 +471,7 @@ export default function ResearchProducts() {
                               <Button 
                                 variant="ghost" 
                                 size="icon-sm"
-                                onClick={() => {
-                                  // TODO: Implement edit dialog
-                                }}
+                                onClick={() => setEditProduct(product)}
                                 title="ویرایش"
                               >
                                 <Edit className="w-4 h-4" />
@@ -500,47 +568,39 @@ export default function ResearchProducts() {
         </Card>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      {deleteProduct && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-md">
-            <CardHeader>
-              <CardTitle>حذف محصول تحقیقی</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">
-                آیا از حذف محصول "{deleteProduct.name}" اطمینان دارید؟
-              </p>
-              <div className="flex items-center gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setDeleteProduct(null)}
-                  disabled={isDeleting}
-                >
-                  انصراف
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleDeleteProduct}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                      در حال حذف...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4 ml-2" />
-                      حذف
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Dialogs */}
+      <ViewResearchProductDialog
+        open={!!viewProduct}
+        onOpenChange={(open) => !open && setViewProduct(null)}
+        product={viewProduct}
+      />
+
+      <AddResearchProductDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={() => {
+          reloadProducts();
+          setIsAddDialogOpen(false);
+        }}
+      />
+
+      <EditResearchProductDialog
+        open={!!editProduct}
+        onOpenChange={(open) => !open && setEditProduct(null)}
+        product={editProduct}
+        onSuccess={() => {
+          reloadProducts();
+          setEditProduct(null);
+        }}
+      />
+
+      <DeleteResearchProductDialog
+        open={!!deleteProduct}
+        onOpenChange={(open) => !open && setDeleteProduct(null)}
+        product={deleteProduct}
+        onConfirm={handleDeleteProduct}
+        isDeleting={isDeleting}
+      />
     </AdminLayout>
   );
 }
