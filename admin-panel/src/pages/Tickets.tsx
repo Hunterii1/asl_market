@@ -52,10 +52,10 @@ interface Ticket {
   userId: string;
   userName: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
+  category: 'general' | 'technical' | 'billing' | 'license' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   message: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting_response' | 'closed';
   createdAt: string;
   updatedAt: string;
   replies: TicketReply[];
@@ -165,10 +165,10 @@ const statusConfig = {
     className: 'bg-warning/10 text-warning',
     icon: AlertTriangle,
   },
-  resolved: {
-    label: 'حل شده',
-    className: 'bg-success/10 text-success',
-    icon: CheckCircle,
+  waiting_response: {
+    label: 'در انتظار پاسخ',
+    className: 'bg-info/10 text-info',
+    icon: Clock,
   },
   closed: {
     label: 'بسته شده',
@@ -197,6 +197,10 @@ const priorityConfig = {
 };
 
 const categoryConfig = {
+  general: {
+    label: 'عمومی',
+    className: 'bg-info/10 text-info',
+  },
   technical: {
     label: 'فنی',
     className: 'bg-primary/10 text-primary',
@@ -205,20 +209,8 @@ const categoryConfig = {
     label: 'مالی',
     className: 'bg-success/10 text-success',
   },
-  general: {
-    label: 'عمومی',
-    className: 'bg-info/10 text-info',
-  },
   license: {
     label: 'لایسنس',
-    className: 'bg-warning/10 text-warning',
-  },
-  bug: {
-    label: 'باگ',
-    className: 'bg-destructive/10 text-destructive',
-  },
-  feature: {
-    label: 'ویژگی جدید',
     className: 'bg-warning/10 text-warning',
   },
   other: {
@@ -238,8 +230,8 @@ export default function Tickets() {
   const [editTicket, setEditTicket] = useState<Ticket | null>(null);
   const [deleteTicket, setDeleteTicket] = useState<Ticket | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<('open' | 'in_progress' | 'resolved' | 'closed')[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<('technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other')[]>([]);
+  const [statusFilter, setStatusFilter] = useState<('open' | 'in_progress' | 'waiting_response' | 'closed')[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<('general' | 'technical' | 'billing' | 'license' | 'other')[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<('low' | 'medium' | 'high' | 'urgent')[]>([]);
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -270,17 +262,15 @@ export default function Tickets() {
 
         if (response) {
           // Backend returns: { data: { tickets: [...], pagination: {...} }, success: true }
-          // Or wrapped in: { data: { data: { tickets: [...], pagination: {...} } } }
-          const data = response.data || response;
-          const ticketsData = data.tickets || [];
-          const pagination = data.pagination || {};
+          const ticketsData = response.tickets || [];
+          const pagination = response.pagination || {};
           
           const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
             id: t.id?.toString() || t.ID?.toString() || '',
-            userId: t.user_id?.toString() || t.userID?.toString() || t.user?.id?.toString() || '',
+            userId: t.user?.id?.toString() || t.user_id?.toString() || '',
             userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
             subject: t.title || t.subject || '',
-            category: t.category || 'general',
+            category: (t.category === 'bug' || t.category === 'feature') ? 'other' : (t.category || 'general'),
             priority: t.priority || 'medium',
             message: t.description || t.message || '',
             status: t.status || 'open',
@@ -294,12 +284,12 @@ export default function Tickets() {
               createdAt: m.created_at ? new Date(m.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
               isInternal: false,
             })) || [],
-            assignedTo: t.assigned_to || null,
+            assignedTo: null,
           }));
 
           setTickets(transformedTickets);
-          setTotalTickets(pagination.total || data.total || 0);
-          setTotalPages(pagination.total_pages || data.total_pages || 1);
+          setTotalTickets(pagination.total || 0);
+          setTotalPages(pagination.total_pages || 1);
         }
       } catch (error: any) {
         console.error('Error loading tickets:', error);
@@ -325,13 +315,53 @@ export default function Tickets() {
     }
   }, [totalPages, currentPage]);
 
-  const handleTicketAdded = () => {
-    const stored = localStorage.getItem('asll-tickets');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setTickets(parsed);
-      } catch {}
+  const reloadTickets = async () => {
+    try {
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : undefined;
+      const priorityFilterValue = priorityFilter.length === 1 ? priorityFilter[0] : undefined;
+      const categoryFilterValue = categoryFilter.length === 1 ? categoryFilter[0] : undefined;
+
+      const response = await adminApi.getTickets({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        priority: priorityFilterValue,
+        category: categoryFilterValue,
+        search: searchQuery || undefined,
+      });
+
+      if (response) {
+        const ticketsData = response.tickets || [];
+        const pagination = response.pagination || {};
+        
+        const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
+          id: t.id?.toString() || t.ID?.toString() || '',
+          userId: t.user?.id?.toString() || t.user_id?.toString() || '',
+          userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
+          subject: t.title || t.subject || '',
+          category: (t.category === 'bug' || t.category === 'feature') ? 'other' : (t.category || 'general'),
+          priority: t.priority || 'medium',
+          message: t.description || t.message || '',
+          status: t.status || 'open',
+          createdAt: t.created_at ? new Date(t.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+          updatedAt: t.updated_at ? new Date(t.updated_at).toLocaleDateString('fa-IR') : (t.created_at ? new Date(t.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR')),
+          replies: t.messages?.map((m: any) => ({
+            id: m.id?.toString() || '',
+            message: m.message || '',
+            author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : (m.is_admin ? 'ادمین' : 'کاربر'),
+            authorType: m.is_admin ? 'admin' : 'user',
+            createdAt: m.created_at ? new Date(m.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
+            isInternal: false,
+          })) || [],
+          assignedTo: null,
+        }));
+
+        setTickets(transformedTickets);
+        setTotalTickets(pagination.total || 0);
+        setTotalPages(pagination.total_pages || 1);
+      }
+    } catch (error: any) {
+      console.error('Error reloading tickets:', error);
     }
   };
 
@@ -367,40 +397,7 @@ export default function Tickets() {
         title: 'موفقیت',
         description: 'وضعیت تیکت با موفقیت به‌روزرسانی شد.',
       });
-      // Reload tickets
-      const response = await adminApi.getTickets({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        priority: priorityFilter.length === 1 ? priorityFilter[0] : undefined,
-        category: categoryFilter.length === 1 ? categoryFilter[0] : undefined,
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.tickets)) {
-        const ticketsData = response.data?.tickets || response.tickets || [];
-        const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
-          id: t.id?.toString() || t.ID?.toString() || '',
-          userId: t.user_id?.toString() || t.userID?.toString() || '',
-          userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
-          subject: t.title || t.subject || '',
-          category: t.category || 'general',
-          priority: t.priority || 'medium',
-          message: t.description || t.message || '',
-          status: t.status || 'open',
-          createdAt: t.created_at || new Date().toISOString(),
-          updatedAt: t.updated_at || t.created_at || new Date().toISOString(),
-          replies: t.messages?.map((m: any) => ({
-            id: m.id?.toString() || '',
-            message: m.message || '',
-            author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : 'ادمین',
-            authorType: m.is_admin ? 'admin' : 'user',
-            createdAt: m.created_at || new Date().toISOString(),
-            isInternal: false,
-          })) || [],
-          assignedTo: t.assigned_to || null,
-        }));
-        setTickets(transformedTickets);
-      }
+      await reloadTickets();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -417,40 +414,7 @@ export default function Tickets() {
         title: 'موفقیت',
         description: 'پیام با موفقیت ارسال شد.',
       });
-      // Reload tickets
-      const response = await adminApi.getTickets({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        priority: priorityFilter.length === 1 ? priorityFilter[0] : undefined,
-        category: categoryFilter.length === 1 ? categoryFilter[0] : undefined,
-        search: searchQuery || undefined,
-      });
-      if (response && (response.data || response.tickets)) {
-        const ticketsData = response.data?.tickets || response.tickets || [];
-        const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
-          id: t.id?.toString() || t.ID?.toString() || '',
-          userId: t.user_id?.toString() || t.userID?.toString() || '',
-          userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
-          subject: t.title || t.subject || '',
-          category: t.category || 'general',
-          priority: t.priority || 'medium',
-          message: t.description || t.message || '',
-          status: t.status || 'open',
-          createdAt: t.created_at || new Date().toISOString(),
-          updatedAt: t.updated_at || t.created_at || new Date().toISOString(),
-          replies: t.messages?.map((m: any) => ({
-            id: m.id?.toString() || '',
-            message: m.message || '',
-            author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : 'ادمین',
-            authorType: m.is_admin ? 'admin' : 'user',
-            createdAt: m.created_at || new Date().toISOString(),
-            isInternal: false,
-          })) || [],
-          assignedTo: t.assigned_to || null,
-        }));
-        setTickets(transformedTickets);
-      }
+      await reloadTickets();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -465,18 +429,13 @@ export default function Tickets() {
     
     setIsDeleting(true);
     try {
-      // Note: Delete endpoint may not exist, using status update as fallback
-      await adminApi.updateTicketStatus(parseInt(deleteTicket.id), { status: 'closed' });
-      
-      setTickets(prev => prev.filter(t => t.id !== deleteTicket.id));
-      setSelectedTickets(prev => prev.filter(id => id !== deleteTicket.id));
-      setDeleteTicket(null);
-      setTotalTickets(prev => prev - 1);
-      
+      await adminApi.deleteTicket(parseInt(deleteTicket.id));
       toast({
         title: 'موفقیت',
         description: 'تیکت با موفقیت حذف شد.',
       });
+      setDeleteTicket(null);
+      await reloadTickets();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -488,7 +447,7 @@ export default function Tickets() {
     }
   };
 
-  const handleBulkAction = async (action: 'open' | 'close' | 'assign' | 'delete') => {
+  const handleBulkAction = async (action: 'open' | 'close' | 'delete') => {
     if (selectedTickets.length === 0) return;
 
     try {
@@ -497,43 +456,17 @@ export default function Tickets() {
           await adminApi.updateTicketStatus(parseInt(ticketId), { status: 'open' });
         } else if (action === 'close') {
           await adminApi.updateTicketStatus(parseInt(ticketId), { status: 'closed' });
+        } else if (action === 'delete') {
+          await adminApi.deleteTicket(parseInt(ticketId));
         }
       }
 
-      // Reload tickets
-      const response = await adminApi.getTickets({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 ? statusFilter[0] : undefined,
-        priority: priorityFilter.length === 1 ? priorityFilter[0] : undefined,
-        category: categoryFilter.length === 1 ? categoryFilter[0] : undefined,
-        search: searchQuery || undefined,
+      toast({
+        title: 'موفقیت',
+        description: `${selectedTickets.length} تیکت با موفقیت ${action === 'open' ? 'باز' : action === 'close' ? 'بسته' : 'حذف'} شد.`,
       });
-      if (response && (response.data || response.tickets)) {
-        const ticketsData = response.data?.tickets || response.tickets || [];
-        const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
-          id: t.id?.toString() || t.ID?.toString() || '',
-          userId: t.user_id?.toString() || t.userID?.toString() || '',
-          userName: t.user ? `${t.user.first_name || ''} ${t.user.last_name || ''}`.trim() : 'بدون نام',
-          subject: t.title || t.subject || '',
-          category: t.category || 'general',
-          priority: t.priority || 'medium',
-          message: t.description || t.message || '',
-          status: t.status || 'open',
-          createdAt: t.created_at || new Date().toISOString(),
-          updatedAt: t.updated_at || t.created_at || new Date().toISOString(),
-          replies: t.messages?.map((m: any) => ({
-            id: m.id?.toString() || '',
-            message: m.message || '',
-            author: m.sender ? `${m.sender.first_name || ''} ${m.sender.last_name || ''}`.trim() : 'ادمین',
-            authorType: m.is_admin ? 'admin' : 'user',
-            createdAt: m.created_at || new Date().toISOString(),
-            isInternal: false,
-          })) || [],
-          assignedTo: t.assigned_to || null,
-        }));
-        setTickets(transformedTickets);
-      }
+      setSelectedTickets([]);
+      await reloadTickets();
 
       setSelectedTickets([]);
       
@@ -968,7 +901,7 @@ export default function Tickets() {
       <AddTicketDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onSuccess={handleTicketAdded}
+        onSuccess={reloadTickets}
       />
 
       {/* Dialog مشاهده و پاسخ تیکت */}
@@ -976,15 +909,7 @@ export default function Tickets() {
         open={!!viewTicket}
         onOpenChange={(open) => !open && setViewTicket(null)}
         ticket={viewTicket}
-        onReply={() => {
-          const stored = localStorage.getItem('asll-tickets');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setTickets(parsed);
-            } catch {}
-          }
-        }}
+        onReply={reloadTickets}
       />
 
       {/* Dialog ویرایش تیکت */}
@@ -993,13 +918,7 @@ export default function Tickets() {
         onOpenChange={(open) => !open && setEditTicket(null)}
         ticket={editTicket}
         onSuccess={() => {
-          const stored = localStorage.getItem('asll-tickets');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setTickets(parsed);
-            } catch {}
-          }
+          reloadTickets();
           setEditTicket(null);
         }}
       />

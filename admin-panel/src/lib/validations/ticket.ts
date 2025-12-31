@@ -52,10 +52,12 @@ export const editTicketSchema = z.object({
     .string()
     .min(5, "موضوع باید حداقل ۵ کاراکتر باشد")
     .max(200, "موضوع نمی‌تواند بیشتر از ۲۰۰ کاراکتر باشد"),
-  category: z.enum(["technical", "billing", "general", "license", "bug", "feature", "other"]),
+  description: z
+    .string()
+    .min(10, "توضیحات باید حداقل ۱۰ کاراکتر باشد")
+    .max(5000, "توضیحات نمی‌تواند بیشتر از ۵۰۰۰ کاراکتر باشد"),
+  category: z.enum(["general", "technical", "billing", "license", "other"]),
   priority: z.enum(["low", "medium", "high", "urgent"]),
-  status: z.enum(["open", "in_progress", "resolved", "closed"]),
-  assignedTo: z.string().optional(),
 });
 
 export type EditTicketFormData = z.infer<typeof editTicketSchema>;

@@ -818,6 +818,154 @@ func AddAdminMessageToTicket(c *gin.Context) {
 	})
 }
 
+// UpdateTicketForAdmin updates ticket details (title, description, priority, category) - admin only
+func UpdateTicketForAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Title       string `json:"title"`
+		Description string `json:"description"`
+		Priority    string `json:"priority" binding:"omitempty,oneof=low medium high urgent"`
+		Category    string `json:"category" binding:"omitempty,oneof=general technical billing license other"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		return
+	}
+
+	// Check if ticket exists
+	var ticket models.SupportTicket
+	if err := db.Where("id = ?", ticketID).First(&ticket).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "تیکت یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت تیکت"})
+		}
+		return
+	}
+
+	// Update fields
+	updates := make(map[string]interface{})
+	if req.Title != "" {
+		updates["title"] = req.Title
+	}
+	if req.Description != "" {
+		updates["description"] = req.Description
+	}
+	if req.Priority != "" {
+		updates["priority"] = req.Priority
+	}
+	if req.Category != "" {
+		updates["category"] = req.Category
+	}
+	updates["updated_at"] = time.Now()
+
+	if err := db.Model(&ticket).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی تیکت"})
+		return
+	}
+
+	// Get updated ticket with relations
+	var updatedTicket models.SupportTicket
+	if err := db.Where("id = ?", ticketID).
+		Preload("User").
+		Preload("Messages", func(db *gorm.DB) *gorm.DB {
+			return db.Preload("Sender").Order("created_at ASC")
+		}).
+		First(&updatedTicket).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت تیکت به‌روزرسانی شده"})
+		return
+	}
+
+	// Format messages
+	var messageResponses []models.TicketMessageResponse
+	for _, msg := range updatedTicket.Messages {
+		var senderResponse *models.TicketUserResponse
+		if msg.Sender != nil {
+			senderResponse = &models.TicketUserResponse{
+				ID:        msg.Sender.ID,
+				FirstName: msg.Sender.FirstName,
+				LastName:  msg.Sender.LastName,
+				Email:     msg.Sender.Email,
+				Phone:     msg.Sender.Phone,
+			}
+		}
+
+		messageResponses = append(messageResponses, models.TicketMessageResponse{
+			ID:        msg.ID,
+			Message:   msg.Message,
+			IsAdmin:   msg.IsAdmin,
+			Sender:    senderResponse,
+			CreatedAt: msg.CreatedAt,
+		})
+	}
+
+	response := models.TicketResponse{
+		ID:          updatedTicket.ID,
+		Title:       updatedTicket.Title,
+		Description: updatedTicket.Description,
+		Priority:    updatedTicket.Priority,
+		Status:      updatedTicket.Status,
+		Category:    updatedTicket.Category,
+		User: models.TicketUserResponse{
+			ID:        updatedTicket.User.ID,
+			FirstName: updatedTicket.User.FirstName,
+			LastName:  updatedTicket.User.LastName,
+			Email:     updatedTicket.User.Email,
+			Phone:     updatedTicket.User.Phone,
+		},
+		Messages:  messageResponses,
+		CreatedAt: updatedTicket.CreatedAt,
+		UpdatedAt: updatedTicket.UpdatedAt,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "تیکت با موفقیت به‌روزرسانی شد",
+		"data":    response,
+	})
+}
+
+// DeleteTicketForAdmin deletes a ticket (soft delete) - admin only
+func DeleteTicketForAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		return
+	}
+
+	// Check if ticket exists
+	var ticket models.SupportTicket
+	if err := db.Where("id = ?", ticketID).First(&ticket).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "تیکت یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت تیکت"})
+		}
+		return
+	}
+
+	// Soft delete ticket
+	if err := db.Delete(&ticket).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف تیکت"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "تیکت با موفقیت حذف شد",
+	})
+}
+
 // ============================================
 // NOTIFICATION MANAGEMENT (ADMIN - Additional endpoints)
 // ============================================
@@ -1427,20 +1575,20 @@ func GetWebAdmins(c *gin.Context) {
 		}
 
 		response = append(response, gin.H{
-			"id":            admin.ID,
-			"name":          admin.Name,
-			"email":         admin.Email,
-			"phone":         admin.Phone,
-			"username":      admin.Username,
-			"telegram_id":   admin.TelegramID,
-			"role":          admin.Role,
-			"permissions":   permissions,
-			"status":        statusStr,
-			"is_active":     admin.IsActive,
-			"last_login":    lastLoginStr,
-			"login_count":   admin.LoginCount,
-			"created_at":    admin.CreatedAt.Format(time.RFC3339),
-			"updated_at":    admin.UpdatedAt.Format(time.RFC3339),
+			"id":          admin.ID,
+			"name":        admin.Name,
+			"email":       admin.Email,
+			"phone":       admin.Phone,
+			"username":    admin.Username,
+			"telegram_id": admin.TelegramID,
+			"role":        admin.Role,
+			"permissions": permissions,
+			"status":      statusStr,
+			"is_active":   admin.IsActive,
+			"last_login":  lastLoginStr,
+			"login_count": admin.LoginCount,
+			"created_at":  admin.CreatedAt.Format(time.RFC3339),
+			"updated_at":  admin.UpdatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -1504,20 +1652,20 @@ func GetWebAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data": gin.H{
-			"id":            admin.ID,
-			"name":          admin.Name,
-			"email":         admin.Email,
-			"phone":         admin.Phone,
-			"username":      admin.Username,
-			"telegram_id":   admin.TelegramID,
-			"role":          admin.Role,
-			"permissions":   permissions,
-			"status":        statusStr,
-			"is_active":     admin.IsActive,
-			"last_login":    lastLoginStr,
-			"login_count":   admin.LoginCount,
-			"created_at":    admin.CreatedAt.Format(time.RFC3339),
-			"updated_at":    admin.UpdatedAt.Format(time.RFC3339),
+			"id":          admin.ID,
+			"name":        admin.Name,
+			"email":       admin.Email,
+			"phone":       admin.Phone,
+			"username":    admin.Username,
+			"telegram_id": admin.TelegramID,
+			"role":        admin.Role,
+			"permissions": permissions,
+			"status":      statusStr,
+			"is_active":   admin.IsActive,
+			"last_login":  lastLoginStr,
+			"login_count": admin.LoginCount,
+			"created_at":  admin.CreatedAt.Format(time.RFC3339),
+			"updated_at":  admin.UpdatedAt.Format(time.RFC3339),
 		},
 	})
 }
@@ -1594,13 +1742,13 @@ func CreateWebAdmin(c *gin.Context) {
 		"success": true,
 		"message": "مدیر با موفقیت ایجاد شد",
 		"data": gin.H{
-			"id":          admin.ID,
-			"name":        admin.Name,
-			"email":       admin.Email,
-			"username":    admin.Username,
-			"role":        admin.Role,
-			"is_active":   admin.IsActive,
-			"created_at":  admin.CreatedAt.Format(time.RFC3339),
+			"id":         admin.ID,
+			"name":       admin.Name,
+			"email":      admin.Email,
+			"username":   admin.Username,
+			"role":       admin.Role,
+			"is_active":  admin.IsActive,
+			"created_at": admin.CreatedAt.Format(time.RFC3339),
 		},
 	})
 }

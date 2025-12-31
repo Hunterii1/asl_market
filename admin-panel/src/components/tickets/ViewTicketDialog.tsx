@@ -25,6 +25,7 @@ import {
   Send,
   FileText,
   Shield,
+  Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
@@ -33,6 +34,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { replyTicketSchema, type ReplyTicketFormData } from '@/lib/validations/ticket';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { Loader2 } from 'lucide-react';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface TicketReply {
   id: string;
@@ -48,10 +50,10 @@ interface TicketData {
   userId: string;
   userName: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
+  category: 'general' | 'technical' | 'billing' | 'license' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   message: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting_response' | 'closed';
   createdAt: string;
   updatedAt: string;
   replies: TicketReply[];
@@ -76,10 +78,10 @@ const statusConfig = {
     className: 'bg-warning/10 text-warning border-warning/20',
     icon: AlertTriangle,
   },
-  resolved: {
-    label: 'حل شده',
-    className: 'bg-success/10 text-success border-success/20',
-    icon: CheckCircle,
+  waiting_response: {
+    label: 'در انتظار پاسخ',
+    className: 'bg-info/10 text-info border-info/20',
+    icon: Clock,
   },
   closed: {
     label: 'بسته شده',
@@ -108,44 +110,17 @@ const priorityConfig = {
 };
 
 const categoryConfig = {
+  general: { label: 'عمومی', className: 'bg-info/10 text-info' },
   technical: { label: 'فنی', className: 'bg-primary/10 text-primary' },
   billing: { label: 'مالی', className: 'bg-success/10 text-success' },
-  general: { label: 'عمومی', className: 'bg-info/10 text-info' },
-  bug: { label: 'باگ', className: 'bg-destructive/10 text-destructive' },
-  feature: { label: 'ویژگی جدید', className: 'bg-warning/10 text-warning' },
+  license: { label: 'لایسنس', className: 'bg-warning/10 text-warning' },
   other: { label: 'سایر', className: 'bg-muted text-muted-foreground' },
 };
 
-// Mock API function
-const addReply = async (data: ReplyTicketFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const tickets = JSON.parse(localStorage.getItem('asll-tickets') || '[]');
-        const index = tickets.findIndex((t: TicketData) => t.id === data.ticketId);
-        if (index !== -1) {
-          const newReply: TicketReply = {
-            id: Date.now().toString(),
-            message: data.message,
-            author: 'مدیر سیستم',
-            authorType: 'admin',
-            createdAt: new Date().toLocaleDateString('fa-IR'),
-            isInternal: data.isInternal || false,
-          };
-          tickets[index].replies = [...(tickets[index].replies || []), newReply];
-          tickets[index].updatedAt = new Date().toLocaleDateString('fa-IR');
-          localStorage.setItem('asll-tickets', JSON.stringify(tickets));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTicketDialogProps) {
   const [isReplying, setIsReplying] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
 
   const form = useForm<ReplyTicketFormData>({
     resolver: zodResolver(replyTicketSchema),
@@ -173,7 +148,7 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
   const handleReply = async (data: ReplyTicketFormData) => {
     setIsReplying(true);
     try {
-      await addReply(data);
+      await adminApi.addAdminMessageToTicket(parseInt(data.ticketId), { message: data.message });
       toast({
         title: 'موفقیت',
         description: 'پاسخ با موفقیت ارسال شد.',
@@ -189,6 +164,33 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
       });
     } finally {
       setIsReplying(false);
+    }
+  };
+
+  const handleCloseTicket = async () => {
+    if (!ticket) return;
+    
+    if (!confirm('آیا از بستن این تیکت اطمینان دارید؟')) {
+      return;
+    }
+
+    setIsClosing(true);
+    try {
+      await adminApi.updateTicketStatus(parseInt(ticket.id), { status: 'closed' });
+      toast({
+        title: 'موفقیت',
+        description: 'تیکت با موفقیت بسته شد.',
+        variant: 'default',
+      });
+      onReply?.();
+    } catch (error) {
+      toast({
+        title: 'خطا',
+        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsClosing(false);
     }
   };
 
@@ -238,6 +240,27 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
                     </Badge>
                   </div>
                 </div>
+                {ticket.status !== 'closed' && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleCloseTicket}
+                    disabled={isClosing}
+                    className="shrink-0"
+                  >
+                    {isClosing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                        در حال بستن...
+                      </>
+                    ) : (
+                      <>
+                        <Lock className="w-4 h-4 ml-2" />
+                        بستن تیکت
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -254,59 +277,91 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
                   <p className="font-medium text-foreground">{ticket.userName}</p>
                   <p className="text-xs text-muted-foreground mt-1">شناسه: {ticket.userId}</p>
                 </div>
-                {ticket.assignedTo && (
-                  <div className="text-left">
-                    <p className="text-xs text-muted-foreground mb-1">واگذار شده به</p>
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-muted-foreground" />
-                      <p className="text-sm font-medium">{ticket.assignedTo}</p>
-                    </div>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
 
           {/* Original Message */}
-          <Card>
+          <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-muted-foreground" />
-                <h4 className="font-semibold text-foreground">پیام اصلی</h4>
-                <span className="text-xs text-muted-foreground mr-auto">
-                  {ticket.createdAt}
-                </span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-foreground">پیام کاربر</h4>
+                    <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                      {ticket.userName}
+                    </Badge>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {ticket.createdAt}
+                  </span>
+                </div>
               </div>
-              <p className="text-sm text-foreground whitespace-pre-wrap">{ticket.message}</p>
+              <div className="bg-background rounded-lg p-4 border border-border">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{ticket.message}</p>
+              </div>
             </CardContent>
           </Card>
 
           {/* Replies */}
           {ticket.replies && ticket.replies.length > 0 && (
             <div className="space-y-4">
-              <h4 className="font-semibold text-foreground">پاسخ‌ها ({ticket.replies.length})</h4>
+              <div className="flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-muted-foreground" />
+                <h4 className="font-semibold text-foreground">پاسخ‌ها ({ticket.replies.length})</h4>
+              </div>
               {ticket.replies.map((reply) => (
-                <Card key={reply.id} className={cn(
-                  reply.isInternal && 'border-warning/50 bg-warning/5'
-                )}>
+                <Card 
+                  key={reply.id} 
+                  className={cn(
+                    reply.authorType === 'admin' 
+                      ? 'border-primary/20 bg-primary/5' 
+                      : 'border-border',
+                    reply.isInternal && 'border-warning/50 bg-warning/5'
+                  )}
+                >
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className={cn(
+                        'w-8 h-8 rounded-lg flex items-center justify-center shrink-0',
+                        reply.authorType === 'admin' 
+                          ? 'bg-primary/10' 
+                          : 'bg-muted'
+                      )}>
                         {reply.authorType === 'admin' ? (
-                          <Shield className="w-4 h-4 text-primary" />
+                          <Shield className={cn('w-4 h-4', reply.authorType === 'admin' ? 'text-primary' : 'text-muted-foreground')} />
                         ) : (
                           <User className="w-4 h-4 text-muted-foreground" />
                         )}
-                        <span className="font-medium text-foreground">{reply.author}</span>
-                        {reply.isInternal && (
-                          <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
-                            داخلی
-                          </Badge>
-                        )}
                       </div>
-                      <span className="text-xs text-muted-foreground">{reply.createdAt}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-foreground">{reply.author}</span>
+                          {reply.authorType === 'admin' && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/20">
+                              ادمین
+                            </Badge>
+                          )}
+                          {reply.isInternal && (
+                            <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/20">
+                              داخلی
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground">{reply.createdAt}</span>
+                      </div>
                     </div>
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{reply.message}</p>
+                    <div className={cn(
+                      'rounded-lg p-3',
+                      reply.authorType === 'admin' 
+                        ? 'bg-background border border-border' 
+                        : 'bg-muted/50'
+                    )}>
+                      <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{reply.message}</p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -314,9 +369,15 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
           )}
 
           {/* Reply Form */}
-          {ticket.status !== 'closed' && (
-            <Card>
+          {ticket.status !== 'closed' ? (
+            <Card className="border-primary/20 bg-primary/5">
               <CardContent className="p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-primary" />
+                  </div>
+                  <h4 className="font-semibold text-foreground">پاسخ ادمین</h4>
+                </div>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleReply)} className="space-y-4">
                     <FormField
@@ -331,7 +392,7 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
                               onCheckedChange={field.onChange}
                               disabled={isReplying}
                             />
-                            <Label htmlFor="isInternal" className="cursor-pointer text-sm">
+                            <Label htmlFor="isInternal" className="cursor-pointer text-sm text-muted-foreground">
                               پاسخ داخلی (فقط برای مدیران قابل مشاهده)
                             </Label>
                           </div>
@@ -345,36 +406,72 @@ export function ViewTicketDialog({ open, onOpenChange, ticket, onReply }: ViewTi
                         <FormItem>
                           <FormControl>
                             <Textarea
-                              placeholder="پاسخ خود را بنویسید..."
-                              className="min-h-[120px]"
-                              {...field}
+                              placeholder="پاسخ خود را وارد کنید..."
+                              className="min-h-[120px] resize-none text-right bg-background border-border focus:border-primary focus:ring-2 focus:ring-primary/20"
                               disabled={isReplying}
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
                       <span className="text-xs text-muted-foreground">
                         {form.watch('message')?.length || 0} / 5000 کاراکتر
                       </span>
-                      <Button type="submit" disabled={isReplying} size="sm">
-                        {isReplying ? (
-                          <>
-                            <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                            در حال ارسال...
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-4 h-4 ml-2" />
-                            ارسال پاسخ
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <Button 
+                          type="submit" 
+                          disabled={isReplying || !form.watch('message')?.trim()} 
+                          size="sm"
+                          className="flex-1 sm:flex-initial"
+                        >
+                          {isReplying ? (
+                            <>
+                              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                              در حال ارسال...
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-4 h-4 ml-2" />
+                              ارسال پاسخ
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCloseTicket}
+                          disabled={isClosing || isReplying}
+                          className="flex-1 sm:flex-initial border-destructive/50 text-destructive hover:bg-destructive/10"
+                        >
+                          {isClosing ? (
+                            <>
+                              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                              در حال بستن...
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4 ml-2" />
+                              بستن تیکت
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-muted bg-muted/30">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Lock className="w-5 h-5" />
+                  <p className="text-sm">این تیکت بسته شده است و امکان ارسال پاسخ وجود ندارد.</p>
+                </div>
               </CardContent>
             </Card>
           )}

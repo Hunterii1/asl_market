@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, MessageSquare, Tag, AlertTriangle, FileText, Shield } from 'lucide-react';
+import { Loader2, MessageSquare, Tag, AlertTriangle, FileText } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -30,13 +30,15 @@ import {
 } from '@/components/ui/form';
 import { editTicketSchema, type EditTicketFormData } from '@/lib/validations/ticket';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Ticket {
   id: string;
   subject: string;
-  category: 'technical' | 'billing' | 'general' | 'license' | 'bug' | 'feature' | 'other';
+  message?: string;
+  category: 'general' | 'technical' | 'billing' | 'license' | 'other';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting_response' | 'closed';
   assignedTo?: string | null;
 }
 
@@ -47,56 +49,19 @@ interface EditTicketDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const updateTicket = async (data: EditTicketFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const tickets = JSON.parse(localStorage.getItem('asll-tickets') || '[]');
-        const index = tickets.findIndex((t: Ticket) => t.id === data.id);
-        if (index !== -1) {
-          tickets[index] = { ...tickets[index], ...data };
-          tickets[index].updatedAt = new Date().toLocaleDateString('fa-IR');
-          localStorage.setItem('asll-tickets', JSON.stringify(tickets));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
-
-// Mock admins list
-const getAdmins = () => {
-  const stored = localStorage.getItem('asll-admins');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
 
 export function EditTicketDialog({ open, onOpenChange, ticket, onSuccess }: EditTicketDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [admins, setAdmins] = useState<any[]>([]);
-
-  useEffect(() => {
-    setAdmins(getAdmins());
-  }, [open]);
 
   const form = useForm<EditTicketFormData>({
     resolver: zodResolver(editTicketSchema),
     defaultValues: {
       id: '',
       subject: '',
+      description: '',
       category: 'general',
       priority: 'medium',
       status: 'open',
-      assignedTo: '',
     },
   });
 
@@ -106,10 +71,10 @@ export function EditTicketDialog({ open, onOpenChange, ticket, onSuccess }: Edit
       form.reset({
         id: ticket.id,
         subject: ticket.subject,
-        category: ticket.category,
+        description: ticket.message || '',
+        category: ticket.category === 'bug' || ticket.category === 'feature' ? 'other' : ticket.category,
         priority: ticket.priority,
-        status: ticket.status,
-        assignedTo: ticket.assignedTo || '',
+        status: ticket.status === 'resolved' ? 'closed' : ticket.status,
       });
     }
   }, [ticket, open, form]);
@@ -117,7 +82,12 @@ export function EditTicketDialog({ open, onOpenChange, ticket, onSuccess }: Edit
   const onSubmit = async (data: EditTicketFormData) => {
     setIsSubmitting(true);
     try {
-      await updateTicket(data);
+      await adminApi.updateTicket(parseInt(data.id), {
+        title: data.subject,
+        description: data.description,
+        category: data.category,
+        priority: data.priority,
+      });
       toast({
         title: 'موفقیت',
         description: 'اطلاعات تیکت با موفقیت به‌روزرسانی شد.',
@@ -209,11 +179,10 @@ export function EditTicketDialog({ open, onOpenChange, ticket, onSuccess }: Edit
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="general">عمومی</SelectItem>
                         <SelectItem value="technical">فنی</SelectItem>
                         <SelectItem value="billing">مالی</SelectItem>
-                        <SelectItem value="general">عمومی</SelectItem>
-                        <SelectItem value="bug">باگ</SelectItem>
-                        <SelectItem value="feature">ویژگی جدید</SelectItem>
+                        <SelectItem value="license">لایسنس</SelectItem>
                         <SelectItem value="other">سایر</SelectItem>
                       </SelectContent>
                     </Select>
@@ -255,70 +224,31 @@ export function EditTicketDialog({ open, onOpenChange, ticket, onSuccess }: Edit
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* وضعیت */}
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>وضعیت</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
+            {/* توضیحات */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    توضیحات
+                  </FormLabel>
+                  <FormControl>
+                    <textarea
+                      {...field}
                       disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="text-right">
-                          <SelectValue placeholder="وضعیت را انتخاب کنید" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="open">باز</SelectItem>
-                        <SelectItem value="in_progress">در حال بررسی</SelectItem>
-                        <SelectItem value="resolved">حل شده</SelectItem>
-                        <SelectItem value="closed">بسته شده</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* واگذاری به */}
-              <FormField
-                control={form.control}
-                name="assignedTo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-muted-foreground" />
-                      واگذاری به
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value || ''}
-                      disabled={isSubmitting}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="text-right">
-                          <SelectValue placeholder="مدیر را انتخاب کنید (اختیاری)" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">واگذار نشده</SelectItem>
-                        {admins.map((admin) => (
-                          <SelectItem key={admin.id} value={admin.name}>
-                            {admin.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                      className="w-full min-h-[120px] rounded-xl border border-border bg-background px-4 py-3 text-sm text-right resize-none focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                      placeholder="توضیحات تیکت را وارد کنید..."
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {field.value?.length || 0} / 5000 کاراکتر
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter className="gap-2 sm:gap-0 flex-row-reverse">
               <Button

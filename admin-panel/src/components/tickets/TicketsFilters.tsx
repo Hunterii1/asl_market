@@ -15,10 +15,10 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 interface TicketsFiltersProps {
-  statusFilter: ('open' | 'in_progress' | 'resolved' | 'closed')[];
-  onStatusFilterChange: (status: ('open' | 'in_progress' | 'resolved' | 'closed')[]) => void;
-  categoryFilter: ('technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other')[];
-  onCategoryFilterChange: (category: ('technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other')[]) => void;
+  statusFilter: ('open' | 'in_progress' | 'waiting_response' | 'closed')[];
+  onStatusFilterChange: (status: ('open' | 'in_progress' | 'waiting_response' | 'closed')[]) => void;
+  categoryFilter: ('general' | 'technical' | 'billing' | 'license' | 'other')[];
+  onCategoryFilterChange: (category: ('general' | 'technical' | 'billing' | 'license' | 'other')[]) => void;
   priorityFilter: ('low' | 'medium' | 'high' | 'urgent')[];
   onPriorityFilterChange: (priority: ('low' | 'medium' | 'high' | 'urgent')[]) => void;
   onReset: () => void;
@@ -35,7 +35,7 @@ export function TicketsFilters({
 }: TicketsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'open' | 'in_progress' | 'resolved' | 'closed') => {
+  const handleToggleStatus = (status: 'open' | 'in_progress' | 'waiting_response' | 'closed') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -43,7 +43,7 @@ export function TicketsFilters({
     }
   };
 
-  const handleToggleCategory = (category: 'technical' | 'billing' | 'general' | 'bug' | 'feature' | 'other') => {
+  const handleToggleCategory = (category: 'general' | 'technical' | 'billing' | 'license' | 'other') => {
     if (categoryFilter.includes(category)) {
       onCategoryFilterChange(categoryFilter.filter(c => c !== category));
     } else {
@@ -90,7 +90,7 @@ export function TicketsFilters({
               {([
                 { value: 'open', label: 'باز' },
                 { value: 'in_progress', label: 'در حال بررسی' },
-                { value: 'resolved', label: 'حل شده' },
+                { value: 'waiting_response', label: 'در انتظار پاسخ' },
                 { value: 'closed', label: 'بسته شده' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
@@ -117,11 +117,10 @@ export function TicketsFilters({
             <Label className="text-base font-semibold">دسته‌بندی</Label>
             <div className="space-y-2">
               {([
+                { value: 'general', label: 'عمومی' },
                 { value: 'technical', label: 'فنی' },
                 { value: 'billing', label: 'مالی' },
-                { value: 'general', label: 'عمومی' },
-                { value: 'bug', label: 'باگ' },
-                { value: 'feature', label: 'ویژگی جدید' },
+                { value: 'license', label: 'لایسنس' },
                 { value: 'other', label: 'سایر' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">

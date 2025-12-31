@@ -507,6 +507,24 @@ class AdminApiService {
     });
   }
 
+  async updateTicket(id: number, data: {
+    title?: string;
+    description?: string;
+    priority?: 'low' | 'medium' | 'high' | 'urgent';
+    category?: 'general' | 'technical' | 'billing' | 'license' | 'other';
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/support/tickets/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteTicket(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/support/tickets/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getTicketStats(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/support/tickets/stats`, {
       method: 'GET',
