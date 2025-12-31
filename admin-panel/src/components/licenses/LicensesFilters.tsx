@@ -15,10 +15,10 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 interface LicensesFiltersProps {
-  statusFilter: ('active' | 'expired' | 'suspended' | 'revoked')[];
-  onStatusFilterChange: (status: ('active' | 'expired' | 'suspended' | 'revoked')[]) => void;
-  typeFilter: ('trial' | 'monthly' | 'yearly' | 'lifetime')[];
-  onTypeFilterChange: (type: ('trial' | 'monthly' | 'yearly' | 'lifetime')[]) => void;
+  statusFilter: ('used' | 'available')[];
+  onStatusFilterChange: (status: ('used' | 'available')[]) => void;
+  typeFilter: ('pro' | 'plus' | 'plus4')[];
+  onTypeFilterChange: (type: ('pro' | 'plus' | 'plus4')[]) => void;
   onReset: () => void;
 }
 
@@ -31,7 +31,7 @@ export function LicensesFilters({
 }: LicensesFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'active' | 'expired' | 'suspended' | 'revoked') => {
+  const handleToggleStatus = (status: 'used' | 'available') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -39,7 +39,7 @@ export function LicensesFilters({
     }
   };
 
-  const handleToggleType = (type: 'trial' | 'monthly' | 'yearly' | 'lifetime') => {
+  const handleToggleType = (type: 'pro' | 'plus' | 'plus4') => {
     if (typeFilter.includes(type)) {
       onTypeFilterChange(typeFilter.filter(t => t !== type));
     } else {
@@ -76,10 +76,8 @@ export function LicensesFilters({
             <Label className="text-base font-semibold">وضعیت</Label>
             <div className="space-y-2">
               {([
-                { value: 'active', label: 'فعال' },
-                { value: 'expired', label: 'منقضی شده' },
-                { value: 'suspended', label: 'تعلیق شده' },
-                { value: 'revoked', label: 'لغو شده' },
+                { value: 'used', label: 'استفاده شده' },
+                { value: 'available', label: 'در دسترس' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
@@ -105,10 +103,9 @@ export function LicensesFilters({
             <Label className="text-base font-semibold">نوع لایسنس</Label>
             <div className="space-y-2">
               {([
-                { value: 'trial', label: 'آزمایشی' },
-                { value: 'monthly', label: 'ماهانه' },
-                { value: 'yearly', label: 'سالانه' },
-                { value: 'lifetime', label: 'مادام‌العمر' },
+                { value: 'pro', label: 'پرو' },
+                { value: 'plus', label: 'پلاس' },
+                { value: 'plus4', label: 'پلاس ۴' },
               ] as const).map(({ value, label }) => (
                 <div key={value} className="flex items-center gap-2">
                   <Checkbox
@@ -151,10 +148,8 @@ export function LicensesFilters({
                       variant="secondary"
                       className="gap-1"
                     >
-                      {status === 'active' && 'فعال'}
-                      {status === 'expired' && 'منقضی شده'}
-                      {status === 'suspended' && 'تعلیق شده'}
-                      {status === 'revoked' && 'لغو شده'}
+                      {status === 'used' && 'استفاده شده'}
+                      {status === 'available' && 'در دسترس'}
                       <button
                         onClick={() => handleToggleStatus(status)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"
@@ -169,10 +164,9 @@ export function LicensesFilters({
                       variant="secondary"
                       className="gap-1"
                     >
-                      {type === 'trial' && 'آزمایشی'}
-                      {type === 'monthly' && 'ماهانه'}
-                      {type === 'yearly' && 'سالانه'}
-                      {type === 'lifetime' && 'مادام‌العمر'}
+                      {type === 'pro' && 'پرو'}
+                      {type === 'plus' && 'پلاس'}
+                      {type === 'plus4' && 'پلاس ۴'}
                       <button
                         onClick={() => handleToggleType(type)}
                         className="hover:bg-destructive/20 rounded-full p-0.5"

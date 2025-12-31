@@ -7,6 +7,7 @@ import {
 } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
   Key,
@@ -23,67 +24,62 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
-interface LicenseData {
+interface License {
   id: string;
-  licenseKey: string;
-  userId: string;
-  userName: string;
-  productId: string;
-  productName: string;
-  licenseType: 'trial' | 'monthly' | 'yearly' | 'lifetime';
-  activatedAt?: string;
-  expiresAt?: string;
-  status: 'active' | 'expired' | 'suspended' | 'revoked';
-  maxActivations: number;
-  currentActivations: number;
-  notes?: string;
-  createdAt?: string;
+  code: string;
+  type: 'pro' | 'plus' | 'plus4';
+  duration: number;
+  is_used: boolean;
+  used_by?: number;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+  used_at?: string;
+  expires_at?: string;
+  generated_by: number;
+  admin?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
 interface ViewLicenseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  license: LicenseData | null;
+  license: License | null;
 }
 
 const statusConfig = {
-  active: {
-    label: 'فعال',
-    className: 'bg-success/10 text-success border-success/20',
+  used: {
+    label: 'استفاده شده',
+    className: 'bg-info/10 text-info border-info/20',
     icon: CheckCircle,
   },
-  expired: {
-    label: 'منقضی شده',
-    className: 'bg-destructive/10 text-destructive border-destructive/20',
-    icon: XCircle,
-  },
-  suspended: {
-    label: 'تعلیق شده',
-    className: 'bg-warning/10 text-warning border-warning/20',
-    icon: AlertCircle,
-  },
-  revoked: {
-    label: 'لغو شده',
-    className: 'bg-muted text-muted-foreground border-border',
-    icon: XCircle,
+  available: {
+    label: 'در دسترس',
+    className: 'bg-success/10 text-success border-success/20',
+    icon: CheckCircle,
   },
 };
 
 const typeConfig = {
-  trial: {
-    label: 'آزمایشی',
-    className: 'bg-info/10 text-info border-info/20',
-  },
-  monthly: {
-    label: 'ماهانه',
+  pro: {
+    label: 'پرو',
     className: 'bg-primary/10 text-primary border-primary/20',
   },
-  yearly: {
-    label: 'سالانه',
+  plus: {
+    label: 'پلاس',
     className: 'bg-success/10 text-success border-success/20',
   },
-  lifetime: {
-    label: 'مادام‌العمر',
+  plus4: {
+    label: 'پلاس ۴',
     className: 'bg-warning/10 text-warning border-warning/20',
   },
 };
@@ -91,10 +87,12 @@ const typeConfig = {
 export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDialogProps) {
   if (!license) return null;
 
-  const StatusIcon = statusConfig[license.status].icon;
+  const statusKey = license.is_used ? 'used' : 'available';
+  const StatusIcon = statusConfig[statusKey].icon;
+  const userName = license.user ? `${license.user.first_name || ''} ${license.user.last_name || ''}`.trim() : 'بدون کاربر';
 
   const handleCopyKey = () => {
-    navigator.clipboard.writeText(license.licenseKey);
+    navigator.clipboard.writeText(license.code);
     toast({
       title: 'کپی شد',
       description: 'کد لایسنس در کلیپ‌بورد کپی شد.',
@@ -123,17 +121,17 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                   <h3 className="text-xl font-bold text-foreground mb-2">لایسنس #{license.id}</h3>
                   <Badge
                     variant="outline"
-                    className={cn('border-2', statusConfig[license.status].className)}
+                    className={cn('border-2', statusConfig[statusKey].className)}
                   >
                     <StatusIcon className="w-3 h-3 ml-1" />
-                    {statusConfig[license.status].label}
+                    {statusConfig[statusKey].label}
                   </Badge>
                 </div>
                 <Badge
                   variant="outline"
-                  className={cn('border-2', typeConfig[license.licenseType].className)}
+                  className={cn('border-2', typeConfig[license.type].className)}
                 >
-                  {typeConfig[license.licenseType].label}
+                  {typeConfig[license.type].label}
                 </Badge>
               </div>
             </CardContent>
@@ -149,7 +147,7 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                     <p className="text-sm text-muted-foreground">کد لایسنس</p>
                   </div>
                   <p className="font-mono text-lg font-bold text-foreground dir-ltr text-left">
-                    {license.licenseKey}
+                    {license.code}
                   </p>
                 </div>
                 <Button
@@ -176,19 +174,13 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-muted-foreground">کاربر</p>
-                    <p className="font-medium text-foreground">{license.userName}</p>
-                    <p className="text-xs text-muted-foreground mt-1">شناسه: {license.userId}</p>
-                  </div>
-                </div>
-                <Separator />
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-info" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">محصول</p>
-                    <p className="font-medium text-foreground">{license.productName}</p>
-                    <p className="text-xs text-muted-foreground mt-1">شناسه: {license.productId}</p>
+                    <p className="font-medium text-foreground">{userName}</p>
+                    {license.user?.email && (
+                      <p className="text-xs text-muted-foreground mt-1">{license.user.email}</p>
+                    )}
+                    {license.user?.phone && (
+                      <p className="text-xs text-muted-foreground mt-1">{license.user.phone}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -203,10 +195,10 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <Calendar className="w-4 h-4" />
-                    تاریخ فعال‌سازی
+                    تاریخ استفاده
                   </div>
                   <p className="text-lg font-semibold text-foreground">
-                    {license.activatedAt || 'هنوز فعال نشده'}
+                    {license.used_at ? new Date(license.used_at).toLocaleDateString('fa-IR') : 'هنوز استفاده نشده'}
                   </p>
                 </div>
                 <div className="bg-muted/50 rounded-xl p-4">
@@ -215,36 +207,29 @@ export function ViewLicenseDialog({ open, onOpenChange, license }: ViewLicenseDi
                     تاریخ انقضا
                   </div>
                   <p className="text-lg font-semibold text-foreground">
-                    {license.expiresAt || 'نامحدود'}
+                    {license.expires_at ? new Date(license.expires_at).toLocaleDateString('fa-IR') : 'نامحدود'}
                   </p>
                 </div>
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <CheckCircle className="w-4 h-4" />
-                    فعال‌سازی‌های فعلی
+                    <Calendar className="w-4 h-4" />
+                    مدت زمان (ماه)
                   </div>
-                  <p className="text-xl font-bold text-foreground">{license.currentActivations}</p>
+                  <p className="text-xl font-bold text-foreground">{license.duration}</p>
                 </div>
                 <div className="bg-muted/50 rounded-xl p-4">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <Key className="w-4 h-4" />
-                    حداکثر فعال‌سازی
+                    <Calendar className="w-4 h-4" />
+                    تاریخ ایجاد
                   </div>
-                  <p className="text-xl font-bold text-foreground">{license.maxActivations}</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {new Date(license.created_at).toLocaleDateString('fa-IR')}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Notes */}
-          {license.notes && (
-            <Card>
-              <CardContent className="p-6">
-                <h4 className="font-semibold text-foreground mb-2">یادداشت</h4>
-                <p className="text-sm text-muted-foreground">{license.notes}</p>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -11,8 +11,6 @@ import {
   Key, 
   Plus,
   Eye,
-  Edit,
-  Trash2,
   X,
   Key as KeyIcon,
   CheckCircle,
@@ -102,7 +100,7 @@ export default function Licenses() {
   const [viewLicense, setViewLicense] = useState<License | null>(null);
   const [statusFilter, setStatusFilter] = useState<('used' | 'available')[]>([]);
   const [typeFilter, setTypeFilter] = useState<('pro' | 'plus' | 'plus4')[]>([]);
-  const [sortField, setSortField] = useState<SortField>('createdAt');
+  const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -283,61 +281,6 @@ export default function Licenses() {
           </CardContent>
         </Card>
 
-        {/* Bulk Actions */}
-        {selectedLicenses.length > 0 && (
-          <Card className="border-primary/50 bg-primary/5 animate-scale-in">
-            <CardContent className="p-3 md:p-4">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <span className="text-sm text-foreground font-medium">
-                  {selectedLicenses.length} لایسنس انتخاب شده
-                </span>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleBulkAction('activate')}
-                    className="text-success hover:bg-success/10 flex-1 md:flex-initial"
-                  >
-                    <CheckCircle className="w-4 h-4 md:ml-2" />
-                    <span className="hidden sm:inline">فعال‌سازی</span>
-                    <span className="sm:hidden">فعال</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleBulkAction('suspend')}
-                    className="text-warning hover:bg-warning/10 flex-1 md:flex-initial"
-                  >
-                    <AlertCircle className="w-4 h-4 md:ml-2" />
-                    <span className="hidden sm:inline">تعلیق</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleBulkAction('revoke')}
-                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
-                  >
-                    <XCircle className="w-4 h-4 md:ml-2" />
-                    <span className="hidden sm:inline">لغو</span>
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      if (confirm(`آیا از حذف ${selectedLicenses.length} لایسنس اطمینان دارید؟`)) {
-                        handleBulkAction('delete');
-                      }
-                    }}
-                    className="text-destructive hover:bg-destructive/10 flex-1 md:flex-initial"
-                  >
-                    <Trash2 className="w-4 h-4 md:ml-2" />
-                    <span className="hidden sm:inline">حذف</span>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Licenses Table */}
         <Card>
@@ -375,51 +318,35 @@ export default function Licenses() {
                         className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                     </th>
-                    <th className="p-4 text-right">
-                      <button
-                        onClick={() => handleSort('userName')}
-                        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        کاربر
-                        {getSortIcon('userName')}
-                      </button>
-                    </th>
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">کد لایسنس</th>
                     <th className="p-4 text-right">
                       <button
-                        onClick={() => handleSort('productName')}
-                        className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        محصول
-                        {getSortIcon('productName')}
-                      </button>
-                    </th>
-                    <th className="p-4 text-right">
-                      <button
-                        onClick={() => handleSort('licenseType')}
+                        onClick={() => handleSort('type')}
                         className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
                         نوع
-                        {getSortIcon('licenseType')}
+                        {getSortIcon('type')}
                       </button>
                     </th>
+                    <th className="p-4 text-right text-sm font-medium text-muted-foreground">کاربر</th>
                     <th className="p-4 text-right">
                       <button
-                        onClick={() => handleSort('status')}
+                        onClick={() => handleSort('is_used')}
                         className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
                         وضعیت
-                        {getSortIcon('status')}
+                        {getSortIcon('is_used')}
                       </button>
                     </th>
-                    <th className="p-4 text-right text-sm font-medium text-muted-foreground">فعال‌سازی</th>
+                    <th className="p-4 text-right text-sm font-medium text-muted-foreground">تاریخ استفاده</th>
+                    <th className="p-4 text-right text-sm font-medium text-muted-foreground">انقضا</th>
                     <th className="p-4 text-right">
                       <button
-                        onClick={() => handleSort('expiresAt')}
+                        onClick={() => handleSort('created_at')}
                         className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
-                        انقضا
-                        {getSortIcon('expiresAt')}
+                        تاریخ ایجاد
+                        {getSortIcon('created_at')}
                       </button>
                     </th>
                     <th className="p-4 text-right text-sm font-medium text-muted-foreground">عملیات</th>
@@ -437,7 +364,9 @@ export default function Licenses() {
                     </tr>
                   ) : (
                     paginatedLicenses.map((license, index) => {
-                      const StatusIcon = statusConfig[license.status].icon;
+                      const statusKey = license.is_used ? 'used' : 'available';
+                      const StatusIcon = statusConfig[statusKey].icon;
+                      const userName = license.user ? `${license.user.first_name || ''} ${license.user.last_name || ''}`.trim() : 'بدون کاربر';
                       return (
                         <tr
                           key={license.id}
@@ -453,20 +382,14 @@ export default function Licenses() {
                             />
                           </td>
                           <td className="p-4">
-                            <div>
-                              <p className="font-medium text-foreground">{license.userName}</p>
-                              <p className="text-xs text-muted-foreground">#{license.id}</p>
-                            </div>
-                          </td>
-                          <td className="p-4">
                             <div className="flex items-center gap-2">
                               <code className="text-sm font-mono text-foreground dir-ltr">
-                                {license.licenseKey}
+                                {license.code}
                               </code>
                               <Button
                                 variant="ghost"
                                 size="icon-sm"
-                                onClick={() => handleCopyKey(license.licenseKey)}
+                                onClick={() => handleCopyKey(license.code)}
                                 title="کپی کد"
                                 className="h-6 w-6"
                               >
@@ -475,36 +398,39 @@ export default function Licenses() {
                             </div>
                           </td>
                           <td className="p-4">
-                            <p className="text-sm text-foreground">{license.productName}</p>
-                          </td>
-                          <td className="p-4">
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium',
-                                typeConfig[license.licenseType].className
+                                typeConfig[license.type].className
                               )}
                             >
-                              {typeConfig[license.licenseType].label}
+                              {typeConfig[license.type].label}
                             </span>
+                          </td>
+                          <td className="p-4">
+                            <div>
+                              <p className="font-medium text-foreground">{userName}</p>
+                              {license.user?.email && (
+                                <p className="text-xs text-muted-foreground">{license.user.email}</p>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <span
                               className={cn(
                                 'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit',
-                                statusConfig[license.status].className
+                                statusConfig[statusKey].className
                               )}
                             >
                               <StatusIcon className="w-3 h-3" />
-                              {statusConfig[license.status].label}
+                              {statusConfig[statusKey].label}
                             </span>
                           </td>
-                          <td className="p-4">
-                            <p className="text-sm text-foreground">
-                              {license.currentActivations} / {license.maxActivations}
-                            </p>
+                          <td className="p-4 text-sm text-muted-foreground">
+                            {license.used_at ? new Date(license.used_at).toLocaleDateString('fa-IR') : '-'}
                           </td>
                           <td className="p-4 text-sm text-muted-foreground">
-                            {license.expiresAt || 'نامحدود'}
+                            {license.expires_at ? new Date(license.expires_at).toLocaleDateString('fa-IR') : '-'}
                           </td>
                           <td className="p-4">
                             <div className="flex items-center gap-1">
@@ -515,23 +441,6 @@ export default function Licenses() {
                                 title="مشاهده جزئیات"
                               >
                                 <Eye className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon-sm"
-                                onClick={() => setEditLicense(license)}
-                                title="ویرایش"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon-sm" 
-                                className="text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleteLicense(license)}
-                                title="حذف"
-                              >
-                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </td>
@@ -638,31 +547,6 @@ export default function Licenses() {
         license={viewLicense}
       />
 
-      {/* Dialog ویرایش لایسنس */}
-      <EditLicenseDialog
-        open={!!editLicense}
-        onOpenChange={(open) => !open && setEditLicense(null)}
-        license={editLicense}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-licenses');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setLicenses(parsed);
-            } catch {}
-          }
-          setEditLicense(null);
-        }}
-      />
-
-      {/* Dialog حذف لایسنس */}
-      <DeleteLicenseDialog
-        open={!!deleteLicense}
-        onOpenChange={(open) => !open && setDeleteLicense(null)}
-        license={deleteLicense}
-        onConfirm={handleDeleteLicense}
-        isDeleting={isDeleting}
-      />
     </AdminLayout>
   );
 }
