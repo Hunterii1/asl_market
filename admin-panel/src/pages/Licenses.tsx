@@ -26,9 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddLicenseDialog } from '@/components/licenses/AddLicenseDialog';
-import { EditLicenseDialog } from '@/components/licenses/EditLicenseDialog';
 import { ViewLicenseDialog } from '@/components/licenses/ViewLicenseDialog';
-import { DeleteLicenseDialog } from '@/components/licenses/DeleteLicenseDialog';
 import { LicensesFilters } from '@/components/licenses/LicensesFilters';
 import {
   Select,
@@ -40,29 +38,60 @@ import {
 
 interface License {
   id: string;
-  code?: string;
-  licenseKey: string;
-  userId: string;
-  userName: string;
-  user?: any;
-  productId: string;
-  productName: string;
-  type?: 'pro' | 'plus' | 'plus4';
-  licenseType: 'trial' | 'monthly' | 'yearly' | 'lifetime';
-  isUsed?: boolean;
-  usedBy?: number;
-  usedAt?: string;
-  activatedAt?: string;
-  expiresAt?: string;
-  status: 'active' | 'expired' | 'suspended' | 'revoked';
-  maxActivations: number;
-  currentActivations: number;
-  notes?: string;
-  createdAt: string;
+  code: string;
+  type: 'pro' | 'plus' | 'plus4';
+  duration: number; // Duration in months
+  is_used: boolean;
+  used_by?: number;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    phone: string;
+  };
+  used_at?: string;
+  expires_at?: string;
+  generated_by: number;
+  admin?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+  };
+  created_at: string;
+  updated_at: string;
 }
 
-// داده‌های اولیه
-const initialLicenses: License[] = [
+const statusConfig = {
+  used: {
+    label: 'استفاده شده',
+    className: 'bg-info/10 text-info',
+    icon: CheckCircle,
+  },
+  available: {
+    label: 'در دسترس',
+    className: 'bg-success/10 text-success',
+    icon: CheckCircle,
+  },
+};
+
+const typeConfig = {
+  pro: {
+    label: 'پرو',
+    className: 'bg-primary/10 text-primary',
+  },
+  plus: {
+    label: 'پلاس',
+    className: 'bg-success/10 text-success',
+  },
+  plus4: {
+    label: 'پلاس ۴',
+    className: 'bg-warning/10 text-warning',
+  },
+};
+
+// داده‌های اولیه حذف شده - از API استفاده می‌شود
+// const initialLicenses: License[] = [];
   {
     id: '1',
     licenseKey: 'ABCD-1234-EFGH-5678',
@@ -140,49 +169,8 @@ const initialLicenses: License[] = [
   },
 ];
 
-const statusConfig = {
-  active: {
-    label: 'فعال',
-    className: 'bg-success/10 text-success',
-    icon: CheckCircle,
-  },
-  expired: {
-    label: 'منقضی شده',
-    className: 'bg-destructive/10 text-destructive',
-    icon: XCircle,
-  },
-  suspended: {
-    label: 'تعلیق شده',
-    className: 'bg-warning/10 text-warning',
-    icon: AlertCircle,
-  },
-  revoked: {
-    label: 'لغو شده',
-    className: 'bg-muted text-muted-foreground',
-    icon: XCircle,
-  },
-};
 
-const typeConfig = {
-  trial: {
-    label: 'آزمایشی',
-    className: 'bg-info/10 text-info',
-  },
-  monthly: {
-    label: 'ماهانه',
-    className: 'bg-primary/10 text-primary',
-  },
-  yearly: {
-    label: 'سالانه',
-    className: 'bg-success/10 text-success',
-  },
-  lifetime: {
-    label: 'مادام‌العمر',
-    className: 'bg-warning/10 text-warning',
-  },
-};
-
-type SortField = 'userName' | 'productName' | 'licenseType' | 'status' | 'expiresAt' | 'createdAt';
+type SortField = 'code' | 'type' | 'is_used' | 'created_at';
 type SortOrder = 'asc' | 'desc';
 
 export default function Licenses() {
@@ -190,11 +178,8 @@ export default function Licenses() {
   const [selectedLicenses, setSelectedLicenses] = useState<string[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [viewLicense, setViewLicense] = useState<License | null>(null);
-  const [editLicense, setEditLicense] = useState<License | null>(null);
-  const [deleteLicense, setDeleteLicense] = useState<License | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<('active' | 'expired' | 'suspended' | 'revoked')[]>([]);
-  const [typeFilter, setTypeFilter] = useState<('trial' | 'monthly' | 'yearly' | 'lifetime')[]>([]);
+  const [statusFilter, setStatusFilter] = useState<('used' | 'available')[]>([]);
+  const [typeFilter, setTypeFilter] = useState<('pro' | 'plus' | 'plus4')[]>([]);
   const [sortField, setSortField] = useState<SortField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -205,71 +190,66 @@ export default function Licenses() {
   const [totalPages, setTotalPages] = useState(0);
 
   // Load licenses from API
-  useEffect(() => {
-    const loadLicenses = async () => {
-      try {
-        setLoading(true);
-        const statusFilterValue = statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'used' 
-            : statusFilter[0] === 'expired' ? 'used' 
-            : statusFilter[0] === 'suspended' ? 'used' 
-            : statusFilter[0] === 'revoked' ? 'used' 
-            : 'all'
-          : 'all';
+  const loadLicenses = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : undefined;
+      const typeFilterValue = typeFilter.length === 1 ? typeFilter[0] : undefined;
 
-        const typeFilterValue = typeFilter.length === 1 ? typeFilter[0] : undefined;
+      const response = await adminApi.getLicenses({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        type: typeFilterValue,
+      });
 
-        const response = await adminApi.getLicenses({
-          page: currentPage,
-          per_page: itemsPerPage,
-          status: statusFilterValue,
-        });
+      if (response && response.data) {
+        const licensesData = response.data.licenses || [];
+        const transformedLicenses: License[] = licensesData.map((l: any) => ({
+          id: l.id?.toString() || l.ID?.toString() || '',
+          code: l.code || '',
+          type: (l.type || 'plus') as 'pro' | 'plus' | 'plus4',
+          duration: l.duration || 12,
+          is_used: l.is_used || false,
+          used_by: l.used_by || undefined,
+          user: l.user ? {
+            id: l.user.id || 0,
+            first_name: l.user.first_name || '',
+            last_name: l.user.last_name || '',
+            email: l.user.email || '',
+            phone: l.user.phone || '',
+          } : undefined,
+          used_at: l.used_at || undefined,
+          expires_at: l.expires_at || undefined,
+          generated_by: l.generated_by || 0,
+          admin: l.admin ? {
+            id: l.admin.id || 0,
+            first_name: l.admin.first_name || '',
+            last_name: l.admin.last_name || '',
+          } : undefined,
+          created_at: l.created_at || new Date().toISOString(),
+          updated_at: l.updated_at || new Date().toISOString(),
+        }));
 
-        if (response && (response.data || response.licenses)) {
-          const licensesData = response.data?.licenses || response.licenses || [];
-          const transformedLicenses: License[] = licensesData.map((l: any) => ({
-            id: l.id?.toString() || l.ID?.toString() || '',
-            code: l.code || l.license_key || '',
-            licenseKey: l.code || l.license_key || 'N/A',
-            userId: l.used_by?.toString() || l.user_id?.toString() || '0',
-            userName: l.user ? `${l.user.first_name || ''} ${l.user.last_name || ''}`.trim() : 'بدون کاربر',
-            productId: l.product_id?.toString() || l.productId?.toString() || '0',
-            productName: l.product?.name || l.productName || 'بدون محصول',
-            type: l.type || 'plus',
-            licenseType: (l.type === 'pro' ? 'yearly' : l.type === 'plus' ? 'yearly' : l.type === 'plus4' ? 'monthly' : 'yearly') as 'trial' | 'monthly' | 'yearly' | 'lifetime',
-            isUsed: l.is_used || false,
-            usedBy: l.used_by,
-            usedAt: l.used_at || '',
-            expiresAt: l.expires_at || '',
-            status: (l.is_used ? 'active' : 'expired') as 'active' | 'expired' | 'suspended' | 'revoked',
-            maxActivations: l.max_activations || 1,
-            currentActivations: l.current_activations || 0,
-            createdAt: l.created_at || new Date().toISOString(),
-          }));
-
-          // Apply type filter if needed - filter by licenseType not type
-          const filtered = typeFilterValue 
-            ? transformedLicenses.filter(l => l.licenseType === typeFilterValue)
-            : transformedLicenses;
-
-          setLicenses(filtered);
-          setTotalLicenses(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
-        }
-      } catch (error: any) {
-        console.error('Error loading licenses:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری لایسنس‌ها',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
+        setLicenses(transformedLicenses);
+        setTotalLicenses(response.data.total || 0);
+        setTotalPages(response.data.total_pages || 1);
       }
-    };
+    } catch (error: any) {
+      console.error('Error loading licenses:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری لایسنس‌ها',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     loadLicenses();
-  }, [currentPage, itemsPerPage, statusFilter, typeFilter, searchQuery]);
+  }, [currentPage, itemsPerPage, statusFilter, typeFilter]);
 
   // Use licenses directly from API (already filtered and paginated)
   const paginatedLicenses = licenses;
@@ -281,43 +261,7 @@ export default function Licenses() {
   }, [totalPages, currentPage]);
 
   const handleLicenseAdded = async () => {
-    // Reload licenses from API
-    try {
-      const response = await adminApi.getLicenses({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'used' 
-            : statusFilter[0] === 'expired' ? 'used' 
-            : statusFilter[0] === 'suspended' ? 'used' 
-            : statusFilter[0] === 'revoked' ? 'used' 
-            : 'all'
-          : 'all',
-      });
-      if (response && (response.data || response.licenses)) {
-        const licensesData = response.data?.licenses || response.licenses || [];
-        const transformedLicenses: License[] = licensesData.map((l: any) => ({
-          id: l.id?.toString() || l.ID?.toString() || '',
-          code: l.code || l.license_key || '',
-          licenseKey: l.code || l.license_key || 'N/A',
-          userId: l.used_by?.toString() || l.user_id?.toString() || '0',
-          userName: l.user ? `${l.user.first_name || ''} ${l.user.last_name || ''}`.trim() : 'بدون کاربر',
-          productId: l.product_id?.toString() || l.productId?.toString() || '0',
-          productName: l.product?.name || l.productName || 'بدون محصول',
-          type: l.type || 'plus',
-          licenseType: l.type === 'pro' ? 'yearly' : l.type === 'plus' ? 'yearly' : l.type === 'plus4' ? 'monthly' : 'yearly',
-          isUsed: l.is_used || false,
-          usedBy: l.used_by,
-          usedAt: l.used_at || '',
-          expiresAt: l.expires_at || '',
-          status: l.is_used ? 'active' : 'expired',
-          createdAt: l.created_at || new Date().toISOString(),
-        }));
-        setLicenses(transformedLicenses);
-      }
-    } catch (error) {
-      console.error('Error reloading licenses:', error);
-    }
+    await loadLicenses();
   };
 
   const toggleSelectAll = () => {
@@ -345,70 +289,6 @@ export default function Licenses() {
     }
   };
 
-  const handleDeleteLicense = async () => {
-    if (!deleteLicense) return;
-    
-    setIsDeleting(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setLicenses(prev => prev.filter(l => l.id !== deleteLicense.id));
-      setSelectedLicenses(prev => prev.filter(id => id !== deleteLicense.id));
-      setDeleteLicense(null);
-      
-      toast({
-        title: 'موفقیت',
-        description: 'لایسنس با موفقیت حذف شد.',
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در حذف لایسنس',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleBulkAction = async (action: 'activate' | 'suspend' | 'revoke' | 'delete') => {
-    if (selectedLicenses.length === 0) return;
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setLicenses(prev => prev.map(license => {
-        if (selectedLicenses.includes(license.id)) {
-          if (action === 'activate') {
-            return { ...license, status: 'active' as const };
-          } else if (action === 'suspend') {
-            return { ...license, status: 'suspended' as const };
-          } else if (action === 'revoke') {
-            return { ...license, status: 'revoked' as const };
-          }
-          return license;
-        }
-        return license;
-      }));
-
-      if (action === 'delete') {
-        setLicenses(prev => prev.filter(l => !selectedLicenses.includes(l.id)));
-      }
-
-      setSelectedLicenses([]);
-      
-      toast({
-        title: 'موفقیت',
-        description: `عملیات با موفقیت انجام شد.`,
-      });
-    } catch (error) {
-      toast({
-        title: 'خطا',
-        description: 'خطا در انجام عملیات',
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleResetFilters = () => {
     setStatusFilter([]);

@@ -365,12 +365,14 @@ class AdminApiService {
   async getLicenses(params: {
     page?: number;
     per_page?: number;
-    status?: string;
+    status?: 'used' | 'available';
+    type?: 'pro' | 'plus' | 'plus4';
   } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.status) queryParams.append('status', params.status);
+    if (params.type) queryParams.append('type', params.type);
 
     return this.makeRequest(`${API_BASE_URL}/admin/licenses?${queryParams}`, {
       method: 'GET',
