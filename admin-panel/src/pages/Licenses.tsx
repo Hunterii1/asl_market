@@ -123,8 +123,8 @@ export default function Licenses() {
         type: typeFilterValue,
       });
 
-      if (response && response.data) {
-        const licensesData = response.data.licenses || [];
+      if (response) {
+        const licensesData = response.licenses || [];
         const transformedLicenses: License[] = licensesData.map((l: any) => ({
           id: l.id?.toString() || l.ID?.toString() || '',
           code: l.code || '',
@@ -152,8 +152,8 @@ export default function Licenses() {
         }));
 
         setLicenses(transformedLicenses);
-        setTotalLicenses(response.data.total || 0);
-        setTotalPages(response.data.total_pages || 1);
+        setTotalLicenses(response.total || 0);
+        setTotalPages(response.total_pages || 1);
       }
     } catch (error: any) {
       console.error('Error loading licenses:', error);
