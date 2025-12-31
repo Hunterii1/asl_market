@@ -304,17 +304,6 @@ export default function Visitors() {
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت ویزیتورها</h1>
             <p className="text-sm md:text-base text-muted-foreground">لیست تمامی ویزیتورهای سیستم</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              size="sm" 
-              onClick={() => setIsAddDialogOpen(true)}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="w-4 h-4 md:ml-2" />
-              <span className="hidden sm:inline">ثبت ویزیتور</span>
-              <span className="sm:hidden">جدید</span>
-            </Button>
-          </div>
         </div>
 
         {/* Filters & Search */}
