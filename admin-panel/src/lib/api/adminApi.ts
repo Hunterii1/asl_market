@@ -99,13 +99,13 @@ class AdminApiService {
 
   // ==================== Authentication ====================
   async login(username: string, password: string): Promise<{ user: any; token: string }> {
-    // Login only with username
+    // Login for admin panel with username
     const payload: { username: string; password: string } = {
       username,
       password,
     };
     
-    const data = await this.makeRequest(`${API_BASE_URL}/auth/login`, {
+    const data = await this.makeRequest(`${API_BASE_URL}/auth/admin/login`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });

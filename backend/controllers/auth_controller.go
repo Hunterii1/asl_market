@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
+	"strings"
 
 	"asl-market-backend/models"
 	"asl-market-backend/services"
@@ -179,6 +181,89 @@ func (ac *AuthController) Login(c *gin.Context) {
 		"data": models.AuthResponse{
 			Token: token,
 			User:  user.ToResponse(),
+		},
+	})
+}
+
+// AdminLogin handles login for web panel admins using username
+func (ac *AuthController) AdminLogin(c *gin.Context) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request data",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Find web admin by username
+	admin, err := models.GetWebAdminByUsername(ac.DB, req.Username)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "نام کاربری یا رمز عبور اشتباه است",
+		})
+		return
+	}
+
+	// Check password
+	if !utils.CheckPassword(req.Password, admin.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "نام کاربری یا رمز عبور اشتباه است",
+		})
+		return
+	}
+
+	// Check if admin is active
+	if !admin.IsActive {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "حساب کاربری غیرفعال شده است",
+		})
+		return
+	}
+
+	// Update last login
+	admin.UpdateLastLogin(ac.DB)
+
+	// Parse permissions
+	permissions := []string{}
+	if admin.Permissions != "" {
+		if admin.Permissions[0] == '[' {
+			_ = json.Unmarshal([]byte(admin.Permissions), &permissions)
+		} else {
+			parts := strings.Split(admin.Permissions, ",")
+			for _, part := range parts {
+				permissions = append(permissions, strings.TrimSpace(part))
+			}
+		}
+	}
+
+	// Generate token (use username as identifier)
+	token, err := utils.GenerateToken(admin.ID, admin.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در تولید توکن",
+		})
+		return
+	}
+
+	// Return admin user response (compatible with frontend AdminUser interface)
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ورود موفقیت‌آمیز",
+		"token":   token,
+		"user": gin.H{
+			"id":          admin.ID,
+			"name":        admin.Name,
+			"email":       admin.Email,
+			"username":    admin.Username,
+			"role":        admin.Role,
+			"permissions": permissions,
+			"is_admin":    true,
+			"first_name":  admin.Name, // For compatibility
+			"last_name":   "",         // WebAdmin doesn't have separate first/last name
 		},
 	})
 }

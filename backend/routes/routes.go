@@ -51,6 +51,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	{
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
+		auth.POST("/admin/login", authController.AdminLogin) // Admin panel login with username
 		auth.POST("/forgot-password", authController.RequestPasswordRecovery)
 		auth.POST("/reset-password", authController.ResetPassword)
 	}
