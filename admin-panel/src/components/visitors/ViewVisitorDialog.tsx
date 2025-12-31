@@ -22,19 +22,37 @@ import {
   Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useState, useEffect } from 'react';
+import { adminApi } from '@/lib/api/adminApi';
+import { Loader2 } from 'lucide-react';
 
 interface VisitorData {
   id: string;
   full_name?: string;
+  national_id?: string;
+  passport_number?: string;
+  birth_date?: string;
   mobile?: string;
+  whatsapp_number?: string;
   email?: string;
+  residence_address?: string;
   city_province?: string;
   destination_cities?: string;
-  national_id?: string;
+  has_local_contact?: boolean;
+  local_contact_details?: string;
+  bank_account_iban?: string;
+  bank_name?: string;
+  account_holder_name?: string;
+  has_marketing_experience?: boolean;
+  marketing_experience_desc?: string;
+  language_level?: string;
+  special_skills?: string;
+  interested_products?: string;
   status?: 'pending' | 'approved' | 'rejected';
   is_featured?: boolean;
   average_rating?: number;
   admin_notes?: string;
+  approved_at?: string;
   created_at?: string;
   createdAt?: string;
 }
@@ -63,8 +81,66 @@ const statusConfig = {
   },
 };
 
-export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDialogProps) {
-  if (!visitor) return null;
+export function ViewVisitorDialog({ open, onOpenChange, visitor: initialVisitor }: ViewVisitorDialogProps) {
+  const [fullVisitor, setFullVisitor] = useState<VisitorData | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && initialVisitor) {
+      const loadFullVisitor = async () => {
+        try {
+          setLoading(true);
+          const response = await adminApi.getVisitor(Number(initialVisitor.id));
+          if (response && response.visitor) {
+            const v = response.visitor;
+            setFullVisitor({
+              id: v.id?.toString() || '',
+              full_name: v.full_name || '',
+              national_id: v.national_id || '',
+              passport_number: v.passport_number || '',
+              birth_date: v.birth_date || '',
+              mobile: v.mobile || '',
+              whatsapp_number: v.whatsapp_number || '',
+              email: v.email || '',
+              residence_address: v.residence_address || '',
+              city_province: v.city_province || '',
+              destination_cities: v.destination_cities || '',
+              has_local_contact: v.has_local_contact || false,
+              local_contact_details: v.local_contact_details || '',
+              bank_account_iban: v.bank_account_iban || '',
+              bank_name: v.bank_name || '',
+              account_holder_name: v.account_holder_name || '',
+              has_marketing_experience: v.has_marketing_experience || false,
+              marketing_experience_desc: v.marketing_experience_desc || '',
+              language_level: v.language_level || '',
+              special_skills: v.special_skills || '',
+              interested_products: v.interested_products || '',
+              status: (v.status || 'pending') as 'pending' | 'approved' | 'rejected',
+              is_featured: v.is_featured || false,
+              average_rating: v.average_rating || 0,
+              admin_notes: v.admin_notes || '',
+              approved_at: v.approved_at,
+              created_at: v.created_at,
+              createdAt: v.created_at || new Date().toISOString(),
+            });
+          } else {
+            setFullVisitor(initialVisitor);
+          }
+        } catch (error) {
+          console.error('Error loading full visitor:', error);
+          setFullVisitor(initialVisitor);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadFullVisitor();
+    } else {
+      setFullVisitor(null);
+    }
+  }, [open, initialVisitor]);
+
+  if (!fullVisitor && !initialVisitor) return null;
+  const visitor = fullVisitor || initialVisitor!;
 
   const StatusIcon = visitor.status ? statusConfig[visitor.status].icon : Clock;
 
@@ -81,7 +157,12 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
           {/* Header */}
           <Card>
             <CardContent className="p-6">
@@ -248,6 +329,7 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor }: ViewVisitorDi
             </CardContent>
           </Card>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );

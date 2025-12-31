@@ -9,32 +9,22 @@ import { Loader2 } from 'lucide-react';
 import { 
   Search, 
   Eye, 
-  Plus,
   Edit,
   Trash2,
-  X,
   XCircle,
   CheckCircle,
   Eye as EyeIcon,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Bot,
-  Globe,
   MapPin,
   Clock,
-  FileText,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import { AddVisitorDialog } from '@/components/visitors/AddVisitorDialog';
 import { EditVisitorDialog } from '@/components/visitors/EditVisitorDialog';
 import { ViewVisitorDialog } from '@/components/visitors/ViewVisitorDialog';
 import { DeleteVisitorDialog } from '@/components/visitors/DeleteVisitorDialog';
-import { VisitorsFilters } from '@/components/visitors/VisitorsFilters';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -47,138 +37,42 @@ interface Visitor {
   id: string;
   user_id?: number;
   full_name?: string;
+  national_id?: string;
+  passport_number?: string;
+  birth_date?: string;
   mobile?: string;
+  whatsapp_number?: string;
   email?: string;
+  residence_address?: string;
   city_province?: string;
   destination_cities?: string;
-  national_id?: string;
+  has_local_contact?: boolean;
+  local_contact_details?: string;
+  bank_account_iban?: string;
+  bank_name?: string;
+  account_holder_name?: string;
+  has_marketing_experience?: boolean;
+  marketing_experience_desc?: string;
+  language_level?: string;
+  special_skills?: string;
+  interested_products?: string;
+  agrees_to_use_approved_products?: boolean;
+  agrees_to_violation_consequences?: boolean;
+  agrees_to_submit_reports?: boolean;
+  digital_signature?: string;
+  signature_date?: string;
   status?: 'pending' | 'approved' | 'rejected';
-  is_featured?: boolean;
-  average_rating?: number;
   admin_notes?: string;
+  approved_at?: string;
+  is_featured?: boolean;
+  featured_at?: string;
+  average_rating?: number;
+  total_ratings?: number;
   created_at?: string;
+  updated_at?: string;
   createdAt: string;
-  // Legacy fields for compatibility
-  ip?: string;
-  userAgent?: string;
-  browser?: string;
-  os?: string;
-  device?: 'desktop' | 'mobile' | 'tablet' | 'other';
-  country?: string;
-  city?: string;
-  page?: string;
-  referrer?: string;
-  sessionId?: string;
-  duration?: number;
-  isBot?: boolean;
-  language?: string;
-  visitedAt?: string;
 }
 
-// داده‌های اولیه
-const initialVisitors: Visitor[] = [
-  {
-    id: '1',
-    ip: '192.168.1.100',
-    browser: 'Chrome',
-    os: 'Windows',
-    device: 'desktop',
-    country: 'ایران',
-    city: 'تهران',
-    page: '/products',
-    referrer: 'https://google.com',
-    duration: 120,
-    isBot: false,
-    language: 'fa',
-    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۳۰:۲۵',
-    createdAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '2',
-    ip: '192.168.1.101',
-    browser: 'Safari',
-    os: 'iOS',
-    device: 'mobile',
-    country: 'ایران',
-    city: 'اصفهان',
-    page: '/',
-    duration: 45,
-    isBot: false,
-    language: 'fa',
-    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۲۵:۱۰',
-    createdAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '3',
-    ip: '192.168.1.102',
-    browser: 'Firefox',
-    os: 'Linux',
-    device: 'desktop',
-    country: 'ایران',
-    city: 'مشهد',
-    page: '/education',
-    referrer: 'https://example.com',
-    duration: 300,
-    isBot: false,
-    language: 'fa',
-    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۲۰:۰۰',
-    createdAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '4',
-    ip: '66.249.64.1',
-    userAgent: 'Googlebot/2.1',
-    browser: 'Googlebot',
-    os: 'Unknown',
-    device: 'other',
-    country: 'ایالات متحده',
-    city: 'Mountain View',
-    page: '/',
-    duration: 0,
-    isBot: true,
-    language: 'en',
-    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۱۵:۰۰',
-    createdAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '5',
-    ip: '192.168.1.103',
-    browser: 'Edge',
-    os: 'Windows',
-    device: 'tablet',
-    country: 'ایران',
-    city: 'شیراز',
-    page: '/users',
-    duration: 180,
-    isBot: false,
-    language: 'fa',
-    visitedAt: '۱۴۰۳/۰۹/۲۰ - ۱۴:۱۰:۳۰',
-    createdAt: '۱۴۰۳/۰۹/۲۰',
-  },
-];
-
-const deviceConfig = {
-  desktop: {
-    label: 'دسکتاپ',
-    className: 'bg-primary/10 text-primary',
-    icon: Monitor,
-  },
-  mobile: {
-    label: 'موبایل',
-    className: 'bg-info/10 text-info',
-    icon: Smartphone,
-  },
-  tablet: {
-    label: 'تبلت',
-    className: 'bg-success/10 text-success',
-    icon: Tablet,
-  },
-  other: {
-    label: 'سایر',
-    className: 'bg-muted text-muted-foreground',
-    icon: Monitor,
-  },
-};
 
 const statusConfig = {
   pending: {
@@ -198,23 +92,18 @@ const statusConfig = {
   },
 };
 
-type SortField = 'ip' | 'browser' | 'os' | 'device' | 'country' | 'page' | 'duration' | 'visitedAt' | 'createdAt';
-type SortOrder = 'asc' | 'desc';
 
 export default function Visitors() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisitors, setSelectedVisitors] = useState<string[]>([]);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editVisitor, setEditVisitor] = useState<Visitor | null>(null);
   const [viewVisitor, setViewVisitor] = useState<Visitor | null>(null);
   const [deleteVisitor, setDeleteVisitor] = useState<Visitor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deviceFilter, setDeviceFilter] = useState<('desktop' | 'mobile' | 'tablet' | 'other')[]>([]);
-  const [isBotFilter, setIsBotFilter] = useState<boolean | null>(null);
-  const [countryFilter, setCountryFilter] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive' | 'suspended')[]>([]);
-  const [sortField, setSortField] = useState<SortField>('visitedAt');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [rejectVisitor, setRejectVisitor] = useState<Visitor | null>(null);
+  const [rejectNotes, setRejectNotes] = useState('');
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<('pending' | 'approved' | 'rejected')[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
@@ -222,82 +111,87 @@ export default function Visitors() {
   const [totalVisitors, setTotalVisitors] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  const reloadVisitors = async () => {
+    try {
+      setLoading(true);
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : 'all';
+
+      const response = await adminApi.getVisitors({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        search: searchQuery || undefined,
+      });
+
+      if (response) {
+        const visitorsData = response.visitors || [];
+        
+        const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
+          id: v.id?.toString() || '',
+          user_id: v.user_id,
+          full_name: v.full_name || 'بدون نام',
+          national_id: v.national_id || '',
+          passport_number: v.passport_number || '',
+          birth_date: v.birth_date || '',
+          mobile: v.mobile || '',
+          whatsapp_number: v.whatsapp_number || '',
+          email: v.email || '',
+          residence_address: v.residence_address || '',
+          city_province: v.city_province || '',
+          destination_cities: v.destination_cities || '',
+          has_local_contact: v.has_local_contact || false,
+          local_contact_details: v.local_contact_details || '',
+          bank_account_iban: v.bank_account_iban || '',
+          bank_name: v.bank_name || '',
+          account_holder_name: v.account_holder_name || '',
+          has_marketing_experience: v.has_marketing_experience || false,
+          marketing_experience_desc: v.marketing_experience_desc || '',
+          language_level: v.language_level || '',
+          special_skills: v.special_skills || '',
+          interested_products: v.interested_products || '',
+          agrees_to_use_approved_products: v.agrees_to_use_approved_products || false,
+          agrees_to_violation_consequences: v.agrees_to_violation_consequences || false,
+          agrees_to_submit_reports: v.agrees_to_submit_reports || false,
+          digital_signature: v.digital_signature || '',
+          signature_date: v.signature_date || '',
+          status: (v.status || 'pending') as 'pending' | 'approved' | 'rejected',
+          admin_notes: v.admin_notes || '',
+          approved_at: v.approved_at,
+          is_featured: v.is_featured || false,
+          featured_at: v.featured_at,
+          average_rating: v.average_rating || 0,
+          total_ratings: v.total_ratings || 0,
+          created_at: v.created_at || new Date().toISOString(),
+          updated_at: v.updated_at,
+          createdAt: v.created_at || new Date().toISOString(),
+        }));
+
+        setVisitors(transformedVisitors);
+        setTotalVisitors(response.total || 0);
+        setTotalPages(response.total_pages || 1);
+      }
+    } catch (error: any) {
+      console.error('Error reloading visitors:', error);
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در بارگذاری ویزیتورها',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load visitors from API
   useEffect(() => {
-    const loadVisitors = async () => {
-      try {
-        setLoading(true);
-        const statusFilterValue = statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all';
-
-        const response = await adminApi.getVisitors({
-          page: currentPage,
-          per_page: itemsPerPage,
-          status: statusFilterValue,
-          search: searchQuery || undefined,
-        });
-
-        if (response) {
-          // Backend returns: { visitors: [...], total: ..., total_pages: ..., page: ..., per_page: ... }
-          const visitorsData = response.visitors || [];
-          
-          const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-            id: v.id?.toString() || '',
-            user_id: v.user_id,
-            full_name: v.full_name || 'بدون نام',
-            mobile: v.mobile || '',
-            email: v.email || '',
-            city_province: v.city_province || '',
-            destination_cities: v.destination_cities || '',
-            national_id: v.national_id || '',
-            status: v.status || 'pending',
-            is_featured: v.is_featured || false,
-            average_rating: v.average_rating || 0,
-            created_at: v.created_at || new Date().toISOString(),
-            createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-          }));
-
-          setVisitors(transformedVisitors);
-          setTotalVisitors(response.total || 0);
-          setTotalPages(response.total_pages || 1);
-        }
-      } catch (error: any) {
-        console.error('Error loading visitors:', error);
-        toast({
-          title: 'خطا',
-          description: error.message || 'خطا در بارگذاری ویزیتورها',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadVisitors();
+    reloadVisitors();
   }, [currentPage, itemsPerPage, statusFilter, searchQuery]);
-
-  // Use visitors directly from API (already filtered and paginated)
-  const paginatedVisitors = visitors;
 
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1);
     }
   }, [totalPages, currentPage]);
-
-  const handleVisitorAdded = () => {
-    const stored = localStorage.getItem('asll-visitors');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setVisitors(parsed);
-      } catch {}
-    }
-  };
 
   const toggleSelectVisitor = (visitorId: string) => {
     setSelectedVisitors(prev =>
@@ -307,53 +201,14 @@ export default function Visitors() {
     );
   };
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('desc');
-    }
-  };
-
   const handleApproveVisitor = async (visitorId: string, notes?: string) => {
     try {
-      await adminApi.approveVisitor(parseInt(visitorId), { admin_notes: notes });
+      await adminApi.approveVisitor(parseInt(visitorId), { admin_notes: notes || '' });
       toast({
         title: 'موفقیت',
         description: 'ویزیتور با موفقیت تأیید شد.',
       });
-      // Reload visitors
-      const response = await adminApi.getVisitors({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all',
-        search: searchQuery || undefined,
-      });
-      if (response) {
-        const visitorsData = response.visitors || [];
-        const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-          id: v.id?.toString() || '',
-          user_id: v.user_id,
-          full_name: v.full_name || 'بدون نام',
-          mobile: v.mobile || '',
-          email: v.email || '',
-          city_province: v.city_province || '',
-          destination_cities: v.destination_cities || '',
-          national_id: v.national_id || '',
-          status: v.status || 'pending',
-          is_featured: v.is_featured || false,
-          average_rating: v.average_rating || 0,
-          created_at: v.created_at || new Date().toISOString(),
-          createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-        }));
-        setVisitors(transformedVisitors);
-      }
+      await reloadVisitors();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -363,50 +218,29 @@ export default function Visitors() {
     }
   };
 
-  const handleRejectVisitor = async (visitorId: string, notes: string) => {
+  const handleRejectVisitor = async (notes: string) => {
+    if (!rejectVisitor) return;
+    
+    setIsRejecting(true);
     try {
-      await adminApi.rejectVisitor(parseInt(visitorId), { admin_notes: notes });
+      await adminApi.rejectVisitor(parseInt(rejectVisitor.id), { admin_notes: notes });
+      setRejectVisitor(null);
+      setRejectNotes('');
+      
       toast({
         title: 'موفقیت',
         description: 'ویزیتور با موفقیت رد شد.',
       });
-      // Reload visitors
-      const response = await adminApi.getVisitors({
-        page: currentPage,
-        per_page: itemsPerPage,
-        status: statusFilter.length === 1 
-          ? statusFilter[0] === 'active' ? 'approved' 
-            : statusFilter[0] === 'inactive' ? 'pending' 
-            : statusFilter[0] === 'suspended' ? 'rejected' 
-            : 'all'
-          : 'all',
-        search: searchQuery || undefined,
-      });
-      if (response) {
-        const visitorsData = response.visitors || [];
-        const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-          id: v.id?.toString() || '',
-          user_id: v.user_id,
-          full_name: v.full_name || 'بدون نام',
-          mobile: v.mobile || '',
-          email: v.email || '',
-          city_province: v.city_province || '',
-          destination_cities: v.destination_cities || '',
-          national_id: v.national_id || '',
-          status: v.status || 'pending',
-          is_featured: v.is_featured || false,
-          average_rating: v.average_rating || 0,
-          created_at: v.created_at || new Date().toISOString(),
-          createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-        }));
-        setVisitors(transformedVisitors);
-      }
+      
+      await reloadVisitors();
     } catch (error: any) {
       toast({
         title: 'خطا',
         description: error.message || 'خطا در رد ویزیتور',
         variant: 'destructive',
       });
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -416,16 +250,14 @@ export default function Visitors() {
     setIsDeleting(true);
     try {
       await adminApi.deleteVisitor(parseInt(deleteVisitor.id));
-      
-      setVisitors(prev => prev.filter(v => v.id !== deleteVisitor.id));
-      setSelectedVisitors(prev => prev.filter(id => id !== deleteVisitor.id));
       setDeleteVisitor(null);
-      setTotalVisitors(prev => prev - 1);
       
       toast({
         title: 'موفقیت',
         description: 'ویزیتور با موفقیت حذف شد.',
       });
+      
+      await reloadVisitors();
     } catch (error: any) {
       toast({
         title: 'خطا',
@@ -441,42 +273,26 @@ export default function Visitors() {
     if (selectedVisitors.length === 0) return;
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       if (action === 'delete') {
-        setVisitors(prev => prev.filter(v => !selectedVisitors.includes(v.id)));
+        await Promise.all(
+          selectedVisitors.map(id => adminApi.deleteVisitor(parseInt(id)))
+        );
       }
 
       setSelectedVisitors([]);
+      await reloadVisitors();
       
       toast({
         title: 'موفقیت',
         description: `عملیات با موفقیت انجام شد.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: 'خطا در انجام عملیات',
+        description: error.message || 'خطا در انجام عملیات',
         variant: 'destructive',
       });
     }
-  };
-
-  const handleResetFilters = () => {
-    setDeviceFilter([]);
-    setIsBotFilter(null);
-    setCountryFilter([]);
-  };
-
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="w-4 h-4 text-muted-foreground" />;
-    }
-    return sortOrder === 'asc' ? (
-      <ArrowUp className="w-4 h-4 text-primary" />
-    ) : (
-      <ArrowDown className="w-4 h-4 text-primary" />
-    );
   };
 
   return (
@@ -516,29 +332,7 @@ export default function Visitors() {
                     className="w-full h-10 pr-10 pl-4 rounded-xl bg-muted/50 border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all text-sm"
                   />
                 </div>
-                <VisitorsFilters
-                  deviceFilter={deviceFilter}
-                  onDeviceFilterChange={setDeviceFilter}
-                  isBotFilter={isBotFilter}
-                  onIsBotFilterChange={setIsBotFilter}
-                  countryFilter={countryFilter}
-                  onCountryFilterChange={setCountryFilter}
-                  onReset={handleResetFilters}
-                />
               </div>
-              {(deviceFilter.length > 0 || isBotFilter !== null || countryFilter.length > 0) && (
-                <div className="flex items-center justify-end">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleResetFilters}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <X className="w-4 h-4 ml-1" />
-                    پاک کردن فیلترها
-                  </Button>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -581,7 +375,7 @@ export default function Visitors() {
               <div className="flex items-center justify-center p-12">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
               </div>
-            ) : paginatedVisitors.length === 0 ? (
+            ) : visitors.length === 0 ? (
               <div className="p-12 text-center">
                 <div className="flex flex-col items-center gap-2">
                   <EyeIcon className="w-12 h-12 text-muted-foreground" />
@@ -596,10 +390,10 @@ export default function Visitors() {
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground w-12">
                         <input
                           type="checkbox"
-                          checked={selectedVisitors.length === paginatedVisitors.length && paginatedVisitors.length > 0}
+                          checked={selectedVisitors.length === visitors.length && visitors.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedVisitors(paginatedVisitors.map(v => v.id));
+                              setSelectedVisitors(visitors.map(v => v.id));
                             } else {
                               setSelectedVisitors([]);
                             }
@@ -619,7 +413,7 @@ export default function Visitors() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginatedVisitors.map((visitor, index) => {
+                    {visitors.map((visitor, index) => {
                       const statusInfo = statusConfig[visitor.status as keyof typeof statusConfig] || statusConfig.pending;
                       const StatusIcon = statusInfo.icon || CheckCircle;
                       return (
@@ -720,7 +514,7 @@ export default function Visitors() {
                                   variant="ghost" 
                                   size="icon-sm"
                                   className="text-destructive hover:bg-destructive/10"
-                                  onClick={() => handleRejectVisitor(visitor.id, 'رد شده توسط ادمین')}
+                                  onClick={() => setRejectVisitor(visitor)}
                                   title="رد"
                                 >
                                   <XCircle className="w-4 h-4" />
@@ -822,62 +616,13 @@ export default function Visitors() {
         </Card>
       </div>
 
-      {/* Dialog افزودن ویزیتور */}
-      <AddVisitorDialog
-        open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
-        onSuccess={handleVisitorAdded}
-      />
-
       {/* Dialog ویرایش ویزیتور */}
       <EditVisitorDialog
         open={!!editVisitor}
         onOpenChange={(open) => !open && setEditVisitor(null)}
         visitor={editVisitor}
         onSuccess={() => {
-          // Reload visitors
-          const loadVisitors = async () => {
-            try {
-              const statusFilterValue = statusFilter.length === 1 
-                ? statusFilter[0] === 'active' ? 'approved' 
-                  : statusFilter[0] === 'inactive' ? 'pending' 
-                  : statusFilter[0] === 'suspended' ? 'rejected' 
-                  : 'all'
-                : 'all';
-
-              const response = await adminApi.getVisitors({
-                page: currentPage,
-                per_page: itemsPerPage,
-                status: statusFilterValue,
-                search: searchQuery || undefined,
-              });
-
-              if (response) {
-                const visitorsData = response.visitors || [];
-                const transformedVisitors: Visitor[] = visitorsData.map((v: any) => ({
-                  id: v.id?.toString() || '',
-                  user_id: v.user_id,
-                  full_name: v.full_name || 'بدون نام',
-                  mobile: v.mobile || '',
-                  email: v.email || '',
-                  city_province: v.city_province || '',
-                  destination_cities: v.destination_cities || '',
-                  national_id: v.national_id || '',
-                  status: v.status || 'pending',
-                  is_featured: v.is_featured || false,
-                  average_rating: v.average_rating || 0,
-                  created_at: v.created_at || new Date().toISOString(),
-                  createdAt: v.created_at ? new Date(v.created_at).toLocaleDateString('fa-IR') : new Date().toLocaleDateString('fa-IR'),
-                }));
-                setVisitors(transformedVisitors);
-                setTotalVisitors(response.total || 0);
-                setTotalPages(response.total_pages || 1);
-              }
-            } catch (error: any) {
-              console.error('Error reloading visitors:', error);
-            }
-          };
-          loadVisitors();
+          reloadVisitors();
           setEditVisitor(null);
         }}
       />
@@ -886,31 +631,78 @@ export default function Visitors() {
       <ViewVisitorDialog
         open={!!viewVisitor}
         onOpenChange={(open) => !open && setViewVisitor(null)}
-        visitor={viewVisitor ? {
-          id: viewVisitor.id,
-          full_name: viewVisitor.full_name,
-          mobile: viewVisitor.mobile,
-          email: viewVisitor.email,
-          city_province: viewVisitor.city_province,
-          destination_cities: viewVisitor.destination_cities,
-          national_id: viewVisitor.national_id,
-          status: viewVisitor.status,
-          is_featured: viewVisitor.is_featured,
-          average_rating: viewVisitor.average_rating,
-          admin_notes: viewVisitor.admin_notes,
-          created_at: viewVisitor.created_at,
-          createdAt: viewVisitor.createdAt || (viewVisitor.created_at ? new Date(viewVisitor.created_at).toLocaleDateString('fa-IR') : ''),
-        } : null}
+        visitor={viewVisitor}
       />
 
       {/* Dialog حذف ویزیتور */}
       <DeleteVisitorDialog
         open={!!deleteVisitor}
         onOpenChange={(open) => !open && setDeleteVisitor(null)}
-        visitor={deleteVisitor ? { id: deleteVisitor.id, ip: deleteVisitor.ip || '0.0.0.0' } : null}
+        visitor={deleteVisitor ? { id: deleteVisitor.id, full_name: deleteVisitor.full_name || 'بدون نام' } : null}
         onConfirm={handleDeleteVisitor}
         isDeleting={isDeleting}
       />
+
+      {/* Dialog رد ویزیتور */}
+      {rejectVisitor && (
+        <Dialog open={!!rejectVisitor} onOpenChange={(open) => {
+          if (!open) {
+            setRejectVisitor(null);
+            setRejectNotes('');
+          }
+        }}>
+          <DialogContent className="sm:max-w-[500px] rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <XCircle className="w-5 h-5 text-destructive" />
+                رد ویزیتور
+              </DialogTitle>
+              <DialogDescription className="text-right">
+                آیا از رد ویزیتور "{rejectVisitor.full_name || 'بدون نام'}" اطمینان دارید؟
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="reject-notes">دلیل رد <span className="text-destructive">*</span></Label>
+                <Textarea
+                  id="reject-notes"
+                  value={rejectNotes}
+                  onChange={(e) => setRejectNotes(e.target.value)}
+                  placeholder="لطفا دلیل رد ویزیتور را وارد کنید..."
+                  className="mt-2 min-h-[100px] text-right"
+                  disabled={isRejecting}
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 flex-row-reverse">
+              <Button
+                variant="destructive"
+                onClick={() => handleRejectVisitor(rejectNotes)}
+                disabled={isRejecting || !rejectNotes.trim()}
+              >
+                {isRejecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                    در حال رد...
+                  </>
+                ) : (
+                  'رد ویزیتور'
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setRejectVisitor(null);
+                  setRejectNotes('');
+                }}
+                disabled={isRejecting}
+              >
+                انصراف
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </AdminLayout>
   );
 }

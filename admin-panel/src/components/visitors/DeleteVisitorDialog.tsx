@@ -13,7 +13,7 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 interface DeleteVisitorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  visitor: { id: string; ip: string } | null;
+  visitor: { id: string; full_name?: string } | null;
   onConfirm: () => void;
   isDeleting?: boolean;
 }
@@ -37,10 +37,10 @@ export function DeleteVisitorDialog({
         <AlertDialogHeader className="text-right">
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-destructive" />
-            حذف بازدیدکننده
+            حذف ویزیتور
           </AlertDialogTitle>
           <AlertDialogDescription className="text-right">
-            آیا از حذف بازدیدکننده با IP <span className="font-semibold text-foreground font-mono" dir="ltr">{visitor.ip}</span> اطمینان دارید؟
+            آیا از حذف ویزیتور <span className="font-semibold text-foreground">{visitor.full_name || 'بدون نام'}</span> اطمینان دارید؟
             <br />
             <span className="text-destructive">این عمل غیرقابل بازگشت است.</span>
           </AlertDialogDescription>
@@ -58,7 +58,7 @@ export function DeleteVisitorDialog({
                 در حال حذف...
               </>
             ) : (
-              'حذف بازدیدکننده'
+              'حذف ویزیتور'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

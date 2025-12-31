@@ -76,15 +76,46 @@ export function EditVisitorDialog({ open, onOpenChange, visitor, onSuccess }: Ed
   // Update form when visitor changes
   useEffect(() => {
     if (visitor && open) {
-      form.reset({
-        full_name: visitor.full_name || '',
-        mobile: visitor.mobile || '',
-        email: visitor.email || '',
-        city_province: visitor.city_province || '',
-        destination_cities: visitor.destination_cities || '',
-        admin_notes: '',
-        status: visitor.status || 'pending',
-      });
+      // Load full visitor data
+      const loadVisitorData = async () => {
+        try {
+          const response = await adminApi.getVisitor(Number(visitor.id));
+          if (response && response.visitor) {
+            const v = response.visitor;
+            form.reset({
+              full_name: v.full_name || '',
+              mobile: v.mobile || '',
+              email: v.email || '',
+              city_province: v.city_province || '',
+              destination_cities: v.destination_cities || '',
+              admin_notes: v.admin_notes || '',
+              status: (v.status || 'pending') as 'pending' | 'approved' | 'rejected',
+            });
+          } else {
+            form.reset({
+              full_name: visitor.full_name || '',
+              mobile: visitor.mobile || '',
+              email: visitor.email || '',
+              city_province: visitor.city_province || '',
+              destination_cities: visitor.destination_cities || '',
+              admin_notes: visitor.admin_notes || '',
+              status: visitor.status || 'pending',
+            });
+          }
+        } catch (error) {
+          console.error('Error loading visitor data:', error);
+          form.reset({
+            full_name: visitor.full_name || '',
+            mobile: visitor.mobile || '',
+            email: visitor.email || '',
+            city_province: visitor.city_province || '',
+            destination_cities: visitor.destination_cities || '',
+            admin_notes: visitor.admin_notes || '',
+            status: visitor.status || 'pending',
+          });
+        }
+      };
+      loadVisitorData();
     }
   }, [visitor, open, form]);
 
