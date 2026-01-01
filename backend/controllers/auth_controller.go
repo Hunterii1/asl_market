@@ -3,6 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strings"
@@ -201,16 +202,20 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	// Try to find web admin by username first
+	// Try to find web admin by username first (case-insensitive)
+	log.Printf("AdminLogin: Attempting login for username: %s", req.Username)
 	webAdmin, err := models.GetWebAdminByUsername(ac.DB, req.Username)
 	if err == nil {
+		log.Printf("AdminLogin: WebAdmin found: ID=%d, Username=%s, IsActive=%v", webAdmin.ID, webAdmin.Username, webAdmin.IsActive)
 		// Found WebAdmin, proceed with WebAdmin login
 		if !utils.CheckPassword(req.Password, webAdmin.Password) {
+			log.Printf("AdminLogin: Password check failed for username: %s", req.Username)
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"error": "نام کاربری یا رمز عبور اشتباه است",
 			})
 			return
 		}
+		log.Printf("AdminLogin: Password check passed for username: %s", req.Username)
 
 		if !webAdmin.IsActive {
 			c.JSON(http.StatusUnauthorized, gin.H{
@@ -220,7 +225,9 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		}
 
 		// Update last login
-		webAdmin.UpdateLastLogin(ac.DB)
+		if err := webAdmin.UpdateLastLogin(ac.DB); err != nil {
+			log.Printf("AdminLogin: Error updating last login: %v", err)
+		}
 
 		// Parse permissions
 		permissions := []string{}
@@ -263,10 +270,12 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 	}
 
 	// If not found in WebAdmin, try User table (for backward compatibility with alireza)
+	log.Printf("AdminLogin: WebAdmin not found for username: %s, trying User table", req.Username)
 	var user models.User
 	// Try to find user by email (alireza might be stored as email) or username
 	err = ac.DB.Where("(email = ? OR phone = ?) AND is_admin = ?", req.Username, req.Username, true).First(&user).Error
 	if err != nil {
+		log.Printf("AdminLogin: User not found for username: %s, error: %v", req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "نام کاربری یا رمز عبور اشتباه است",
 		})

@@ -34,10 +34,15 @@ func GetWebAdminByID(db *gorm.DB, id uint) (*WebAdmin, error) {
 	return &admin, nil
 }
 
-// GetWebAdminByUsername retrieves a web admin by username
+// GetWebAdminByUsername retrieves a web admin by username (case-insensitive)
 func GetWebAdminByUsername(db *gorm.DB, username string) (*WebAdmin, error) {
 	var admin WebAdmin
-	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", username, true).First(&admin).Error; err != nil {
+	// Try exact match first
+	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", username, true).First(&admin).Error; err == nil {
+		return &admin, nil
+	}
+	// If not found, try case-insensitive match (MySQL: LOWER() function)
+	if err := db.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL", username, true).First(&admin).Error; err != nil {
 		return nil, err
 	}
 	return &admin, nil
