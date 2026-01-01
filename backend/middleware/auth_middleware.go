@@ -60,27 +60,48 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Get user from database
+		// Get user from database - try WebAdmin first, then User
 		db := models.GetDB()
-		var user models.User
-		if err := db.First(&user, claims.UserID).Error; err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "User not found",
-			})
-			c.Abort()
-			return
-		}
-
-		// Set user information in context
-		c.Set("user_id", claims.UserID)
-		c.Set("user_email", claims.Email)
-		c.Set("user", user)
-
-		// Set user_role based on IsAdmin flag
-		if user.IsAdmin {
-			c.Set("user_role", "admin")
+		
+		// First, try to find in WebAdmin table (for admin panel admins)
+		var webAdmin models.WebAdmin
+		if err := db.Where("id = ? AND is_active = ? AND deleted_at IS NULL", claims.UserID, true).First(&webAdmin).Error; err == nil {
+			// Set admin information in context
+			c.Set("user_id", claims.UserID)
+			c.Set("user_email", claims.Email)
+			c.Set("is_web_admin", true)
+			c.Set("web_admin", webAdmin)
+			c.Set("user_role", webAdmin.Role) // super_admin, admin, moderator
+			
+			// Also set a user object for backward compatibility (if needed)
+			var user models.User
+			user.ID = uint(claims.UserID)
+			user.Email = webAdmin.Email
+			user.IsAdmin = true
+			c.Set("user", user)
 		} else {
-			c.Set("user_role", "user")
+			// If not found in WebAdmin, try User table
+			var user models.User
+			if err := db.First(&user, claims.UserID).Error; err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "User not found",
+				})
+				c.Abort()
+				return
+			}
+
+			// Set user information in context
+			c.Set("user_id", claims.UserID)
+			c.Set("user_email", claims.Email)
+			c.Set("user", user)
+			c.Set("is_web_admin", false)
+
+			// Set user_role based on IsAdmin flag
+			if user.IsAdmin {
+				c.Set("user_role", "admin")
+			} else {
+				c.Set("user_role", "user")
+			}
 		}
 
 		c.Next()
@@ -101,19 +122,40 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 			if token != "" {
 				claims, err := utils.ValidateToken(token)
 				if err == nil {
-					// Get user from database
+					// Get user from database - try WebAdmin first, then User
 					db := models.GetDB()
-					var user models.User
-					if err := db.First(&user, claims.UserID).Error; err == nil {
+					
+					// First, try to find in WebAdmin table (for admin panel admins)
+					var webAdmin models.WebAdmin
+					if err := db.Where("id = ? AND is_active = ? AND deleted_at IS NULL", claims.UserID, true).First(&webAdmin).Error; err == nil {
+						// Set admin information in context
 						c.Set("user_id", claims.UserID)
 						c.Set("user_email", claims.Email)
+						c.Set("is_web_admin", true)
+						c.Set("web_admin", webAdmin)
+						c.Set("user_role", webAdmin.Role) // super_admin, admin, moderator
+						
+						// Also set a user object for backward compatibility (if needed)
+						var user models.User
+						user.ID = uint(claims.UserID)
+						user.Email = webAdmin.Email
+						user.IsAdmin = true
 						c.Set("user", user)
+					} else {
+						// If not found in WebAdmin, try User table
+						var user models.User
+						if err := db.First(&user, claims.UserID).Error; err == nil {
+							c.Set("user_id", claims.UserID)
+							c.Set("user_email", claims.Email)
+							c.Set("user", user)
+							c.Set("is_web_admin", false)
 
-						// Set user_role based on IsAdmin flag
-						if user.IsAdmin {
-							c.Set("user_role", "admin")
-						} else {
-							c.Set("user_role", "user")
+							// Set user_role based on IsAdmin flag
+							if user.IsAdmin {
+								c.Set("user_role", "admin")
+							} else {
+								c.Set("user_role", "user")
+							}
 						}
 					}
 				}
