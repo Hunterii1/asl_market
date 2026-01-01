@@ -204,6 +204,11 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 
 	log.Printf("AdminLogin: Attempting login for username: %s", req.Username)
 
+	// Special case: alireza user (backward compatibility)
+	// Check if this is alireza trying to login
+	usernameLower := strings.ToLower(strings.TrimSpace(req.Username))
+	isAlireza := usernameLower == "alireza"
+
 	// Try to find web admin by username (case-insensitive)
 	// Also try to match by email if username doesn't match
 	var webAdmin models.WebAdmin
@@ -215,6 +220,58 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		log.Printf("AdminLogin: WebAdmin not found by username '%s', trying email", req.Username)
 		err = ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
 			req.Username, req.Username, true).First(&webAdmin).Error
+	}
+
+	// If not found in WebAdmin and this is alireza, try User table
+	if err != nil && isAlireza {
+		log.Printf("AdminLogin: WebAdmin not found for alireza, trying User table")
+		var user models.User
+		userErr := ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_admin = ? AND is_active = ?",
+			req.Username, req.Username, true, true).First(&user).Error
+
+		if userErr == nil {
+			// Found alireza in User table
+			if !utils.CheckPassword(req.Password, user.Password) {
+				log.Printf("AdminLogin: Password check failed for alireza")
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error": "نام کاربری یا رمز عبور اشتباه است",
+				})
+				return
+			}
+
+			log.Printf("AdminLogin: alireza found in User table, password verified")
+
+			// Generate token
+			identifier := user.Phone
+			if user.Email != "" {
+				identifier = user.Email
+			}
+
+			token, err := utils.GenerateToken(user.ID, identifier)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "خطا در تولید توکن",
+				})
+				return
+			}
+
+			c.JSON(http.StatusOK, gin.H{
+				"message": "ورود موفقیت‌آمیز",
+				"token":   token,
+				"user": gin.H{
+					"id":          user.ID,
+					"name":        fmt.Sprintf("%s %s", user.FirstName, user.LastName),
+					"email":       user.Email,
+					"username":    user.Email,
+					"role":        "super_admin",
+					"permissions": []string{"all"},
+					"is_admin":    true,
+					"first_name":  user.FirstName,
+					"last_name":   user.LastName,
+				},
+			})
+			return
+		}
 	}
 
 	if err != nil {
