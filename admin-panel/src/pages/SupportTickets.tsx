@@ -113,8 +113,9 @@ export default function SupportTickets() {
           status: statusFilter !== 'all' ? statusFilter : undefined,
         });
 
-        if (response && (response.data || response.tickets)) {
-          const ticketsData = response.data?.tickets || response.tickets || [];
+        if (response && (response.tickets || response.data?.tickets)) {
+          // handleResponse returns data.data, so structure is { pagination: {...}, tickets: [...] }
+          const ticketsData = response.tickets || response.data?.tickets || [];
           const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
             id: t.id || t.ID || 0,
             title: t.title || 'بدون عنوان',
@@ -133,8 +134,10 @@ export default function SupportTickets() {
           }));
 
           setTickets(transformedTickets);
-          setTotalTickets(response.data?.total || response.total || 0);
-          setTotalPages(response.data?.total_pages || response.total_pages || 1);
+          // Get pagination data from response.pagination (since handleResponse returns data.data)
+          const pagination = response.pagination || response.data?.pagination;
+          setTotalTickets(pagination?.total || response.total || 0);
+          setTotalPages(pagination?.total_pages || response.total_pages || 1);
         }
       } catch (error: any) {
         console.error('Error loading tickets:', error);
@@ -219,8 +222,8 @@ export default function SupportTickets() {
         per_page: itemsPerPage,
         status: statusFilter !== 'all' ? statusFilter : undefined,
       });
-      if (response && (response.data || response.tickets)) {
-        const ticketsData = response.data?.tickets || response.tickets || [];
+      if (response && (response.tickets || response.data?.tickets)) {
+        const ticketsData = response.tickets || response.data?.tickets || [];
         const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
           id: t.id || t.ID || 0,
           title: t.title || 'بدون عنوان',
@@ -268,8 +271,8 @@ export default function SupportTickets() {
         per_page: itemsPerPage,
         status: statusFilter !== 'all' ? statusFilter : undefined,
       });
-      if (response && (response.data || response.tickets)) {
-        const ticketsData = response.data?.tickets || response.tickets || [];
+      if (response && (response.tickets || response.data?.tickets)) {
+        const ticketsData = response.tickets || response.data?.tickets || [];
         const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
           id: t.id || t.ID || 0,
           title: t.title || 'بدون عنوان',
@@ -279,7 +282,7 @@ export default function SupportTickets() {
           category: t.category || 'general',
           user_id: t.user_id || t.user?.id || 0,
           user_name: t.user?.first_name && t.user?.last_name 
-            ? `${t.user.first_name} ${t.user.last_name}` 
+            ? `${t.user.first_name} ${t.user.last_name}`
             : t.user?.name || 'کاربر ناشناس',
           user_email: t.user?.email || '',
           created_at: t.created_at || new Date().toISOString(),
