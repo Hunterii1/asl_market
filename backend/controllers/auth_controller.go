@@ -187,7 +187,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 }
 
 // AdminLogin handles login for web panel admins using username
-// Supports both WebAdmin and User (with IsAdmin=true) tables
+// ONLY searches in WebAdmin table, not User table
 func (ac *AuthController) AdminLogin(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
@@ -202,127 +202,70 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	// Try to find web admin by username first (case-insensitive)
 	log.Printf("AdminLogin: Attempting login for username: %s", req.Username)
 
-	// Debug: Check if any web admin exists
-	var allAdmins []models.WebAdmin
-	ac.DB.Where("deleted_at IS NULL").Find(&allAdmins)
-	log.Printf("AdminLogin: Total web admins in database: %d", len(allAdmins))
-	for _, a := range allAdmins {
-		log.Printf("AdminLogin: Found admin - ID: %d, Username: '%s', Email: '%s', IsActive: %v",
-			a.ID, a.Username, a.Email, a.IsActive)
-	}
+	// Try to find web admin by username (case-insensitive)
+	// Also try to match by email if username doesn't match
+	var webAdmin models.WebAdmin
+	err := ac.DB.Where("(username = ? OR LOWER(username) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
+		req.Username, req.Username, true).First(&webAdmin).Error
 
-	webAdmin, err := models.GetWebAdminByUsername(ac.DB, req.Username)
-	if err == nil {
-		log.Printf("AdminLogin: WebAdmin found: ID=%d, Username=%s, IsActive=%v", webAdmin.ID, webAdmin.Username, webAdmin.IsActive)
-		// Found WebAdmin, proceed with WebAdmin login
-		if !utils.CheckPassword(req.Password, webAdmin.Password) {
-			log.Printf("AdminLogin: Password check failed for username: %s", req.Username)
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "نام کاربری یا رمز عبور اشتباه است",
-			})
-			return
-		}
-		log.Printf("AdminLogin: Password check passed for username: %s", req.Username)
-
-		if !webAdmin.IsActive {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "حساب کاربری غیرفعال شده است",
-			})
-			return
-		}
-
-		// Update last login
-		if err := webAdmin.UpdateLastLogin(ac.DB); err != nil {
-			log.Printf("AdminLogin: Error updating last login: %v", err)
-		}
-
-		// Parse permissions
-		permissions := []string{}
-		if webAdmin.Permissions != "" {
-			if webAdmin.Permissions[0] == '[' {
-				_ = json.Unmarshal([]byte(webAdmin.Permissions), &permissions)
-			} else {
-				parts := strings.Split(webAdmin.Permissions, ",")
-				for _, part := range parts {
-					permissions = append(permissions, strings.TrimSpace(part))
-				}
-			}
-		}
-
-		// Generate token
-		token, err := utils.GenerateToken(webAdmin.ID, webAdmin.Username)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "خطا در تولید توکن",
-			})
-			return
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"message": "ورود موفقیت‌آمیز",
-			"token":   token,
-			"user": gin.H{
-				"id":          webAdmin.ID,
-				"name":        webAdmin.Name,
-				"email":       webAdmin.Email,
-				"username":    webAdmin.Username,
-				"role":        webAdmin.Role,
-				"permissions": permissions,
-				"is_admin":    true,
-				"first_name":  webAdmin.Name,
-				"last_name":   "",
-			},
-		})
-		return
-	}
-
-	// If not found in WebAdmin, try User table (for backward compatibility with alireza)
-	log.Printf("AdminLogin: WebAdmin not found for username: %s, trying User table", req.Username)
-	var user models.User
-	// Try to find user by email (alireza might be stored as email) or username
-	err = ac.DB.Where("(email = ? OR phone = ?) AND is_admin = ?", req.Username, req.Username, true).First(&user).Error
+	// If not found by username, try email
 	if err != nil {
-		log.Printf("AdminLogin: User not found for username: %s, error: %v", req.Username, err)
+		log.Printf("AdminLogin: WebAdmin not found by username '%s', trying email", req.Username)
+		err = ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
+			req.Username, req.Username, true).First(&webAdmin).Error
+	}
+
+	if err != nil {
+		log.Printf("AdminLogin: WebAdmin not found for username/email: %s, error: %v", req.Username, err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "نام کاربری یا رمز عبور اشتباه است",
 		})
 		return
 	}
+
+	log.Printf("AdminLogin: WebAdmin found: ID=%d, Username=%s, Email=%s, IsActive=%v",
+		webAdmin.ID, webAdmin.Username, webAdmin.Email, webAdmin.IsActive)
 
 	// Check password
-	if !utils.CheckPassword(req.Password, user.Password) {
+	if !utils.CheckPassword(req.Password, webAdmin.Password) {
+		log.Printf("AdminLogin: Password check failed for username: %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "نام کاربری یا رمز عبور اشتباه است",
 		})
 		return
 	}
 
-	// Check if user is active
-	if !user.IsActive {
+	log.Printf("AdminLogin: Password check passed for username: %s", req.Username)
+
+	if !webAdmin.IsActive {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "حساب کاربری غیرفعال شده است",
 		})
 		return
 	}
 
-	// Check if user is admin
-	if !user.IsAdmin {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "دسترسی غیرمجاز",
-		})
-		return
+	// Update last login
+	if err := webAdmin.UpdateLastLogin(ac.DB); err != nil {
+		log.Printf("AdminLogin: Error updating last login: %v", err)
 	}
 
-	// Generate token (use email or phone as identifier)
-	identifier := user.Phone
-	if user.Email != "" {
-		identifier = user.Email
+	// Parse permissions
+	permissions := []string{}
+	if webAdmin.Permissions != "" {
+		if webAdmin.Permissions[0] == '[' {
+			_ = json.Unmarshal([]byte(webAdmin.Permissions), &permissions)
+		} else {
+			parts := strings.Split(webAdmin.Permissions, ",")
+			for _, part := range parts {
+				permissions = append(permissions, strings.TrimSpace(part))
+			}
+		}
 	}
 
-	token, err := utils.GenerateToken(user.ID, identifier)
+	// Generate token
+	token, err := utils.GenerateToken(webAdmin.ID, webAdmin.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "خطا در تولید توکن",
@@ -330,27 +273,19 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	// Determine role based on username (alireza = super_admin)
-	username := strings.ToLower(req.Username)
-	role := "admin"
-	if username == "alireza" || user.Email == "alireza" {
-		role = "super_admin"
-	}
-
-	// Return user response (compatible with frontend AdminUser interface)
 	c.JSON(http.StatusOK, gin.H{
 		"message": "ورود موفقیت‌آمیز",
 		"token":   token,
 		"user": gin.H{
-			"id":          user.ID,
-			"name":        fmt.Sprintf("%s %s", user.FirstName, user.LastName),
-			"email":       user.Email,
-			"username":    user.Email, // Use email as username for User table
-			"role":        role,
-			"permissions": []string{"all"}, // Super admin gets all permissions
+			"id":          webAdmin.ID,
+			"name":        webAdmin.Name,
+			"email":       webAdmin.Email,
+			"username":    webAdmin.Username,
+			"role":        webAdmin.Role,
+			"permissions": permissions,
 			"is_admin":    true,
-			"first_name":  user.FirstName,
-			"last_name":   user.LastName,
+			"first_name":  webAdmin.Name,
+			"last_name":   "",
 		},
 	})
 }
