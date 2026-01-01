@@ -202,24 +202,41 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	log.Printf("AdminLogin: Attempting login for username: %s", req.Username)
+	log.Printf("AdminLogin: Attempting login for username: '%s' (trimmed: '%s', len: %d)",
+		req.Username, strings.TrimSpace(req.Username), len(strings.TrimSpace(req.Username)))
 
 	// Special case: alireza user (backward compatibility)
 	// Check if this is alireza trying to login
-	usernameLower := strings.ToLower(strings.TrimSpace(req.Username))
+	usernameTrimmed := strings.TrimSpace(req.Username)
+	usernameLower := strings.ToLower(usernameTrimmed)
 	isAlireza := usernameLower == "alireza"
 
-	// Try to find web admin by username (case-insensitive)
-	// Also try to match by email if username doesn't match
-	var webAdmin models.WebAdmin
-	err := ac.DB.Where("(username = ? OR LOWER(username) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
-		req.Username, req.Username, true).First(&webAdmin).Error
+	// Debug: List all admins
+	var allAdmins []models.WebAdmin
+	ac.DB.Where("deleted_at IS NULL").Find(&allAdmins)
+	log.Printf("AdminLogin: Total web admins in DB: %d", len(allAdmins))
+	for _, a := range allAdmins {
+		log.Printf("AdminLogin: DB Admin - ID: %d, Username: '%s' (len: %d), Email: '%s', IsActive: %v",
+			a.ID, a.Username, len(a.Username), a.Email, a.IsActive)
+	}
 
-	// If not found by username, try email
+	// Try to find web admin by username (case-insensitive, exact match first)
+	var webAdmin models.WebAdmin
+	err := ac.DB.Where("username = ? AND is_active = ? AND deleted_at IS NULL",
+		usernameTrimmed, true).First(&webAdmin).Error
+
+	// If not found, try case-insensitive match
 	if err != nil {
-		log.Printf("AdminLogin: WebAdmin not found by username '%s', trying email", req.Username)
+		log.Printf("AdminLogin: Exact username match failed for '%s', trying case-insensitive", usernameTrimmed)
+		err = ac.DB.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL",
+			usernameTrimmed, true).First(&webAdmin).Error
+	}
+
+	// If still not found by username, try email
+	if err != nil {
+		log.Printf("AdminLogin: WebAdmin not found by username '%s', trying email", usernameTrimmed)
 		err = ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
-			req.Username, req.Username, true).First(&webAdmin).Error
+			usernameTrimmed, usernameTrimmed, true).First(&webAdmin).Error
 	}
 
 	// If not found in WebAdmin and this is alireza, try User table
