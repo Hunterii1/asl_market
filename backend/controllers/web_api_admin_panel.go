@@ -1687,13 +1687,18 @@ func CreateWebAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("CreateWebAdmin: Invalid request data: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است: " + err.Error()})
 		return
 	}
 
+	log.Printf("CreateWebAdmin: Creating admin with Username: '%s', Email: '%s', Name: '%s', Role: '%s', IsActive: %v",
+		req.Username, req.Email, req.Name, req.Role, req.IsActive)
+
 	// Check if username already exists
 	var existingUsername models.WebAdmin
 	if err := db.Where("username = ? AND deleted_at IS NULL", req.Username).First(&existingUsername).Error; err == nil {
+		log.Printf("CreateWebAdmin: Username '%s' already exists (ID: %d)", req.Username, existingUsername.ID)
 		c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
 		return
 	}
@@ -1701,6 +1706,7 @@ func CreateWebAdmin(c *gin.Context) {
 	// Check if email already exists
 	var existingEmail models.WebAdmin
 	if err := db.Where("email = ? AND deleted_at IS NULL", req.Email).First(&existingEmail).Error; err == nil {
+		log.Printf("CreateWebAdmin: Email '%s' already exists (ID: %d)", req.Email, existingEmail.ID)
 		c.JSON(http.StatusConflict, gin.H{"error": "ایمیل قبلاً استفاده شده است"})
 		return
 	}
@@ -1724,7 +1730,7 @@ func CreateWebAdmin(c *gin.Context) {
 		Name:        req.Name,
 		Email:       req.Email,
 		Phone:       req.Phone,
-		Username:    req.Username,
+		Username:    strings.TrimSpace(req.Username), // Trim whitespace
 		Password:    hashedPassword,
 		TelegramID:  req.TelegramID,
 		Role:        req.Role,
@@ -1733,14 +1739,23 @@ func CreateWebAdmin(c *gin.Context) {
 		LoginCount:  0,
 	}
 
+	log.Printf("CreateWebAdmin: About to create admin - Username: '%s' (len: %d), Email: '%s'",
+		admin.Username, len(admin.Username), admin.Email)
+
 	if err := models.CreateWebAdmin(db, &admin); err != nil {
 		log.Printf("CreateWebAdmin: Error creating admin: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد مدیر: " + err.Error()})
 		return
 	}
 
-	log.Printf("CreateWebAdmin: Admin created successfully - ID: %d, Username: %s, Email: %s, IsActive: %v",
-		admin.ID, admin.Username, admin.Email, admin.IsActive)
+	// Verify the admin was created correctly
+	var verifyAdmin models.WebAdmin
+	if err := db.First(&verifyAdmin, admin.ID).Error; err == nil {
+		log.Printf("CreateWebAdmin: Admin created and verified - ID: %d, Username: '%s' (len: %d), Email: '%s', IsActive: %v",
+			verifyAdmin.ID, verifyAdmin.Username, len(verifyAdmin.Username), verifyAdmin.Email, verifyAdmin.IsActive)
+	} else {
+		log.Printf("CreateWebAdmin: Warning - Could not verify created admin: %v", err)
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
