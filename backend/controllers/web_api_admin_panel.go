@@ -1734,9 +1734,13 @@ func CreateWebAdmin(c *gin.Context) {
 	}
 
 	if err := models.CreateWebAdmin(db, &admin); err != nil {
+		log.Printf("CreateWebAdmin: Error creating admin: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد مدیر: " + err.Error()})
 		return
 	}
+
+	log.Printf("CreateWebAdmin: Admin created successfully - ID: %d, Username: %s, Email: %s, IsActive: %v",
+		admin.ID, admin.Username, admin.Email, admin.IsActive)
 
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,

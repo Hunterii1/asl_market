@@ -204,6 +204,16 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 
 	// Try to find web admin by username first (case-insensitive)
 	log.Printf("AdminLogin: Attempting login for username: %s", req.Username)
+
+	// Debug: Check if any web admin exists
+	var allAdmins []models.WebAdmin
+	ac.DB.Where("deleted_at IS NULL").Find(&allAdmins)
+	log.Printf("AdminLogin: Total web admins in database: %d", len(allAdmins))
+	for _, a := range allAdmins {
+		log.Printf("AdminLogin: Found admin - ID: %d, Username: '%s', Email: '%s', IsActive: %v",
+			a.ID, a.Username, a.Email, a.IsActive)
+	}
+
 	webAdmin, err := models.GetWebAdminByUsername(ac.DB, req.Username)
 	if err == nil {
 		log.Printf("AdminLogin: WebAdmin found: ID=%d, Username=%s, IsActive=%v", webAdmin.ID, webAdmin.Username, webAdmin.IsActive)
