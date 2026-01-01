@@ -202,45 +202,58 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		return
 	}
 
-	log.Printf("AdminLogin: Attempting login for username: '%s' (trimmed: '%s', len: %d)",
-		req.Username, strings.TrimSpace(req.Username), len(strings.TrimSpace(req.Username)))
+	log.Printf("AdminLogin: Attempting login for username: '%s'", req.Username)
 
-	// Special case: alireza user (backward compatibility)
-	// Check if this is alireza trying to login
 	usernameTrimmed := strings.TrimSpace(req.Username)
 	usernameLower := strings.ToLower(usernameTrimmed)
 	isAlireza := usernameLower == "alireza"
 
-	// Debug: List all admins
-	var allAdmins []models.WebAdmin
-	ac.DB.Where("deleted_at IS NULL").Find(&allAdmins)
-	log.Printf("AdminLogin: Total web admins in DB: %d", len(allAdmins))
-	for _, a := range allAdmins {
-		log.Printf("AdminLogin: DB Admin - ID: %d, Username: '%s' (len: %d), Email: '%s', IsActive: %v",
-			a.ID, a.Username, len(a.Username), a.Email, a.IsActive)
-	}
-
-	// Try to find web admin by username (case-insensitive, exact match first)
+	// Get all active web admins and try to find matching username/email and verify password
 	var webAdmin models.WebAdmin
+	var found bool
+
+	// First, try exact username match
 	err := ac.DB.Where("username = ? AND is_active = ? AND deleted_at IS NULL",
 		usernameTrimmed, true).First(&webAdmin).Error
-
-	// If not found, try case-insensitive match
-	if err != nil {
-		log.Printf("AdminLogin: Exact username match failed for '%s', trying case-insensitive", usernameTrimmed)
+	if err == nil {
+		found = true
+		log.Printf("AdminLogin: Found admin by exact username match: ID=%d", webAdmin.ID)
+	} else {
+		// Try case-insensitive username match
 		err = ac.DB.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL",
 			usernameTrimmed, true).First(&webAdmin).Error
-	}
+		if err == nil {
+			found = true
+			log.Printf("AdminLogin: Found admin by case-insensitive username match: ID=%d", webAdmin.ID)
+		} else {
+			// Try email match
+			err = ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
+				usernameTrimmed, usernameTrimmed, true).First(&webAdmin).Error
+			if err == nil {
+				found = true
+				log.Printf("AdminLogin: Found admin by email match: ID=%d", webAdmin.ID)
+			} else {
+				// If still not found, try to find by password match in all active admins
+				// This allows login with any username if password matches
+				var allAdmins []models.WebAdmin
+				ac.DB.Where("is_active = ? AND deleted_at IS NULL", true).Find(&allAdmins)
 
-	// If still not found by username, try email
-	if err != nil {
-		log.Printf("AdminLogin: WebAdmin not found by username '%s', trying email", usernameTrimmed)
-		err = ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_active = ? AND deleted_at IS NULL",
-			usernameTrimmed, usernameTrimmed, true).First(&webAdmin).Error
+				log.Printf("AdminLogin: Username/email not found, checking password against %d active admins", len(allAdmins))
+
+				for _, admin := range allAdmins {
+					if utils.CheckPassword(req.Password, admin.Password) {
+						webAdmin = admin
+						found = true
+						log.Printf("AdminLogin: Password match found for admin ID=%d, Username='%s'", admin.ID, admin.Username)
+						break
+					}
+				}
+			}
+		}
 	}
 
 	// If not found in WebAdmin and this is alireza, try User table
-	if err != nil && isAlireza {
+	if !found && isAlireza {
 		log.Printf("AdminLogin: WebAdmin not found for alireza, trying User table")
 		var user models.User
 		userErr := ac.DB.Where("(email = ? OR LOWER(email) = LOWER(?)) AND is_admin = ? AND is_active = ?",
@@ -291,8 +304,8 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 		}
 	}
 
-	if err != nil {
-		log.Printf("AdminLogin: WebAdmin not found for username/email: %s, error: %v", req.Username, err)
+	if !found {
+		log.Printf("AdminLogin: WebAdmin not found for username/email: %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "نام کاربری یا رمز عبور اشتباه است",
 		})
@@ -302,7 +315,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 	log.Printf("AdminLogin: WebAdmin found: ID=%d, Username=%s, Email=%s, IsActive=%v",
 		webAdmin.ID, webAdmin.Username, webAdmin.Email, webAdmin.IsActive)
 
-	// Check password
+	// Check password (if not already verified in the loop above)
 	if !utils.CheckPassword(req.Password, webAdmin.Password) {
 		log.Printf("AdminLogin: Password check failed for username: %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{
