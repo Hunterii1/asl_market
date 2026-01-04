@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
-import { DailyLimitsDisplay } from '@/components/DailyLimitsDisplay';
+import { SupplierLimitsDisplay } from '@/components/SupplierLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -164,8 +164,8 @@ const AslSupplier = () => {
         </Card>
       )}
 
-      {/* Daily Limits Display */}
-      <DailyLimitsDisplay className="mb-6" />
+      {/* Supplier Limits Display */}
+      <SupplierLimitsDisplay className="mb-6" />
 
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">

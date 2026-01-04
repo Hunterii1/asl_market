@@ -14,6 +14,34 @@ import (
 func GetAvailableProducts(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
 
+	// Check if user is authenticated and check limits
+	userIDInterface, exists := c.Get("user_id")
+	if exists {
+		userID := userIDInterface.(uint)
+		// Get user's license to check limits
+		license, err := models.GetUserLicense(db, userID)
+		if err == nil {
+			// Check if user can view
+			canView, err := models.CanViewAvailableProduct(db, userID, license.Type)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بررسی محدودیت"})
+				return
+			}
+			if !canView {
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":         "محدودیت روزانه مشاهده کالاهای موجود به پایان رسیده است",
+					"limit_reached": true,
+				})
+				return
+			}
+			// Track the view
+			if err := models.IncrementAvailableProductView(db, userID); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ثبت مشاهده"})
+				return
+			}
+		}
+	}
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "20"))
 	category := c.Query("category")
@@ -124,6 +152,22 @@ func GetAvailableProduct(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
+	}
+
+	// Check if user is authenticated and track view
+	userIDInterface, exists := c.Get("user_id")
+	if exists {
+		userID := userIDInterface.(uint)
+		// Get user's license to check limits
+		license, err := models.GetUserLicense(db, userID)
+		if err == nil {
+			// Check if user can view
+			canView, err := models.CanViewAvailableProduct(db, userID, license.Type)
+			if err == nil && canView {
+				// Track the view
+				models.IncrementAvailableProductView(db, userID)
+			}
+		}
 	}
 
 	product, err := models.GetAvailableProduct(db, uint(productID))

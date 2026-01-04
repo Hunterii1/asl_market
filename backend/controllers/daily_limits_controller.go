@@ -23,7 +23,7 @@ func GetDailyLimitsStatus(c *gin.Context) {
 	}
 
 	// Get remaining limits
-	visitorRemaining, supplierRemaining, err := models.GetRemainingLimits(db, userID, license.Type)
+	visitorRemaining, supplierRemaining, availableProductRemaining, err := models.GetRemainingLimits(db, userID, license.Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت محدودیت‌ها"})
 		return
@@ -39,8 +39,10 @@ func GetDailyLimitsStatus(c *gin.Context) {
 	// Calculate max limits based on license type
 	visitorMax := 3
 	supplierMax := 3
+	availableProductMax := 3
 	if license.Type == "pro" {
 		supplierMax = 6
+		availableProductMax = 6
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -54,6 +56,11 @@ func GetDailyLimitsStatus(c *gin.Context) {
 			"used":      limits.SupplierViews,
 			"max":       supplierMax,
 			"remaining": supplierRemaining,
+		},
+		"available_product_limits": gin.H{
+			"used":      limits.AvailableProductViews,
+			"max":       availableProductMax,
+			"remaining": availableProductRemaining,
 		},
 		"date": limits.Date.Format("2006-01-02"),
 	})

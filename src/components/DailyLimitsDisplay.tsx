@@ -10,7 +10,8 @@ import {
   AlertTriangle,
   Zap,
   Eye,
-  Phone
+  Phone,
+  Package
 } from 'lucide-react';
 import { apiService } from '@/services/api';
 
@@ -22,6 +23,11 @@ interface DailyLimits {
     remaining: number;
   };
   supplier_limits: {
+    used: number;
+    max: number;
+    remaining: number;
+  };
+  available_product_limits?: {
     used: number;
     max: number;
     remaining: number;
@@ -186,6 +192,40 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
           </p>
         </div>
 
+        {/* Available Product Limits */}
+        {limits.available_product_limits && (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium">مشاهده کالاهای موجود</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge className={`text-xs rounded-full ${
+                  limits.available_product_limits.remaining <= 0
+                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                    : "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                }`}>
+                  {limits.available_product_limits.remaining} مونده
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {limits.available_product_limits.used} / {limits.available_product_limits.max}
+                </span>
+              </div>
+            </div>
+            <Progress 
+              value={(limits.available_product_limits.used / limits.available_product_limits.max) * 100}
+              className="h-2"
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              {limits.available_product_limits.remaining > 0 
+                ? `${limits.available_product_limits.remaining} مشاهده باقی‌مانده`
+                : 'محدودیت امروز به پایان رسیده'
+              }
+            </p>
+          </div>
+        )}
+
         {/* Contact Information Limits */}
         {limits.contact_limits && (
           <div className="space-y-2 pt-4 border-t">
@@ -237,6 +277,7 @@ export function DailyLimitsDisplay({ className }: DailyLimitsDisplayProps) {
         {/* Warning for limits reached */}
         {(isLimitReached(limits.visitor_limits.remaining) || 
           isLimitReached(limits.supplier_limits.remaining) || 
+          (limits.available_product_limits && isLimitReached(limits.available_product_limits.remaining)) ||
           (limits.contact_limits && limits.contact_limits.remaining_views <= 0)) && (
           <Alert>
             <AlertTriangle className="h-4 w-4" />
