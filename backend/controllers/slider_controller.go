@@ -3,6 +3,7 @@ package controllers
 import (
 	"asl-market-backend/models"
 	"asl-market-backend/utils"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -310,34 +311,74 @@ func DeleteSlider(c *gin.Context) {
 // UploadSliderImage uploads a slider image
 func UploadSliderImage(c *gin.Context) {
 	// Check if user is authenticated and is admin
-	// Check user_role (works for both WebAdmin and regular User with IsAdmin)
-	userRole, exists := c.Get("user_role")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
-		return
-	}
+	// Check if it's a WebAdmin (admin panel admin)
+	isWebAdminInterface, exists := c.Get("is_web_admin")
+	log.Printf("UploadSliderImage: is_web_admin exists=%v, value=%v", exists, isWebAdminInterface)
 
-	// Allow super_admin, admin, or moderator roles
-	roleStr, ok := userRole.(string)
-	if !ok {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-		return
-	}
-
-	// Check if role is admin (super_admin, admin, or moderator)
-	if roleStr != "super_admin" && roleStr != "admin" && roleStr != "moderator" {
-		// Also check if it's a regular User with IsAdmin flag
-		userInterface, userExists := c.Get("user")
-		if userExists {
-			if user, ok := userInterface.(models.User); ok && user.IsAdmin {
-				// Regular User with IsAdmin flag is allowed
-			} else {
+	if exists {
+		if isWebAdmin, ok := isWebAdminInterface.(bool); ok && isWebAdmin {
+			log.Printf("UploadSliderImage: WebAdmin detected, allowing access")
+			// WebAdmin is allowed, continue
+		} else {
+			log.Printf("UploadSliderImage: is_web_admin is false or invalid, checking regular User")
+			// Not a WebAdmin, check regular User with IsAdmin flag
+			userInterface, userExists := c.Get("user")
+			if !userExists {
+				log.Printf("UploadSliderImage: User not found in context")
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+				return
+			}
+			user, ok := userInterface.(models.User)
+			if !ok || !user.IsAdmin {
+				log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
 				c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 				return
 			}
+			log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
+		}
+	} else {
+		// is_web_admin not set, check user_role for WebAdmin roles
+		userRole, roleExists := c.Get("user_role")
+		log.Printf("UploadSliderImage: user_role exists=%v, value=%v", roleExists, userRole)
+
+		if roleExists {
+			roleStr, ok := userRole.(string)
+			if ok && (roleStr == "super_admin" || roleStr == "admin" || roleStr == "moderator") {
+				log.Printf("UploadSliderImage: WebAdmin role detected (%s), allowing access", roleStr)
+				// WebAdmin with valid role is allowed, continue
+			} else {
+				log.Printf("UploadSliderImage: Invalid role (%v), checking regular User", roleStr)
+				// Not a valid admin role, check regular User
+				userInterface, userExists := c.Get("user")
+				if !userExists {
+					log.Printf("UploadSliderImage: User not found in context")
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+					return
+				}
+				user, ok := userInterface.(models.User)
+				if !ok || !user.IsAdmin {
+					log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
+					c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+					return
+				}
+				log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
+			}
 		} else {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-			return
+			log.Printf("UploadSliderImage: Neither is_web_admin nor user_role set, checking regular User")
+			// Neither is_web_admin nor user_role set, check regular User
+			userInterface, userExists := c.Get("user")
+			if !userExists {
+				log.Printf("UploadSliderImage: User not found in context")
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+				return
+			}
+			user, ok := userInterface.(models.User)
+			if !ok || !user.IsAdmin {
+				log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
+				c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+				return
+			}
+			log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
 		}
 	}
 
