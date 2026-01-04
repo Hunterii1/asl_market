@@ -1765,6 +1765,16 @@ class ApiService {
       },
     });
   }
+
+  // Global search
+  async globalSearch(query: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();

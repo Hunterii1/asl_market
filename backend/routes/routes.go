@@ -223,6 +223,9 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.PUT("/admin/withdrawal/request/:id/status", withdrawalController.UpdateWithdrawalStatus)
 		protected.GET("/admin/withdrawal/stats", withdrawalController.GetAllWithdrawalStats)
 
+		// Global search route
+		protected.GET("/search", controllers.GlobalSearch)
+
 		// Available products routes (public access for viewing)
 		protected.GET("/available-products", controllers.GetAvailableProducts)
 		protected.GET("/available-products/categories", controllers.GetAvailableProductCategories)

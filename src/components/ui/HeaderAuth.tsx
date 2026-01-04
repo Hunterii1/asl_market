@@ -42,6 +42,7 @@ import {
   MessageCircle
 } from "lucide-react";
 import { Logo } from "./Logo";
+import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 import { apiService, type LicenseStatus } from "@/services/api";
 
 interface Notification {
@@ -272,6 +273,11 @@ const HeaderAuth = () => {
             <div className="block sm:hidden">
               <h1 className="text-lg font-bold text-foreground">اصل مارکت</h1>
             </div>
+          </div>
+
+          {/* Global Search - Desktop only, centered */}
+          <div className="hidden lg:flex flex-1 max-w-md mx-4">
+            <GlobalSearchBar />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

@@ -53,6 +53,7 @@ import ProductsResearch from "./ProductsResearch";
 import MarketingPopup from "@/components/MarketingPopup";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import Slider from "@/components/Slider";
+import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -151,6 +152,12 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
       {/* Header */}
       <HeaderAuth />
+      
+      {/* Global Search - Mobile only, above banners */}
+      <div className="lg:hidden container mx-auto px-3 sm:px-4 pt-4">
+        <GlobalSearchBar mobile />
+      </div>
+
       {/* Slider and Quick Access Links - Desktop side by side, Mobile stacked */}
       <div className="container mx-auto px-3 sm:px-4 mt-6 sm:mt-8 mb-6 sm:mb-8">
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
