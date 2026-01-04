@@ -124,7 +124,7 @@ export default function Slider() {
   return (
     <div className="relative w-full">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-stretch">
           {/* Slider - smaller on desktop */}
           <div className="relative w-full lg:w-2/3 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
             {sliders.map((slider, index) => (
@@ -198,8 +198,8 @@ export default function Slider() {
           </div>
 
           {/* Quick Access Links - only on desktop */}
-          <div className="hidden lg:flex flex-col gap-3 w-1/3 mt-4">
-            <div className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg">
+          <div className="hidden lg:flex flex-col gap-3 w-1/3">
+            <div className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg h-full flex flex-col justify-between">
               {quickLinks.map((link, index) => {
                 const Icon = link.icon;
                 return (
