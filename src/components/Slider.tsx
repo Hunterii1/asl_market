@@ -194,7 +194,7 @@ export default function Slider() {
           </div>
 
           {/* Quick Access Links - only on desktop */}
-          <div className="hidden lg:flex flex-col gap-3 w-1/3">
+          <div className="hidden lg:flex flex-col gap-3 w-1/3 mt-4">
             <div className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg">
               {quickLinks.map((link, index) => {
                 const Icon = link.icon;
@@ -202,13 +202,13 @@ export default function Slider() {
                   <button
                     key={index}
                     onClick={() => navigate(link.path)}
-                    className="w-full flex items-center justify-between gap-2 p-3 rounded-xl border border-orange-500/20 bg-white/5 dark:bg-gray-900/5 backdrop-blur-sm text-gray-800 dark:text-gray-200 hover:bg-white/15 dark:hover:bg-gray-900/15 hover:border-orange-500/40 transition-all duration-300 hover:scale-[1.01] group mb-2 last:mb-0"
+                    className="w-full flex items-center justify-between gap-3 p-5 rounded-xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-900/20 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] group mb-3 last:mb-0"
                   >
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                        <Icon className="w-4 h-4 text-orange-500 group-hover:text-orange-600" />
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                        <Icon className="w-5 h-5 text-orange-500 group-hover:text-orange-600" />
                       </div>
-                      <span className="text-right font-semibold text-sm">{link.title}</span>
+                      <span className="text-right font-semibold text-base">{link.title}</span>
                     </div>
                   </button>
                 );
