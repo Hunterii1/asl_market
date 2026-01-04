@@ -16,14 +16,14 @@ export default function Slider() {
   const [sliders, setSliders] = useState<Slider[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
+  
+  // Swipe handling (touch and mouse)
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const isDragging = useRef(false);
+  const hasSwiped = useRef(false);
+  const minSwipeDistance = 50; // Minimum distance for a swipe
 
   useEffect(() => {
     loadSliders();
@@ -48,41 +48,15 @@ export default function Slider() {
   };
 
   useEffect(() => {
-    if (sliders.length > 0 && !isPaused) {
-      // Reset progress
-      setProgress(0);
-      
-      // Progress bar animation
-      const progressInterval = setInterval(() => {
-        setProgress((prev) => {
-          if (prev >= 100) {
-            return 0;
-          }
-          return prev + 2; // 2% every 100ms = 100% in 5 seconds
-        });
-      }, 100);
-      progressIntervalRef.current = progressInterval;
-
+    if (sliders.length > 0) {
       // Auto-advance slider every 5 seconds
       const interval = setInterval(() => {
         setCurrentIndex((prev) => (prev + 1) % sliders.length);
-        setProgress(0);
       }, 5000);
 
-      return () => {
-        clearInterval(interval);
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-      };
-    } else {
-      // Pause progress when hovered or dragging
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
+      return () => clearInterval(interval);
     }
-  }, [sliders.length, isPaused, currentIndex]);
+  }, [sliders.length]);
 
   useEffect(() => {
     // Track view when slider changes
@@ -91,8 +65,21 @@ export default function Slider() {
     }
   }, [currentIndex, sliders]);
 
-  const handleSliderClick = async (slider: Slider) => {
-    if (!slider.link || isDragging) return;
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + sliders.length) % sliders.length);
+  };
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % sliders.length);
+  };
+
+  const handleSliderClick = async (slider: Slider, e?: React.MouseEvent) => {
+    // Prevent click if user was swiping
+    if (hasSwiped.current) {
+      return;
+    }
+    
+    if (!slider.link) return;
 
     // Track click
     try {
@@ -109,69 +96,94 @@ export default function Slider() {
     }
   };
 
-  // Touch/Mouse drag handlers
-  const handleStart = (clientX: number) => {
-    setIsDragging(true);
-    setStartX(clientX);
-    setIsPaused(true);
+  // Swipe handlers (touch)
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
   };
 
-  const handleMove = (clientX: number) => {
-    if (!isDragging) return;
-    const diff = clientX - startX;
-    setTranslateX(diff);
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
   };
 
-  const handleEnd = () => {
-    if (!isDragging) return;
-    
-    const threshold = 50; // Minimum drag distance to change slide
-    if (Math.abs(translateX) > threshold) {
-      if (translateX > 0) {
-        // Swipe right - go to previous
-        setCurrentIndex((prev) => (prev - 1 + sliders.length) % sliders.length);
-      } else {
-        // Swipe left - go to next
-        setCurrentIndex((prev) => (prev + 1) % sliders.length);
-      }
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) {
+      touchStartX.current = null;
+      touchEndX.current = null;
+      hasSwiped.current = false;
+      return;
     }
     
-    setIsDragging(false);
-    setTranslateX(0);
-    setStartX(0);
-    setIsPaused(false);
-  };
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
 
-  // Mouse events
-  const handleMouseDown = (e: React.MouseEvent) => {
-    handleStart(e.clientX);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    handleMove(e.clientX);
-  };
-
-  const handleMouseUp = () => {
-    handleEnd();
-  };
-
-  const handleMouseLeave = () => {
-    if (isDragging) {
-      handleEnd();
+    if (isLeftSwipe && sliders.length > 0) {
+      hasSwiped.current = true;
+      handleNext();
+    } else if (isRightSwipe && sliders.length > 0) {
+      hasSwiped.current = true;
+      handlePrevious();
     }
+
+    // Reset after a short delay to allow click handler to check hasSwiped
+    setTimeout(() => {
+      touchStartX.current = null;
+      touchEndX.current = null;
+      hasSwiped.current = false;
+    }, 100);
   };
 
-  // Touch events
-  const handleTouchStart = (e: React.TouchEvent) => {
-    handleStart(e.touches[0].clientX);
+  // Mouse drag handlers (for desktop)
+  const onMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    hasSwiped.current = false;
+    touchStartX.current = e.clientX;
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    handleMove(e.touches[0].clientX);
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    touchEndX.current = e.clientX;
   };
 
-  const handleTouchEnd = () => {
-    handleEnd();
+  const onMouseUp = () => {
+    if (!isDragging.current) {
+      return;
+    }
+    
+    if (!touchStartX.current || touchEndX.current === null) {
+      isDragging.current = false;
+      touchStartX.current = null;
+      touchEndX.current = null;
+      hasSwiped.current = false;
+      return;
+    }
+    
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && sliders.length > 0) {
+      hasSwiped.current = true;
+      handleNext();
+    } else if (isRightSwipe && sliders.length > 0) {
+      hasSwiped.current = true;
+      handlePrevious();
+    }
+
+    // Reset after a short delay to allow click handler to check hasSwiped
+    setTimeout(() => {
+      touchStartX.current = null;
+      touchEndX.current = null;
+      isDragging.current = false;
+      hasSwiped.current = false;
+    }, 100);
+  };
+
+  const onMouseLeave = () => {
+    isDragging.current = false;
+    touchStartX.current = null;
+    touchEndX.current = null;
+    hasSwiped.current = false;
   };
 
 
@@ -184,89 +196,53 @@ export default function Slider() {
   }
 
   return (
-    <div 
-      className="relative w-full group"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <div className="relative w-full">
       <div 
-        ref={sliderRef}
-        className="relative w-full overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        style={{ 
-          cursor: isDragging ? 'grabbing' : 'grab',
-          userSelect: 'none',
-          touchAction: 'pan-x pan-y pinch-zoom'
-        }}
+        className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 touch-pan-y select-none"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
       >
-        <div 
-          className="flex transition-transform duration-700 ease-in-out"
-          style={{
-            transform: isDragging 
-              ? `translateX(calc(-${currentIndex * 100}% + ${translateX}px))`
-              : `translateX(-${currentIndex * 100}%)`,
-            width: `${sliders.length * 100}%`
-          }}
-        >
-          {sliders.map((slider, index) => (
-            <div
-              key={slider.id}
-              className="relative flex-shrink-0"
-              style={{ width: `${100 / sliders.length}%` }}
-            >
-              <div className="relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[90vh] flex items-center justify-center overflow-hidden">
-                <img
-                  src={getImageUrl(slider.image_url)}
-                  alt={`Slider ${slider.id}`}
-                  className={cn(
-                    "w-full h-full object-contain cursor-pointer transition-transform duration-700",
-                    !isDragging && "hover:scale-[1.01]",
-                    isDragging && "scale-100"
-                  )}
-                  onClick={() => handleSliderClick(slider)}
-                  loading={index === 0 ? 'eager' : 'lazy'}
-                  draggable={false}
-                />
-                {/* Subtle overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent pointer-events-none" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Progress Bar - Show on hover for desktop, always on mobile */}
-        {sliders.length > 1 && !isPaused && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 dark:bg-white/10 z-20 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity duration-300">
-            <div 
-              className="h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-100 ease-linear"
-              style={{ width: `${progress}%` }}
+        {sliders.map((slider, index) => (
+          <div
+            key={slider.id}
+            className={cn(
+              'relative w-full transition-opacity duration-700 ease-in-out',
+              index === currentIndex 
+                ? 'opacity-100 z-10' 
+                : 'opacity-0 z-0 absolute inset-0'
+            )}
+          >
+            <img
+              src={getImageUrl(slider.image_url)}
+              alt={`Slider ${slider.id}`}
+              className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto select-none pointer-events-auto"
+              onClick={(e) => handleSliderClick(slider, e)}
+              onDragStart={(e) => e.preventDefault()} // Prevent image drag
+              loading={index === 0 ? 'eager' : 'lazy'}
+              style={{ maxHeight: '80vh' }}
             />
+            {/* Overlay gradient for better text readability if needed */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
           </div>
-        )}
+        ))}
 
-        {/* Dots Indicator - Only show on hover for desktop, always on mobile */}
+        {/* Dots Indicator */}
         {sliders.length > 1 && (
-          <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/20 dark:bg-white/20 backdrop-blur-md px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity duration-300">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/30 dark:bg-white/30 backdrop-blur-sm px-3 py-2 rounded-full">
             {sliders.map((_, index) => (
               <button
                 key={index}
-                onClick={() => {
-                  setCurrentIndex(index);
-                  setProgress(0);
-                  setIsPaused(true);
-                  setTimeout(() => setIsPaused(false), 3000);
-                }}
+                onClick={() => setCurrentIndex(index)}
                 className={cn(
-                  'rounded-full transition-all duration-300 hover:scale-110',
+                  'rounded-full transition-all duration-300',
                   index === currentIndex
-                    ? 'bg-white dark:bg-gray-200 w-8 h-2 shadow-lg'
-                    : 'bg-white/60 dark:bg-gray-400/60 hover:bg-white/80 dark:hover:bg-gray-400/80 w-2 h-2'
+                    ? 'bg-white w-8 h-2 shadow-lg'
+                    : 'bg-white/60 hover:bg-white/80 w-2 h-2'
                 )}
                 aria-label={`Go to slide ${index + 1}`}
               />
