@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { LicenseGate } from '@/components/LicenseGate';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 import { Pagination } from "@/components/ui/pagination";
 import { 
   Target, 
@@ -173,9 +174,15 @@ const ProductsResearch = () => {
     );
   }
 
+  // Check if page was opened from search
+  const isFromSearch = searchParams.get('search') !== null;
+
   return (
     <LicenseGate>
-      <div className="space-y-6 animate-fade-in">
+      <div className="min-h-screen bg-background" dir="rtl">
+        {isFromSearch && <HeaderAuth />}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="space-y-6 animate-fade-in">
         {/* Header */}
         <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl">
         <CardContent className="p-6">
@@ -398,7 +405,9 @@ const ProductsResearch = () => {
             <p className="text-sm text-muted-foreground">میانگین رشد</p>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </div>
+        </div>
       </div>
     </LicenseGate>
   );

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LicenseGate } from '@/components/LicenseGate';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
 import { getFirstImageUrl } from '@/utils/imageUrl';
@@ -226,9 +227,15 @@ const AslAvailable = () => {
     setCurrentPage(1);
   }, [selectedCategory, selectedCondition, searchTerm, selectedLocation]);
 
+  // Check if page was opened from search
+  const isFromSearch = searchParams.get('search') !== null;
+
   return (
     <LicenseGate>
-    <div className="space-y-6 animate-fade-in">
+      <div className="min-h-screen bg-background" dir="rtl">
+        {isFromSearch && <HeaderAuth />}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
         <CardContent className="p-6">
@@ -513,7 +520,9 @@ const AslAvailable = () => {
           </div>
         </>
       )}
-    </div>
+          </div>
+        </div>
+      </div>
     </LicenseGate>
   );
 };

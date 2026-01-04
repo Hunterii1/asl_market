@@ -465,10 +465,14 @@ const AslAI = () => {
     );
   }
 
+  // Check if page was opened from search
+  const isFromSearch = searchParams.get('search') !== null;
+
   return (
     <LicenseGate>
-    <div className="min-h-screen bg-background" dir="rtl">
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="min-h-screen bg-background" dir="rtl">
+        {isFromSearch && <HeaderAuth />}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
         <Card className="bg-gradient-to-r from-blue-100/40 to-purple-200/40 dark:from-blue-900/20 dark:to-purple-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl mb-6">
           <CardContent className="p-6">

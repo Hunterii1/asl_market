@@ -13,6 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiService } from "@/services/api";
 import { getImageUrl } from '@/utils/imageUrl';
 import { Pagination } from "@/components/ui/pagination";
+import HeaderAuth from '@/components/ui/HeaderAuth';
 import { 
   Users, 
   Star, 
@@ -424,9 +425,15 @@ const AslSupplier = () => {
     </div>
   );
 
+  // Check if page was opened from search
+  const isFromSearch = searchParams.get('search') !== null;
+
   return (
     <LicenseGate>
-      <div className="space-y-6 animate-fade-in transition-colors duration-300">
+      <div className="min-h-screen bg-background" dir="rtl">
+        {isFromSearch && <HeaderAuth />}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="space-y-6 animate-fade-in transition-colors duration-300">
         {/* Header */}
         <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl">
           <CardContent className="p-6">
@@ -477,7 +484,9 @@ const AslSupplier = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+          </div>
+        </div>
+      </div>
     </LicenseGate>
   );
 };

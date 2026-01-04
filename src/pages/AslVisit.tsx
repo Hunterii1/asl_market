@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LicenseGate } from '@/components/LicenseGate';
 import { VisitorLimitsDisplay } from '@/components/VisitorLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
+import HeaderAuth from '@/components/ui/HeaderAuth';
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { 
@@ -380,9 +381,15 @@ const AslVisit = () => {
 
 
 
+  // Check if page was opened from search
+  const isFromSearch = searchParams.get('search') !== null;
+
   return (
     <LicenseGate>
-    <div className="space-y-6 animate-fade-in transition-colors duration-300">
+      <div className="min-h-screen bg-background" dir="rtl">
+        {isFromSearch && <HeaderAuth />}
+        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="space-y-6 animate-fade-in transition-colors duration-300">
       {/* Header */}
       <Card className="bg-gradient-to-r from-blue-900/20 to-blue-800/20 border-blue-700/50 rounded-3xl transition-colors duration-300">
         <CardContent className="p-6">
@@ -447,8 +454,10 @@ const AslVisit = () => {
             <p className="text-sm text-muted-foreground">نرخ موفقیت</p>
           </CardContent>
         </Card>
+          </div>
+        </div>
+        </div>
       </div>
-    </div>
     </LicenseGate>
   );
 };
