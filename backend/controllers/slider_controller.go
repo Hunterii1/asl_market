@@ -310,74 +310,120 @@ func DeleteSlider(c *gin.Context) {
 
 // UploadSliderImage uploads a slider image
 func UploadSliderImage(c *gin.Context) {
+	// Debug info to send in response
+	debugInfo := make(map[string]interface{})
+
 	// Check if user is authenticated and is admin
 	// Check if it's a WebAdmin (admin panel admin)
 	isWebAdminInterface, exists := c.Get("is_web_admin")
+	debugInfo["is_web_admin_exists"] = exists
+	debugInfo["is_web_admin_value"] = isWebAdminInterface
 	log.Printf("UploadSliderImage: is_web_admin exists=%v, value=%v", exists, isWebAdminInterface)
 
 	if exists {
 		if isWebAdmin, ok := isWebAdminInterface.(bool); ok && isWebAdmin {
+			debugInfo["check_result"] = "WebAdmin detected, allowing access"
 			log.Printf("UploadSliderImage: WebAdmin detected, allowing access")
 			// WebAdmin is allowed, continue
 		} else {
+			debugInfo["check_result"] = "is_web_admin is false or invalid, checking regular User"
 			log.Printf("UploadSliderImage: is_web_admin is false or invalid, checking regular User")
 			// Not a WebAdmin, check regular User with IsAdmin flag
 			userInterface, userExists := c.Get("user")
+			debugInfo["user_exists"] = userExists
 			if !userExists {
+				debugInfo["error_step"] = "User not found in context"
 				log.Printf("UploadSliderImage: User not found in context")
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":      "لطفا ابتدا وارد شوید",
+					"debug_info": debugInfo,
+				})
 				return
 			}
 			user, ok := userInterface.(models.User)
+			debugInfo["user_is_admin"] = ok && user.IsAdmin
 			if !ok || !user.IsAdmin {
+				debugInfo["error_step"] = "User is not admin"
 				log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
-				c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":      "Admin access required",
+					"debug_info": debugInfo,
+				})
 				return
 			}
+			debugInfo["check_result"] = "Regular User with IsAdmin=true detected, allowing access"
 			log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
 		}
 	} else {
 		// is_web_admin not set, check user_role for WebAdmin roles
 		userRole, roleExists := c.Get("user_role")
+		debugInfo["user_role_exists"] = roleExists
+		debugInfo["user_role_value"] = userRole
 		log.Printf("UploadSliderImage: user_role exists=%v, value=%v", roleExists, userRole)
 
 		if roleExists {
 			roleStr, ok := userRole.(string)
+			debugInfo["user_role_string"] = roleStr
 			if ok && (roleStr == "super_admin" || roleStr == "admin" || roleStr == "moderator") {
+				debugInfo["check_result"] = "WebAdmin role detected, allowing access"
 				log.Printf("UploadSliderImage: WebAdmin role detected (%s), allowing access", roleStr)
 				// WebAdmin with valid role is allowed, continue
 			} else {
+				debugInfo["check_result"] = "Invalid role, checking regular User"
 				log.Printf("UploadSliderImage: Invalid role (%v), checking regular User", roleStr)
 				// Not a valid admin role, check regular User
 				userInterface, userExists := c.Get("user")
+				debugInfo["user_exists"] = userExists
 				if !userExists {
+					debugInfo["error_step"] = "User not found in context"
 					log.Printf("UploadSliderImage: User not found in context")
-					c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+					c.JSON(http.StatusUnauthorized, gin.H{
+						"error":      "لطفا ابتدا وارد شوید",
+						"debug_info": debugInfo,
+					})
 					return
 				}
 				user, ok := userInterface.(models.User)
+				debugInfo["user_is_admin"] = ok && user.IsAdmin
 				if !ok || !user.IsAdmin {
+					debugInfo["error_step"] = "User is not admin"
 					log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
-					c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+					c.JSON(http.StatusForbidden, gin.H{
+						"error":      "Admin access required",
+						"debug_info": debugInfo,
+					})
 					return
 				}
+				debugInfo["check_result"] = "Regular User with IsAdmin=true detected, allowing access"
 				log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
 			}
 		} else {
+			debugInfo["check_result"] = "Neither is_web_admin nor user_role set, checking regular User"
 			log.Printf("UploadSliderImage: Neither is_web_admin nor user_role set, checking regular User")
 			// Neither is_web_admin nor user_role set, check regular User
 			userInterface, userExists := c.Get("user")
+			debugInfo["user_exists"] = userExists
 			if !userExists {
+				debugInfo["error_step"] = "User not found in context"
 				log.Printf("UploadSliderImage: User not found in context")
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"error":      "لطفا ابتدا وارد شوید",
+					"debug_info": debugInfo,
+				})
 				return
 			}
 			user, ok := userInterface.(models.User)
+			debugInfo["user_is_admin"] = ok && user.IsAdmin
 			if !ok || !user.IsAdmin {
+				debugInfo["error_step"] = "User is not admin"
 				log.Printf("UploadSliderImage: User is not admin (IsAdmin=%v)", ok && user.IsAdmin)
-				c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+				c.JSON(http.StatusForbidden, gin.H{
+					"error":      "Admin access required",
+					"debug_info": debugInfo,
+				})
 				return
 			}
+			debugInfo["check_result"] = "Regular User with IsAdmin=true detected, allowing access"
 			log.Printf("UploadSliderImage: Regular User with IsAdmin=true detected, allowing access")
 		}
 	}
@@ -400,8 +446,9 @@ func UploadSliderImage(c *gin.Context) {
 	imagePath = utils.NormalizeImagePath(imagePath)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "تصویر با موفقیت آپلود شد",
-		"image_url": imagePath,
+		"message":    "تصویر با موفقیت آپلود شد",
+		"image_url":  imagePath,
+		"debug_info": debugInfo,
 	})
 }
 
