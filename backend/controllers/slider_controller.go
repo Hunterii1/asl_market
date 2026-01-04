@@ -129,19 +129,37 @@ func GetSlider(c *gin.Context) {
 
 // CreateSlider creates a new slider (admin only)
 func CreateSlider(c *gin.Context) {
-	// Get user from middleware
-	userInterface, exists := c.Get("user")
+	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
+	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
 		return
 	}
 
-	user := userInterface.(models.User)
-
-	// Check if user is admin
-	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+	// Get user ID from context
+	userIDInterface, userIDExists := c.Get("user_id")
+	if !userIDExists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
 		return
+	}
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	roleStr, ok := userRole.(string)
+	if !ok || (roleStr != "super_admin" && roleStr != "admin" && roleStr != "moderator") {
+		// Also check if it's a regular User with IsAdmin flag
+		userInterface, userExists := c.Get("user")
+		if !userExists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
+		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
 	}
 
 	var req models.SliderRequest
@@ -151,7 +169,7 @@ func CreateSlider(c *gin.Context) {
 	}
 
 	db := models.GetDB()
-	slider, err := models.CreateSlider(db, user.ID, req)
+	slider, err := models.CreateSlider(db, userID, req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create slider"})
 		return
@@ -181,19 +199,25 @@ func CreateSlider(c *gin.Context) {
 
 // UpdateSlider updates an existing slider (admin only)
 func UpdateSlider(c *gin.Context) {
-	// Get user from middleware
-	userInterface, exists := c.Get("user")
+	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
+	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
 		return
 	}
 
-	user := userInterface.(models.User)
-
-	// Check if user is admin
-	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-		return
+	roleStr, ok := userRole.(string)
+	if !ok || (roleStr != "super_admin" && roleStr != "admin" && roleStr != "moderator") {
+		// Also check if it's a regular User with IsAdmin flag
+		userInterface, userExists := c.Get("user")
+		if !userExists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
+		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -239,19 +263,25 @@ func UpdateSlider(c *gin.Context) {
 
 // DeleteSlider deletes a slider (admin only)
 func DeleteSlider(c *gin.Context) {
-	// Get user from middleware
-	userInterface, exists := c.Get("user")
+	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
+	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
 		return
 	}
 
-	user := userInterface.(models.User)
-
-	// Check if user is admin
-	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-		return
+	roleStr, ok := userRole.(string)
+	if !ok || (roleStr != "super_admin" && roleStr != "admin" && roleStr != "moderator") {
+		// Also check if it's a regular User with IsAdmin flag
+		userInterface, userExists := c.Get("user")
+		if !userExists {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
+		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
@@ -280,20 +310,32 @@ func DeleteSlider(c *gin.Context) {
 // UploadSliderImage uploads a slider image
 func UploadSliderImage(c *gin.Context) {
 	// Check if user is authenticated and is admin
-	// Check for WebAdmin first (admin panel admins)
-	isWebAdmin, _ := c.Get("is_web_admin")
-	if isWebAdmin == true {
-		// WebAdmin is allowed
-	} else {
-		// Check for regular User with admin flag
-		userInterface, exists := c.Get("user")
-		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
-			return
-		}
+	// Check user_role (works for both WebAdmin and regular User with IsAdmin)
+	userRole, exists := c.Get("user_role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
 
-		user := userInterface.(models.User)
-		if !user.IsAdmin {
+	// Allow super_admin, admin, or moderator roles
+	roleStr, ok := userRole.(string)
+	if !ok {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		return
+	}
+
+	// Check if role is admin (super_admin, admin, or moderator)
+	if roleStr != "super_admin" && roleStr != "admin" && roleStr != "moderator" {
+		// Also check if it's a regular User with IsAdmin flag
+		userInterface, userExists := c.Get("user")
+		if userExists {
+			if user, ok := userInterface.(models.User); ok && user.IsAdmin {
+				// Regular User with IsAdmin flag is allowed
+			} else {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+				return
+			}
+		} else {
 			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
 			return
 		}
