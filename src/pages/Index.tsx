@@ -148,9 +148,11 @@ const Index = () => {
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
       {/* Header */}
       <HeaderAuth />
-      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        {/* Slider - Top of platform */}
+      {/* Slider - Full width, outside container */}
+      <div className="w-full mb-6 sm:mb-8">
         <Slider />
+      </div>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
         {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons */}
         {isAuthenticated && (

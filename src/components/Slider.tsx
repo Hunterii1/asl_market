@@ -95,27 +95,28 @@ export default function Slider() {
   }
 
   return (
-    <div className="relative w-full mb-6 sm:mb-8">
-      <div className="relative w-full h-[280px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 ring-1 ring-gray-200 dark:ring-gray-700">
+    <div className="relative w-full">
+      <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
         {sliders.map((slider, index) => (
           <div
             key={slider.id}
             className={cn(
-              'absolute inset-0 transition-all duration-700 ease-in-out',
+              'relative w-full transition-opacity duration-700 ease-in-out',
               index === currentIndex 
-                ? 'opacity-100 scale-100 z-10' 
-                : 'opacity-0 scale-105 z-0'
+                ? 'opacity-100 z-10' 
+                : 'opacity-0 z-0 absolute inset-0'
             )}
           >
             <img
               src={getImageUrl(slider.image_url)}
               alt={`Slider ${slider.id}`}
-              className="w-full h-full object-cover cursor-pointer transition-transform duration-700 hover:scale-105"
+              className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto"
               onClick={() => handleSliderClick(slider)}
               loading={index === 0 ? 'eager' : 'lazy'}
+              style={{ maxHeight: '80vh' }}
             />
             {/* Overlay gradient for better text readability if needed */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
           </div>
         ))}
 
@@ -160,7 +161,7 @@ export default function Slider() {
 
         {/* Loading indicator */}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-30">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-30 min-h-[300px]">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
