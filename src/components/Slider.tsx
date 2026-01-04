@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/utils/imageUrl';
 
@@ -17,13 +18,6 @@ export default function Slider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  
-  // Swipe handling (touch and mouse)
-  const touchStartX = useRef<number | null>(null);
-  const touchEndX = useRef<number | null>(null);
-  const isDragging = useRef(false);
-  const hasSwiped = useRef(false);
-  const minSwipeDistance = 50; // Minimum distance for a swipe
 
   useEffect(() => {
     loadSliders();
@@ -73,12 +67,7 @@ export default function Slider() {
     setCurrentIndex((prev) => (prev + 1) % sliders.length);
   };
 
-  const handleSliderClick = async (slider: Slider, e?: React.MouseEvent) => {
-    // Prevent click if user was swiping
-    if (hasSwiped.current) {
-      return;
-    }
-    
+  const handleSliderClick = async (slider: Slider) => {
     if (!slider.link) return;
 
     // Track click
@@ -96,96 +85,6 @@ export default function Slider() {
     }
   };
 
-  // Swipe handlers (touch)
-  const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    touchEndX.current = e.targetTouches[0].clientX;
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStartX.current || !touchEndX.current) {
-      touchStartX.current = null;
-      touchEndX.current = null;
-      hasSwiped.current = false;
-      return;
-    }
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && sliders.length > 0) {
-      hasSwiped.current = true;
-      handleNext();
-    } else if (isRightSwipe && sliders.length > 0) {
-      hasSwiped.current = true;
-      handlePrevious();
-    }
-
-    // Reset after a short delay to allow click handler to check hasSwiped
-    setTimeout(() => {
-      touchStartX.current = null;
-      touchEndX.current = null;
-      hasSwiped.current = false;
-    }, 100);
-  };
-
-  // Mouse drag handlers (for desktop)
-  const onMouseDown = (e: React.MouseEvent) => {
-    isDragging.current = true;
-    hasSwiped.current = false;
-    touchStartX.current = e.clientX;
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current) return;
-    touchEndX.current = e.clientX;
-  };
-
-  const onMouseUp = () => {
-    if (!isDragging.current) {
-      return;
-    }
-    
-    if (!touchStartX.current || touchEndX.current === null) {
-      isDragging.current = false;
-      touchStartX.current = null;
-      touchEndX.current = null;
-      hasSwiped.current = false;
-      return;
-    }
-    
-    const distance = touchStartX.current - touchEndX.current;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe && sliders.length > 0) {
-      hasSwiped.current = true;
-      handleNext();
-    } else if (isRightSwipe && sliders.length > 0) {
-      hasSwiped.current = true;
-      handlePrevious();
-    }
-
-    // Reset after a short delay to allow click handler to check hasSwiped
-    setTimeout(() => {
-      touchStartX.current = null;
-      touchEndX.current = null;
-      isDragging.current = false;
-      hasSwiped.current = false;
-    }, 100);
-  };
-
-  const onMouseLeave = () => {
-    isDragging.current = false;
-    touchStartX.current = null;
-    touchEndX.current = null;
-    hasSwiped.current = false;
-  };
-
 
   if (loading) {
     return null; // Don't show anything while loading
@@ -197,16 +96,7 @@ export default function Slider() {
 
   return (
     <div className="relative w-full">
-      <div 
-        className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 touch-pan-y select-none"
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseLeave}
-      >
+      <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
         {sliders.map((slider, index) => (
           <div
             key={slider.id}
@@ -220,9 +110,8 @@ export default function Slider() {
             <img
               src={getImageUrl(slider.image_url)}
               alt={`Slider ${slider.id}`}
-              className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto select-none pointer-events-auto"
-              onClick={(e) => handleSliderClick(slider, e)}
-              onDragStart={(e) => e.preventDefault()} // Prevent image drag
+              className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto"
+              onClick={() => handleSliderClick(slider)}
               loading={index === 0 ? 'eager' : 'lazy'}
               style={{ maxHeight: '80vh' }}
             />
@@ -230,6 +119,26 @@ export default function Slider() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
           </div>
         ))}
+
+        {/* Navigation Arrows */}
+        {sliders.length > 1 && (
+          <>
+            <button
+              onClick={handlePrevious}
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <button
+              onClick={handleNext}
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </>
+        )}
 
         {/* Dots Indicator */}
         {sliders.length > 1 && (
