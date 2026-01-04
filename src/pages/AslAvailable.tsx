@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LicenseGate } from '@/components/LicenseGate';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
+import { getFirstImageUrl } from '@/utils/imageUrl';
 import { Pagination } from "@/components/ui/pagination";
 import { 
   Package, 
@@ -342,10 +343,7 @@ const AslAvailable = () => {
               {item.image_urls && item.image_urls.trim() ? (
                 <div className="relative">
                   <img
-                    src={item.image_urls.startsWith('/uploads') 
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${item.image_urls}`
-                      : item.image_urls.split(',')[0].trim()
-                    }
+                    src={getFirstImageUrl(item.image_urls)}
                     alt={item.product_name}
                     className="w-full h-48 object-cover"
                     onError={(e) => {

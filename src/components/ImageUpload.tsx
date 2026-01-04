@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Upload, X, ImageIcon, Loader2 } from 'lucide-react';
 import { apiService } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { getImageUrl } from '@/utils/imageUrl';
 
 interface ImageUploadProps {
   currentImage?: string;
@@ -121,7 +122,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         <Card className="relative overflow-hidden">
           <div className="aspect-video relative bg-muted">
             <img
-              src={preview.startsWith('/uploads') ? `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${preview}` : preview}
+              src={getImageUrl(preview)}
               alt="Preview"
               className="w-full h-full object-cover"
             />

@@ -185,11 +185,11 @@ func (wc *WithdrawalController) GetAllWithdrawalRequests(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"requests":   requests,
-		"total":      total,
-		"limit":      limit,
-		"offset":     offset,
-		"per_page":   limit,
+		"requests":    requests,
+		"total":       total,
+		"limit":       limit,
+		"offset":      offset,
+		"per_page":    limit,
 		"total_pages": totalPages,
 	})
 }
@@ -292,15 +292,16 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 		return
 	}
 
-	// Save file (implement file saving logic here)
+	// Save file to uploads/receipts/ directory
 	filename := "receipts/withdrawal_" + requestIDStr + "_" + file.Filename
 	if err := c.SaveUploadedFile(file, "uploads/"+filename); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره فایل"})
 		return
 	}
 
-	// Update request with receipt path
-	if err := models.UploadReceipt(wc.db, uint(requestID), filename); err != nil {
+	// Update request with receipt path (use /uploads/receipts/ format)
+	receiptPath := "/uploads/" + filename
+	if err := models.UploadReceipt(wc.db, uint(requestID), receiptPath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بروزرسانی درخواست"})
 		return
 	}
@@ -325,6 +326,6 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "فیش با موفقیت بارگذاری شد",
-		"receipt_path": filename,
+		"receipt_path": receiptPath,
 	})
 }

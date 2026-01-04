@@ -9,6 +9,7 @@ import { WithdrawalForm } from "@/components/WithdrawalForm";
 import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
 import { COUNTRIES } from "@/constants/countries";
+import { getImageUrl } from '@/utils/imageUrl';
 import { 
   CreditCard, 
   DollarSign, 
@@ -213,7 +214,15 @@ const AslPay = () => {
                     )}
                     
                     {request.receipt_path && (
-                      <Button size="sm" variant="outline" className="border-border text-muted-foreground hover:bg-muted rounded-2xl">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="border-border text-muted-foreground hover:bg-muted rounded-2xl"
+                        onClick={() => {
+                          const receiptUrl = getImageUrl(request.receipt_path);
+                          window.open(receiptUrl, '_blank');
+                        }}
+                      >
                         <Download className="w-4 h-4 ml-2" />
                         دانلود فیش
                       </Button>

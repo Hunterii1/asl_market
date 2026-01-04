@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/hooks/useAuth';
 import { apiService } from "@/services/api";
+import { getImageUrl } from '@/utils/imageUrl';
 import { Pagination } from "@/components/ui/pagination";
 import { 
   Users, 
@@ -247,10 +248,7 @@ const AslSupplier = () => {
               {supplier.image_url && supplier.image_url.trim() ? (
                 <div className="relative">
                   <img
-                    src={supplier.image_url.startsWith('/uploads') 
-                      ? `${import.meta.env.VITE_API_URL || 'http://localhost:8080'}${supplier.image_url}`
-                      : supplier.image_url
-                    }
+                    src={getImageUrl(supplier.image_url)}
                     alt={supplier.brand_name || supplier.full_name}
                     className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => {

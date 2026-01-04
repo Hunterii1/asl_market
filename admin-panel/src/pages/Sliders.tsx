@@ -8,6 +8,7 @@ import { adminApi } from '@/lib/api/adminApi';
 import { Loader2, Image as ImageIcon, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { getImageUrl } from '@/lib/utils/imageUrl';
 import {
   Dialog,
   DialogContent,
@@ -227,18 +228,6 @@ export default function Sliders() {
     setIsAddDialogOpen(true);
   };
 
-  const getApiBaseUrl = () => {
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      if (hostname === 'admin.asllmarket.com') {
-        return 'https://admin.asllmarket.com';
-      }
-      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-        return 'https://asllmarket.com/backend';
-      }
-    }
-    return '';
-  };
 
   return (
     <AdminLayout>
@@ -315,7 +304,7 @@ export default function Sliders() {
                       <tr key={slider.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                         <td className="p-4">
                           <img
-                            src={`${getApiBaseUrl()}${slider.image_url}`}
+                            src={getImageUrl(slider.image_url)}
                             alt={`Slider ${slider.id}`}
                             className="w-24 h-16 object-cover rounded"
                           />
@@ -490,7 +479,7 @@ export default function Sliders() {
                   )}
                   {uploadedImageUrl && (
                     <img
-                      src={`${getApiBaseUrl()}${uploadedImageUrl}`}
+                      src={getImageUrl(uploadedImageUrl)}
                       alt="Preview"
                       className="mt-2 w-full h-48 object-cover rounded"
                     />
@@ -585,7 +574,7 @@ export default function Sliders() {
                   )}
                   {uploadedImageUrl && (
                     <img
-                      src={`${getApiBaseUrl()}${uploadedImageUrl}`}
+                      src={getImageUrl(uploadedImageUrl)}
                       alt="Preview"
                       className="mt-2 w-full h-48 object-cover rounded"
                     />

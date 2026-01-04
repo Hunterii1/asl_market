@@ -456,7 +456,13 @@ func (s *TelegramService) NotifyReceiptUploaded(withdrawal *models.WithdrawalReq
 
 		// Try to send the receipt file if it exists and is accessible
 		if withdrawal.ReceiptPath != "" {
-			receiptMsg := tgbotapi.NewDocument(adminID, tgbotapi.FilePath("uploads/"+withdrawal.ReceiptPath))
+			// ReceiptPath is already in format /uploads/receipts/... or receipts/...
+			// Remove leading slash for file path
+			filePath := strings.TrimPrefix(withdrawal.ReceiptPath, "/")
+			if !strings.HasPrefix(filePath, "uploads/") {
+				filePath = "uploads/" + filePath
+			}
+			receiptMsg := tgbotapi.NewDocument(adminID, tgbotapi.FilePath(filePath))
 			receiptMsg.Caption = fmt.Sprintf("فیش واریز - درخواست #%d", withdrawal.ID)
 			s.bot.Send(receiptMsg)
 		}

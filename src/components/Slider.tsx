@@ -3,6 +3,7 @@ import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getImageUrl } from '@/utils/imageUrl';
 
 interface Slider {
   id: number;
@@ -84,24 +85,6 @@ export default function Slider() {
     }
   };
 
-  const getImageUrl = (imagePath: string) => {
-    // Image paths are served from root, not from /backend
-    // If imagePath already starts with http, return as is
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // For production, use full URL
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-        return `https://asllmarket.com${imagePath}`;
-      }
-    }
-    
-    // For local development, use relative path
-    return imagePath;
-  };
 
   if (loading) {
     return null; // Don't show anything while loading

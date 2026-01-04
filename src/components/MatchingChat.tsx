@@ -23,6 +23,7 @@ const getStaticFileBaseUrl = (): string => {
 };
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { getImageUrl as getImageUrlHelper } from '@/utils/imageUrl';
 import { 
   Send, 
   MessageCircle, 
@@ -53,9 +54,7 @@ interface MatchingChatProps {
   onClose?: () => void;
 }
 
-// TODO: Image display functionality - temporarily commented out
 // Component for displaying image messages with error handling
-/*
 function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl: string; messageId: number; getImageUrl: (path: string) => string }) {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
@@ -153,63 +152,26 @@ function ImageMessageComponent({ imageUrl, messageId, getImageUrl }: { imageUrl:
     </div>
   );
 }
-*/
 
 export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  // TODO: Image upload functionality - temporarily commented out
-  // const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  // const [imagePreview, setImagePreview] = useState<string | null>(null);
-  // const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  // TODO: Image upload functionality - temporarily commented out
-  // const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper function to get image URL
+  // Helper function to get image URL (using shared helper)
   const getImageUrl = (imagePath: string): string => {
-    if (!imagePath) return '';
-    
-    // If already a full URL, return as is
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
-    }
-    
-    // Ensure imagePath starts with /
-    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-    
-    // Get static file base URL - use api.asllmarket.com for backend static files
-    if (typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      const protocol = window.location.protocol;
-      
-      // Production server - use api subdomain for backend static files
-      if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-        // Backend serves static files at /uploads via api.asllmarket.com
-        const url = `https://api.${hostname}${normalizedPath}`;
-        console.log('🖼️ Image URL (production):', url, 'from path:', imagePath);
-        return url;
-      }
-      
-      // Development server
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
-        const url = `http://localhost:8080${normalizedPath}`;
-        console.log('🖼️ Image URL (development):', url, 'from path:', imagePath);
-        return url;
-      }
-    }
-    
-    // Fallback
-    const url = `http://localhost:8080${normalizedPath}`;
-    console.log('🖼️ Image URL (fallback):', url, 'from path:', imagePath);
-    return url;
+    return getImageUrlHelper(imagePath);
   };
 
   useEffect(() => {
@@ -282,8 +244,6 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
     }
   };
 
-  // TODO: Image upload functionality - temporarily commented out
-  /*
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -345,25 +305,21 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
       setUploadingImage(false);
     }
   };
-  */
 
   const sendMessage = async () => {
-    // TODO: Image upload functionality - temporarily commented out
-    // if ((!newMessage.trim() && !selectedImage) || sending || uploadingImage) return;
-    if (!newMessage.trim() || sending) return;
+    if ((!newMessage.trim() && !selectedImage) || sending || uploadingImage) return;
 
     setSending(true);
     
-    // TODO: Image upload functionality - temporarily commented out
     // Upload image first if selected
-    // let imageUrl: string | null = null;
-    // if (selectedImage) {
-    //   imageUrl = await uploadImage();
-    //   if (!imageUrl) {
-    //     setSending(false);
-    //     return;
-    //   }
-    // }
+    let imageUrl: string | null = null;
+    if (selectedImage) {
+      imageUrl = await uploadImage();
+      if (!imageUrl) {
+        setSending(false);
+        return;
+      }
+    }
 
     const messageText = newMessage.trim();
     
@@ -375,21 +331,19 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
       sender_name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || 'شما' : 'شما',
       sender_type: 'supplier', // Will be corrected by backend response
       message: messageText,
-      // image_url: imageUrl || undefined, // TODO: Image upload functionality
+      image_url: imageUrl || undefined,
       is_read: false,
       created_at: new Date().toISOString(),
     };
     setMessages(prev => [...prev, tempMessage]);
     setNewMessage("");
-    // removeImage(); // TODO: Image upload functionality
+    removeImage();
     
     // Scroll to bottom immediately
     setTimeout(() => scrollToBottom(), 100);
 
     try {
-      // TODO: Image upload functionality - temporarily commented out
-      // const response = await apiService.sendMatchingChatMessage(requestId, messageText, imageUrl || undefined);
-      const response = await apiService.sendMatchingChatMessage(requestId, messageText, undefined);
+      const response = await apiService.sendMatchingChatMessage(requestId, messageText, imageUrl || undefined);
       
       // Backend returns: { "message": { ... } }
       // Check both response.message and response.data.message for compatibility
@@ -527,8 +481,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                           </Badge>
                         </div>
                       )}
-                      {/* TODO: Image display functionality - temporarily commented out */}
-                      {/* {message.image_url && <ImageMessageComponent imageUrl={message.image_url} messageId={message.id} getImageUrl={getImageUrl} />} */}
+                      {message.image_url && <ImageMessageComponent imageUrl={message.image_url} messageId={message.id} getImageUrl={getImageUrl} />}
                       {message.message && (
                         <p className="text-sm whitespace-pre-wrap break-words overflow-wrap-anywhere word-break-break-word">
                           {message.message}
@@ -559,9 +512,8 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
         </div>
 
         <div className="border-t p-4 bg-muted/30 shrink-0">
-          {/* TODO: Image upload functionality - temporarily commented out */}
           {/* Image Preview */}
-          {/* {imagePreview && (
+          {imagePreview && (
             <div className="mb-3 relative inline-block max-w-full">
               <div className="relative">
                 <img
@@ -580,11 +532,10 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
                 </Button>
               </div>
             </div>
-          )} */}
+          )}
           
           <div className="flex gap-2 w-full">
-            {/* TODO: Image upload functionality - temporarily commented out */}
-            {/* <input
+            <input
               type="file"
               ref={fileInputRef}
               onChange={handleImageSelect}
@@ -603,7 +554,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
               ) : (
                 <ImageIcon className="w-4 h-4" />
               )}
-            </Button> */}
+            </Button>
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -619,7 +570,7 @@ export function MatchingChat({ requestId, onClose }: MatchingChatProps) {
             />
             <Button
               onClick={sendMessage}
-              disabled={!newMessage.trim() || sending}
+              disabled={(!newMessage.trim() && !selectedImage) || sending || uploadingImage}
               className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
             >
               {sending ? (

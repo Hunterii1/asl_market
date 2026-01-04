@@ -299,8 +299,8 @@ func UploadSliderImage(c *gin.Context) {
 		return
 	}
 
-	// Upload image to assets folder
-	imagePath, err := utils.UploadImage(file, "assets")
+	// Upload image to sliders folder
+	imagePath, err := utils.UploadImage(file, "sliders")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
