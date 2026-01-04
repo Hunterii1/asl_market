@@ -154,9 +154,9 @@ const Index = () => {
       </div>
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
-        {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons */}
+        {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons - Hidden on desktop */}
         {isAuthenticated && (
-          <div className="mb-4 sm:mb-6">
+          <div className="mb-4 sm:mb-6 lg:hidden">
             <Button
               onClick={() => navigate('/asl-match')}
               className="w-full h-16 sm:h-20 md:h-24 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 group relative overflow-hidden"

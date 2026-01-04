@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Headphones, User, Package, Key } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Headphones, User, Package, Key, Radio, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/utils/imageUrl';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Slider {
   id: number;
@@ -18,6 +21,7 @@ export default function Slider() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     loadSliders();
@@ -213,6 +217,50 @@ export default function Slider() {
                   </button>
                 );
               })}
+              
+              {/* ASL Match Button - Desktop only, below quick links */}
+              {isAuthenticated && (
+                <Button
+                  onClick={() => navigate('/asl-match')}
+                  className="w-full h-20 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden mt-3"
+                >
+                  {/* Animated gradient background */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-orange-400/30 via-orange-500/30 to-red-500/30 animate-pulse"></div>
+                  
+                  {/* Shimmer effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  
+                  {/* Glowing particles */}
+                  <div className="absolute top-0 left-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0s' }}></div>
+                  <div className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="absolute bottom-0 left-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1s' }}></div>
+                  <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1.5s' }}></div>
+                  
+                  {/* Content */}
+                  <div className="relative z-10 flex items-center gap-3 w-full justify-center">
+                    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                      <Radio className="w-6 h-6 text-white group-hover:rotate-180 transition-transform duration-500" />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-black text-white drop-shadow-lg group-hover:scale-105 transition-transform duration-300">
+                          ASL MATCH
+                        </span>
+                        <Badge className="bg-white/30 text-white border-white/50 text-xs px-2 py-0.5 font-bold backdrop-blur-sm group-hover:bg-white/40 transition-all duration-300 animate-pulse">
+                          BETA
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-white/90 font-semibold mt-0.5">
+                        سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
+                      <span className="text-sm font-semibold">ورود</span>
+                      <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                    </div>
+                  </div>
+                </Button>
+              )}
             </div>
           </div>
         </div>
