@@ -29,12 +29,23 @@ func main() {
 
 	updatedCount := 0
 	for _, slider := range sliders {
-		// Check if URL starts with /uploads/assets/ and needs to be changed to /assets/
-		if strings.HasPrefix(slider.ImageURL, "/uploads/assets/") {
+		// Check if URL needs to be changed to /uploads/sliders/
+		needsUpdate := false
+		var newURL string
+
+		if strings.HasPrefix(slider.ImageURL, "/assets/") {
+			// Extract filename
+			filename := strings.TrimPrefix(slider.ImageURL, "/assets/")
+			newURL = "/uploads/sliders/" + filename
+			needsUpdate = true
+		} else if strings.HasPrefix(slider.ImageURL, "/uploads/assets/") {
 			// Extract filename
 			filename := strings.TrimPrefix(slider.ImageURL, "/uploads/assets/")
-			newURL := "/assets/" + filename
+			newURL = "/uploads/sliders/" + filename
+			needsUpdate = true
+		}
 
+		if needsUpdate {
 			// Update slider
 			if err := db.Model(&slider).Update("image_url", newURL).Error; err != nil {
 				log.Printf("❌ Failed to update slider #%d: %v", slider.ID, err)

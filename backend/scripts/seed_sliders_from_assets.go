@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -38,8 +39,10 @@ func main() {
 	log.Println("🌱 Starting to seed sliders from assets folder...")
 	log.Println("================================================")
 
-	// Assets folder path
+	// Assets folder path (source)
 	assetsDir := "./assets"
+	// Destination folder in uploads
+	uploadsSlidersDir := "./uploads/sliders"
 
 	// Check if assets directory exists
 	if _, err := os.Stat(assetsDir); os.IsNotExist(err) {
@@ -48,6 +51,11 @@ func main() {
 			log.Fatalf("❌ Failed to create assets directory: %v", err)
 		}
 		log.Println("✅ Assets directory created")
+	}
+
+	// Create uploads/sliders directory if it doesn't exist
+	if err := os.MkdirAll(uploadsSlidersDir, 0755); err != nil {
+		log.Fatalf("❌ Failed to create uploads/sliders directory: %v", err)
 	}
 
 	// Supported image extensions
@@ -88,8 +96,48 @@ func main() {
 			continue
 		}
 
-		// Image URL path - use /assets/ directly since we serve assets folder
-		imageURL := fmt.Sprintf("/assets/%s", file.Name())
+		// Source file path
+		sourcePath := filepath.Join(assetsDir, file.Name())
+		// Destination file path in uploads/sliders
+		destPath := filepath.Join(uploadsSlidersDir, file.Name())
+
+		// Copy file to uploads/sliders if it doesn't exist there
+		if _, err := os.Stat(destPath); os.IsNotExist(err) {
+			log.Printf("📋 Copying %s to uploads/sliders...", file.Name())
+
+			// Open source file
+			sourceFile, err := os.Open(sourcePath)
+			if err != nil {
+				log.Printf("❌ Failed to open source file %s: %v", sourcePath, err)
+				continue
+			}
+			defer sourceFile.Close()
+
+			// Create destination file
+			destFile, err := os.Create(destPath)
+			if err != nil {
+				log.Printf("❌ Failed to create destination file %s: %v", destPath, err)
+				sourceFile.Close()
+				continue
+			}
+			defer destFile.Close()
+
+			// Copy file content
+			_, err = io.Copy(destFile, sourceFile)
+			if err != nil {
+				log.Printf("❌ Failed to copy file %s: %v", file.Name(), err)
+				destFile.Close()
+				os.Remove(destPath)
+				continue
+			}
+
+			log.Printf("✅ Copied %s to uploads/sliders", file.Name())
+		} else {
+			log.Printf("ℹ️  File %s already exists in uploads/sliders, skipping copy", file.Name())
+		}
+
+		// Image URL path - use /uploads/sliders/ since nginx already serves /uploads
+		imageURL := fmt.Sprintf("/uploads/sliders/%s", file.Name())
 
 		// Check if slider with this image already exists
 		var existingSlider models.Slider

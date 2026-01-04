@@ -32,8 +32,6 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 	// Serve uploaded files
 	router.Static("/uploads", "./uploads")
-	// Serve assets folder (for slider images)
-	router.Static("/assets", "./assets")
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
