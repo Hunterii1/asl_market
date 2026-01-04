@@ -26,7 +26,7 @@ import {
   Menu,
   History
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const AslAI = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
