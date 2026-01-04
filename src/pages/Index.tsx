@@ -158,7 +158,6 @@ const Index = () => {
           <div className="hidden lg:flex flex-col gap-3 w-1/3">
             {[
               { title: 'پشتیبانی و تیکت', icon: Headphones, path: '/support' },
-              { title: 'پروفایل من', icon: User, path: '/edit-profile' },
               { title: 'محصولات من', icon: Package, path: '/my-products' },
               { title: 'لایسنس من', icon: Key, path: '/license-info' },
             ].map((link, index) => {

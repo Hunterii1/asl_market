@@ -419,27 +419,23 @@ const HeaderAuth = () => {
               </PopoverContent>
             </Popover>
 
-            {/* Logout Button - Desktop only */}
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-red-500 hover:text-red-600"
-              onClick={handleLogout}
-              title="خروج"
-            >
-              <LogOut className="w-5 h-5" />
-              <span className="text-sm font-medium">خروج</span>
-            </Button>
-
-            {/* User Menu - Mobile and Tablet */}
+            {/* User Menu - All devices */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="lg:hidden flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
+                <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
                   <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
                     <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
                       {user ? getInitials(user.first_name, user.last_name) : "U"}
                     </AvatarFallback>
                   </Avatar>
+                  <div className="text-right hidden lg:block">
+                    <p className="text-sm font-medium text-foreground">
+                      {user ? `${user.first_name} ${user.last_name}` : "کاربر"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user?.email || "user@example.com"}
+                    </p>
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
@@ -469,7 +465,7 @@ const HeaderAuth = () => {
                   className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
                   onClick={() => navigate('/edit-profile')}
                 >
-                  <span className="flex-1 text-right">ویرایش پروفایل</span>
+                  <span className="flex-1 text-right">پروفایل من</span>
                   <User className="w-4 h-4 ml-2 flex-shrink-0" />
                 </DropdownMenuItem>
                 
