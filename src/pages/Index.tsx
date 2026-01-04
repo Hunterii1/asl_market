@@ -149,9 +149,7 @@ const Index = () => {
       {/* Header */}
       <HeaderAuth />
       {/* Slider - Full width, outside container */}
-      <div className="w-full mb-6 sm:mb-8">
-        <Slider />
-      </div>
+      <Slider />
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
         {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons */}

@@ -208,14 +208,16 @@ export default function Slider() {
         <div 
           className="flex transition-transform duration-700 ease-in-out"
           style={{
-            transform: `translateX(-${currentIndex * 100}%) translateX(${translateX}px)`,
+            transform: isDragging 
+              ? `translateX(calc(-${currentIndex * 100}% + ${translateX}px))`
+              : `translateX(-${currentIndex * 100}%)`,
             width: `${sliders.length * 100}%`
           }}
         >
           {sliders.map((slider, index) => (
             <div
               key={slider.id}
-              className="relative w-full flex-shrink-0"
+              className="relative flex-shrink-0"
               style={{ width: `${100 / sliders.length}%` }}
             >
               <div className="relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[85vh] xl:h-[90vh] flex items-center justify-center overflow-hidden">
