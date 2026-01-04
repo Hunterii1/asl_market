@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Headphones, User, Package, Key, Radio, ArrowLeft } from 'lucide-react';
@@ -20,8 +20,10 @@ export default function Slider() {
   const [sliders, setSliders] = useState<Slider[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [sliderHeight, setSliderHeight] = useState<number | null>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSliders();
@@ -62,6 +64,50 @@ export default function Slider() {
       apiService.trackSliderView(sliders[currentIndex].id).catch(console.error);
     }
   }, [currentIndex, sliders]);
+
+  // Update slider height when image loads or changes
+  useEffect(() => {
+    if (sliderRef.current && sliders.length > 0) {
+      const updateHeight = () => {
+        // Get the visible image (current slide)
+        const visibleSlide = sliderRef.current?.querySelector('.opacity-100') as HTMLElement;
+        const img = visibleSlide?.querySelector('img') as HTMLImageElement;
+        
+        if (img && img.offsetHeight > 0) {
+          setSliderHeight(img.offsetHeight);
+        } else if (sliderRef.current) {
+          // Fallback to container height
+          const containerHeight = sliderRef.current.offsetHeight;
+          if (containerHeight > 0) {
+            setSliderHeight(containerHeight);
+          }
+        }
+      };
+
+      // Wait a bit for the image to render
+      const timeoutId = setTimeout(updateHeight, 100);
+      
+      const img = sliderRef.current.querySelector('img') as HTMLImageElement;
+      if (img) {
+        if (img.complete) {
+          updateHeight();
+        } else {
+          img.addEventListener('load', updateHeight);
+        }
+      }
+
+      // Also update on window resize
+      window.addEventListener('resize', updateHeight);
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (img) {
+          img.removeEventListener('load', updateHeight);
+        }
+        window.removeEventListener('resize', updateHeight);
+      };
+    }
+  }, [sliders, currentIndex]);
 
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + sliders.length) % sliders.length);
@@ -124,14 +170,17 @@ export default function Slider() {
   return (
     <div className="relative w-full">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 lg:items-stretch">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
           {/* Slider - smaller on desktop */}
-          <div className="relative w-full lg:w-2/3 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
+          <div 
+            ref={sliderRef}
+            className="relative w-full lg:w-2/3 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg"
+          >
             {sliders.map((slider, index) => (
               <div
                 key={slider.id}
                 className={cn(
-                  'relative w-full transition-opacity duration-700 ease-in-out',
+                  'relative w-full transition-opacity duration-700 ease-in-out flex items-center justify-center',
                   index === currentIndex 
                     ? 'opacity-100 z-10' 
                     : 'opacity-0 z-0 absolute inset-0'
@@ -199,7 +248,10 @@ export default function Slider() {
 
           {/* Quick Access Links - only on desktop */}
           <div className="hidden lg:flex flex-col gap-3 w-1/3">
-            <div className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg h-full flex flex-col justify-between">
+            <div 
+              className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg flex flex-col justify-between"
+              style={sliderHeight ? { minHeight: `${sliderHeight}px` } : { minHeight: '300px' }}
+            >
               {quickLinks.map((link, index) => {
                 const Icon = link.icon;
                 return (
