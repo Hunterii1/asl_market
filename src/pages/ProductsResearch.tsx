@@ -52,6 +52,7 @@ const ProductsResearch = () => {
           apiService.getActiveResearchProducts({
             page: currentPage,
             per_page: itemsPerPage,
+            search: searchTerm.trim() || undefined,
           }),
           apiService.getResearchProductCategories()
         ]);
