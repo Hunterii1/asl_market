@@ -306,6 +306,9 @@ func UploadSliderImage(c *gin.Context) {
 		return
 	}
 
+	// Normalize path to ensure it's relative (no full URLs)
+	imagePath = utils.NormalizeImagePath(imagePath)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "تصویر با موفقیت آپلود شد",
 		"image_url": imagePath,

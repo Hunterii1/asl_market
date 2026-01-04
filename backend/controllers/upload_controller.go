@@ -32,6 +32,9 @@ func UploadSupplierImage(c *gin.Context) {
 		return
 	}
 
+	// Normalize path to ensure it's relative (no full URLs)
+	imagePath = utils.NormalizeImagePath(imagePath)
+
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "تصویر با موفقیت آپلود شد",
 		"image_url": imagePath,
@@ -60,6 +63,9 @@ func UploadChatImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Normalize path to ensure it's relative (no full URLs)
+	imagePath = utils.NormalizeImagePath(imagePath)
 
 	// Debug: Log the image path
 	fmt.Printf("📸 Chat image uploaded: %s\n", imagePath)
@@ -98,6 +104,9 @@ func UploadProductImage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Normalize path to ensure it's relative (no full URLs)
+	imagePath = utils.NormalizeImagePath(imagePath)
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":   "تصویر با موفقیت آپلود شد",
@@ -174,6 +183,8 @@ func UploadMultipleProductImages(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+		// Normalize path to ensure it's relative (no full URLs)
+		imagePath = utils.NormalizeImagePath(imagePath)
 		imagePaths = append(imagePaths, imagePath)
 	}
 

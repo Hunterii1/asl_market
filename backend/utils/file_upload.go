@@ -44,7 +44,7 @@ func UploadImage(file *multipart.FileHeader, uploadType string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("خطا در خواندن فایل: %v", err)
 	}
-	
+
 	// Reset file pointer
 	src.Seek(0, 0)
 
@@ -56,7 +56,7 @@ func UploadImage(file *multipart.FileHeader, uploadType string) (string, error) 
 
 	// Generate unique filename
 	filename := fmt.Sprintf("%s_%s%s", uploadType, uuid.New().String(), ext)
-	
+
 	// Create upload directory if it doesn't exist
 	uploadDir := filepath.Join("uploads", uploadType)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
@@ -76,8 +76,21 @@ func UploadImage(file *multipart.FileHeader, uploadType string) (string, error) 
 		return "", fmt.Errorf("خطا در ذخیره فایل: %v", err)
 	}
 
-	// Return relative path
-	return "/" + strings.ReplaceAll(filePath, "\\", "/"), nil
+	// Return relative path (always /uploads/{type}/filename)
+	// Never return full URLs - frontend will construct the full URL based on environment
+	relativePath := "/" + strings.ReplaceAll(filePath, "\\", "/")
+
+	// Ensure it starts with /uploads/ and normalize
+	relativePath = strings.ReplaceAll(relativePath, "\\", "/")
+	if !strings.HasPrefix(relativePath, "/uploads/") {
+		// If somehow the path doesn't start with /uploads/, fix it
+		relativePath = "/uploads/" + uploadType + "/" + filename
+	}
+
+	// Normalize: ensure no double slashes and correct format
+	relativePath = strings.ReplaceAll(relativePath, "//", "/")
+
+	return relativePath, nil
 }
 
 // DeleteImage deletes an image file
@@ -88,7 +101,7 @@ func DeleteImage(imagePath string) error {
 
 	// Remove leading slash if present
 	imagePath = strings.TrimPrefix(imagePath, "/")
-	
+
 	// Check if file exists
 	if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 		return nil // File doesn't exist, no error

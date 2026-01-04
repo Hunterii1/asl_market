@@ -6,6 +6,7 @@ import (
 
 	"asl-market-backend/config"
 	"asl-market-backend/models"
+	"asl-market-backend/utils"
 )
 
 func main() {
@@ -27,7 +28,9 @@ func main() {
 	} else {
 		sliderCount := 0
 		for _, slider := range sliders {
-			newURL := fixImageURL(slider.ImageURL, "sliders")
+			// First normalize to remove any full URLs
+			normalizedURL := utils.NormalizeImagePath(slider.ImageURL)
+			newURL := fixImageURL(normalizedURL, "sliders")
 			if newURL != slider.ImageURL {
 				if err := db.Model(&slider).Update("image_url", newURL).Error; err != nil {
 					log.Printf("❌ Failed to update slider #%d: %v", slider.ID, err)
@@ -49,7 +52,9 @@ func main() {
 		supplierCount := 0
 		for _, supplier := range suppliers {
 			if supplier.ImageURL != "" {
-				newURL := fixImageURL(supplier.ImageURL, "suppliers")
+				// First normalize to remove any full URLs
+				normalizedURL := utils.NormalizeImagePath(supplier.ImageURL)
+				newURL := fixImageURL(normalizedURL, "suppliers")
 				if newURL != supplier.ImageURL {
 					if err := db.Model(&supplier).Update("image_url", newURL).Error; err != nil {
 						log.Printf("❌ Failed to update supplier #%d: %v", supplier.ID, err)
@@ -83,7 +88,9 @@ func main() {
 					url = strings.Trim(url, "[]\"'")
 					url = strings.TrimSpace(url)
 					if url != "" {
-						newURL := fixImageURL(url, "products")
+						// First normalize to remove any full URLs
+						normalizedURL := utils.NormalizeImagePath(url)
+						newURL := fixImageURL(normalizedURL, "products")
 						fixedURLs = append(fixedURLs, newURL)
 						if newURL != url {
 							changed = true
@@ -113,7 +120,9 @@ func main() {
 		messageCount := 0
 		for _, message := range messages {
 			if message.ImageURL != "" {
-				newURL := fixImageURL(message.ImageURL, "chat")
+				// First normalize to remove any full URLs
+				normalizedURL := utils.NormalizeImagePath(message.ImageURL)
+				newURL := fixImageURL(normalizedURL, "chat")
 				if newURL != message.ImageURL {
 					if err := db.Model(&message).Update("image_url", newURL).Error; err != nil {
 						log.Printf("❌ Failed to update message #%d: %v", message.ID, err)
@@ -161,9 +170,42 @@ func fixImageURL(url string, uploadType string) string {
 		return url
 	}
 
-	// If already a full URL (http/https), return as is
-	if strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") {
-		return url
+	// Remove localhost:8080 or any full URL prefix - we only want relative paths
+	if strings.Contains(url, "localhost:8080") {
+		// Extract the path part after localhost:8080
+		parts := strings.Split(url, "localhost:8080")
+		if len(parts) > 1 {
+			url = parts[1]
+		}
+	}
+
+	// Remove http:// or https:// prefixes if present (but keep the path)
+	if strings.HasPrefix(url, "http://") {
+		url = strings.TrimPrefix(url, "http://")
+		// Remove domain part
+		if idx := strings.Index(url, "/"); idx != -1 {
+			url = url[idx:]
+		} else {
+			url = "/" + url
+		}
+	}
+	if strings.HasPrefix(url, "https://") {
+		url = strings.TrimPrefix(url, "https://")
+		// Remove domain part
+		if idx := strings.Index(url, "/"); idx != -1 {
+			url = url[idx:]
+		} else {
+			url = "/" + url
+		}
+	}
+
+	// If it's an external URL (not our domain), keep it as is
+	// But if it's our domain (asllmarket.com), extract the path
+	if strings.Contains(url, "asllmarket.com") {
+		parts := strings.Split(url, "asllmarket.com")
+		if len(parts) > 1 {
+			url = parts[1]
+		}
 	}
 
 	// If already in correct format /uploads/{type}/..., return as is
