@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, HeadphonesIcon, User, Package, Key } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Headphones, User, Package, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/utils/imageUrl';
 
@@ -94,77 +94,129 @@ export default function Slider() {
     return null; // Don't show slider if no sliders
   }
 
+  const quickLinks = [
+    {
+      title: 'پشتیبانی و تیکت',
+      icon: Headphones,
+      path: '/support',
+      color: 'bg-blue-500 hover:bg-blue-600',
+    },
+    {
+      title: 'پروفایل من',
+      icon: User,
+      path: '/edit-profile',
+      color: 'bg-green-500 hover:bg-green-600',
+    },
+    {
+      title: 'محصولات من',
+      icon: Package,
+      path: '/my-products',
+      color: 'bg-orange-500 hover:bg-orange-600',
+    },
+    {
+      title: 'لایسنس من',
+      icon: Key,
+      path: '/license-info',
+      color: 'bg-purple-500 hover:bg-purple-600',
+    },
+  ];
+
   return (
     <div className="relative w-full">
-      <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
-        {sliders.map((slider, index) => (
-          <div
-            key={slider.id}
-            className={cn(
-              'relative w-full transition-opacity duration-700 ease-in-out',
-              index === currentIndex 
-                ? 'opacity-100 z-10' 
-                : 'opacity-0 z-0 absolute inset-0'
-            )}
-          >
-            <img
-              src={getImageUrl(slider.image_url)}
-              alt={`Slider ${slider.id}`}
-              className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto"
-              onClick={() => handleSliderClick(slider)}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              style={{ maxHeight: '80vh' }}
-            />
-            {/* Overlay gradient for better text readability if needed */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
-          </div>
-        ))}
-
-        {/* Navigation Arrows */}
-        {sliders.length > 1 && (
-          <>
-            <button
-              onClick={handlePrevious}
-              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-            <button
-              onClick={handleNext}
-              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          </>
-        )}
-
-        {/* Dots Indicator */}
-        {sliders.length > 1 && (
-          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/30 dark:bg-white/30 backdrop-blur-sm px-3 py-2 rounded-full">
-            {sliders.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+          {/* Slider - smaller on desktop */}
+          <div className="relative w-full lg:w-2/3 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
+            {sliders.map((slider, index) => (
+              <div
+                key={slider.id}
                 className={cn(
-                  'rounded-full transition-all duration-300',
-                  index === currentIndex
-                    ? 'bg-white w-8 h-2 shadow-lg'
-                    : 'bg-white/60 hover:bg-white/80 w-2 h-2'
+                  'relative w-full transition-opacity duration-700 ease-in-out',
+                  index === currentIndex 
+                    ? 'opacity-100 z-10' 
+                    : 'opacity-0 z-0 absolute inset-0'
                 )}
-                aria-label={`Go to slide ${index + 1}`}
-              />
+              >
+                <img
+                  src={getImageUrl(slider.image_url)}
+                  alt={`Slider ${slider.id}`}
+                  className="w-full h-auto object-contain cursor-pointer transition-transform duration-700 hover:scale-[1.02] block mx-auto"
+                  onClick={() => handleSliderClick(slider)}
+                  loading={index === 0 ? 'eager' : 'lazy'}
+                  style={{ maxHeight: '80vh' }}
+                />
+                {/* Overlay gradient for better text readability if needed */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent pointer-events-none" />
+              </div>
             ))}
-          </div>
-        )}
 
-        {/* Loading indicator */}
-        {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-30 min-h-[300px]">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            {/* Navigation Arrows */}
+            {sliders.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrevious}
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+                </button>
+              </>
+            )}
+
+            {/* Dots Indicator */}
+            {sliders.length > 1 && (
+              <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/30 dark:bg-white/30 backdrop-blur-sm px-3 py-2 rounded-full">
+                {sliders.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={cn(
+                      'rounded-full transition-all duration-300',
+                      index === currentIndex
+                        ? 'bg-white w-8 h-2 shadow-lg'
+                        : 'bg-white/60 hover:bg-white/80 w-2 h-2'
+                    )}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Loading indicator */}
+            {loading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-30 min-h-[300px]">
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Quick Access Links - only on desktop */}
+          <div className="hidden lg:flex flex-col gap-3 w-1/3">
+            {quickLinks.map((link, index) => {
+              const Icon = link.icon;
+              return (
+                <button
+                  key={index}
+                  onClick={() => navigate(link.path)}
+                  className={cn(
+                    'flex items-center gap-3 p-4 rounded-lg text-white transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105',
+                    link.color
+                  )}
+                >
+                  <Icon className="w-6 h-6 flex-shrink-0" />
+                  <span className="text-right font-medium text-lg">{link.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
