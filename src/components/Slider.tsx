@@ -84,18 +84,23 @@ export default function Slider() {
     }
   };
 
-  const getApiBaseUrl = () => {
+  const getImageUrl = (imagePath: string) => {
+    // Image paths are served from root, not from /backend
+    // If imagePath already starts with http, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // For production, use full URL
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
       if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-        return 'https://asllmarket.com/backend';
-      }
-      // For local development, use empty string (relative path)
-      if (hostname === 'localhost' || hostname === '127.0.0.1') {
-        return '';
+        return `https://asllmarket.com${imagePath}`;
       }
     }
-    return '';
+    
+    // For local development, use relative path
+    return imagePath;
   };
 
   if (loading) {
@@ -118,7 +123,7 @@ export default function Slider() {
             )}
           >
             <img
-              src={`${getApiBaseUrl()}${slider.image_url}`}
+              src={getImageUrl(slider.image_url)}
               alt={`Slider ${slider.id}`}
               className="w-full h-full object-cover cursor-pointer"
               onClick={() => handleSliderClick(slider)}
