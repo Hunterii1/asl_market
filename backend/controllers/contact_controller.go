@@ -108,6 +108,36 @@ func (cc *ContactController) ViewContactInfo(c *gin.Context) {
 			"email":  visitor.User.Email,
 			"type":   "visitor",
 		}
+	} else if req.TargetType == "available_product" {
+		var product models.AvailableProduct
+		if err := cc.db.Preload("AddedBy").First(&product, req.TargetID).Error; err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "کالا یافت نشد"})
+			return
+		}
+
+		// Get contact info from product or added_by user
+		mobile := product.ContactPhone
+		email := product.ContactEmail
+		if mobile == "" && product.AddedBy.ID != 0 {
+			// Try to get from user
+			var user models.User
+			if err := cc.db.First(&user, product.AddedByID).Error; err == nil {
+				if mobile == "" {
+					mobile = user.Phone
+				}
+				if email == "" {
+					email = user.Email
+				}
+			}
+		}
+
+		contactInfo = gin.H{
+			"id":     product.ID,
+			"name":   product.ProductName,
+			"mobile": mobile,
+			"email":  email,
+			"type":   "available_product",
+		}
 	} else {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "نوع هدف نامعتبر"})
 		return

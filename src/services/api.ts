@@ -1028,7 +1028,7 @@ class ApiService {
     });
   }
 
-  async viewContactInfo(targetType: 'supplier' | 'visitor', targetId: number): Promise<any> {
+  async viewContactInfo(targetType: 'supplier' | 'visitor' | 'available_product', targetId: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/contact/view`, {
       method: 'POST',
       headers: {
@@ -1050,7 +1050,7 @@ class ApiService {
     });
   }
 
-  async checkCanViewContact(targetType: 'supplier' | 'visitor', targetId: number): Promise<any> {
+  async checkCanViewContact(targetType: 'supplier' | 'visitor' | 'available_product', targetId: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/contact/check/${targetType}/${targetId}`, {
       method: 'GET',
       headers: {

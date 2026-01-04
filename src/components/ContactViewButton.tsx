@@ -15,7 +15,8 @@ import {
   AlertTriangle, 
   CheckCircle, 
   User,
-  Building
+  Building,
+  Package
 } from 'lucide-react';
 
 interface ContactInfo {
@@ -27,7 +28,7 @@ interface ContactInfo {
 }
 
 interface ContactViewButtonProps {
-  targetType: 'supplier' | 'visitor';
+  targetType: 'supplier' | 'visitor' | 'available_product';
   targetId: number;
   targetName: string;
   className?: string;
@@ -63,7 +64,10 @@ export const ContactViewButton: React.FC<ContactViewButtonProps> = ({
 
   const checkViewPermission = async () => {
     try {
-      const response = await apiService.checkCanViewContact(targetType, targetId);
+      const response = await apiService.checkCanViewContact(
+        targetType as 'supplier' | 'visitor' | 'available_product', 
+        targetId
+      );
       setCanView(response.can_view);
       setHasViewed(response.has_viewed);
       setLimits(prev => ({
@@ -180,8 +184,10 @@ export const ContactViewButton: React.FC<ContactViewButtonProps> = ({
           <DialogTitle className="flex items-center gap-2">
             {targetType === 'supplier' ? (
               <Building className="w-5 h-5 text-orange-400" />
-            ) : (
+            ) : targetType === 'visitor' ? (
               <User className="w-5 h-5 text-blue-400" />
+            ) : (
+              <Package className="w-5 h-5 text-purple-400" />
             )}
             اطلاعات تماس - {targetName}
           </DialogTitle>

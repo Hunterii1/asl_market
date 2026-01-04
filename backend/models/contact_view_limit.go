@@ -11,7 +11,7 @@ type ContactViewLimit struct {
 	ID           uint           `json:"id" gorm:"primaryKey"`
 	UserID       uint           `json:"user_id" gorm:"not null;index"`
 	User         User           `json:"user" gorm:"foreignKey:UserID"`
-	TargetType   string         `json:"target_type" gorm:"size:50;not null"` // "supplier" or "visitor"
+	TargetType   string         `json:"target_type" gorm:"size:50;not null"` // "supplier", "visitor", or "available_product"
 	TargetID     uint           `json:"target_id" gorm:"not null"`
 	ViewCount    int            `json:"view_count" gorm:"default:0"`
 	LastViewedAt *time.Time     `json:"last_viewed_at"`
@@ -36,7 +36,7 @@ type DailyContactViewLimit struct {
 
 // ContactViewRequest represents a request to view contact information
 type ContactViewRequest struct {
-	TargetType string `json:"target_type" binding:"required,oneof=supplier visitor"`
+	TargetType string `json:"target_type" binding:"required,oneof=supplier visitor available_product"`
 	TargetID   uint   `json:"target_id" binding:"required"`
 }
 
@@ -73,15 +73,17 @@ func (u *User) GetContactLimits(db *gorm.DB) (*ContactLimitsResponse, error) {
 		return nil, err
 	}
 
-	totalUsed := limits.VisitorViews + limits.SupplierViews
+	totalUsed := limits.VisitorViews + limits.SupplierViews + limits.AvailableProductViews
 
 	// Calculate max based on license type
 	visitorMax := 3
 	supplierMax := 3
+	availableProductMax := 3
 	if license.Type == "pro" {
 		supplierMax = 6
+		availableProductMax = 6
 	}
-	totalMax := visitorMax + supplierMax
+	totalMax := visitorMax + supplierMax + availableProductMax
 	totalRemaining := totalMax - totalUsed
 
 	if totalRemaining < 0 {
@@ -110,6 +112,8 @@ func (u *User) CanViewContact(db *gorm.DB, targetType string) (bool, error) {
 		return CanViewVisitor(db, u.ID, license.Type)
 	} else if targetType == "supplier" {
 		return CanViewSupplier(db, u.ID, license.Type)
+	} else if targetType == "available_product" {
+		return CanViewAvailableProduct(db, u.ID, license.Type)
 	}
 
 	return false, nil
@@ -142,6 +146,11 @@ func (u *User) RecordContactView(db *gorm.DB, targetType string, targetID uint) 
 		}
 	} else if targetType == "supplier" {
 		if err := IncrementSupplierView(tx, u.ID); err != nil {
+			tx.Rollback()
+			return err
+		}
+	} else if targetType == "available_product" {
+		if err := IncrementAvailableProductView(tx, u.ID); err != nil {
 			tx.Rollback()
 			return err
 		}

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LicenseGate } from '@/components/LicenseGate';
-import { AvailableProductLimitsDisplay } from '@/components/AvailableProductLimitsDisplay';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
 import { getFirstImageUrl } from '@/utils/imageUrl';
@@ -98,7 +97,6 @@ const AslAvailable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [limitReached, setLimitReached] = useState(false);
   const itemsPerPage = 12;
 
   // Load data from API - load all products for client-side filtering and pagination
@@ -117,18 +115,6 @@ const AslAvailable = () => {
                    status: selectedCondition !== "all" ? selectedCondition : undefined,
                  });
                  console.log('Products response:', productsResponse);
-                 
-                 // Check if limit reached
-                 if (productsResponse?.limit_reached) {
-                   setLimitReached(true);
-                   setProducts([]);
-                   setTotalPages(1);
-                   setTotalItems(0);
-                   setError(productsResponse?.error || 'محدودیت روزانه مشاهده کالاهای موجود به پایان رسیده است');
-                   return;
-                 }
-                 
-                 setLimitReached(false);
                  
                  // Handle different response formats
                  let products = [];
@@ -154,13 +140,7 @@ const AslAvailable = () => {
                  setTotalItems(total);
                } catch (productsErr: any) {
                  console.error('Error loading products:', productsErr);
-                 // Check if it's a limit reached error
-                 if (productsErr?.response?.data?.limit_reached || productsErr?.limit_reached) {
-                   setLimitReached(true);
-                   setError(productsErr?.response?.data?.error || productsErr?.error || 'محدودیت روزانه مشاهده کالاهای موجود به پایان رسیده است');
-                 } else {
-                   setError('خطا در بارگذاری کالاها');
-                 }
+                 setError('خطا در بارگذاری کالاها');
                  setProducts([]);
                  setTotalPages(1);
                }
@@ -239,9 +219,6 @@ const AslAvailable = () => {
   return (
     <LicenseGate>
     <div className="space-y-6 animate-fade-in">
-      {/* Available Product Limits Display */}
-      <AvailableProductLimitsDisplay className="mb-6" />
-      
       {/* Header */}
       <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
         <CardContent className="p-6">
@@ -346,20 +323,8 @@ const AslAvailable = () => {
                <Card className="bg-card/80 border-border rounded-3xl">
                  <CardContent className="p-8 text-center">
                    <AlertTriangle className="w-16 h-16 mx-auto text-red-500 mb-4" />
-                   <h3 className="text-xl font-semibold text-foreground mb-2">
-                     {limitReached ? 'محدودیت روزانه به پایان رسیده' : 'خطا در بارگذاری'}
-                   </h3>
-                   <p className="text-muted-foreground mb-4">{error}</p>
-                   {limitReached && (
-                     <div className="mt-4 p-4 bg-orange-500/10 border border-orange-500/30 rounded-2xl">
-                       <p className="text-sm text-foreground mb-2">
-                         شما امروز به محدودیت مشاهده کالاهای موجود رسیده‌اید.
-                       </p>
-                       <p className="text-xs text-muted-foreground">
-                         محدودیت‌ها فردا بازنشانی می‌شوند. برای افزایش محدودیت، لایسنس پرو تهیه کنید.
-                       </p>
-                     </div>
-                   )}
+                   <h3 className="text-xl font-semibold text-foreground mb-2">خطا در بارگذاری</h3>
+                   <p className="text-muted-foreground">{error}</p>
                  </CardContent>
                </Card>
              ) : filteredItems.length === 0 ? (
@@ -504,24 +469,20 @@ const AslAvailable = () => {
                   )}
                   
                   {/* Contact Phone with Limit */}
-                  {item.contact_phone && (
+                  {(item.contact_phone || item.added_by) && (
                     <div className="flex items-center justify-between gap-2 text-sm pt-2 border-t">
                       <div className="flex items-center gap-2">
                         <Phone className="w-4 h-4 text-muted-foreground" />
                         <span className="text-muted-foreground">شماره تماس:</span>
                       </div>
-                      {item.supplier?.id ? (
-                        <ContactViewButton
-                          targetType="supplier"
-                          targetId={item.supplier.id}
-                          targetName={item.supplier.full_name || item.product_name}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs"
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">محدود</span>
-                      )}
+                      <ContactViewButton
+                        targetType="available_product"
+                        targetId={item.id}
+                        targetName={item.product_name}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                      />
                     </div>
                   )}
                 </div>
