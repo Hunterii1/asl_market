@@ -1015,6 +1015,70 @@ class AdminApiService {
       body: formData,
     });
   }
+
+  // ==================== Slider Management ====================
+  async getSliders(params: {
+    page?: number;
+    per_page?: number;
+    active_only?: boolean;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.active_only) queryParams.append('active_only', params.active_only.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getSlider(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async createSlider(data: {
+    image_url: string;
+    link?: string;
+    link_type?: 'internal' | 'external';
+    is_active?: boolean;
+    order?: number;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSlider(id: number, data: {
+    image_url?: string;
+    link?: string;
+    link_type?: 'internal' | 'external';
+    is_active?: boolean;
+    order?: number;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSlider(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async uploadSliderImage(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    return this.makeRequest(`${API_BASE_URL}/admin/sliders/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
 }
 
 export const adminApi = new AdminApiService();

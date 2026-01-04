@@ -49,6 +49,7 @@ import AslAvailable from "./AslAvailable";
 import ProductsResearch from "./ProductsResearch";
 import MarketingPopup from "@/components/MarketingPopup";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import Slider from "@/components/Slider";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
@@ -148,6 +149,9 @@ const Index = () => {
       {/* Header */}
       <HeaderAuth />
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        {/* Slider - Top of platform */}
+        <Slider />
+
         {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons */}
         {isAuthenticated && (
           <div className="mb-4 sm:mb-6">

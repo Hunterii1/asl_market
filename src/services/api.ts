@@ -1737,6 +1737,34 @@ class ApiService {
       body: formData,
     });
   }
+
+  // Slider API methods
+  async getActiveSliders(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/sliders/active`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async trackSliderClick(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/sliders/${id}/click`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async trackSliderView(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/sliders/${id}/view`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();

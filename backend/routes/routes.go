@@ -32,6 +32,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 
 	// Serve uploaded files
 	router.Static("/uploads", "./uploads")
+	// Serve assets folder (for slider images)
+	router.Static("/assets", "./assets")
 
 	// Health check
 	router.GET("/health", func(c *gin.Context) {
@@ -204,6 +206,19 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/marketing-popups", controllers.CreateMarketingPopup)
 		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
 		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)
+
+		// Slider routes (public access for active sliders)
+		protected.GET("/sliders/active", controllers.GetActiveSliders)
+		protected.POST("/sliders/:id/click", controllers.TrackSliderClick)
+		protected.POST("/sliders/:id/view", controllers.TrackSliderView)
+
+		// Admin slider management routes
+		protected.GET("/admin/sliders", controllers.GetSliders)
+		protected.GET("/admin/sliders/:id", controllers.GetSlider)
+		protected.POST("/admin/sliders", controllers.CreateSlider)
+		protected.PUT("/admin/sliders/:id", controllers.UpdateSlider)
+		protected.DELETE("/admin/sliders/:id", controllers.DeleteSlider)
+		protected.POST("/admin/sliders/upload", controllers.UploadSliderImage)
 
 		// Admin withdrawal management routes
 		protected.GET("/admin/withdrawal/requests", withdrawalController.GetAllWithdrawalRequests)

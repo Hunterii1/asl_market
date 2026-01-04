@@ -17,6 +17,7 @@ import Tickets from "./pages/Tickets";
 import Suppliers from "./pages/Suppliers";
 import Visitors from "./pages/Visitors";
 import Popups from "./pages/Popups";
+import Sliders from "./pages/Sliders";
 import Notifications from "./pages/Notifications";
 // import Export from "./pages/Export";
 import NotFound from "./pages/NotFound";
@@ -147,6 +148,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Popups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sliders"
+            element={
+              <ProtectedRoute>
+                <Sliders />
               </ProtectedRoute>
             }
           />

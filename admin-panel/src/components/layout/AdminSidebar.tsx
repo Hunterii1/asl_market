@@ -19,6 +19,7 @@ import {
   Eye,
   Megaphone,
   Bell,
+  Image as ImageIcon,
   // FileSpreadsheet, // Commented out - Export page is not needed
   ChevronRight,
   ChevronLeft,
@@ -70,6 +71,7 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
     { title: 'محصولات تحقیقی', icon: Box, href: '/products/research', permissionKey: 'products/research' },
     { title: 'ویزیتورها', icon: Eye, href: '/visitors', permissionKey: 'visitors' },
     { title: 'پاپ‌آپ‌ها', icon: Megaphone, href: '/popups', permissionKey: 'popups' },
+    { title: 'اسلایدرها', icon: ImageIcon, href: '/sliders', permissionKey: 'sliders' },
     { title: 'اعلان‌ها', icon: Bell, href: '/notifications', permissionKey: 'notifications' },
     // { title: 'خروجی اکسل', icon: FileSpreadsheet, href: '/export' },
   ];
