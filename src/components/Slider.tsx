@@ -95,22 +95,27 @@ export default function Slider() {
   }
 
   return (
-    <div className="relative w-full mb-8 rounded-2xl overflow-hidden shadow-lg">
-      <div className="relative w-full" style={{ aspectRatio: '16/9' }}>
+    <div className="relative w-full mb-6 sm:mb-8">
+      <div className="relative w-full h-[280px] sm:h-[350px] md:h-[400px] lg:h-[450px] xl:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 ring-1 ring-gray-200 dark:ring-gray-700">
         {sliders.map((slider, index) => (
           <div
             key={slider.id}
             className={cn(
-              'absolute inset-0 transition-opacity duration-500',
-              index === currentIndex ? 'opacity-100' : 'opacity-0'
+              'absolute inset-0 transition-all duration-700 ease-in-out',
+              index === currentIndex 
+                ? 'opacity-100 scale-100 z-10' 
+                : 'opacity-0 scale-105 z-0'
             )}
           >
             <img
               src={getImageUrl(slider.image_url)}
               alt={`Slider ${slider.id}`}
-              className="w-full h-full object-cover cursor-pointer"
+              className="w-full h-full object-cover cursor-pointer transition-transform duration-700 hover:scale-105"
               onClick={() => handleSliderClick(slider)}
+              loading={index === 0 ? 'eager' : 'lazy'}
             />
+            {/* Overlay gradient for better text readability if needed */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
           </div>
         ))}
 
@@ -119,37 +124,44 @@ export default function Slider() {
           <>
             <button
               onClick={handlePrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all z-10"
+              className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
               aria-label="Previous slide"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all z-10"
+              className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 sm:p-3 rounded-full transition-all z-20 shadow-lg hover:shadow-xl hover:scale-110 backdrop-blur-sm"
               aria-label="Next slide"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </>
         )}
 
         {/* Dots Indicator */}
         {sliders.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-black/30 dark:bg-white/30 backdrop-blur-sm px-3 py-2 rounded-full">
             {sliders.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentIndex(index)}
                 className={cn(
-                  'w-2 h-2 rounded-full transition-all',
+                  'rounded-full transition-all duration-300',
                   index === currentIndex
-                    ? 'bg-white w-8'
-                    : 'bg-white/50 hover:bg-white/75'
+                    ? 'bg-white w-8 h-2 shadow-lg'
+                    : 'bg-white/60 hover:bg-white/80 w-2 h-2'
                 )}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
+          </div>
+        )}
+
+        {/* Loading indicator */}
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-30">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
       </div>
