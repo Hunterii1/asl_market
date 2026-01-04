@@ -31,6 +31,7 @@ import { useNavigate } from "react-router-dom";
 const AslAI = () => {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const [chats, setChats] = useState<Chat[]>([]);
   const [currentChat, setCurrentChat] = useState<Chat | null>(null);
@@ -45,9 +46,24 @@ const AslAI = () => {
   const [originalContent, setOriginalContent] = useState<string>("");
   const [aiUsage, setAiUsage] = useState<AIUsageResponse | null>(null);
   const [isUsageLoading, setIsUsageLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typewriterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentChatRef = useRef<Chat | null>(null);
+  
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
+
+  // Filter chats by search term
+  const filteredChats = chats.filter(chat => {
+    if (!searchTerm.trim()) return true;
+    return chat.title?.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Load chats and AI usage on component mount (only if authenticated)
   useEffect(() => {
@@ -310,7 +326,7 @@ const AslAI = () => {
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
-      ) : chats.length === 0 ? (
+      ) : filteredChats.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>هنوز مکالمه‌ای نداشته‌اید</p>
@@ -318,7 +334,7 @@ const AslAI = () => {
         </div>
       ) : (
         <div className="space-y-2 p-3">
-          {chats.map((chat) => (
+          {filteredChats.map((chat) => (
             <div
               key={chat.id}
               className={`group p-3 rounded-xl cursor-pointer transition-all duration-200 ${

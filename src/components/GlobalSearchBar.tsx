@@ -137,22 +137,31 @@ export function GlobalSearchBar({ className, mobile = false }: GlobalSearchBarPr
     inputRef.current?.focus();
   };
 
-  const handleResultClick = (type: string, id: number) => {
+  const handleResultClick = (type: string, id: number, chatId?: number) => {
     setIsOpen(false);
     setFocused(false);
     
+    // Navigate with search query parameter
+    const searchQuery = query.trim() ? `search=${encodeURIComponent(query.trim())}` : '';
+    
     switch (type) {
       case 'supplier':
-        navigate(`/aslsupplier?supplier=${id}`);
+        navigate(searchQuery ? `/aslsupplier?${searchQuery}` : `/aslsupplier`);
         break;
       case 'visitor':
-        navigate(`/aslvisit?visitor=${id}`);
+        navigate(searchQuery ? `/aslvisit?${searchQuery}` : `/aslvisit`);
         break;
       case 'available_product':
-        navigate(`/aslavailable?product=${id}`);
+        navigate(searchQuery ? `/aslavailable?${searchQuery}` : `/aslavailable`);
         break;
       case 'research_product':
-        navigate(`/products?product=${id}`);
+        navigate(searchQuery ? `/?activeSection=products&${searchQuery}` : `/?activeSection=products`);
+        break;
+      case 'chat':
+        navigate(searchQuery ? `/aslai?chat=${id}&${searchQuery}` : `/aslai?chat=${id}`);
+        break;
+      case 'message':
+        navigate(searchQuery ? `/aslai?chat=${chatId || id}&${searchQuery}` : `/aslai?chat=${chatId || id}`);
         break;
     }
   };

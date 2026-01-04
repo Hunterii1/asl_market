@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiService } from "@/services/api";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LicenseGate } from '@/components/LicenseGate';
@@ -28,13 +28,23 @@ import {
 
 const AslVisit = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCountry, setSelectedCountry] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
+  
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   const countries = [
     { 
@@ -81,7 +91,7 @@ const AslVisit = () => {
     }
   ];
 
-  // Load visitors data from API with pagination
+  // Load visitors data from API with pagination and search
   useEffect(() => {
     const loadVisitorsData = async () => {
       try {
@@ -89,6 +99,7 @@ const AslVisit = () => {
         const response = await apiService.getApprovedVisitors({
           page: currentPage,
           per_page: itemsPerPage,
+          search: searchTerm.trim() || undefined,
         });
         setVisitors(response.visitors || []);
         setTotalPages(response.total_pages || 1);
@@ -103,7 +114,7 @@ const AslVisit = () => {
     };
 
     loadVisitorsData();
-  }, [currentPage]);
+  }, [currentPage, searchTerm]);
 
   // Helper function to convert numbers to Farsi
   const toFarsiNumber = (num: number) => {

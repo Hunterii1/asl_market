@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,9 +33,18 @@ import {
 
 const AslSupplier = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
@@ -54,7 +63,7 @@ const AslSupplier = () => {
     { id: "handicrafts", name: "صنایع دستی" }
   ];
 
-  // Load suppliers data from API with pagination
+  // Load suppliers data from API with pagination and search
   useEffect(() => {
     const loadSuppliersData = async () => {
       try {
@@ -62,6 +71,8 @@ const AslSupplier = () => {
         const response = await apiService.getApprovedSuppliers({
           page: currentPage,
           per_page: itemsPerPage,
+          search: searchTerm.trim() || undefined,
+          product_type: selectedProduct !== "all" ? selectedProduct : undefined,
         });
         setApprovedSuppliers(response.suppliers || []);
         setTotalPages(response.total_pages || 1);
@@ -77,36 +88,24 @@ const AslSupplier = () => {
     };
 
     loadSuppliersData();
-  }, [currentPage]);
+  }, [currentPage, searchTerm, selectedProduct]);
 
   // Helper function to convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
     return num.toLocaleString('fa-IR');
   };
 
-  // Client-side filtering (server handles pagination)
-  const filteredSuppliers = approvedSuppliers
-    .filter(supplier => {
-      const matchesSearch = supplier.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           supplier.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           supplier.city?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesProduct = selectedProduct === "all" || 
-        supplier.products?.some((p: any) => {
-          const productName = typeof p === 'string' ? p : p.product_name;
-          return productName?.toLowerCase().includes(selectedProduct.toLowerCase());
-        });
-      return matchesSearch && matchesProduct;
-    })
-    .sort((a, b) => {
-      // Featured suppliers first (only if property exists)
-      const aFeatured = a.hasOwnProperty('is_featured') && a.is_featured === true;
-      const bFeatured = b.hasOwnProperty('is_featured') && b.is_featured === true;
-      
-      if (aFeatured && !bFeatured) return -1;
-      if (!aFeatured && bFeatured) return 1;
-      // Then by creation date (newest first)
-      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-    });
+  // Server handles search and filtering now, so only sort needed
+  const filteredSuppliers = approvedSuppliers.sort((a, b) => {
+    // Featured suppliers first (only if property exists)
+    const aFeatured = a.hasOwnProperty('is_featured') && a.is_featured === true;
+    const bFeatured = b.hasOwnProperty('is_featured') && b.is_featured === true;
+    
+    if (aFeatured && !bFeatured) return -1;
+    if (!aFeatured && bFeatured) return 1;
+    // Then by creation date (newest first)
+    return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+  });
 
   // Reset to page 1 when filter changes
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { apiService } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 
 const ProductsResearch = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [researchProducts, setResearchProducts] = useState([]);
@@ -32,6 +34,14 @@ const ProductsResearch = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
+  
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
 
   // Load data from API with pagination
   useEffect(() => {
@@ -65,7 +75,7 @@ const ProductsResearch = () => {
     };
 
     loadData();
-  }, [currentPage]);
+  }, [currentPage, searchTerm]);
 
   // Helper functions for styling and text conversion
   const getMarketDemandColor = (demand: string) => {

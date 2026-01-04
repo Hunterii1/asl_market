@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -84,10 +84,19 @@ interface AvailableProduct {
 
 const AslAvailable = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedCondition, setSelectedCondition] = useState("all");
   const [selectedLocation, setSelectedLocation] = useState("all");
+  
+  // Read search query from URL on mount
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
+    }
+  }, [searchParams]);
   
   // Real data states
   const [products, setProducts] = useState<AvailableProduct[]>([]);
@@ -113,6 +122,7 @@ const AslAvailable = () => {
                    per_page: itemsPerPage,
                    category: selectedCategory !== "all" ? selectedCategory : undefined,
                    status: selectedCondition !== "all" ? selectedCondition : undefined,
+                   search: searchTerm.trim() || undefined,
                  });
                  console.log('Products response:', productsResponse);
                  
@@ -177,8 +187,8 @@ const AslAvailable = () => {
       }
     };
 
-    loadData();
-  }, [currentPage, selectedCategory, selectedCondition]);
+           loadData();
+         }, [currentPage, selectedCategory, selectedCondition, searchTerm]);
 
   // Static filter options
   const conditions = [

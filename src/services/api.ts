@@ -498,10 +498,12 @@ class ApiService {
     }
   }
 
-  async getApprovedSuppliers(params: { page?: number; per_page?: number } = {}): Promise<any> {
+  async getApprovedSuppliers(params: { page?: number; per_page?: number; search?: string; product_type?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.search) queryParams.append('search', params.search);
+    if (params.product_type) queryParams.append('product_type', params.product_type);
 
     const url = `${API_BASE_URL}/suppliers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(url, {
@@ -559,10 +561,11 @@ class ApiService {
     }
   }
 
-  async getApprovedVisitors(params: { page?: number; per_page?: number } = {}): Promise<any> {
+  async getApprovedVisitors(params: { page?: number; per_page?: number; search?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.search) queryParams.append('search', params.search);
 
     const url = `${API_BASE_URL}/visitors${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(url, {
@@ -664,10 +667,11 @@ class ApiService {
     });
   }
 
-  async getActiveResearchProducts(params: { page?: number; per_page?: number } = {}): Promise<any> {
+  async getActiveResearchProducts(params: { page?: number; per_page?: number; search?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.search) queryParams.append('search', params.search);
 
     const url = `${API_BASE_URL}/research-products/active${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(url, {
@@ -737,13 +741,14 @@ class ApiService {
   }
 
   // Available Products API methods
-  async getAvailableProducts(params: { page?: number; per_page?: number; category?: string; status?: string; featured_only?: boolean } = {}): Promise<any> {
+  async getAvailableProducts(params: { page?: number; per_page?: number; category?: string; status?: string; featured_only?: boolean; search?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.category) queryParams.append('category', params.category);
     if (params.status) queryParams.append('status', params.status);
     if (params.featured_only) queryParams.append('featured_only', 'true');
+    if (params.search) queryParams.append('search', params.search);
     
     const url = `/available-products${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(`${API_BASE_URL}${url}`, {
