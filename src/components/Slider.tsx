@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, HeadphonesIcon, User, Package, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/utils/imageUrl';
 
