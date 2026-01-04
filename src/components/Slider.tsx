@@ -99,25 +99,21 @@ export default function Slider() {
       title: 'پشتیبانی و تیکت',
       icon: Headphones,
       path: '/support',
-      color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
       title: 'پروفایل من',
       icon: User,
       path: '/edit-profile',
-      color: 'bg-green-500 hover:bg-green-600',
     },
     {
       title: 'محصولات من',
       icon: Package,
       path: '/my-products',
-      color: 'bg-orange-500 hover:bg-orange-600',
     },
     {
       title: 'لایسنس من',
       icon: Key,
       path: '/license-info',
-      color: 'bg-purple-500 hover:bg-purple-600',
     },
   ];
 
@@ -205,13 +201,14 @@ export default function Slider() {
                 <button
                   key={index}
                   onClick={() => navigate(link.path)}
-                  className={cn(
-                    'flex items-center gap-3 p-4 rounded-lg text-white transition-all duration-300 shadow-md hover:shadow-lg transform hover:scale-105',
-                    link.color
-                  )}
+                  className="flex items-center justify-between gap-3 p-5 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-900/20 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] group"
                 >
-                  <Icon className="w-6 h-6 flex-shrink-0" />
-                  <span className="text-right font-medium text-lg">{link.title}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                      <Icon className="w-5 h-5 text-orange-500 group-hover:text-orange-600" />
+                    </div>
+                    <span className="text-right font-semibold text-base">{link.title}</span>
+                  </div>
                 </button>
               );
             })}

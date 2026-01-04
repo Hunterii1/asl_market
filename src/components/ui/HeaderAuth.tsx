@@ -278,22 +278,22 @@ const HeaderAuth = () => {
             {/* Theme Toggle */}
             <ThemeToggle />
             
-            {/* License Status */}
+            {/* License Status - Hidden on desktop */}
             {currentLicenseStatus && (
               <Badge 
                 variant={currentLicenseStatus.is_approved ? "default" : (currentLicenseStatus.has_license ? "secondary" : "destructive")}
-                className={`hidden sm:flex ${currentLicenseStatus.is_approved ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                className={`hidden sm:flex lg:hidden ${currentLicenseStatus.is_approved ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
                 onClick={currentLicenseStatus.is_approved ? () => navigate('/license-info') : undefined}
               >
                 {currentLicenseStatus.is_approved ? "لایسنس فعال" : (currentLicenseStatus.has_license ? "در انتظار تأیید" : "بدون لایسنس")}
               </Badge>
             )}
 
-            {/* My Products Button */}
+            {/* My Products Button - Hidden on desktop */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
+              className="lg:hidden flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
               onClick={() => navigate('/my-products')}
               title="محصولات من"
             >
@@ -301,11 +301,11 @@ const HeaderAuth = () => {
               <span className="hidden md:inline-block text-xs sm:text-sm text-muted-foreground">محصولات من</span>
             </Button>
 
-            {/* Support Ticket Button */}
+            {/* Support Ticket Button - Hidden on desktop */}
             <Button 
               variant="ghost" 
               size="sm" 
-              className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
+              className="lg:hidden flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-xl hover:bg-muted transition-colors"
               onClick={() => navigate('/support')}
               title="پشتیبانی"
             >
@@ -419,23 +419,27 @@ const HeaderAuth = () => {
               </PopoverContent>
             </Popover>
 
-            {/* User Menu */}
+            {/* Logout Button - Desktop only */}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-red-500 hover:text-red-600"
+              onClick={handleLogout}
+              title="خروج"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-sm font-medium">خروج</span>
+            </Button>
+
+            {/* User Menu - Mobile and Tablet */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
+                <Button variant="ghost" className="lg:hidden flex items-center gap-2 sm:gap-3 p-1 sm:p-2 rounded-xl sm:rounded-2xl hover:bg-muted">
                   <Avatar className="w-7 h-7 sm:w-8 sm:h-8">
                     <AvatarFallback className="bg-gradient-to-br from-orange-500 to-orange-600 text-white text-xs sm:text-sm font-bold">
                       {user ? getInitials(user.first_name, user.last_name) : "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="text-right hidden lg:block">
-                    <p className="text-sm font-medium text-foreground">
-                      {user ? `${user.first_name} ${user.last_name}` : "کاربر"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {user?.email || "user@example.com"}
-                    </p>
-                  </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-background border-border rounded-2xl">
