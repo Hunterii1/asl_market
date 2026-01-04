@@ -280,16 +280,23 @@ func DeleteSlider(c *gin.Context) {
 // UploadSliderImage uploads a slider image
 func UploadSliderImage(c *gin.Context) {
 	// Check if user is authenticated and is admin
-	userInterface, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
-		return
-	}
+	// Check for WebAdmin first (admin panel admins)
+	isWebAdmin, _ := c.Get("is_web_admin")
+	if isWebAdmin == true {
+		// WebAdmin is allowed
+	} else {
+		// Check for regular User with admin flag
+		userInterface, exists := c.Get("user")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+			return
+		}
 
-	user := userInterface.(models.User)
-	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
-		return
+		user := userInterface.(models.User)
+		if !user.IsAdmin {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
 	}
 
 	// Get file from request
