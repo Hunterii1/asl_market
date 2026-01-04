@@ -1,12 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Headphones, User, Package, Key, Radio, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getImageUrl } from '@/utils/imageUrl';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/hooks/useAuth';
 
 interface Slider {
   id: number;
@@ -20,10 +17,7 @@ export default function Slider() {
   const [sliders, setSliders] = useState<Slider[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [sliderHeight, setSliderHeight] = useState<number | null>(null);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
-  const sliderRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadSliders();
@@ -65,50 +59,6 @@ export default function Slider() {
     }
   }, [currentIndex, sliders]);
 
-  // Update slider height when image loads or changes
-  useEffect(() => {
-    if (sliderRef.current && sliders.length > 0) {
-      const updateHeight = () => {
-        // Get the visible image (current slide)
-        const visibleSlide = sliderRef.current?.querySelector('.opacity-100') as HTMLElement;
-        const img = visibleSlide?.querySelector('img') as HTMLImageElement;
-        
-        if (img && img.offsetHeight > 0) {
-          setSliderHeight(img.offsetHeight);
-        } else if (sliderRef.current) {
-          // Fallback to container height
-          const containerHeight = sliderRef.current.offsetHeight;
-          if (containerHeight > 0) {
-            setSliderHeight(containerHeight);
-          }
-        }
-      };
-
-      // Wait a bit for the image to render
-      const timeoutId = setTimeout(updateHeight, 100);
-      
-      const img = sliderRef.current.querySelector('img') as HTMLImageElement;
-      if (img) {
-        if (img.complete) {
-          updateHeight();
-        } else {
-          img.addEventListener('load', updateHeight);
-        }
-      }
-
-      // Also update on window resize
-      window.addEventListener('resize', updateHeight);
-
-      return () => {
-        clearTimeout(timeoutId);
-        if (img) {
-          img.removeEventListener('load', updateHeight);
-        }
-        window.removeEventListener('resize', updateHeight);
-      };
-    }
-  }, [sliders, currentIndex]);
-
   const handlePrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + sliders.length) % sliders.length);
   };
@@ -144,43 +94,14 @@ export default function Slider() {
     return null; // Don't show slider if no sliders
   }
 
-  const quickLinks = [
-    {
-      title: 'پشتیبانی و تیکت',
-      icon: Headphones,
-      path: '/support',
-    },
-    {
-      title: 'پروفایل من',
-      icon: User,
-      path: '/edit-profile',
-    },
-    {
-      title: 'محصولات من',
-      icon: Package,
-      path: '/my-products',
-    },
-    {
-      title: 'لایسنس من',
-      icon: Key,
-      path: '/license-info',
-    },
-  ];
-
   return (
     <div className="relative w-full">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-          {/* Slider - smaller on desktop */}
-          <div 
-            ref={sliderRef}
-            className="relative w-full lg:w-2/3 overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg"
-          >
+      <div className="relative w-full overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 rounded-lg">
             {sliders.map((slider, index) => (
               <div
                 key={slider.id}
                 className={cn(
-                  'relative w-full transition-opacity duration-700 ease-in-out flex items-center justify-center',
+                  'relative w-full transition-opacity duration-700 ease-in-out',
                   index === currentIndex 
                     ? 'opacity-100 z-10' 
                     : 'opacity-0 z-0 absolute inset-0'
@@ -245,78 +166,6 @@ export default function Slider() {
               </div>
             )}
           </div>
-
-          {/* Quick Access Links - only on desktop */}
-          <div className="hidden lg:flex flex-col gap-3 w-1/3">
-            <div 
-              className="p-4 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md shadow-lg flex flex-col justify-between"
-              style={sliderHeight ? { minHeight: `${sliderHeight}px` } : { minHeight: '300px' }}
-            >
-              {quickLinks.map((link, index) => {
-                const Icon = link.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => navigate(link.path)}
-                    className="w-full flex items-center justify-between gap-3 p-5 rounded-xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-900/20 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] group mb-3 last:mb-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-                        <Icon className="w-5 h-5 text-orange-500 group-hover:text-orange-600" />
-                      </div>
-                      <span className="text-right font-semibold text-base">{link.title}</span>
-                    </div>
-                  </button>
-                );
-              })}
-              
-              {/* ASL Match Button - Desktop only, below quick links */}
-              {isAuthenticated && (
-                <Button
-                  onClick={() => navigate('/asl-match')}
-                  className="w-full h-20 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden mt-3"
-                >
-                  {/* Animated gradient background */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-orange-400/30 via-orange-500/30 to-red-500/30 animate-pulse"></div>
-                  
-                  {/* Shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  
-                  {/* Glowing particles */}
-                  <div className="absolute top-0 left-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0s' }}></div>
-                  <div className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
-                  <div className="absolute bottom-0 left-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1s' }}></div>
-                  <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1.5s' }}></div>
-                  
-                  {/* Content */}
-                  <div className="relative z-10 flex items-center gap-3 w-full justify-center">
-                    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
-                      <Radio className="w-6 h-6 text-white group-hover:rotate-180 transition-transform duration-500" />
-                    </div>
-                    <div className="flex flex-col items-start">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-black text-white drop-shadow-lg group-hover:scale-105 transition-transform duration-300">
-                          ASL MATCH
-                        </span>
-                        <Badge className="bg-white/30 text-white border-white/50 text-xs px-2 py-0.5 font-bold backdrop-blur-sm group-hover:bg-white/40 transition-all duration-300 animate-pulse">
-                          BETA
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-white/90 font-semibold mt-0.5">
-                        سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
-                      <span className="text-sm font-semibold">ورود</span>
-                      <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
-                    </div>
-                  </div>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

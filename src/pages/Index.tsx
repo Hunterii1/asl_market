@@ -34,7 +34,10 @@ import {
   Globe,
   ExternalLink,
   ArrowLeft,
-  Radio
+  Radio,
+  Headphones,
+  User,
+  Key
 } from "lucide-react";
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
@@ -152,9 +155,82 @@ const Index = () => {
       <div className="w-full mb-6 sm:mb-8">
         <Slider />
       </div>
+      
+      {/* Quick Access Links - Desktop only, centered */}
+      <div className="hidden lg:flex justify-center mt-8 mb-6">
+        <div className="flex flex-col gap-3 w-full max-w-md">
+          {[
+            { title: 'پشتیبانی و تیکت', icon: Headphones, path: '/support' },
+            { title: 'پروفایل من', icon: User, path: '/edit-profile' },
+            { title: 'محصولات من', icon: Package, path: '/my-products' },
+            { title: 'لایسنس من', icon: Key, path: '/license-info' },
+          ].map((link, index) => {
+            const Icon = link.icon;
+            return (
+              <button
+                key={index}
+                onClick={() => navigate(link.path)}
+                className="w-full flex items-center justify-between gap-3 p-5 rounded-2xl border-2 border-orange-500/30 bg-white/10 dark:bg-gray-900/10 backdrop-blur-md text-gray-800 dark:text-gray-200 hover:bg-white/20 dark:hover:bg-gray-900/20 hover:border-orange-500/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-[1.02] group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
+                    <Icon className="w-5 h-5 text-orange-500 group-hover:text-orange-600" />
+                  </div>
+                  <span className="text-right font-semibold text-base">{link.title}</span>
+                </div>
+              </button>
+            );
+          })}
+          
+          {/* ASL Match Button - Desktop only, below quick links */}
+          {isAuthenticated && (
+            <Button
+              onClick={() => navigate('/asl-match')}
+              className="w-full h-20 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-2xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden mt-2"
+            >
+              {/* Animated gradient background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/30 via-orange-500/30 to-red-500/30 animate-pulse"></div>
+              
+              {/* Shimmer effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+              
+              {/* Glowing particles */}
+              <div className="absolute top-0 left-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0s' }}></div>
+              <div className="absolute top-0 right-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
+              <div className="absolute bottom-0 left-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1s' }}></div>
+              <div className="absolute bottom-0 right-1/4 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '1.5s' }}></div>
+              
+              {/* Content */}
+              <div className="relative z-10 flex items-center gap-3 w-full justify-center">
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm group-hover:bg-white/30 transition-all duration-300 group-hover:scale-110">
+                  <Radio className="w-6 h-6 text-white group-hover:rotate-180 transition-transform duration-500" />
+                </div>
+                <div className="flex flex-col items-start">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl font-black text-white drop-shadow-lg group-hover:scale-105 transition-transform duration-300">
+                      ASL MATCH
+                    </span>
+                    <Badge className="bg-white/30 text-white border-white/50 text-xs px-2 py-0.5 font-bold backdrop-blur-sm group-hover:bg-white/40 transition-all duration-300 animate-pulse">
+                      BETA
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-white/90 font-semibold mt-0.5">
+                    سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
+                  <span className="text-sm font-semibold">ورود</span>
+                  <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                </div>
+              </div>
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
-        {/* ASL Match - Prominent Horizontal Button - Above 9 main buttons - Hidden on desktop */}
+        {/* ASL Match - Prominent Horizontal Button - Mobile and Tablet only */}
         {isAuthenticated && (
           <div className="mb-4 sm:mb-6 lg:hidden">
             <Button
