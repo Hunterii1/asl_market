@@ -17,6 +17,7 @@ export default function Slider() {
   const [sliders, setSliders] = useState<Slider[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false); // TODO: Remove this error state after network issues are resolved
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function Slider() {
   const loadSliders = async () => {
     try {
       setLoading(true);
+      setError(false); // TODO: Remove this error state after network issues are resolved
       const response = await apiService.getActiveSliders();
       if (response && response.sliders) {
         setSliders(response.sliders);
@@ -36,6 +38,8 @@ export default function Slider() {
       }
     } catch (error) {
       console.error('Error loading sliders:', error);
+      // TODO: Remove this error handling after network issues are resolved
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -86,12 +90,31 @@ export default function Slider() {
   };
 
 
-  if (loading) {
-    return null; // Don't show anything while loading
+  // TODO: Remove this error display after network issues are resolved
+  if (error || (!loading && sliders.length === 0)) {
+    return (
+      <div className="relative w-full">
+        <div className="relative w-full overflow-hidden bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20 rounded-lg border-2 border-red-200 dark:border-red-800 min-h-[200px] flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="text-red-500 dark:text-red-400 mb-2">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <p className="text-red-700 dark:text-red-300 font-semibold text-lg">
+              خطا در بارگذاری به دلیل نت ملی ایران
+            </p>
+            <p className="text-red-600 dark:text-red-400 text-sm mt-2">
+              لطفاً اتصال اینترنت خود را بررسی کنید
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (sliders.length === 0) {
-    return null; // Don't show slider if no sliders
+  if (loading) {
+    return null; // Don't show anything while loading
   }
 
   return (

@@ -73,9 +73,18 @@ class ErrorHandler {
           if (data.license_status.needs_license) {
             errorMessage = 'برای دسترسی به این بخش نیاز به لایسنس معتبر دارید';
           }
+        } else if (statusCode === 405) {
+          // TODO: Remove this custom 405 error message after network issues are resolved
+          errorType = 'method';
+          errorTitle = 'خطای درخواست';
+          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
+          duration = 10000;
         } else if (statusCode >= 500) {
           errorType = 'server';
           errorTitle = 'خطای سرور';
+          // TODO: Remove this custom server error message after network issues are resolved
+          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
+          duration = 10000;
         } else if (statusCode >= 400) {
           errorType = 'validation';
           errorTitle = 'خطای اعتبارسنجی';
@@ -83,19 +92,17 @@ class ErrorHandler {
       }
       // اگر خطا از fetch API آمده باشد
       else if (error?.message) {
-        if (error.message.includes('fetch')) {
+        // TODO: Remove this custom network error message after network issues are resolved
+        // Show general network error message for all network-related errors
+        if (error.message.includes('fetch') || 
+            error.message.includes('NetworkError') || 
+            error.message.includes('timeout') ||
+            error.message.includes('Failed to fetch') ||
+            error.message.includes('Network request failed')) {
           errorType = 'network';
-          errorTitle = 'خطای شبکه';
-          errorMessage = 'اتصال به سرور برقرار نشد. لطفا اتصال اینترنت خود را بررسی کنید.';
-          duration = 8000;
-        } else if (error.message.includes('NetworkError')) {
-          errorType = 'network';
-          errorTitle = 'خطای شبکه';
-          errorMessage = 'مشکل در شبکه. لطفا دوباره تلاش کنید.';
-        } else if (error.message.includes('timeout')) {
-          errorType = 'network';
-          errorTitle = 'خطای زمان';
-          errorMessage = 'درخواست زمان زیادی طول کشید. لطفا دوباره تلاش کنید.';
+          errorTitle = 'خطای اتصال';
+          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
+          duration = 10000;
         } else {
           errorMessage = this.translateErrorMessage(error.message) || fallbackMessage;
         }
