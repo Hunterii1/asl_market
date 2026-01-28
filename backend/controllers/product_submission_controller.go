@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"asl-market-backend/models"
-	"asl-market-backend/services"
+	// "asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -38,12 +38,13 @@ func SubmitProduct(c *gin.Context) {
 	db.Model(product).Update("status", "pending")
 
 	// Send notification to Telegram bot
-	go func() {
-		telegramService := services.GetTelegramService()
-		if telegramService != nil {
-			telegramService.NotifyNewProductSubmission(product, &user)
-		}
-	}()
+	// TODO: unccoment this on new server
+	// go func() {
+	// 	telegramService := services.GetTelegramService()
+	// 	if telegramService != nil {
+	// 		telegramService.NotifyNewProductSubmission(product, &user)
+	// 	}
+	// }()
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":    "Product submitted successfully and is pending admin review",

@@ -19,7 +19,8 @@ type SupportTicketController struct {
 // NewSupportTicketController creates a new support ticket controller
 func NewSupportTicketController() *SupportTicketController {
 	return &SupportTicketController{
-		telegramService: services.GetTelegramService(),
+		// TODO: unccoment this on new server
+		// telegramService: services.GetTelegramService(),
 	}
 }
 

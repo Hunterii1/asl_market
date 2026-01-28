@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"asl-market-backend/models"
-	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -195,7 +194,8 @@ func (c *PublicRegistrationController) RegisterPublicSupplier(ctx *gin.Context) 
 	}
 
 	// Send Telegram notification to admin
-	telegramService := services.GetTelegramService()
+	// TODO: unccoment this on new server
+	// telegramService := services.GetTelegramService()
 	message := "🆕 درخواست ثبت‌نام تأمین‌کننده جدید\n\n"
 	message += "📋 اطلاعات تأمین‌کننده:\n"
 	message += "👤 نام: " + req.FullName + "\n"
@@ -209,14 +209,15 @@ func (c *PublicRegistrationController) RegisterPublicSupplier(ctx *gin.Context) 
 	message += "➖➖➖➖➖➖➖➖"
 
 	// Create a dummy support ticket to use the notification system
-	dummyTicket := &models.SupportTicket{
+	_ = &models.SupportTicket{
 		ID:          0,
 		UserID:      tempUser.ID,
 		Title:       "ثبت‌نام تأمین‌کننده جدید",
 		Description: message,
 		Status:      "open",
 	}
-	telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
+	// TODO: unccoment this on new server
+	// telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Supplier registration submitted successfully. Awaiting admin approval.",
@@ -250,17 +251,17 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "لطفا حداقل یک شهر مقصد وارد کنید"})
 		return
 	}
-	
+
 	// Split only by comma (Persian or English comma), not by space or dash
 	destinations := strings.FieldsFunc(trimmedInput, func(r rune) bool {
 		return r == ',' || r == '،'
 	})
-	
+
 	// If no comma found, treat the whole string as one destination
 	if len(destinations) == 0 {
 		destinations = []string{trimmedInput}
 	}
-	
+
 	for _, dest := range destinations {
 		dest = strings.TrimSpace(dest)
 		if dest != "" {
@@ -332,7 +333,8 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 	}
 
 	// Send Telegram notification to admin
-	telegramService := services.GetTelegramService()
+	// TODO: unccoment this on new server
+	// telegramService := services.GetTelegramService()
 	message := "🆕 درخواست ثبت‌نام ویزیتور جدید\n\n"
 	message += "📋 اطلاعات ویزیتور:\n"
 	message += "👤 نام: " + req.FullName + "\n"
@@ -347,14 +349,15 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 	message += "➖➖➖➖➖➖➖➖"
 
 	// Create a dummy support ticket to use the notification system
-	dummyTicket := &models.SupportTicket{
+	_ = &models.SupportTicket{
 		ID:          0,
 		UserID:      tempUser.ID,
 		Title:       "ثبت‌نام ویزیتور جدید",
 		Description: message,
 		Status:      "open",
 	}
-	telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
+	// TODO: unccoment this on new server
+	// telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Visitor registration submitted successfully. Awaiting admin approval.",

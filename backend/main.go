@@ -22,8 +22,9 @@ func main() {
 	models.ConnectDatabase()
 
 	// Initialize Telegram bot service
-	telegramService := services.GetTelegramService()
-	log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
+	// TODO: unccoment this on new server
+	// telegramService := services.GetTelegramService()
+	// log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
 
 	// Initialize SMS service
 	if config.AppConfig.SMS.APIKey != "" {
@@ -84,17 +85,18 @@ func main() {
 		matchingService := services.NewMatchingService(models.GetDB())
 		ticker := time.NewTicker(1 * time.Hour) // Check every hour
 		defer ticker.Stop()
-		
+
 		// Run immediately on startup
 		matchingService.CheckAndExpireRequests()
-		
+
 		for range ticker.C {
 			matchingService.CheckAndExpireRequests()
 		}
 	}()
 
 	// Setup routes
-	routes.SetupRoutes(router, telegramService)
+	// TODO : add telegram service here
+	routes.SetupRoutes(router, nil)
 
 	// Start server
 	serverAddr := fmt.Sprintf("%s:%s", config.AppConfig.Server.Host, config.AppConfig.Server.Port)

@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"asl-market-backend/models"
-	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -315,14 +314,15 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 	}
 
 	// Notify admin via Telegram about the receipt upload
-	telegramService := services.GetTelegramService()
-	if telegramService != nil {
-		// Get updated request with receipt path
-		updatedRequest, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
-		if err == nil {
-			telegramService.NotifyReceiptUploaded(updatedRequest)
-		}
-	}
+	// TODO: unccoment this on new server
+	// telegramService := services.GetTelegramService()
+	// if telegramService != nil {
+	// 	// Get updated request with receipt path
+	// 	updatedRequest, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
+	// 	if err == nil {
+	// 		telegramService.NotifyReceiptUploaded(updatedRequest)
+	// 	}
+	// }
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "فیش با موفقیت بارگذاری شد",
