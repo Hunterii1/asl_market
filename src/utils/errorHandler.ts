@@ -73,18 +73,9 @@ class ErrorHandler {
           if (data.license_status.needs_license) {
             errorMessage = 'برای دسترسی به این بخش نیاز به لایسنس معتبر دارید';
           }
-        } else if (statusCode === 405) {
-          // TODO: Remove this custom 405 error message after network issues are resolved
-          errorType = 'method';
-          errorTitle = 'خطای درخواست';
-          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
-          duration = 10000;
         } else if (statusCode >= 500) {
           errorType = 'server';
           errorTitle = 'خطای سرور';
-          // TODO: Remove this custom server error message after network issues are resolved
-          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
-          duration = 10000;
         } else if (statusCode >= 400) {
           errorType = 'validation';
           errorTitle = 'خطای اعتبارسنجی';
