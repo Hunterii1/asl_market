@@ -16,13 +16,13 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  // For production (admin.asllmarket.com or asllmarket.com)
+  // For production (admin.asllmarket.ir or asllmarket.ir)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname === 'admin.asllmarket.com' || hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+    if (hostname === 'admin.asllmarket.ir' || hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
       // In production, images are served directly by Nginx from /uploads/
       // Admin panel and main site share the same domain structure
-      return `https://asllmarket.com${imagePath}`;
+      return `https://asllmarket.ir${imagePath}`;
     }
   }
 

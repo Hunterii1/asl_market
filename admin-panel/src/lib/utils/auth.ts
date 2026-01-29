@@ -169,8 +169,8 @@ export async function forgotPassword(email: string): Promise<void> {
     const getApiBaseUrl = () => {
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
-        if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-          return 'https://asllmarket.com/backend/api/v1';
+        if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+          return 'https://asllmarket.ir/backend/api/v1';
         }
         if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
           return '/api/v1';

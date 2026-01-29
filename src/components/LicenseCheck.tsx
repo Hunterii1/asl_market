@@ -79,11 +79,11 @@ export function LicenseCheck() {
       const getApiBaseUrl = () => {
         if (typeof window !== 'undefined') {
           const hostname = window.location.hostname;
-          if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-            return 'https://asllmarket.com/backend/api/v1';
+          if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+            return 'https://asllmarket.ir/backend/api/v1';
           }
         }
-        return 'https://asllmarket.com/backend/api/v1';
+        return 'https://asllmarket.ir/backend/api/v1';
       };
       
       const response = await fetch(`${getApiBaseUrl()}/license/refresh`, {

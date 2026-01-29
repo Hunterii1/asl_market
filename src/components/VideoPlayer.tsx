@@ -119,8 +119,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const currentVideoUrl = videoRef.current?.src || video.video_url;
     console.log('🎬 Error with video URL:', currentVideoUrl);
     
-    // Check if URL looks malformed (has asllmarket.com in the path)
-    if (currentVideoUrl && currentVideoUrl.includes('asllmarket.org/asllmarket.com/')) {
+    // Check if URL looks malformed (has asllmarket.ir in the path)
+    if (currentVideoUrl && currentVideoUrl.includes('asllmarket.org/asllmarket.ir/')) {
       errorMessage = 'خطا: URL ویدیو اشتباه است (مسیر تکراری)';
       shouldFallbackToExternal = true;
     }
@@ -270,8 +270,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       const getApiBaseUrl = () => {
         if (typeof window !== 'undefined') {
           const hostname = window.location.hostname;
-          if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-            return 'https://asllmarket.com/api/v1';
+          if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+            return 'https://asllmarket.ir/api/v1';
           }
         }
         return 'http://localhost:8080/api/v1';
@@ -306,10 +306,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
              url.includes('.avi') ||
              url.includes('blob:');
       
-      // Check if URL is from our domains (asllmarket.com or asllmarket.org)
+      // Check if URL is from our domains (asllmarket.ir or asllmarket.org)
       const currentOrigin = window.location.origin;
       const videoOrigin = new URL(url).origin;
-      const isOurDomain = videoOrigin.includes('asllmarket.com') || 
+      const isOurDomain = videoOrigin.includes('asllmarket.ir') || 
                          videoOrigin.includes('asllmarket.org');
       
       console.log('🎬 Link type, is direct video:', isDirectVideo);
@@ -580,7 +580,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ویدیو خارجی
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  {video.video_url && (video.video_url.includes('asllmarket.com') || video.video_url.includes('asllmarket.org'))
+                  {video.video_url && (video.video_url.includes('asllmarket.ir') || video.video_url.includes('asllmarket.org'))
                     ? "این ویدیو روی سرور ما آپلود شده و باید inline پخش شود"
                     : "این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود"
                   }
@@ -632,7 +632,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 )}
                 
-                {video.video_url && !video.video_url.includes('asllmarket.com') && !video.video_url.includes('asllmarket.org') && (
+                {video.video_url && !video.video_url.includes('asllmarket.ir') && !video.video_url.includes('asllmarket.org') && (
                   <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
                       💡 نکته: اگر می‌خواهید ویدیو در همین صفحه پخش شود، لطفاً آن را روی سرور اصلی آپلود کنید.

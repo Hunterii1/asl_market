@@ -16,7 +16,7 @@ jwt:
 cors:
   allowed_origins:
     - "http://localhost:3000"
-    - "https://asllmarket.com"
+    - "https://asllmarket.ir"
   allowed_methods:
     - "GET"
     - "POST"

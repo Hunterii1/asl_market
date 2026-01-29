@@ -28,8 +28,8 @@ self.addEventListener('install', function(event) {
 self.addEventListener('fetch', function(event) {
   // Skip caching for API requests
   if (event.request.url.includes('/api/') || 
-      event.request.url.includes('api.asllmarket.com') ||
-      event.request.url.includes('asllmarket.com/backend') ||
+      event.request.url.includes('api.asllmarket.ir') ||
+      event.request.url.includes('asllmarket.ir/backend') ||
       event.request.url.includes('localhost:8080')) {
     return; // Let the browser handle API requests normally
   }

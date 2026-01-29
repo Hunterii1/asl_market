@@ -13,8 +13,8 @@ const getStaticFileBaseUrl = (): string => {
   const protocol = window.location.protocol;
   
   // Production server
-  if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-    // Use api.asllmarket.com for static files (backend serves them directly)
+  if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+    // Use api.asllmarket.ir for static files (backend serves them directly)
     return `${protocol}//api.${hostname}`;
   }
   

@@ -16,13 +16,13 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  // For production (asllmarket.com)
+  // For production (asllmarket.ir)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+    if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
       // In production, images are served directly by Nginx from /uploads/
       // So we just need to prepend the domain
-      return `https://asllmarket.com${imagePath}`;
+      return `https://asllmarket.ir${imagePath}`;
     }
   }
 

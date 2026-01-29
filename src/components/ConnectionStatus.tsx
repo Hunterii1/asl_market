@@ -23,8 +23,8 @@ export function ConnectionStatus() {
     const checkApiStatus = async () => {
       try {
         const hostname = window.location.hostname;
-        const apiUrl = hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com'
-          ? 'https://asllmarket.com/backend/health'
+        const apiUrl = hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir'
+          ? 'https://asllmarket.ir/backend/health'
           : '/health';
         
         const response = await fetch(apiUrl, { 

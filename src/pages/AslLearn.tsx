@@ -799,7 +799,7 @@ const AslLearn = () => {
                         size="sm"
                         variant="outline"
                         className="text-xs"
-                        onClick={() => window.open('mailto:support@asllmarket.com', '_blank')}
+                        onClick={() => window.open('mailto:support@asllmarket.ir', '_blank')}
                       >
                         <Mail className="w-3 h-3 ml-1" />
                         ایمیل پشتیبانی

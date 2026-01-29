@@ -146,7 +146,7 @@ export function NotificationPermissionPrompt() {
             'روی دکمه "تنظیمات" در پایین صفحه کلیک کنید',
             'گزینه "Allow" را انتخاب کنید',
             'یا به Settings > Safari > Notifications بروید',
-            'سایت asllmarket.com را پیدا کرده و Allow را انتخاب کنید'
+            'سایت asllmarket.ir را پیدا کرده و Allow را انتخاب کنید'
           ]
         };
       } else if (isAndroid && isChrome) {
@@ -185,7 +185,7 @@ export function NotificationPermissionPrompt() {
             title: 'فعال‌سازی نوتیفیکیشن در Safari',
             steps: [
               'به Safari > Settings > Websites > Notifications بروید',
-              'سایت asllmarket.com را پیدا کنید',
+              'سایت asllmarket.ir را پیدا کنید',
               'گزینه "Allow" را انتخاب کنید',
               'صفحه را رفرش کنید'
             ]
@@ -271,7 +271,7 @@ export function NotificationPermissionPrompt() {
                       window.open('chrome://settings/content/notifications', '_blank');
                     } catch (e) {
                       // Fallback: show instructions
-                      alert('لطفاً به Chrome Settings > Privacy and security > Site settings > Notifications بروید و asllmarket.com را Allow کنید');
+                      alert('لطفاً به Chrome Settings > Privacy and security > Site settings > Notifications بروید و asllmarket.ir را Allow کنید');
                     }
                   } else if (isFirefox) {
                     try {
@@ -280,9 +280,9 @@ export function NotificationPermissionPrompt() {
                       alert('لطفاً به Firefox Settings > Privacy & Security > Permissions > Notifications بروید');
                     }
                   } else if (isSafari && isMac) {
-                    alert('لطفاً به Safari > Settings > Websites > Notifications بروید و asllmarket.com را Allow کنید');
+                    alert('لطفاً به Safari > Settings > Websites > Notifications بروید و asllmarket.ir را Allow کنید');
                   } else if (isIOS) {
-                    alert('لطفاً به Settings > Safari > Notifications بروید و asllmarket.com را Allow کنید');
+                    alert('لطفاً به Settings > Safari > Notifications بروید و asllmarket.ir را Allow کنید');
                   } else {
                     alert('لطفاً به تنظیمات مرورگر خود بروید و Notifications را برای این سایت Allow کنید');
                   }

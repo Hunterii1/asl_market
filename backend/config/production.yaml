@@ -15,10 +15,10 @@ jwt:
 
 cors:
   allowed_origins: 
-    - "https://asllmarket.com"
-    - "https://www.asllmarket.com"
-    - "http://asllmarket.com"
-    - "http://www.asllmarket.com"
+    - "https://asllmarket.ir"
+    - "https://www.asllmarket.ir"
+    - "http://asllmarket.ir"
+    - "http://www.asllmarket.ir"
   allowed_methods:
     - "GET"
     - "POST"

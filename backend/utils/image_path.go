@@ -47,6 +47,11 @@ func NormalizeImagePath(imagePath string) string {
 		if len(parts) > 1 {
 			imagePath = parts[1]
 		}
+	} else if strings.Contains(imagePath, "asllmarket.ir") {
+		parts := strings.Split(imagePath, "asllmarket.ir")
+		if len(parts) > 1 {
+			imagePath = parts[1]
+		}
 	}
 
 	// Normalize slashes

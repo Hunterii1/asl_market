@@ -8,8 +8,8 @@ const getApiBaseUrl = () => {
     const hostname = window.location.hostname;
     
     // Production server
-    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
-      return 'https://asllmarket.com/backend/api/v1';
+    if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+      return 'https://asllmarket.ir/backend/api/v1';
     }
     
     // Development server - use proxy for testing
