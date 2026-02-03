@@ -25,17 +25,27 @@ npm run build
 
 ## دیپلوی روی سرور
 
-1. بعد از `npm run build`، محتویات پوشه **affiliate-panel/dist** را روی سرور در مسیر **/var/www/asl_market/affiliate/** کپی کنید.
-   - مثلاً:  
-     `rsync -avz affiliate-panel/dist/ user@server:/var/www/asl_market/affiliate/`
+**روش ۱ – اسکریپت فقط پنل افیلیت (از ریشه پروژه):**
+```bash
+# ابتدا SERVER_HOST (و در صورت نیاز SERVER_USER) را تنظیم کنید؛ سپس:
+./deploy-affiliate.sh
+```
 
-2. در nginx برای دامنه اصلی (asllmarket.com) دو بلاک زیر را داشته باشید (در کانفیگ پروژه در `nginx/aslmarket.conf` هست):
-   - `location = /affiliate { return 301 /affiliate/; }`
-   - `location /affiliate/ { alias /var/www/asl_market/affiliate/; try_files $uri $uri/ /affiliate/index.html; ... }`
+**روش ۲ – دیپلوی کامل (فرانت + بکند + پنل افیلیت):**
+```bash
+# در deploy.sh متغیرهای SERVER_USER و SERVER_HOST را تنظیم کنید؛ سپس:
+./deploy.sh
+```
 
-3. تست nginx و ریلود:
-   ```bash
-   sudo nginx -t && sudo systemctl reload nginx
-   ```
+**روش ۳ – دستی:** بعد از `npm run build`، محتویات **affiliate-panel/dist** را در مسیر **/var/www/asl_market/affiliate/** روی سرور کپی کنید، مثلاً:
+```bash
+rsync -avz affiliate-panel/dist/ user@server:/var/www/asl_market/affiliate/
+```
 
-بعد از این مراحل آدرس **https://asllmarket.com/affiliate** باید صفحه لاگین پنل افیلیت را نشان دهد و بعد از ورود، داشبورد و بقیه صفحات در دسترس باشند.
+در nginx برای دامنه اصلی (asllmarket.com) دو بلاک زیر باید باشند (در `nginx/aslmarket.conf`):
+- `location = /affiliate { return 301 /affiliate/; }`
+- `location /affiliate/ { alias /var/www/asl_market/affiliate/; try_files ... }`
+
+تست و ریلود nginx روی سرور: `sudo nginx -t && sudo systemctl reload nginx`
+
+بعد از دیپلوی، **https://asllmarket.com/affiliate** و **https://asllmarket.com/affiliate/dashboard** باید صفحه پنل افیلیت را با HTTP 200 برگردانند.
