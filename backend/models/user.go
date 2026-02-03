@@ -7,17 +7,19 @@ import (
 )
 
 type User struct {
-	ID        uint           `json:"id" gorm:"primaryKey"`
-	FirstName string         `json:"first_name" gorm:"size:100;not null"`
-	LastName  string         `json:"last_name" gorm:"size:100;not null"`
-	Email     string         `json:"email" gorm:"size:255"`
-	Password  string         `json:"-" gorm:"size:255;not null"`
-	Phone     string         `json:"phone" gorm:"size:255;not null"`
-	IsActive  bool           `json:"is_active" gorm:"default:true"`
-	IsAdmin   bool           `json:"is_admin" gorm:"default:false"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+	ID          uint           `json:"id" gorm:"primaryKey"`
+	FirstName   string         `json:"first_name" gorm:"size:100;not null"`
+	LastName    string         `json:"last_name" gorm:"size:100;not null"`
+	Email       string         `json:"email" gorm:"size:255"`
+	Password    string         `json:"-" gorm:"size:255;not null"`
+	Phone       string         `json:"phone" gorm:"size:255;not null"`
+	IsActive    bool           `json:"is_active" gorm:"default:true"`
+	IsAdmin     bool           `json:"is_admin" gorm:"default:false"`
+	AffiliateID *uint          `json:"affiliate_id" gorm:"index"` // who referred this user (?ref=)
+	Affiliate   *Affiliate     `json:"affiliate,omitempty" gorm:"foreignKey:AffiliateID"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // Helper methods for User
@@ -45,11 +47,12 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-	FirstName string `json:"first_name" binding:"required,min=2,max=100"`
-	LastName  string `json:"last_name" binding:"required,min=2,max=100"`
-	Email     string `json:"email" binding:"omitempty,email"`
-	Password  string `json:"password" binding:"required,min=6"`
-	Phone     string `json:"phone" binding:"required"`
+	FirstName    string `json:"first_name" binding:"required,min=2,max=100"`
+	LastName     string `json:"last_name" binding:"required,min=2,max=100"`
+	Email        string `json:"email" binding:"omitempty,email"`
+	Password     string `json:"password" binding:"required,min=6"`
+	Phone        string `json:"phone" binding:"required"`
+	ReferralCode string `json:"referral_code" binding:"omitempty"` // optional ?ref= from affiliate link
 }
 
 type UserResponse struct {

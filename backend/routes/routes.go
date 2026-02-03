@@ -14,6 +14,7 @@ import (
 func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) {
 	// Initialize controllers
 	authController := controllers.NewAuthController(models.GetDB())
+	affiliateController := controllers.NewAffiliateController(models.GetDB())
 	contactController := controllers.NewContactController(models.GetDB())
 	withdrawalController := controllers.NewWithdrawalController(models.GetDB())
 	upgradeController := controllers.NewUpgradeController(telegramService)
@@ -51,9 +52,21 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	{
 		auth.POST("/register", authController.Register)
 		auth.POST("/login", authController.Login)
-		auth.POST("/admin/login", authController.AdminLogin) // Admin panel login with username
+		auth.POST("/admin/login", authController.AdminLogin)         // Admin panel login with username
+		auth.POST("/affiliate/login", authController.AffiliateLogin) // Affiliate panel login
 		auth.POST("/forgot-password", authController.RequestPasswordRecovery)
 		auth.POST("/reset-password", authController.ResetPassword)
+	}
+
+	// Affiliate panel routes (affiliate JWT required)
+	affiliate := v1.Group("/affiliate")
+	affiliate.Use(middleware.AffiliateAuthMiddleware())
+	{
+		affiliate.GET("/dashboard", affiliateController.GetDashboard)
+		affiliate.GET("/users", affiliateController.GetUsers)
+		affiliate.GET("/payments", affiliateController.GetPayments)
+		affiliate.POST("/withdrawal-request", affiliateController.CreateWithdrawalRequest)
+		affiliate.GET("/withdrawal-requests", affiliateController.GetWithdrawalRequests)
 	}
 
 	// Public registration routes (no authentication required)
@@ -285,6 +298,13 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/web-admins", controllers.CreateWebAdmin)
 		protected.PUT("/admin/web-admins/:id", controllers.UpdateWebAdmin)
 		protected.DELETE("/admin/web-admins/:id", controllers.DeleteWebAdmin)
+
+		// Affiliate management (admin panel)
+		protected.GET("/admin/affiliates", controllers.GetAffiliates)
+		protected.GET("/admin/affiliates/:id", controllers.GetAffiliate)
+		protected.POST("/admin/affiliates", controllers.CreateAffiliate)
+		protected.PUT("/admin/affiliates/:id", controllers.UpdateAffiliate)
+		protected.DELETE("/admin/affiliates/:id", controllers.DeleteAffiliate)
 
 		// Excel Export (Admin)
 		protected.GET("/admin/export/users", controllers.ExportUsersToExcel)

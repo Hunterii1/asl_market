@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -50,7 +50,13 @@ import MatchingRequestDetails from "./pages/MatchingRequestDetails";
 import MatchingChats from "./pages/MatchingChats";
 import MatchingRatings from "./pages/MatchingRatings";
 import AslMatch from "./pages/AslMatch";
-
+import AffiliateProtected from "./components/AffiliateProtected";
+import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
+import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
+import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
+import AffiliateUsers from "./pages/affiliate/AffiliateUsers";
+import AffiliatePayments from "./pages/affiliate/AffiliatePayments";
+import AffiliateWithdrawals from "./pages/affiliate/AffiliateWithdrawals";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +86,18 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/" element={<Index />} />
               
+              {/* Affiliate panel - asllmarket.com/affiliate */}
+              <Route path="/affiliate/login" element={<AffiliateLogin />} />
+              <Route path="/affiliate" element={<AffiliateProtected />}>
+                <Route index element={<Navigate to="/affiliate/dashboard" replace />} />
+                <Route element={<AffiliateLayout />}>
+                  <Route path="dashboard" element={<AffiliateDashboard />} />
+                  <Route path="users" element={<AffiliateUsers />} />
+                  <Route path="payments" element={<AffiliatePayments />} />
+                  <Route path="withdrawals" element={<AffiliateWithdrawals />} />
+                </Route>
+              </Route>
+
               {/* Public registration routes (no authentication required) */}
         <Route path="/public/supplier-registration" element={<PublicSupplierRegistration />} />
         <Route path="/public/visitor-registration" element={<PublicVisitorRegistration />} />

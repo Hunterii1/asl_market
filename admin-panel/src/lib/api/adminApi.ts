@@ -959,6 +959,37 @@ class AdminApiService {
     }
   }
 
+  // ==================== Affiliate Management ====================
+  async getAffiliates(params: { page?: number; per_page?: number; status?: string } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    if (params.status) queryParams.append('status', params.status);
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates?${queryParams}`, { method: 'GET' });
+  }
+
+  async getAffiliate(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, { method: 'GET' });
+  }
+
+  async createAffiliate(data: { name: string; username: string; password: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAffiliate(id: number, data: { name?: string; password?: string; is_active?: boolean; balance?: number }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAffiliate(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, { method: 'DELETE' });
+  }
+
   // ==================== Telegram Admin Management ====================
   async getTelegramAdmins(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/telegram-admins`, {

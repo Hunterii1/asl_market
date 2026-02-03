@@ -57,6 +57,7 @@ export interface RegisterRequest {
   email?: string;
   password: string;
   phone: string;
+  referral_code?: string; // optional, from ?ref= in signup URL (affiliate)
 }
 
 export interface PushSubscription {

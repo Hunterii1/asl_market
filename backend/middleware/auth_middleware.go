@@ -62,7 +62,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		// Get user from database - try WebAdmin first, then User
 		db := models.GetDB()
-		
+
 		// First, try to find in WebAdmin table (for admin panel admins)
 		var webAdmin models.WebAdmin
 		if err := db.Where("id = ? AND is_active = ? AND deleted_at IS NULL", claims.UserID, true).First(&webAdmin).Error; err == nil {
@@ -72,7 +72,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Set("is_web_admin", true)
 			c.Set("web_admin", webAdmin)
 			c.Set("user_role", webAdmin.Role) // super_admin, admin, moderator
-			
+
 			// Also set a user object for backward compatibility (if needed)
 			var user models.User
 			user.ID = uint(claims.UserID)
@@ -124,7 +124,7 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 				if err == nil {
 					// Get user from database - try WebAdmin first, then User
 					db := models.GetDB()
-					
+
 					// First, try to find in WebAdmin table (for admin panel admins)
 					var webAdmin models.WebAdmin
 					if err := db.Where("id = ? AND is_active = ? AND deleted_at IS NULL", claims.UserID, true).First(&webAdmin).Error; err == nil {
@@ -134,7 +134,7 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 						c.Set("is_web_admin", true)
 						c.Set("web_admin", webAdmin)
 						c.Set("user_role", webAdmin.Role) // super_admin, admin, moderator
-						
+
 						// Also set a user object for backward compatibility (if needed)
 						var user models.User
 						user.ID = uint(claims.UserID)
@@ -162,6 +162,51 @@ func OptionalAuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
+		c.Next()
+	}
+}
+
+// AffiliateAuthMiddleware validates affiliate JWT and sets affiliate_id in context
+func AffiliateAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
+			c.Abort()
+			return
+		}
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
+			c.Abort()
+			return
+		}
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is required"})
+			c.Abort()
+			return
+		}
+		claims, err := utils.ValidateAffiliateToken(token)
+		if err != nil {
+			log.Printf("Affiliate token validation failed: %v", err)
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
+			c.Abort()
+			return
+		}
+		db := models.GetDB()
+		var aff models.Affiliate
+		if err := db.First(&aff, claims.AffiliateID).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Affiliate not found"})
+			c.Abort()
+			return
+		}
+		if !aff.IsActive {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Affiliate account is inactive"})
+			c.Abort()
+			return
+		}
+		c.Set("affiliate_id", aff.ID)
+		c.Set("affiliate", aff)
 		c.Next()
 	}
 }

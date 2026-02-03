@@ -1,0 +1,125 @@
+package models
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+)
+
+// Affiliate represents an affiliate user (separate from WebAdmin and User)
+type Affiliate struct {
+	ID            uint           `json:"id" gorm:"primaryKey"`
+	Name          string         `json:"name" gorm:"size:100;not null"`
+	Username      string         `json:"username" gorm:"size:100;uniqueIndex;not null"`
+	Password      string         `json:"-" gorm:"size:255;not null"`
+	ReferralCode  string         `json:"referral_code" gorm:"size:32;uniqueIndex;not null"` // used in ?ref=XXX
+	Balance       float64        `json:"balance" gorm:"type:decimal(14,2);default:0"`       // withdrawable balance
+	TotalEarnings float64        `json:"total_earnings" gorm:"type:decimal(14,2);default:0"`
+	IsActive      bool           `json:"is_active" gorm:"default:true"`
+	LastLogin     *time.Time     `json:"last_login"`
+	LoginCount    int            `json:"login_count" gorm:"default:0"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// GenerateReferralCode creates a unique short code for the affiliate
+func GenerateReferralCode(db *gorm.DB) (string, error) {
+	for i := 0; i < 10; i++ {
+		b := make([]byte, 4)
+		if _, err := rand.Read(b); err != nil {
+			return "", err
+		}
+		code := strings.ToLower(hex.EncodeToString(b))[:8]
+		var count int64
+		db.Model(&Affiliate{}).Where("referral_code = ?", code).Count(&count)
+		if count == 0 {
+			return code, nil
+		}
+	}
+	return "", gorm.ErrInvalidData
+}
+
+// GetAffiliateByID retrieves an affiliate by ID
+func GetAffiliateByID(db *gorm.DB, id uint) (*Affiliate, error) {
+	var a Affiliate
+	if err := db.First(&a, id).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// GetAffiliateByUsername retrieves an affiliate by username (case-insensitive)
+func GetAffiliateByUsername(db *gorm.DB, username string) (*Affiliate, error) {
+	var a Affiliate
+	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", username, true).First(&a).Error; err == nil {
+		return &a, nil
+	}
+	if err := db.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL", username, true).First(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// GetAffiliateByReferralCode retrieves an affiliate by referral code
+func GetAffiliateByReferralCode(db *gorm.DB, code string) (*Affiliate, error) {
+	var a Affiliate
+	code = strings.TrimSpace(strings.ToLower(code))
+	if err := db.Where("referral_code = ? AND is_active = ? AND deleted_at IS NULL", code, true).First(&a).Error; err != nil {
+		return nil, err
+	}
+	return &a, nil
+}
+
+// GetAllAffiliates with pagination and filters
+func GetAllAffiliates(db *gorm.DB, page, perPage int, status string) ([]Affiliate, int64, error) {
+	var list []Affiliate
+	var total int64
+	query := db.Model(&Affiliate{}).Where("deleted_at IS NULL")
+	if status == "active" {
+		query = query.Where("is_active = ?", true)
+	} else if status == "inactive" {
+		query = query.Where("is_active = ?", false)
+	}
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	offset := (page - 1) * perPage
+	if err := query.Order("created_at DESC").Offset(offset).Limit(perPage).Find(&list).Error; err != nil {
+		return nil, 0, err
+	}
+	return list, total, nil
+}
+
+// CreateAffiliate creates a new affiliate
+func CreateAffiliate(db *gorm.DB, a *Affiliate) error {
+	if a.ReferralCode == "" {
+		code, err := GenerateReferralCode(db)
+		if err != nil {
+			return err
+		}
+		a.ReferralCode = code
+	}
+	return db.Create(a).Error
+}
+
+// UpdateAffiliate updates an affiliate
+func UpdateAffiliate(db *gorm.DB, id uint, updates map[string]interface{}) error {
+	return db.Model(&Affiliate{}).Where("id = ?", id).Updates(updates).Error
+}
+
+// DeleteAffiliate soft deletes an affiliate
+func DeleteAffiliate(db *gorm.DB, id uint) error {
+	return db.Delete(&Affiliate{}, id).Error
+}
+
+// UpdateLastLogin updates last login time and count
+func (a *Affiliate) UpdateLastLogin(db *gorm.DB) error {
+	now := time.Now()
+	a.LastLogin = &now
+	a.LoginCount++
+	return db.Save(a).Error
+}

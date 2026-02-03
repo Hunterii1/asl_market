@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { SupportAdminRoute } from "./components/auth/SupportAdminRoute";
 import SupportTickets from "./pages/SupportTickets";
+import Affiliates from "./pages/Affiliates";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,14 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Admins />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/affiliates"
+            element={
+              <ProtectedRoute>
+                <Affiliates />
               </ProtectedRoute>
             }
           />

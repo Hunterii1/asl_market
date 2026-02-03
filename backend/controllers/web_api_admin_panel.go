@@ -1900,3 +1900,192 @@ func DeleteWebAdmin(c *gin.Context) {
 		"message": "مدیر با موفقیت حذف شد",
 	})
 }
+
+// ==================== AFFILIATE MANAGEMENT (Admin Panel) ====================
+
+// GetAffiliates returns all affiliates with pagination
+func GetAffiliates(c *gin.Context) {
+	db := models.GetDB()
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+	status := c.Query("status")
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 10
+	}
+	admins, total, err := models.GetAllAffiliates(db, page, perPage, status)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست افیلیت‌ها"})
+		return
+	}
+	list := make([]gin.H, 0, len(admins))
+	for _, a := range admins {
+		list = append(list, gin.H{
+			"id":             a.ID,
+			"name":           a.Name,
+			"username":       a.Username,
+			"referral_code":  a.ReferralCode,
+			"balance":        a.Balance,
+			"total_earnings": a.TotalEarnings,
+			"is_active":      a.IsActive,
+			"last_login":     a.LastLogin,
+			"login_count":    a.LoginCount,
+			"created_at":     a.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"affiliates": list,
+			"total":      total,
+			"page":       page,
+			"per_page":   perPage,
+		},
+	})
+}
+
+// GetAffiliate returns a single affiliate by ID
+func GetAffiliate(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	aff, err := models.GetAffiliateByID(db, uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"id":             aff.ID,
+			"name":           aff.Name,
+			"username":       aff.Username,
+			"referral_code":  aff.ReferralCode,
+			"balance":        aff.Balance,
+			"total_earnings": aff.TotalEarnings,
+			"is_active":      aff.IsActive,
+			"last_login":     aff.LastLogin,
+			"login_count":    aff.LoginCount,
+			"created_at":     aff.CreatedAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// CreateAffiliate creates a new affiliate
+func CreateAffiliate(c *gin.Context) {
+	db := models.GetDB()
+	var req struct {
+		Name     string `json:"name" binding:"required"`
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است: " + err.Error()})
+		return
+	}
+	var existing models.Affiliate
+	if err := db.Where("username = ? AND deleted_at IS NULL", strings.TrimSpace(req.Username)).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
+		return
+	}
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رمزگذاری رمز عبور"})
+		return
+	}
+	aff := &models.Affiliate{
+		Name:     req.Name,
+		Username: strings.TrimSpace(req.Username),
+		Password: hashedPassword,
+		IsActive: true,
+	}
+	if err := models.CreateAffiliate(db, aff); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد افیلیت: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "افیلیت با موفقیت ایجاد شد",
+		"data": gin.H{
+			"id":            aff.ID,
+			"name":          aff.Name,
+			"username":      aff.Username,
+			"referral_code": aff.ReferralCode,
+			"is_active":     aff.IsActive,
+			"created_at":    aff.CreatedAt.Format(time.RFC3339),
+		},
+	})
+}
+
+// UpdateAffiliate updates an existing affiliate
+func UpdateAffiliate(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	_, err = models.GetAffiliateByID(db, uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	var req struct {
+		Name     *string  `json:"name"`
+		Password *string  `json:"password"`
+		IsActive *bool    `json:"is_active"`
+		Balance  *float64 `json:"balance"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		return
+	}
+	updates := make(map[string]interface{})
+	if req.Name != nil {
+		updates["name"] = *req.Name
+	}
+	if req.Password != nil && len(*req.Password) >= 6 {
+		hashed, _ := utils.HashPassword(*req.Password)
+		updates["password"] = hashed
+	}
+	if req.IsActive != nil {
+		updates["is_active"] = *req.IsActive
+	}
+	if req.Balance != nil {
+		updates["balance"] = *req.Balance
+	}
+	if len(updates) == 0 {
+		c.JSON(http.StatusOK, gin.H{"success": true, "message": "بدون تغییر"})
+		return
+	}
+	if err := models.UpdateAffiliate(db, uint(id), updates); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی افیلیت"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "افیلیت با موفقیت به‌روزرسانی شد"})
+}
+
+// DeleteAffiliate soft deletes an affiliate
+func DeleteAffiliate(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	if err := models.DeleteAffiliate(db, uint(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف افیلیت"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "افیلیت با موفقیت حذف شد"})
+}

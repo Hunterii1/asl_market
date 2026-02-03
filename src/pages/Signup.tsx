@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,8 +12,10 @@ import { Eye, EyeOff, UserPlus, ArrowRight } from "lucide-react";
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, isLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
+  const refCode = new URLSearchParams(location.search).get("ref") || "";
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -59,7 +61,7 @@ const Signup = () => {
 
     try {
       const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
+      await register(refCode ? { ...registerData, referral_code: refCode } : registerData);
       navigate("/");
     } catch (err) {
       // Error toast is handled in api.ts

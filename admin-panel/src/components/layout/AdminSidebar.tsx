@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Users,
   Shield,
+  Link2,
   BarChart3,
   Wallet,
   Key,
@@ -62,6 +63,7 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
     { title: 'داشبورد', icon: LayoutDashboard, href: '/' }, // Always accessible
     { title: 'کاربران', icon: Users, href: '/users', badge: stats.users > 0 ? stats.users : undefined, permissionKey: 'users' },
     { title: 'مدیران', icon: Shield, href: '/admins', permissionKey: 'admins' },
+    { title: 'افیلیت‌ها', icon: Link2, href: '/affiliates', permissionKey: 'admins' },
     { title: 'آمار سیستم', icon: BarChart3, href: '/statistics', permissionKey: 'statistics' },
     { title: 'برداشت‌ها', icon: Wallet, href: '/withdrawals', badge: stats.withdrawals > 0 ? stats.withdrawals : undefined, permissionKey: 'withdrawals' },
     { title: 'لایسنس‌ها', icon: Key, href: '/licenses', permissionKey: 'licenses' },

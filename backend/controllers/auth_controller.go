@@ -63,14 +63,23 @@ func (ac *AuthController) Register(c *gin.Context) {
 		return
 	}
 
+	// Resolve optional affiliate referral
+	var affiliateID *uint
+	if req.ReferralCode != "" {
+		if aff, err := models.GetAffiliateByReferralCode(ac.DB, req.ReferralCode); err == nil {
+			affiliateID = &aff.ID
+		}
+	}
+
 	// Create user
 	user := models.User{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  hashedPassword,
-		Phone:     req.Phone,
-		IsActive:  true,
+		FirstName:   req.FirstName,
+		LastName:    req.LastName,
+		Email:       req.Email,
+		Password:    hashedPassword,
+		Phone:       req.Phone,
+		IsActive:    true,
+		AffiliateID: affiliateID,
 	}
 
 	if err := ac.DB.Create(&user).Error; err != nil {
@@ -373,6 +382,49 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 			"is_admin":    true,
 			"first_name":  webAdmin.Name,
 			"last_name":   "",
+		},
+	})
+}
+
+// AffiliateLogin handles login for affiliate panel (username + password)
+func (ac *AuthController) AffiliateLogin(c *gin.Context) {
+	var req struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		return
+	}
+	aff, err := models.GetAffiliateByUsername(ac.DB, strings.TrimSpace(req.Username))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
+		return
+	}
+	if !utils.CheckPassword(req.Password, aff.Password) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
+		return
+	}
+	if !aff.IsActive {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "حساب کاربری غیرفعال شده است"})
+		return
+	}
+	_ = aff.UpdateLastLogin(ac.DB)
+	token, err := utils.GenerateAffiliateToken(aff.ID, aff.Username)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در تولید توکن"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "ورود موفقیت‌آمیز",
+		"token":   token,
+		"user": gin.H{
+			"id":             aff.ID,
+			"name":           aff.Name,
+			"username":       aff.Username,
+			"referral_code":  aff.ReferralCode,
+			"balance":        aff.Balance,
+			"total_earnings": aff.TotalEarnings,
 		},
 	})
 }
