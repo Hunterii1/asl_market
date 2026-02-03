@@ -80,13 +80,7 @@ const App = () => (
             <ErrorTestPanel />
             <BrowserRouter>
             <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/" element={<Index />} />
-              
-              {/* Affiliate panel - asllmarket.com/affiliate */}
+              {/* Affiliate panel - باید اول باشد تا /affiliate به 404 نره */}
               <Route path="/affiliate/login" element={<AffiliateLogin />} />
               <Route path="/affiliate" element={<AffiliateProtected />}>
                 <Route index element={<Navigate to="/affiliate/dashboard" replace />} />
@@ -97,6 +91,12 @@ const App = () => (
                   <Route path="withdrawals" element={<AffiliateWithdrawals />} />
                 </Route>
               </Route>
+
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/" element={<Index />} />
 
               {/* Public registration routes (no authentication required) */}
         <Route path="/public/supplier-registration" element={<PublicSupplierRegistration />} />
