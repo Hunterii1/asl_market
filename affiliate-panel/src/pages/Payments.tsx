@@ -24,7 +24,7 @@ export default function Payments() {
             const dayTotals: Record<string, number> = {};
             const defaultAmount = 6_000_000;
             for (const u of buyers) {
-              const dateStr = u.purchased_at?.slice(0, 10) || (u.created_at ? new Date(u.created_at).toISOString().slice(0, 10)) : "";
+              const dateStr = u.purchased_at?.slice(0, 10) || (u.created_at ? new Date(u.created_at).toISOString().slice(0, 10) : "");
               if (dateStr) {
                 const amt = (u.amount_toman && u.amount_toman > 0) ? u.amount_toman : defaultAmount;
                 dayTotals[dateStr] = (dayTotals[dateStr] ?? 0) + amt;
