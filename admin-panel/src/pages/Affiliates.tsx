@@ -32,6 +32,7 @@ interface AffiliateRow {
   last_login: string | null;
   login_count: number;
   created_at: string;
+  needs_withdrawal_followup?: boolean;
 }
 
 interface AffiliateStats {
@@ -123,6 +124,7 @@ export default function Affiliates() {
         last_login: a.last_login ?? null,
         login_count: a.login_count ?? 0,
         created_at: a.created_at ?? '',
+        needs_withdrawal_followup: a.needs_withdrawal_followup ?? false,
       })));
       setTotal(Number(data?.total ?? 0));
       const s = data?.stats;
@@ -477,6 +479,7 @@ export default function Affiliates() {
                         <th className="text-right py-3 px-2">نام کاربری</th>
                         <th className="text-right py-3 px-2">کد معرف</th>
                         <th className="text-right py-3 px-2">موجودی</th>
+                        <th className="text-right py-3 px-2">درخواست برداشت وجه</th>
                         <th className="text-right py-3 px-2">وضعیت</th>
                         <th className="text-right py-3 px-2">تاریخ ایجاد</th>
                         <th className="text-right py-3 px-2">عملیات</th>
@@ -500,6 +503,11 @@ export default function Affiliates() {
                             )}
                           </td>
                           <td className="py-2 px-2">{row.balance.toLocaleString('fa-IR')}</td>
+                          <td className="py-2 px-2">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${row.needs_withdrawal_followup ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' : 'bg-green-500/20 text-green-700 dark:text-green-400'}`}>
+                              {row.needs_withdrawal_followup ? 'نیاز به پیگیری' : 'پیگیری شده'}
+                            </span>
+                          </td>
                           <td className="py-2 px-2">
                             <span className={row.is_active ? 'text-green-600' : 'text-muted-foreground'}>{row.is_active ? 'فعال' : 'غیرفعال'}</span>
                           </td>

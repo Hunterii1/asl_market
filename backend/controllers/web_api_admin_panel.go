@@ -1926,21 +1926,32 @@ func GetAffiliates(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست افیلیت‌ها"})
 		return
 	}
+	// افیلیت‌هایی که درخواست برداشت پیگیری‌نشده دارند (pending, approved, processing)
+	var pendingAffiliateIDs []uint
+	db.Model(&models.AffiliateWithdrawalRequest{}).
+		Where("status IN ?", []models.AffiliateWithdrawalStatus{models.AffiliateWithdrawalPending, models.AffiliateWithdrawalApproved, models.AffiliateWithdrawalProcessing}).
+		Distinct("affiliate_id").Pluck("affiliate_id", &pendingAffiliateIDs)
+	pendingSet := make(map[uint]bool)
+	for _, id := range pendingAffiliateIDs {
+		pendingSet[id] = true
+	}
 	list := make([]gin.H, 0, len(admins))
 	for _, a := range admins {
+		needsFollowup := pendingSet[a.ID]
 		list = append(list, gin.H{
-			"id":                 a.ID,
-			"name":               a.Name,
-			"username":           a.Username,
-			"referral_code":      a.ReferralCode,
-			"referral_link":      a.ReferralLink,
-			"balance":            a.Balance,
-			"total_earnings":     a.TotalEarnings,
-			"commission_percent": a.CommissionPercent,
-			"is_active":          a.IsActive,
-			"last_login":         a.LastLogin,
-			"login_count":        a.LoginCount,
-			"created_at":         a.CreatedAt.Format(time.RFC3339),
+			"id":                        a.ID,
+			"name":                      a.Name,
+			"username":                  a.Username,
+			"referral_code":             a.ReferralCode,
+			"referral_link":             a.ReferralLink,
+			"balance":                   a.Balance,
+			"total_earnings":            a.TotalEarnings,
+			"commission_percent":        a.CommissionPercent,
+			"is_active":                 a.IsActive,
+			"last_login":                a.LastLogin,
+			"login_count":               a.LoginCount,
+			"created_at":                a.CreatedAt.Format(time.RFC3339),
+			"needs_withdrawal_followup": needsFollowup,
 		})
 	}
 
