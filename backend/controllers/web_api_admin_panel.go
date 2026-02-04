@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -2171,37 +2172,119 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
 		return
 	}
-	file, _, err := c.Request.FormFile("file")
+	file, fileHeader, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "فایل CSV ارسال نشده است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فایل ارسال نشده است"})
 		return
 	}
 	defer file.Close()
 
-	// Read file content to handle encoding
-	content, err := io.ReadAll(file)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل: " + err.Error()})
-		return
-	}
+	// Get file extension
+	filename := fileHeader.Filename
+	isExcel := strings.HasSuffix(strings.ToLower(filename), ".xlsx") || strings.HasSuffix(strings.ToLower(filename), ".xls")
 
-	// Try to detect and convert encoding (UTF-8, Windows-1256, etc.)
-	contentStr := string(content)
-	// Remove BOM if present
-	if len(contentStr) > 0 && contentStr[0] == '\ufeff' {
-		contentStr = contentStr[1:]
-	}
+	var rows [][]string
 
-	reader := csv.NewReader(strings.NewReader(contentStr))
-	reader.Comma = ','
-	reader.LazyQuotes = true // Allow unquoted quotes in fields
-	reader.TrimLeadingSpace = true
-	reader.FieldsPerRecord = -1 // Allow variable number of fields
+	if isExcel {
+		// Handle Excel file
+		fileBytes, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل Excel: " + err.Error()})
+			return
+		}
 
-	rows, err := reader.ReadAll()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن CSV: " + err.Error()})
-		return
+		xlFile, err := excelize.OpenReader(bytes.NewReader(fileBytes))
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در باز کردن فایل Excel: " + err.Error()})
+			return
+		}
+		defer xlFile.Close()
+
+		// Get first sheet
+		sheetName := xlFile.GetSheetName(0)
+		if sheetName == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "فایل Excel خالی است"})
+			return
+		}
+
+		// Read all rows
+		excelRows, err := xlFile.GetRows(sheetName)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن داده‌های Excel: " + err.Error()})
+			return
+		}
+
+		rows = excelRows
+	} else {
+		// Handle CSV file with improved parsing
+		content, err := io.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل: " + err.Error()})
+			return
+		}
+
+		// Try to detect and convert encoding (UTF-8, Windows-1256, etc.)
+		contentStr := string(content)
+		// Remove BOM if present
+		if len(contentStr) > 0 && contentStr[0] == '\ufeff' {
+			contentStr = contentStr[1:]
+		}
+
+		// Try standard CSV parser first
+		reader := csv.NewReader(strings.NewReader(contentStr))
+		reader.Comma = ','
+		reader.LazyQuotes = true // Allow unquoted quotes in fields
+		reader.TrimLeadingSpace = true
+		reader.FieldsPerRecord = -1 // Allow variable number of fields
+		reader.ReuseRecord = false  // Don't reuse records
+
+		csvRows, err := reader.ReadAll()
+		if err != nil {
+			// If standard parser fails, use manual parsing
+			log.Printf("CSV parse error, using manual parsing: %v", err)
+			lines := strings.Split(contentStr, "\n")
+			csvRows = [][]string{}
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				// Manual CSV parsing: handle quotes properly
+				parts := []string{}
+				current := ""
+				inQuotes := false
+				lineRunes := []rune(line)
+				for i := 0; i < len(lineRunes); i++ {
+					char := lineRunes[i]
+					if char == '"' {
+						if inQuotes && i+1 < len(lineRunes) && lineRunes[i+1] == '"' {
+							// Escaped quote ("")
+							current += `"`
+							i++ // Skip next quote
+						} else {
+							inQuotes = !inQuotes
+						}
+					} else if char == ',' && !inQuotes {
+						parts = append(parts, strings.TrimSpace(current))
+						current = ""
+					} else {
+						current += string(char)
+					}
+				}
+				// Add last field
+				if current != "" || len(parts) > 0 {
+					parts = append(parts, strings.TrimSpace(current))
+					csvRows = append(csvRows, parts)
+				}
+			}
+		}
+
+		if len(csvRows) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ داده‌ای در فایل CSV یافت نشد"})
+			return
+		}
+
+		rows = csvRows
 	}
 	var toInsert []models.AffiliateRegisteredUser
 	for i, row := range rows {

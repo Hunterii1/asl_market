@@ -443,11 +443,11 @@ export default function Affiliates() {
 
               <TabsContent value="registered" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label>آپلود فایل CSV لیست ثبت‌نام‌ها</Label>
-                  <p className="text-xs text-muted-foreground">فرمت: نام، شماره موبایل، تاریخ ثبت‌نام</p>
+                  <Label>آپلود فایل CSV یا Excel لیست ثبت‌نام‌ها</Label>
+                  <p className="text-xs text-muted-foreground">فرمت: نام (ستون 1)، شماره موبایل (ستون 2)، تاریخ ثبت‌نام (ستون 5)</p>
                   <Input
                     type="file"
-                    accept=".csv"
+                    accept=".csv,.xlsx,.xls"
                     onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
                   />
                 </div>
