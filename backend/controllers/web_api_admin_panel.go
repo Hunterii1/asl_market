@@ -2295,9 +2295,7 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 			return
 		}
 		contentStr := string(content)
-		if len(contentStr) > 0 && contentStr[0] == '\ufeff' {
-			contentStr = contentStr[1:]
-		}
+		contentStr = strings.TrimPrefix(contentStr, "\ufeff")
 		log.Printf("[ImportAffiliate] CSV size: %d bytes, first 200 chars: %q", len(contentStr), truncate(contentStr, 200))
 
 		// Character-by-character CSV parser: never fails on quotes
