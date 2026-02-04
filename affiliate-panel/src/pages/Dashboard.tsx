@@ -22,7 +22,7 @@ export default function Dashboard() {
     balance: number;
     registrations_chart: { name: string; count: number }[];
     sales_chart: { name: string; sales: number }[];
-    confirmed_buyers?: { id: number; name: string; phone: string; purchased_at: string; created_at: string }[];
+    confirmed_buyers?: { id: number; name: string; phone: string; purchased_at: string; created_at: string; amount_toman?: number }[];
     registered_users?: RegisteredUser[];
     total_registered_users?: number;
     registered_users_chart?: { name: string; count: number }[];
@@ -88,6 +88,17 @@ export default function Dashboard() {
   }
 
   if (!data) return null;
+
+  // اگر API درآمد ۰ برگرداند ولی لیست خریداران داریم، از همان لیست محاسبه کن (هر خریدار = ۶ میلیون یا amount_toman)
+  const realIncomeFromApi = Number(data.real_income ?? 0);
+  const totalIncomeFromApi = Number(data.total_income ?? 0);
+  const buyers = data.confirmed_buyers ?? [];
+  const computedRealIncome = buyers.reduce((sum, b) => {
+    const amt = (b.amount_toman && b.amount_toman > 0) ? b.amount_toman : 6_000_000;
+    return sum + amt;
+  }, 0);
+  const realIncomeDisplay = realIncomeFromApi > 0 ? realIncomeFromApi : computedRealIncome;
+  const totalIncomeDisplay = totalIncomeFromApi > 0 ? totalIncomeFromApi : realIncomeDisplay;
 
   const regChart = (data.registrations_chart || []).map((d: { name: string; count?: number }) => ({ ...d, count: Number(d.count) || 0 }));
   const salesChart = (data.sales_chart || []).map((d: { name: string; sales?: number; count?: number }) => ({ ...d, sales: Number(d.sales) || Number((d as { count?: number }).count) || 0 }));
@@ -161,7 +172,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">درآمد واقعی</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{Number(data.real_income ?? data.total_income ?? 0).toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
+                <p className="text-3xl font-bold text-foreground mt-1">{realIncomeDisplay.toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
                 <Wallet className="w-7 h-7 text-muted-foreground" />
@@ -174,7 +185,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">درآمد کل</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{Number(data.total_income ?? 0).toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
+                <p className="text-3xl font-bold text-foreground mt-1">{totalIncomeDisplay.toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-green-500/15 flex items-center justify-center">
                 <Wallet className="w-7 h-7 text-green-600" />

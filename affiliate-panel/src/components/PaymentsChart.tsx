@@ -14,6 +14,7 @@ import {
   formatJalaliLong,
   isInCurrentJalaliMonth,
   isInCurrentWeek,
+  parseApiDate,
 } from "@/lib/jalali";
 
 export type PaymentsChartPoint = { name: string; amount: number; count?: number };
@@ -28,17 +29,28 @@ function formatToman(value: number): string {
   return value?.toLocaleString?.("fa-IR") ?? "0";
 }
 
+/** یک روز قبل از تاریخ YYYY-MM-DD برمی‌گرداند (برای نقطهٔ پایه نمودار) */
+function dayBefore(dateStr: string): string {
+  const d = parseApiDate(dateStr);
+  if (!d) return dateStr;
+  return d.subtract(1, "day").format("YYYY-MM-DD");
+}
+
 export function PaymentsChart({ data }: { data: PaymentsChartPoint[] }) {
   const [range, setRange] = useState<TimeRange>("all");
 
   const chartData = useMemo(() => {
-    const raw = (data || []).map((d) => ({
+    let raw = (data || []).map((d) => ({
       name: d.name,
       amount: Number(d.amount ?? d.count ?? 0) || 0,
     }));
-    if (range === "week") return raw.filter((d) => isInCurrentWeek(d.name));
-    if (range === "month") return raw.filter((d) => isInCurrentJalaliMonth(d.name));
-    return raw;
+    if (range === "week") raw = raw.filter((d) => isInCurrentWeek(d.name));
+    if (range === "month") raw = raw.filter((d) => isInCurrentJalaliMonth(d.name));
+    if (raw.length === 0) return raw;
+    // برای اینکه نمودار ناحیه‌ای شکل واقعی داشته باشد (مثل نمودار کاربران)، یک نقطهٔ پایه با مبلغ ۰ اضافه می‌کنیم
+    const first = raw[0];
+    const baseline = { name: dayBefore(first.name), amount: 0 };
+    return [baseline, ...raw];
   }, [data, range]);
 
   if ((data || []).length === 0) return null;
