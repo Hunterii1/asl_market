@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { fcmNotificationService } from '@/services/fcmNotification';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { BASE_DOMAIN } from '@/config/domain';
+import { BASE_DOMAIN } from '../config/domain';
 
 export function NotificationPermissionPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);

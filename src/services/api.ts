@@ -13,8 +13,8 @@ const getApiBaseUrl = () => {
     }
 
     // Global production (.com)
-    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-      return 'https://aslmarket.com/backend/api/v1';
+    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+      return 'https://asllmarket.com/backend/api/v1';
     }
 
     // Development server - use proxy for testing
