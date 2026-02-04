@@ -97,12 +97,17 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		if b.PurchasedAt != nil {
 			pa = b.PurchasedAt.Format("2006-01-02")
 		}
+		amt := models.DefaultAmountToman
+		if b.AmountToman != nil {
+			amt = *b.AmountToman
+		}
 		confirmedBuyersList = append(confirmedBuyersList, map[string]interface{}{
 			"id":           b.ID,
 			"name":         b.Name,
 			"phone":        b.Phone,
 			"purchased_at": pa,
 			"created_at":   b.CreatedAt.Format(time.RFC3339),
+			"amount_toman": amt,
 		})
 	}
 
@@ -171,8 +176,9 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		referralLink = "" // Will show "درحال آماده سازی لینک شما..." in frontend
 	}
 
-	// درآمد واقعی = همان TotalEarnings ذخیره‌شده؛ درآمد کل = واقعی × (درصد/۱۰۰)
-	realIncome := aff.TotalEarnings
+	// درآمد واقعی = مجموع مبلغ پرداخت‌های تأییدشده (لیست خریداران). هر پرداخت بدون مبلغ = ۶ میلیون تومان. درآمد کل = واقعی × (درصد افیلیت/۱۰۰)
+	var realIncome float64
+	db.Raw(`SELECT COALESCE(SUM(COALESCE(amount_toman, ?)), 0) FROM affiliate_buyers WHERE affiliate_id = ? AND deleted_at IS NULL`, models.DefaultAmountToman, affID).Scan(&realIncome)
 	percent := aff.CommissionPercent
 	if percent <= 0 {
 		percent = 100
@@ -239,26 +245,27 @@ func (ac *AffiliateController) GetUsers(c *gin.Context) {
 	})
 }
 
-// GetPayments returns same chart + list as dashboard (sales chart + users who purchased)
+// GetPayments returns نمودار پرداخت (روزانه، مبلغ تومان) + لیست خریداران تأییدشده. هر پرداخت بدون مبلغ = ۶ میلیون تومان.
 func (ac *AffiliateController) GetPayments(c *gin.Context) {
 	affID := getAffiliateID(c)
 	db := ac.DB
-	var salesChart []struct {
-		Date  string
-		Count int64
+	var paymentsChart []struct {
+		Date   string  `gorm:"column:date"`
+		Amount float64 `gorm:"column:amount"`
 	}
 	db.Raw(`
-		SELECT DATE(l.used_at) as date, COUNT(*) as count
-		FROM licenses l
-		INNER JOIN users u ON u.id = l.used_by AND u.affiliate_id = ?
-		WHERE l.used_at IS NOT NULL AND l.used_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-		GROUP BY DATE(l.used_at)
+		SELECT DATE(COALESCE(purchased_at, created_at)) AS date,
+		       COALESCE(SUM(COALESCE(amount_toman, ?)), 0) AS amount
+		FROM affiliate_buyers
+		WHERE affiliate_id = ? AND deleted_at IS NULL
+		  AND COALESCE(purchased_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+		GROUP BY DATE(COALESCE(purchased_at, created_at))
 		ORDER BY date ASC
-	`, affID).Scan(&salesChart)
-	salesChartData := make([]map[string]interface{}, 0, len(salesChart))
-	for _, r := range salesChart {
-		salesChartData = append(salesChartData, map[string]interface{}{
-			"name": r.Date, "count": r.Count, "sales": r.Count,
+	`, models.DefaultAmountToman, affID).Scan(&paymentsChart)
+	paymentsChartData := make([]map[string]interface{}, 0, len(paymentsChart))
+	for _, r := range paymentsChart {
+		paymentsChartData = append(paymentsChartData, map[string]interface{}{
+			"name": r.Date, "count": int64(r.Amount), "amount": r.Amount,
 		})
 	}
 	confirmedBuyers, _, _ := models.GetAffiliateBuyers(ac.DB, affID, 100, 0)
@@ -268,14 +275,19 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 		if b.PurchasedAt != nil {
 			pa = b.PurchasedAt.Format("2006-01-02")
 		}
+		amt := models.DefaultAmountToman
+		if b.AmountToman != nil {
+			amt = *b.AmountToman
+		}
 		confirmedList = append(confirmedList, map[string]interface{}{
 			"id": b.ID, "name": b.Name, "phone": b.Phone,
 			"purchased_at": pa, "created_at": b.CreatedAt.Format(time.RFC3339),
+			"amount_toman": amt,
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"sales_chart":      salesChartData,
+			"payments_chart":   paymentsChartData,
 			"confirmed_buyers": confirmedList,
 		},
 	})

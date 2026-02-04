@@ -2515,8 +2515,9 @@ func MatchAffiliateSales(c *gin.Context) {
 // ConfirmAffiliateBuyersRequestBody for confirming matched buyers
 type ConfirmAffiliateBuyersRequestBody struct {
 	Buyers []struct {
-		Name  string `json:"name"`
-		Phone string `json:"phone"`
+		Name        string `json:"name"`
+		Phone       string `json:"phone"`
+		AmountToman *int64 `json:"amount_toman"` // مبلغ تومان؛ نزده = ۶ میلیون
 	} `json:"buyers"`
 	PurchasedAt string `json:"purchased_at"` // optional date for week, e.g. "2026-02-03"
 }
@@ -2557,7 +2558,11 @@ func ConfirmAffiliateBuyers(c *gin.Context) {
 		if name == "" || phone == "" {
 			continue
 		}
-		rows = append(rows, models.AffiliateBuyer{Name: name, Phone: phone})
+		row := models.AffiliateBuyer{Name: name, Phone: phone}
+		if b.AmountToman != nil && *b.AmountToman >= 0 {
+			row.AmountToman = b.AmountToman
+		}
+		rows = append(rows, row)
 	}
 	if len(rows) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "لیست خریداران خالی است"})
@@ -2603,7 +2608,11 @@ func GetAffiliateBuyers(c *gin.Context) {
 		if r.PurchasedAt != nil {
 			pa = r.PurchasedAt.Format("2006-01-02")
 		}
-		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "purchased_at": pa, "created_at": r.CreatedAt.Format(time.RFC3339)})
+		amt := models.DefaultAmountToman
+		if r.AmountToman != nil {
+			amt = *r.AmountToman
+		}
+		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "purchased_at": pa, "created_at": r.CreatedAt.Format(time.RFC3339), "amount_toman": amt})
 	}
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
 }

@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { CreditCard, Loader2, UserCheck } from "lucide-react";
 import { affiliateApi } from "@/lib/affiliateApi";
+import { PaymentsChart } from "@/components/PaymentsChart";
 
 export default function Payments() {
-  const [salesChart, setSalesChart] = useState<{ name: string; sales: number }[]>([]);
-  const [usersList, setUsersList] = useState<{ id: number; name: string; phone: string; purchased_at: string; created_at: string }[]>([]);
+  const [paymentsChart, setPaymentsChart] = useState<{ name: string; amount: number; count?: number }[]>([]);
+  const [usersList, setUsersList] = useState<{ id: number; name: string; phone: string; purchased_at: string; created_at: string; amount_toman?: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +15,8 @@ export default function Payments() {
       try {
         const res = await affiliateApi.getPayments();
         if (!cancelled) {
-          setSalesChart(res?.sales_chart ?? []);
+          const raw = res?.payments_chart ?? [];
+          setPaymentsChart(raw.map((d: { name: string; amount?: number; count?: number }) => ({ name: d.name, amount: Number(d.amount ?? d.count ?? 0) || 0 })));
           setUsersList(res?.confirmed_buyers ?? []);
         }
       } finally {
@@ -25,42 +26,30 @@ export default function Payments() {
     return () => { cancelled = true; };
   }, []);
 
-  const chartData = (salesChart || []).map((d: { name: string; sales?: number; count?: number }) => ({ ...d, sales: Number(d.sales) ?? Number((d as { count?: number }).count) ?? 0 }));
-
   return (
     <div className="space-y-6" dir="rtl">
       <div>
         <h1 className="text-2xl font-bold text-foreground">پرداخت‌ها</h1>
-        <p className="text-muted-foreground">نمودار فروش و لیست کاربران خریدار</p>
+        <p className="text-muted-foreground">نمودار پرداخت و لیست خریداران تأییدشده (هر پرداخت بدون مبلغ = ۶ میلیون تومان)</p>
       </div>
 
-      <Card className="rounded-2xl">
+      <Card className="rounded-2xl overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
-            نمودار فروش
+            نمودار پرداخت
           </CardTitle>
-          <CardDescription>۳۰ روز گذشته</CardDescription>
+          <CardDescription>پرداخت‌های تأییدشده بر اساس روز (۹۰ روز گذشته) — مشابه نمودار ثبت‌نام‌ها</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : chartData.length === 0 ? (
-            <p className="text-muted-foreground text-center py-12">داده‌ای موجود نیست.</p>
+          ) : paymentsChart.length === 0 ? (
+            <p className="text-muted-foreground text-center py-12">داده‌ای برای نمودار موجود نیست. پس از تأیید خریداران در پنل مدیریت، اینجا نمایش داده می‌شود.</p>
           ) : (
-            <div className="h-[280px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip formatter={(v: number) => [v?.toLocaleString?.("fa-IR"), "فروش"]} />
-                  <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" fill="hsl(var(--primary)/0.2)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <PaymentsChart data={paymentsChart} />
           )}
         </CardContent>
       </Card>
@@ -83,6 +72,7 @@ export default function Payments() {
                     <th className="text-right py-3 px-2">نام</th>
                     <th className="text-right py-3 px-2">تماس</th>
                     <th className="text-right py-3 px-2">تاریخ</th>
+                    <th className="text-right py-3 px-2">مبلغ (تومان)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -91,6 +81,7 @@ export default function Payments() {
                       <td className="py-2 px-2">{u.name}</td>
                       <td className="py-2 px-2">{u.phone || "—"}</td>
                       <td className="py-2 px-2">{u.purchased_at ? new Date(u.purchased_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
+                      <td className="py-2 px-2">{(u.amount_toman ?? 0).toLocaleString("fa-IR")}</td>
                     </tr>
                   ))}
                 </tbody>

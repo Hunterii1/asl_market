@@ -6,6 +6,9 @@ import (
 	"gorm.io/gorm"
 )
 
+// DefaultAmountToman when amount_toman is null (هر پرداخت = ۶ میلیون تومان)
+const DefaultAmountToman = 6000000
+
 // AffiliateBuyer is a buyer attributed to an affiliate (matched from sales list and confirmed by admin)
 type AffiliateBuyer struct {
 	ID          uint           `json:"id" gorm:"primaryKey"`
@@ -13,7 +16,8 @@ type AffiliateBuyer struct {
 	Affiliate   Affiliate      `json:"-" gorm:"foreignKey:AffiliateID"`
 	Name        string         `json:"name" gorm:"size:200;not null"`
 	Phone       string         `json:"phone" gorm:"size:20;not null;index"`
-	PurchasedAt *time.Time     `json:"purchased_at" gorm:"type:date"` // week of sale
+	PurchasedAt *time.Time     `json:"purchased_at" gorm:"type:date"`   // week of sale
+	AmountToman *int64         `json:"amount_toman" gorm:"type:bigint"` // مبلغ تومان؛ null = ۶ میلیون
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
 	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
