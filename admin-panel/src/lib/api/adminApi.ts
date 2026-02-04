@@ -14,8 +14,8 @@ const getApiBaseUrl = () => {
     }
 
     // Admin Panel Global (.com)
-    if (hostname === 'admin.aslmarket.com') {
-      return 'https://admin.aslmarket.com/api/v1';
+    if (hostname === 'admin.asllmarket.com') {
+      return 'https://admin.asllmarket.com/api/v1';
     }
     
     // Main site Production
@@ -24,8 +24,8 @@ const getApiBaseUrl = () => {
     }
 
     // Main site Global (.com)
-    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-      return 'https://aslmarket.com/backend/api/v1';
+    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+      return 'https://asllmarket.com/backend/api/v1';
     }
     
     // Development server - use proxy for testing

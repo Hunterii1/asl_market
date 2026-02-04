@@ -21,10 +21,10 @@ cors:
     - "http://asllmarket.ir"
     - "http://www.asllmarket.ir"
     # Global domains (in case same config is reused)
-    - "https://aslmarket.com"
-    - "https://www.aslmarket.com"
-    - "http://aslmarket.com"
-    - "http://www.aslmarket.com"
+    - "https://asllmarket.com"
+    - "https://www.asllmarket.com"
+    - "http://asllmarket.com"
+    - "http://www.asllmarket.com"
   allowed_methods:
     - "GET"
     - "POST"

@@ -17,9 +17,9 @@ const getStaticFileBaseUrl = (): string => {
     return `${protocol}//api.asllmarket.ir`;
   }
 
-  // Global production: api.aslmarket.com
-  if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-    return `${protocol}//api.aslmarket.com`;
+  // Global production: api.asllmarket.com
+  if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+    return `${protocol}//api.asllmarket.com`;
   }
 
   // Development server

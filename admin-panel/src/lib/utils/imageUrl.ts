@@ -30,11 +30,11 @@ export function getImageUrl(imagePath: string | null | undefined): string {
 
     // Global domains (admin + main)
     if (
-      hostname === 'admin.aslmarket.com' ||
-      hostname === 'aslmarket.com' ||
-      hostname === 'www.aslmarket.com'
+      hostname === 'admin.asllmarket.com' ||
+      hostname === 'asllmarket.com' ||
+      hostname === 'www.asllmarket.com'
     ) {
-      return `https://aslmarket.com${imagePath}`;
+      return `https://asllmarket.com${imagePath}`;
     }
   }
 

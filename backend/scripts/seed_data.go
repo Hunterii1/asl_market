@@ -22,12 +22,12 @@ func main24555() {
 
 	// Create a default admin user if not exists
 	var adminUser models.User
-	err := db.Where("email = ?", "admin@aslmarket.com").First(&adminUser).Error
+	err := db.Where("email = ?", "admin@asllmarket.com").First(&adminUser).Error
 	if err != nil {
 		adminUser = models.User{
 			FirstName: "Admin",
 			LastName:  "ASL Market",
-			Email:     "admin@aslmarket.com",
+			Email:     "admin@asllmarket.com",
 			Password:  "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // password
 			Phone:     "09123456789",
 			IsActive:  true,

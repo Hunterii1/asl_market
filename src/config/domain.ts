@@ -12,8 +12,8 @@ export const BASE_DOMAIN = (() => {
   const hostname = window.location.hostname;
 
   // Global (.com)
-  if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com' || hostname === 'admin.aslmarket.com') {
-    return 'aslmarket.com';
+  if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com' || hostname === 'admin.asllmarket.com') {
+    return 'asllmarket.com';
   }
 
   // Iran (.ir) – main site or admin
@@ -36,8 +36,8 @@ export const getApiBaseUrl = (): string => {
     }
 
     // Global production (.com)
-    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-      return 'https://aslmarket.com/backend/api/v1';
+    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+      return 'https://asllmarket.com/backend/api/v1';
     }
 
     // Dev / local

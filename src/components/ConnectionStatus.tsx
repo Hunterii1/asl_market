@@ -30,8 +30,8 @@ export function ConnectionStatus() {
           apiUrl = 'https://asllmarket.ir/backend/health';
         }
         // Global (.com)
-        else if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-          apiUrl = 'https://aslmarket.com/backend/health';
+        else if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+          apiUrl = 'https://asllmarket.com/backend/health';
         }
         
         const response = await fetch(apiUrl, { 

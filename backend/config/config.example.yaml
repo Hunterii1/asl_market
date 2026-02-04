@@ -19,7 +19,7 @@ cors:
     # Iran domains
     - "https://asllmarket.ir"
     # Global domains
-    - "https://aslmarket.com"
+    - "https://asllmarket.com"
   allowed_methods:
     - "GET"
     - "POST"

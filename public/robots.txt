@@ -1,4 +1,4 @@
-# robots.txt for ASL Market (aslmarket.com)
+# robots.txt for ASL Market (asllmarket.com)
 # اصل مارکت - سیستم هوشمند فروش بین‌المللی
 
 User-agent: *
@@ -26,7 +26,7 @@ Disallow: /admin/
 Disallow: /api/internal/
 
 # Sitemap
-Sitemap: https://aslmarket.com/sitemap.xml
+Sitemap: https://asllmarket.com/sitemap.xml
 
 # Crawl delay (optional)
 Crawl-delay: 1

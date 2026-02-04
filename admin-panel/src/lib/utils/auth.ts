@@ -170,8 +170,8 @@ export async function forgotPassword(email: string): Promise<void> {
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         // Global (.com)
-        if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-          return 'https://aslmarket.com/backend/api/v1';
+        if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+          return 'https://asllmarket.com/backend/api/v1';
         }
         // Iran (.ir)
         if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {

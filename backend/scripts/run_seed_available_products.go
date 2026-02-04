@@ -20,12 +20,12 @@ func main9() {
 
 	// First, find the admin user to use as creator
 	var adminUser models.User
-	if err := db.Where("email = ?", "admin@aslmarket.com").First(&adminUser).Error; err != nil {
+	if err := db.Where("email = ?", "admin@asllmarket.com").First(&adminUser).Error; err != nil {
 		// Create a default admin user if not exists
 		adminUser = models.User{
 			FirstName: "Admin",
 			LastName:  "ASL Market",
-			Email:     "admin@aslmarket.com",
+			Email:     "admin@asllmarket.com",
 			Password:  "$2a$10$placeholder", // This should be properly hashed
 			IsAdmin:   true,
 			IsActive:  true,

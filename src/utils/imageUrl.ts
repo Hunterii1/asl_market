@@ -16,7 +16,7 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  // For production (asllmarket.ir / aslmarket.com)
+  // For production (asllmarket.ir / asllmarket.com)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
 
@@ -26,8 +26,8 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     }
 
     // Global domains
-    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
-      return `https://aslmarket.com${imagePath}`;
+    if (hostname === 'asllmarket.com' || hostname === 'www.asllmarket.com') {
+      return `https://asllmarket.com${imagePath}`;
     }
   }
 
