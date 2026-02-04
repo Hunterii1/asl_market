@@ -81,7 +81,7 @@ export default function Payments() {
                       <td className="py-2 px-2">{u.name}</td>
                       <td className="py-2 px-2">{u.phone || "—"}</td>
                       <td className="py-2 px-2">{u.purchased_at ? new Date(u.purchased_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
-                      <td className="py-2 px-2">{(u.amount_toman ?? 0).toLocaleString("fa-IR")}</td>
+                      <td className="py-2 px-2">{((u.amount_toman && u.amount_toman > 0) ? u.amount_toman : 6_000_000).toLocaleString("fa-IR")}</td>
                     </tr>
                   ))}
                 </tbody>

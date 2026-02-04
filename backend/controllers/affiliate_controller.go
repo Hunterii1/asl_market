@@ -97,8 +97,8 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		if b.PurchasedAt != nil {
 			pa = b.PurchasedAt.Format("2006-01-02")
 		}
-		amt := models.DefaultAmountToman
-		if b.AmountToman != nil {
+		amt := int64(models.DefaultAmountToman)
+		if b.AmountToman != nil && *b.AmountToman > 0 {
 			amt = *b.AmountToman
 		}
 		confirmedBuyersList = append(confirmedBuyersList, map[string]interface{}{
@@ -178,7 +178,10 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 
 	// درآمد واقعی = مجموع مبلغ پرداخت‌های تأییدشده (لیست خریداران). هر پرداخت بدون مبلغ = ۶ میلیون تومان. درآمد کل = واقعی × (درصد افیلیت/۱۰۰)
 	var realIncome float64
-	db.Raw(`SELECT COALESCE(SUM(COALESCE(amount_toman, ?)), 0) FROM affiliate_buyers WHERE affiliate_id = ? AND deleted_at IS NULL`, models.DefaultAmountToman, affID).Scan(&realIncome)
+	// هر پرداخت بدون مبلغ یا مبلغ ۰ = ۶ میلیون. با COUNT×۶M کار می‌کند حتی اگر ستون amount_toman نباشد.
+	var buyerCount int64
+	db.Raw(`SELECT COUNT(*) FROM affiliate_buyers WHERE affiliate_id = ? AND deleted_at IS NULL`, affID).Scan(&buyerCount)
+	realIncome = float64(buyerCount) * float64(models.DefaultAmountToman)
 	percent := aff.CommissionPercent
 	if percent <= 0 {
 		percent = 100
@@ -245,7 +248,7 @@ func (ac *AffiliateController) GetUsers(c *gin.Context) {
 	})
 }
 
-// GetPayments returns نمودار پرداخت (روزانه، مبلغ تومان) + لیست خریداران تأییدشده. هر پرداخت بدون مبلغ = ۶ میلیون تومان.
+// GetPayments returns نمودار پرداخت (روزانه، مبلغ تومان) + لیست خریداران تأییدشده. هر پرداخت بدون مبلغ یا مبلغ ۰ = ۶ میلیون تومان.
 func (ac *AffiliateController) GetPayments(c *gin.Context) {
 	affID := getAffiliateID(c)
 	db := ac.DB
@@ -253,19 +256,25 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 		Date   string  `gorm:"column:date"`
 		Amount float64 `gorm:"column:amount"`
 	}
+	// هر ردیف = یک روز؛ مبلغ = تعداد × ۶۰۰۰۰۰۰. محدود به ۳۶۵ روز اخیر تا نمودار خالی نشود (مشکل timezone/تاریخ).
 	db.Raw(`
-		SELECT DATE(COALESCE(purchased_at, created_at)) AS date,
-		       COALESCE(SUM(COALESCE(amount_toman, ?)), 0) AS amount
+		SELECT COALESCE(DATE(purchased_at), DATE(created_at)) AS date,
+		       (COUNT(*) * ?) AS amount
 		FROM affiliate_buyers
 		WHERE affiliate_id = ? AND deleted_at IS NULL
-		  AND COALESCE(purchased_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
-		GROUP BY DATE(COALESCE(purchased_at, created_at))
+		  AND COALESCE(purchased_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)
+		GROUP BY COALESCE(DATE(purchased_at), DATE(created_at))
 		ORDER BY date ASC
 	`, models.DefaultAmountToman, affID).Scan(&paymentsChart)
 	paymentsChartData := make([]map[string]interface{}, 0, len(paymentsChart))
+	now := time.Now().Format("2006-01-02")
 	for _, r := range paymentsChart {
+		dateStr := r.Date
+		if dateStr == "" || dateStr == "0000-00-00" {
+			dateStr = now
+		}
 		paymentsChartData = append(paymentsChartData, map[string]interface{}{
-			"name": r.Date, "count": int64(r.Amount), "amount": r.Amount,
+			"name": dateStr, "count": int64(r.Amount), "amount": r.Amount,
 		})
 	}
 	confirmedBuyers, _, _ := models.GetAffiliateBuyers(ac.DB, affID, 100, 0)
@@ -275,8 +284,8 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 		if b.PurchasedAt != nil {
 			pa = b.PurchasedAt.Format("2006-01-02")
 		}
-		amt := models.DefaultAmountToman
-		if b.AmountToman != nil {
+		amt := int64(models.DefaultAmountToman)
+		if b.AmountToman != nil && *b.AmountToman > 0 {
 			amt = *b.AmountToman
 		}
 		confirmedList = append(confirmedList, map[string]interface{}{

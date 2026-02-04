@@ -2609,7 +2609,7 @@ func GetAffiliateBuyers(c *gin.Context) {
 			pa = r.PurchasedAt.Format("2006-01-02")
 		}
 		amt := models.DefaultAmountToman
-		if r.AmountToman != nil {
+		if r.AmountToman != nil && *r.AmountToman > 0 {
 			amt = *r.AmountToman
 		}
 		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "purchased_at": pa, "created_at": r.CreatedAt.Format(time.RFC3339), "amount_toman": amt})
