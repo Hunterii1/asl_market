@@ -1,12 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Users, Wallet, Copy, Check, Link2, Loader2, UserCheck, FileText, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { RegisteredUsersChart } from "@/components/RegisteredUsersChart";
+import { Pagination } from "@/components/ui/pagination";
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
+
+const REGISTERED_PER_PAGE = 50;
+type RegisteredUser = { id: number; name: string; phone: string; registered_at: string; created_at: string };
 
 export default function Dashboard() {
   const [data, setData] = useState<{
@@ -18,12 +22,16 @@ export default function Dashboard() {
     registrations_chart: { name: string; count: number }[];
     sales_chart: { name: string; sales: number }[];
     users_who_purchased: { id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[];
-    registered_users?: { id: number; name: string; phone: string; registered_at: string; created_at: string }[];
+    registered_users?: RegisteredUser[];
     total_registered_users?: number;
     registered_users_chart?: { name: string; count: number }[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [registeredList, setRegisteredList] = useState<RegisteredUser[]>([]);
+  const [registeredTotal, setRegisteredTotal] = useState(0);
+  const [registeredPage, setRegisteredPage] = useState(1);
+  const [registeredListLoading, setRegisteredListLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -39,6 +47,28 @@ export default function Dashboard() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  const loadRegisteredPage = useCallback(async (page: number) => {
+    setRegisteredListLoading(true);
+    try {
+      const res = await affiliateApi.getRegisteredUsers({ page, per_page: REGISTERED_PER_PAGE });
+      const users = Array.isArray(res?.users) ? res.users : [];
+      const tot = Number(res?.total ?? 0);
+      setRegisteredList(users);
+      setRegisteredTotal(tot);
+      setRegisteredPage(page);
+    } catch {
+      setRegisteredList([]);
+      setRegisteredTotal(0);
+    } finally {
+      setRegisteredListLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!data || (data.total_registered_users ?? 0) === 0) return;
+    loadRegisteredPage(1);
+  }, [data?.total_registered_users, loadRegisteredPage]);
 
   const copyLink = () => {
     if (!data?.referral_link || data.referral_link === '') return;
@@ -200,7 +230,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* لیست ثبت‌نامی (همان لیستی که پشتیبانی از CSV آپلود کرده) — از همان API داشبورد می‌آید */}
+      {/* لیست ثبت‌نامی (۵۰ نفر در هر صفحه، صفحه‌بندی) */}
       <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -215,29 +245,45 @@ export default function Dashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {(data.registered_users?.length ?? 0) === 0 ? (
+          {(data.total_registered_users ?? 0) === 0 ? (
             <p className="text-muted-foreground text-center py-8">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-right py-3 px-2">نام</th>
-                    <th className="text-right py-3 px-2">موبایل</th>
-                    <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.registered_users ?? []).map((u) => (
-                    <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-2 px-2">{u.name}</td>
-                      <td className="py-2 px-2">{u.phone || "—"}</td>
-                      <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          ) : registeredListLoading && registeredList.length === 0 ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-right py-3 px-2">نام</th>
+                      <th className="text-right py-3 px-2">موبایل</th>
+                      <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {registeredList.map((u) => (
+                      <tr key={u.id} className="border-b border-border/50">
+                        <td className="py-2 px-2">{u.name}</td>
+                        <td className="py-2 px-2">{u.phone || "—"}</td>
+                        <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {registeredTotal > REGISTERED_PER_PAGE && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Pagination
+                    page={registeredPage}
+                    total={registeredTotal}
+                    perPage={REGISTERED_PER_PAGE}
+                    onPageChange={loadRegisteredPage}
+                  />
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -4,43 +4,60 @@ import { Users as UsersIcon, Loader2, AlertCircle, RefreshCw, BarChart3 } from "
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
 import { RegisteredUsersChart } from "@/components/RegisteredUsersChart";
+import { Pagination } from "@/components/ui/pagination";
 
+const PER_PAGE = 50;
 type RegisteredUser = { id: number; name: string; phone: string; registered_at: string; created_at: string };
 
 export default function Users() {
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [chartData, setChartData] = useState<{ name: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [listLoading, setListLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // از همان API داشبورد استفاده می‌کنیم (همان درخواستی که لینک اختصاصی را برمی‌گرداند) تا روی همهٔ سرورها یکسان کار کند
-  const load = useCallback(async () => {
+  const loadChartAndTotal = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await affiliateApi.getDashboard();
-      const list = Array.isArray(res?.registered_users) ? res.registered_users : [];
-      const tot = Number(res?.total_registered_users ?? 0);
       const chart = Array.isArray(res?.registered_users_chart) ? res.registered_users_chart : [];
-      setUsers(list);
-      setTotal(tot);
       setChartData(chart);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "خطا در بارگذاری لیست ثبت‌نامی";
+      const msg = e instanceof Error ? e.message : "خطا در بارگذاری";
       setError(msg);
       toast.error(msg);
-      setUsers([]);
-      setTotal(0);
       setChartData([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const loadPage = useCallback(async (p: number) => {
+    setListLoading(true);
+    try {
+      const res = await affiliateApi.getRegisteredUsers({ page: p, per_page: PER_PAGE });
+      const list = Array.isArray(res?.users) ? res.users : [];
+      setUsers(list);
+      setTotal(Number(res?.total ?? 0));
+      setPage(p);
+    } catch {
+      setUsers([]);
+    } finally {
+      setListLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    load();
-  }, [load]);
+    loadChartAndTotal();
+  }, [loadChartAndTotal]);
+
+  useEffect(() => {
+    if (error) return;
+    loadPage(1);
+  }, [error, loadPage]);
 
   // نمودار: از API یا از روی لیست کاربران (گروه‌بندی بر اساس روز)
   const chartDataToShow = (() => {
@@ -80,15 +97,15 @@ export default function Users() {
             <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : chartDataToShow.length > 0 ? (
-              <RegisteredUsersChart data={chartDataToShow} />
-            ) : (
-              <p className="text-muted-foreground text-center py-12">در ۹۰ روز گذشته داده‌ای برای نمودار ثبت نشده است.</p>
-            )}
+          {loading && chartData.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : chartDataToShow.length > 0 ? (
+            <RegisteredUsersChart data={chartDataToShow} />
+          ) : (
+            <p className="text-muted-foreground text-center py-12">در ۹۰ روز گذشته داده‌ای برای نمودار ثبت نشده است.</p>
+          )}
           </CardContent>
         </Card>
       )}
@@ -109,40 +126,52 @@ export default function Users() {
                 <p className="text-sm font-medium text-destructive">{error}</p>
                 <p className="text-xs text-muted-foreground mt-1">اگر پشتیبانی لیست ثبت‌نامی برای شما آپلود کرده، لطفاً یک بار دیگر بارگذاری کنید یا با پشتیبانی تماس بگیرید.</p>
               </div>
-              <button type="button" onClick={() => load()} className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted flex items-center gap-2 text-sm">
+              <button type="button" onClick={() => { setError(null); loadChartAndTotal(); loadPage(1); }} className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted flex items-center gap-2 text-sm">
                 <RefreshCw className="w-4 h-4" />
                 تلاش مجدد
               </button>
             </div>
           )}
-          {loading ? (
+          {listLoading && users.length === 0 && !error ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : users.length === 0 && !error ? (
+          ) : total === 0 && !error ? (
             <p className="text-muted-foreground text-center py-12">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
-          ) : users.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-right py-3 px-2">نام</th>
-                    <th className="text-right py-3 px-2">موبایل</th>
-                    <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-2 px-2">{u.name}</td>
-                      <td className="py-2 px-2">{u.phone || "—"}</td>
-                      <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-right py-3 px-2">نام</th>
+                      <th className="text-right py-3 px-2">موبایل</th>
+                      <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
+                  </thead>
+                  <tbody>
+                    {users.map((u) => (
+                      <tr key={u.id} className="border-b border-border/50">
+                        <td className="py-2 px-2">{u.name}</td>
+                        <td className="py-2 px-2">{u.phone || "—"}</td>
+                        <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {total > PER_PAGE && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <Pagination
+                    page={page}
+                    total={total}
+                    perPage={PER_PAGE}
+                    onPageChange={loadPage}
+                  />
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
