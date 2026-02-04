@@ -22,7 +22,7 @@ export default function Dashboard() {
     balance: number;
     registrations_chart: { name: string; count: number }[];
     sales_chart: { name: string; sales: number }[];
-    users_who_purchased: { id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[];
+    confirmed_buyers?: { id: number; name: string; phone: string; purchased_at: string; created_at: string }[];
     registered_users?: RegisteredUser[];
     total_registered_users?: number;
     registered_users_chart?: { name: string; count: number }[];
@@ -308,10 +308,11 @@ export default function Dashboard() {
             <UserCheck className="w-5 h-5" />
             کاربرانی که خرید کرده‌اند
           </CardTitle>
+          <CardDescription>همان لیستی که در بخش مدیریت افیلیت از «لیست فروش» تطبیق و تأیید شده است</CardDescription>
         </CardHeader>
         <CardContent>
-          {(data.users_who_purchased?.length ?? 0) === 0 ? (
-            <p className="text-muted-foreground text-center py-8">هنوز کاربری با خرید ثبت نشده است.</p>
+          {(data.confirmed_buyers?.length ?? 0) === 0 ? (
+            <p className="text-muted-foreground text-center py-8">هنوز خریدی تأیید نشده است. پس از تطبیق و تأیید در پنل مدیریت، اینجا نمایش داده می‌شود.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -319,15 +320,15 @@ export default function Dashboard() {
                   <tr className="border-b border-border">
                     <th className="text-right py-3 px-2">نام</th>
                     <th className="text-right py-3 px-2">تماس</th>
-                    <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
+                    <th className="text-right py-3 px-2">تاریخ خرید</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.users_who_purchased.map((u) => (
+                  {(data.confirmed_buyers ?? []).map((u) => (
                     <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-2 px-2">{u.first_name} {u.last_name}</td>
-                      <td className="py-2 px-2">{u.phone || u.email || "—"}</td>
-                      <td className="py-2 px-2">{u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—"}</td>
+                      <td className="py-2 px-2">{u.name}</td>
+                      <td className="py-2 px-2">{u.phone || "—"}</td>
+                      <td className="py-2 px-2">{u.purchased_at ? new Date(u.purchased_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
                     </tr>
                   ))}
                 </tbody>

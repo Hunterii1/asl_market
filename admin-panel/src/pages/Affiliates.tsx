@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminApi } from '@/lib/api/adminApi';
-import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck } from 'lucide-react';
+import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck, Percent } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -80,6 +80,7 @@ export default function Affiliates() {
   
   // Detail modal states
   const [customReferralLink, setCustomReferralLink] = useState('');
+  const [detailCommissionPercent, setDetailCommissionPercent] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [salesListText, setSalesListText] = useState('');
   const [matchedBuyers, setMatchedBuyers] = useState<{ name: string; phone: string; registered_at: string }[]>([]);
@@ -146,15 +147,14 @@ export default function Affiliates() {
 
   const openDetail = async (row: AffiliateRow) => {
     setSelected(row);
-    // Set referral link (empty string if not set)
     setCustomReferralLink(row.referral_link || '');
+    setDetailCommissionPercent(row.commission_percent != null ? String(row.commission_percent) : '100');
     setCsvFile(null);
     setSalesListText('');
     setMatchedBuyers([]);
     setRegisteredUsers([]);
     setBuyers([]);
     setDetailOpen(true);
-    // Load registered users and buyers
     loadRegisteredUsers(row.id);
     loadBuyers(row.id);
   };
@@ -259,6 +259,26 @@ export default function Affiliates() {
       }
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'ذخیره لینک ناموفق بود' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSaveCommissionPercent = async () => {
+    if (!selected) return;
+    const pct = parseFloat(detailCommissionPercent);
+    if (isNaN(pct) || pct < 0 || pct > 100) {
+      toast({ variant: 'destructive', title: 'خطا', description: 'درصد باید بین ۰ تا ۱۰۰ باشد' });
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await adminApi.updateAffiliate(selected.id, { commission_percent: pct });
+      toast({ title: 'ذخیره شد', description: 'درصد سهم افیلیت به‌روزرسانی شد' });
+      load();
+      setSelected(prev => prev ? { ...prev, commission_percent: pct } : null);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'ذخیره درصد ناموفق بود' });
     } finally {
       setSubmitting(false);
     }
@@ -471,11 +491,12 @@ export default function Affiliates() {
           </DialogHeader>
           {selected && (
             <Tabs defaultValue="link" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="link"><Link2 className="w-4 h-4 ml-1" /> لینک اختصاصی</TabsTrigger>
                 <TabsTrigger value="registered"><Users className="w-4 h-4 ml-1" /> لیست ثبت‌نام‌ها</TabsTrigger>
                 <TabsTrigger value="sales"><ShoppingCart className="w-4 h-4 ml-1" /> لیست فروش</TabsTrigger>
                 <TabsTrigger value="buyers"><FileText className="w-4 h-4 ml-1" /> لیست خریداران</TabsTrigger>
+                <TabsTrigger value="discount"><Percent className="w-4 h-4 ml-1" /> کد تخفیف</TabsTrigger>
               </TabsList>
               
               <TabsContent value="link" className="space-y-4 mt-4">
@@ -594,6 +615,31 @@ export default function Affiliates() {
                     </div>
                   )}
                 </div>
+              </TabsContent>
+
+              <TabsContent value="discount" className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>درصد سهم افیلیت (۰–۱۰۰)</Label>
+                  <p className="text-xs text-muted-foreground">این درصد روی کادر «درآمد کل» در داشبورد پنل افیلیت اعمال می‌شود. مثلاً اگر درآمد واقعی ۱۰ میلیون تومان و درصد ۲۰ باشد، درآمد کل افیلیت می‌شود ۲ میلیون تومان.</p>
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={detailCommissionPercent}
+                      onChange={(e) => setDetailCommissionPercent(e.target.value)}
+                      placeholder="100"
+                      className="w-28 font-mono"
+                      dir="ltr"
+                    />
+                    <span className="text-muted-foreground">درصد</span>
+                  </div>
+                </div>
+                <Button onClick={handleSaveCommissionPercent} disabled={submitting}>
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
+                  ذخیره درصد سهم
+                </Button>
               </TabsContent>
             </Tabs>
           )}

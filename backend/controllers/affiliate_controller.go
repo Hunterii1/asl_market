@@ -89,19 +89,20 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		})
 	}
 
-	// Users who purchased (referred users that have used a license)
-	var usersWhoPurchased []models.User
-	db.Where("affiliate_id = ? AND id IN (SELECT used_by FROM licenses WHERE used_by IS NOT NULL)", affID).
-		Order("created_at DESC").Limit(50).Find(&usersWhoPurchased)
-	usersList := make([]map[string]interface{}, 0, len(usersWhoPurchased))
-	for _, u := range usersWhoPurchased {
-		usersList = append(usersList, map[string]interface{}{
-			"id":         u.ID,
-			"first_name": u.FirstName,
-			"last_name":  u.LastName,
-			"email":      u.Email,
-			"phone":      u.Phone,
-			"created_at": u.CreatedAt,
+	// خریداران تأییدشده (همان لیستی که ادمین از «لیست فروش» تطبیق و تأیید کرده — جدول affiliate_buyers، یک منبع با پنل مدیریت)
+	confirmedBuyers, _, _ := models.GetAffiliateBuyers(db, affID, 50, 0)
+	confirmedBuyersList := make([]map[string]interface{}, 0, len(confirmedBuyers))
+	for _, b := range confirmedBuyers {
+		pa := ""
+		if b.PurchasedAt != nil {
+			pa = b.PurchasedAt.Format("2006-01-02")
+		}
+		confirmedBuyersList = append(confirmedBuyersList, map[string]interface{}{
+			"id":           b.ID,
+			"name":         b.Name,
+			"phone":        b.Phone,
+			"purchased_at": pa,
+			"created_at":   b.CreatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -188,7 +189,7 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 			"balance":                aff.Balance,
 			"registrations_chart":    chartData,
 			"sales_chart":            salesChartData,
-			"users_who_purchased":    usersList,
+			"confirmed_buyers":       confirmedBuyersList,
 			"registered_users":       registeredUsersPayload,
 			"total_registered_users": totalRegistered,
 			"registered_users_chart": registeredUsersChartData,
@@ -260,20 +261,22 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 			"name": r.Date, "count": r.Count, "sales": r.Count,
 		})
 	}
-	var usersWhoPurchased []models.User
-	db.Where("affiliate_id = ? AND id IN (SELECT used_by FROM licenses WHERE used_by IS NOT NULL)", affID).
-		Order("created_at DESC").Limit(100).Find(&usersWhoPurchased)
-	usersList := make([]map[string]interface{}, 0, len(usersWhoPurchased))
-	for _, u := range usersWhoPurchased {
-		usersList = append(usersList, map[string]interface{}{
-			"id": u.ID, "first_name": u.FirstName, "last_name": u.LastName,
-			"email": u.Email, "phone": u.Phone, "created_at": u.CreatedAt,
+	confirmedBuyers, _, _ := models.GetAffiliateBuyers(ac.DB, affID, 100, 0)
+	confirmedList := make([]map[string]interface{}, 0, len(confirmedBuyers))
+	for _, b := range confirmedBuyers {
+		pa := ""
+		if b.PurchasedAt != nil {
+			pa = b.PurchasedAt.Format("2006-01-02")
+		}
+		confirmedList = append(confirmedList, map[string]interface{}{
+			"id": b.ID, "name": b.Name, "phone": b.Phone,
+			"purchased_at": pa, "created_at": b.CreatedAt.Format(time.RFC3339),
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"sales_chart":         salesChartData,
-			"users_who_purchased": usersList,
+			"sales_chart":      salesChartData,
+			"confirmed_buyers": confirmedList,
 		},
 	})
 }

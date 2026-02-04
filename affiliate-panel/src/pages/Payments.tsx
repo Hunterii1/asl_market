@@ -6,7 +6,7 @@ import { affiliateApi } from "@/lib/affiliateApi";
 
 export default function Payments() {
   const [salesChart, setSalesChart] = useState<{ name: string; sales: number }[]>([]);
-  const [usersList, setUsersList] = useState<{ id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[]>([]);
+  const [usersList, setUsersList] = useState<{ id: number; name: string; phone: string; purchased_at: string; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function Payments() {
         const res = await affiliateApi.getPayments();
         if (!cancelled) {
           setSalesChart(res?.sales_chart ?? []);
-          setUsersList(res?.users_who_purchased ?? []);
+          setUsersList(res?.confirmed_buyers ?? []);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -88,9 +88,9 @@ export default function Payments() {
                 <tbody>
                   {usersList.map((u) => (
                     <tr key={u.id} className="border-b border-border/50">
-                      <td className="py-2 px-2">{u.first_name} {u.last_name}</td>
-                      <td className="py-2 px-2">{u.phone || u.email || "—"}</td>
-                      <td className="py-2 px-2">{u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—"}</td>
+                      <td className="py-2 px-2">{u.name}</td>
+                      <td className="py-2 px-2">{u.phone || "—"}</td>
+                      <td className="py-2 px-2">{u.purchased_at ? new Date(u.purchased_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
                     </tr>
                   ))}
                 </tbody>
