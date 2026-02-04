@@ -33,7 +33,8 @@ func GetAffiliateRegisteredUsers(db *gorm.DB, affiliateID uint, limit, offset in
 	return list, total, nil
 }
 
-// CreateAffiliateRegisteredUserBatch inserts multiple rows (from CSV import)
+// CreateAffiliateRegisteredUserBatch inserts multiple rows (from CSV import).
+// Uses CreateInBatches with batch size 1000 so all rows are inserted (GORM default Create batch size is 100).
 func CreateAffiliateRegisteredUserBatch(db *gorm.DB, affiliateID uint, rows []AffiliateRegisteredUser) error {
 	if len(rows) == 0 {
 		return nil
@@ -41,5 +42,6 @@ func CreateAffiliateRegisteredUserBatch(db *gorm.DB, affiliateID uint, rows []Af
 	for i := range rows {
 		rows[i].AffiliateID = affiliateID
 	}
-	return db.Create(&rows).Error
+	const batchSize = 1000
+	return db.CreateInBatches(rows, batchSize).Error
 }

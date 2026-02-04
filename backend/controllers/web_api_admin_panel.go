@@ -2137,7 +2137,7 @@ func GetAffiliateRegisteredUsers(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 200 {
+	if perPage < 1 || perPage > 10000 {
 		perPage = 50
 	}
 	offset := (page - 1) * perPage
@@ -2565,7 +2565,7 @@ func GetAffiliateBuyers(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 200 {
+	if perPage < 1 || perPage > 10000 {
 		perPage = 50
 	}
 	offset := (page - 1) * perPage

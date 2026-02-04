@@ -143,7 +143,7 @@ export default function Affiliates() {
   const loadRegisteredUsers = async (id: number) => {
     setLoadingRegistered(true);
     try {
-      const res = await adminApi.getAffiliateRegisteredUsers(id, { page: 1, per_page: 100 });
+      const res = await adminApi.getAffiliateRegisteredUsers(id, { page: 1, per_page: 10000 });
       const data = res?.data ?? res;
       setRegisteredUsers(data?.items ?? []);
     } catch (e: any) {
@@ -156,7 +156,7 @@ export default function Affiliates() {
   const loadBuyers = async (id: number) => {
     setLoadingBuyers(true);
     try {
-      const res = await adminApi.getAffiliateBuyers(id, { page: 1, per_page: 100 });
+      const res = await adminApi.getAffiliateBuyers(id, { page: 1, per_page: 10000 });
       const data = res?.data ?? res;
       setBuyers(data?.items ?? []);
     } catch (e: any) {

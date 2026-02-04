@@ -33,7 +33,8 @@ func GetAffiliateBuyers(db *gorm.DB, affiliateID uint, limit, offset int) ([]Aff
 	return list, total, nil
 }
 
-// CreateAffiliateBuyerBatch inserts multiple buyers (after admin confirm)
+// CreateAffiliateBuyerBatch inserts multiple buyers (after admin confirm).
+// Uses CreateInBatches so all rows are inserted (GORM default Create batch size is 100).
 func CreateAffiliateBuyerBatch(db *gorm.DB, affiliateID uint, purchasedAt *time.Time, rows []AffiliateBuyer) error {
 	if len(rows) == 0 {
 		return nil
@@ -42,5 +43,6 @@ func CreateAffiliateBuyerBatch(db *gorm.DB, affiliateID uint, purchasedAt *time.
 		rows[i].AffiliateID = affiliateID
 		rows[i].PurchasedAt = purchasedAt
 	}
-	return db.Create(&rows).Error
+	const batchSize = 1000
+	return db.CreateInBatches(rows, batchSize).Error
 }
