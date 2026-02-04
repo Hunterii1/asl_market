@@ -123,6 +123,27 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		})
 	}
 
+	// نمودار تعداد ثبت‌نامی‌ها در روزهای مختلف (لیست ثبت‌نامی توسط پشتیبانی) — برای نمایش در داشبورد و صفحه کاربران
+	var registeredChart []struct {
+		Date  string
+		Count int64
+	}
+	db.Raw(`
+		SELECT DATE(COALESCE(registered_at, created_at)) AS date, COUNT(*) AS count
+		FROM affiliate_registered_users
+		WHERE affiliate_id = ? AND deleted_at IS NULL
+		  AND COALESCE(registered_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
+		GROUP BY DATE(COALESCE(registered_at, created_at))
+		ORDER BY date ASC
+	`, affID).Scan(&registeredChart)
+	registeredUsersChartData := make([]map[string]interface{}, 0, len(registeredChart))
+	for _, r := range registeredChart {
+		registeredUsersChartData = append(registeredUsersChartData, map[string]interface{}{
+			"name":  r.Date,
+			"count": r.Count,
+		})
+	}
+
 	// Base URL for referral link: main site (not admin/api subdomain)
 	baseURL := "https://asllmarket.com"
 	if c.Request.Host != "" {
@@ -161,6 +182,7 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 			"users_who_purchased":    usersList,
 			"registered_users":       registeredUsersPayload,
 			"total_registered_users": totalRegistered,
+			"registered_users_chart": registeredUsersChartData,
 		},
 	})
 }

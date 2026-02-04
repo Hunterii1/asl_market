@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users as UsersIcon, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { Users as UsersIcon, Loader2, AlertCircle, RefreshCw, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
+import { RegisteredUsersChart } from "@/components/RegisteredUsersChart";
 
 type RegisteredUser = { id: number; name: string; phone: string; registered_at: string; created_at: string };
 
 export default function Users() {
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [total, setTotal] = useState(0);
+  const [chartData, setChartData] = useState<{ name: string; count: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,14 +22,17 @@ export default function Users() {
       const res = await affiliateApi.getDashboard();
       const list = Array.isArray(res?.registered_users) ? res.registered_users : [];
       const tot = Number(res?.total_registered_users ?? 0);
+      const chart = Array.isArray(res?.registered_users_chart) ? res.registered_users_chart : [];
       setUsers(list);
       setTotal(tot);
+      setChartData(chart);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "خطا در بارگذاری لیست ثبت‌نامی";
       setError(msg);
       toast.error(msg);
       setUsers([]);
       setTotal(0);
+      setChartData([]);
     } finally {
       setLoading(false);
     }
@@ -43,6 +48,23 @@ export default function Users() {
         <h1 className="text-2xl font-bold text-foreground">لیست ثبت‌نامی</h1>
         <p className="text-muted-foreground">همان لیستی که پشتیبانی برای شما در پنل مدیریت ثبت کرده است</p>
       </div>
+
+      {/* نمودار ثبت‌نام‌ها در روزهای مختلف */}
+      {chartData.length > 0 && !error && (
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              نمودار ثبت‌نام‌ها (بر اساس روز)
+            </CardTitle>
+            <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RegisteredUsersChart data={chartData} />
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

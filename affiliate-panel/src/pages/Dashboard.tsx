@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Wallet, Copy, Check, Link2, Loader2, UserCheck, FileText } from "lucide-react";
+import { Users, Wallet, Copy, Check, Link2, Loader2, UserCheck, FileText, BarChart3 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { RegisteredUsersChart } from "@/components/RegisteredUsersChart";
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
 
@@ -19,6 +20,7 @@ export default function Dashboard() {
     users_who_purchased: { id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[];
     registered_users?: { id: number; name: string; phone: string; registered_at: string; created_at: string }[];
     total_registered_users?: number;
+    registered_users_chart?: { name: string; count: number }[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -154,6 +156,22 @@ export default function Dashboard() {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* نمودار ثبت‌نامی‌ها در روزهای مختلف (لیست پشتیبانی) */}
+      {(data.registered_users_chart?.length ?? 0) > 0 && (
+        <Card className="rounded-2xl overflow-hidden">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              نمودار ثبت‌نام‌ها (بر اساس روز)
+            </CardTitle>
+            <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RegisteredUsersChart data={data.registered_users_chart ?? []} />
           </CardContent>
         </Card>
       )}
