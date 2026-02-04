@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"bytes"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -2230,52 +2229,83 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 			contentStr = contentStr[1:]
 		}
 
-		// Try standard CSV parser first
-		reader := csv.NewReader(strings.NewReader(contentStr))
-		reader.Comma = ','
-		reader.LazyQuotes = true // Allow unquoted quotes in fields
-		reader.TrimLeadingSpace = true
-		reader.FieldsPerRecord = -1 // Allow variable number of fields
-		reader.ReuseRecord = false  // Don't reuse records
+		// Use robust manual CSV parsing to handle all edge cases
+		// Split by newlines (handle both \n and \r\n)
+		lines := strings.Split(contentStr, "\n")
+		csvRows := [][]string{}
 
-		csvRows, err := reader.ReadAll()
-		if err != nil {
-			// If standard parser fails, use manual parsing
-			log.Printf("CSV parse error, using manual parsing: %v", err)
-			lines := strings.Split(contentStr, "\n")
-			csvRows = [][]string{}
-			for _, line := range lines {
-				line = strings.TrimSpace(line)
-				if line == "" {
-					continue
-				}
-				// Manual CSV parsing: handle quotes properly
-				parts := []string{}
-				current := ""
-				inQuotes := false
-				lineRunes := []rune(line)
-				for i := 0; i < len(lineRunes); i++ {
-					char := lineRunes[i]
-					if char == '"' {
-						if inQuotes && i+1 < len(lineRunes) && lineRunes[i+1] == '"' {
-							// Escaped quote ("")
-							current += `"`
-							i++ // Skip next quote
-						} else {
-							inQuotes = !inQuotes
-						}
-					} else if char == ',' && !inQuotes {
-						parts = append(parts, strings.TrimSpace(current))
-						current = ""
-					} else {
-						current += string(char)
+		for _, line := range lines {
+			// Clean line: remove \r
+			line = strings.TrimRight(line, "\r")
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+
+			// More lenient CSV parsing: split by comma, then clean up quotes
+			// This handles malformed CSV better
+			rawParts := strings.Split(line, ",")
+			parts := []string{}
+			currentField := ""
+			inQuotes := false
+
+			for _, rawPart := range rawParts {
+				part := rawPart
+
+				// Check if this part starts with quote
+				trimmed := strings.TrimSpace(part)
+				if strings.HasPrefix(trimmed, `"`) && !inQuotes {
+					// Starting a quoted field
+					inQuotes = true
+					currentField = strings.TrimPrefix(trimmed, `"`)
+					// Check if it also ends with quote (single field)
+					if strings.HasSuffix(currentField, `"`) && len(currentField) > 0 {
+						currentField = strings.TrimSuffix(currentField, `"`)
+						// Handle escaped quotes
+						currentField = strings.ReplaceAll(currentField, `""`, `"`)
+						parts = append(parts, strings.TrimSpace(currentField))
+						currentField = ""
+						inQuotes = false
 					}
+				} else if inQuotes {
+					// Continue building quoted field
+					currentField += "," + part
+					// Check if this part ends the quoted field
+					if strings.HasSuffix(strings.TrimSpace(part), `"`) {
+						currentField = strings.TrimSuffix(currentField, `"`)
+						// Handle escaped quotes
+						currentField = strings.ReplaceAll(currentField, `""`, `"`)
+						parts = append(parts, strings.TrimSpace(currentField))
+						currentField = ""
+						inQuotes = false
+					}
+				} else {
+					// Regular unquoted field
+					field := strings.TrimSpace(part)
+					// Remove quotes if present (malformed CSV)
+					field = strings.Trim(field, `"`)
+					// Handle escaped quotes
+					field = strings.ReplaceAll(field, `""`, `"`)
+					parts = append(parts, field)
 				}
-				// Add last field
-				if current != "" || len(parts) > 0 {
-					parts = append(parts, strings.TrimSpace(current))
-					csvRows = append(csvRows, parts)
+			}
+
+			// Add any remaining field
+			if currentField != "" {
+				currentField = strings.Trim(currentField, `"`)
+				currentField = strings.ReplaceAll(currentField, `""`, `"`)
+				parts = append(parts, strings.TrimSpace(currentField))
+			}
+
+			// Only add non-empty rows (at least one non-empty field)
+			hasData := false
+			for _, p := range parts {
+				if strings.TrimSpace(p) != "" {
+					hasData = true
+					break
 				}
+			}
+			if hasData {
+				csvRows = append(csvRows, parts)
 			}
 		}
 
