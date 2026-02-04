@@ -396,25 +396,57 @@ func (ac *AuthController) AffiliateLogin(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
 		return
 	}
-	aff, err := models.GetAffiliateByUsername(ac.DB, strings.TrimSpace(req.Username))
+	
+	// Normalize username: trim spaces and convert to lowercase
+	usernameNormalized := strings.TrimSpace(strings.ToLower(req.Username))
+	if usernameNormalized == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "نام کاربری نمی‌تواند خالی باشد"})
+		return
+	}
+	
+	log.Printf("AffiliateLogin: Attempting login for username: '%s' (normalized: '%s')", req.Username, usernameNormalized)
+	
+	// Get affiliate by username (function handles normalization internally)
+	aff, err := models.GetAffiliateByUsername(ac.DB, usernameNormalized)
 	if err != nil {
+		log.Printf("AffiliateLogin: Affiliate not found for username: '%s'", usernameNormalized)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
 		return
 	}
+	
+	log.Printf("AffiliateLogin: Affiliate found: ID=%d, Username=%s, IsActive=%v", aff.ID, aff.Username, aff.IsActive)
+	
+	// Check password
 	if !utils.CheckPassword(req.Password, aff.Password) {
+		log.Printf("AffiliateLogin: Password check failed for username: '%s'", usernameNormalized)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
 		return
 	}
+	
+	log.Printf("AffiliateLogin: Password check passed for username: '%s'", usernameNormalized)
+	
+	// Check if affiliate is active
 	if !aff.IsActive {
+		log.Printf("AffiliateLogin: Affiliate account is inactive: ID=%d", aff.ID)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "حساب کاربری غیرفعال شده است"})
 		return
 	}
-	_ = aff.UpdateLastLogin(ac.DB)
+	
+	// Update last login
+	if err := aff.UpdateLastLogin(ac.DB); err != nil {
+		log.Printf("AffiliateLogin: Error updating last login: %v", err)
+	}
+	
+	// Generate token
 	token, err := utils.GenerateAffiliateToken(aff.ID, aff.Username)
 	if err != nil {
+		log.Printf("AffiliateLogin: Error generating token: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در تولید توکن"})
 		return
 	}
+	
+	log.Printf("AffiliateLogin: Login successful for affiliate ID=%d, Username=%s", aff.ID, aff.Username)
+	
 	c.JSON(http.StatusOK, gin.H{
 		"message": "ورود موفقیت‌آمیز",
 		"token":   token,

@@ -55,10 +55,28 @@ func GetAffiliateByID(db *gorm.DB, id uint) (*Affiliate, error) {
 // GetAffiliateByUsername retrieves an affiliate by username (case-insensitive)
 func GetAffiliateByUsername(db *gorm.DB, username string) (*Affiliate, error) {
 	var a Affiliate
-	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", username, true).First(&a).Error; err == nil {
+	// Normalize username: trim spaces and convert to lowercase for consistent comparison
+	usernameNormalized := strings.TrimSpace(strings.ToLower(username))
+	usernameTrimmed := strings.TrimSpace(username)
+	
+	// Try multiple strategies for maximum compatibility:
+	// 1. Exact match with normalized username (most common case for new affiliates)
+	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", usernameNormalized, true).First(&a).Error; err == nil {
 		return &a, nil
 	}
-	if err := db.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL", username, true).First(&a).Error; err != nil {
+	
+	// 2. Case-insensitive match with normalized username
+	if err := db.Where("LOWER(username) = ? AND is_active = ? AND deleted_at IS NULL", usernameNormalized, true).First(&a).Error; err == nil {
+		return &a, nil
+	}
+	
+	// 3. Exact match with trimmed original username (for backward compatibility)
+	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", usernameTrimmed, true).First(&a).Error; err == nil {
+		return &a, nil
+	}
+	
+	// 4. Case-insensitive match with trimmed original username (last resort)
+	if err := db.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL", usernameTrimmed, true).First(&a).Error; err != nil {
 		return nil, err
 	}
 	return &a, nil

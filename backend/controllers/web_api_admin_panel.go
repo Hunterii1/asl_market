@@ -1991,26 +1991,41 @@ func CreateAffiliate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است: " + err.Error()})
 		return
 	}
+	
+	// Normalize username: trim spaces and convert to lowercase for consistency
+	usernameNormalized := strings.TrimSpace(strings.ToLower(req.Username))
+	if usernameNormalized == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "نام کاربری نمی‌تواند خالی باشد"})
+		return
+	}
+	
+	// Check for existing affiliate (case-insensitive check)
 	var existing models.Affiliate
-	if err := db.Where("username = ? AND deleted_at IS NULL", strings.TrimSpace(req.Username)).First(&existing).Error; err == nil {
+	if err := db.Where("LOWER(TRIM(username)) = ? AND deleted_at IS NULL", usernameNormalized).First(&existing).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
 		return
 	}
+	
+	// Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رمزگذاری رمز عبور"})
 		return
 	}
+	
+	// Create affiliate with normalized username
 	aff := &models.Affiliate{
-		Name:     req.Name,
-		Username: strings.TrimSpace(req.Username),
+		Name:     strings.TrimSpace(req.Name),
+		Username: usernameNormalized, // Store normalized username
 		Password: hashedPassword,
 		IsActive: true,
 	}
+	
 	if err := models.CreateAffiliate(db, aff); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد افیلیت: " + err.Error()})
 		return
 	}
+	
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "افیلیت با موفقیت ایجاد شد",
