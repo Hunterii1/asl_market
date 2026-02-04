@@ -24,6 +24,7 @@ interface AffiliateRow {
   name: string;
   username: string;
   referral_code: string;
+  referral_link: string;
   balance: number;
   total_earnings: number;
   is_active: boolean;
@@ -69,7 +70,7 @@ export default function Affiliates() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   
   // Detail modal states
-  const [customReferralCode, setCustomReferralCode] = useState('');
+  const [customReferralLink, setCustomReferralLink] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [salesListText, setSalesListText] = useState('');
   const [matchedBuyers, setMatchedBuyers] = useState<{ name: string; phone: string; registered_at: string }[]>([]);
@@ -90,6 +91,7 @@ export default function Affiliates() {
         name: a.name ?? '',
         username: a.username ?? '',
         referral_code: a.referral_code ?? '',
+        referral_link: a.referral_link ?? '',
         balance: Number(a.balance) ?? 0,
         total_earnings: Number(a.total_earnings) ?? 0,
         is_active: a.is_active ?? true,
@@ -125,7 +127,8 @@ export default function Affiliates() {
 
   const openDetail = async (row: AffiliateRow) => {
     setSelected(row);
-    setCustomReferralCode(row.referral_code);
+    // Set referral link (empty string if not set)
+    setCustomReferralLink(row.referral_link || '');
     setCsvFile(null);
     setSalesListText('');
     setMatchedBuyers([]);
@@ -220,17 +223,17 @@ export default function Affiliates() {
     }
   };
 
-  const handleSaveReferralCode = async () => {
+  const handleSaveReferralLink = async () => {
     if (!selected) return;
     setSubmitting(true);
     try {
-      await adminApi.updateAffiliate(selected.id, { referral_code: customReferralCode.trim() });
+      await adminApi.updateAffiliate(selected.id, { referral_link: customReferralLink.trim() });
       toast({ title: 'ذخیره شد', description: 'لینک اختصاصی با موفقیت به‌روزرسانی شد' });
       load();
       if (selected) {
         const updated = list.find(a => a.id === selected.id);
         if (updated) {
-          setSelected({ ...updated, referral_code: customReferralCode.trim() });
+          setSelected({ ...updated, referral_link: customReferralLink.trim() });
         }
       }
     } catch (e: any) {
@@ -302,21 +305,6 @@ export default function Affiliates() {
     }
   };
 
-  const copyReferralLink = (code: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const mainOrigin = origin.includes('admin.') ? origin.replace('admin.', '') : origin;
-    const url = `${mainOrigin || 'https://asllmarket.com'}/signup?ref=${code}`;
-    navigator.clipboard.writeText(url);
-    setCopiedCode(code);
-    toast({ title: 'کپی شد', description: 'لینک افیلیت کپی شد' });
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-
-  const getReferralLink = (code: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const mainOrigin = origin.includes('admin.') ? origin.replace('admin.', '') : origin;
-    return `${mainOrigin || 'https://asllmarket.com'}/signup?ref=${code}`;
-  };
 
   const totalPages = Math.ceil(total / perPage) || 1;
 
@@ -370,11 +358,15 @@ export default function Affiliates() {
                           <td className="py-2 px-2">{row.name}</td>
                           <td className="py-2 px-2 font-mono">{row.username}</td>
                           <td className="py-2 px-2">
-                            <code className="bg-muted px-1 rounded">{row.referral_code || '—'}</code>
-                            {row.referral_code && (
-                              <Button variant="ghost" size="icon" className="h-8 w-8 inline-flex mr-1" onClick={(e) => { e.stopPropagation(); copyReferralLink(row.referral_code); }}>
-                                {copiedCode === row.referral_code ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                              </Button>
+                            {row.referral_link ? (
+                              <>
+                                <code className="bg-muted px-1 rounded text-xs">{row.referral_link.substring(0, 30)}...</code>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 inline-flex mr-1" onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(row.referral_link); toast({ title: 'کپی شد', description: 'لینک کپی شد' }); }}>
+                                  {copiedCode === row.referral_link ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
                           <td className="py-2 px-2">{row.balance.toLocaleString('fa-IR')}</td>
@@ -426,28 +418,24 @@ export default function Affiliates() {
                   <Label>لینک اختصاصی افیلیت</Label>
                   <div className="flex gap-2">
                     <Input
-                      readOnly
-                      value={customReferralCode ? getReferralLink(customReferralCode) : 'درحال آماده سازی لینک شما...'}
+                      value={customReferralLink || ''}
+                      onChange={(e) => setCustomReferralLink(e.target.value)}
+                      placeholder="https://asllmarket.com/signup?ref=..."
                       className="flex-1 font-mono text-sm dir-ltr"
                       dir="ltr"
                     />
-                    {customReferralCode && (
-                      <Button variant="outline" onClick={() => copyReferralLink(customReferralCode)}>
+                    {customReferralLink && (
+                      <Button variant="outline" onClick={() => {
+                        navigator.clipboard.writeText(customReferralLink);
+                        toast({ title: 'کپی شد', description: 'لینک کپی شد' });
+                      }}>
                         <Copy className="w-4 h-4 ml-1" />
                       </Button>
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground">لینک کامل را وارد کنید. این لینک در پنل افیلیت نمایش داده می‌شود</p>
                 </div>
-                <div className="space-y-2">
-                  <Label>کد معرف (برای ویرایش)</Label>
-                  <Input
-                    value={customReferralCode}
-                    onChange={(e) => setCustomReferralCode(e.target.value)}
-                    placeholder="کد معرف را وارد کنید"
-                    dir="ltr"
-                  />
-                </div>
-                <Button onClick={handleSaveReferralCode} disabled={submitting}>
+                <Button onClick={handleSaveReferralLink} disabled={submitting}>
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
                   ذخیره لینک اختصاصی
                 </Button>

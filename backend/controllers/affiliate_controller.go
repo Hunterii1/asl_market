@@ -120,9 +120,11 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		}
 		baseURL = scheme + "://" + host
 	}
-	// Show referral link only if referral_code exists, otherwise show placeholder
+	// Use custom referral link if set, otherwise generate from referral_code, otherwise empty
 	var referralLink string
-	if aff.ReferralCode != "" {
+	if aff.ReferralLink != "" {
+		referralLink = aff.ReferralLink
+	} else if aff.ReferralCode != "" {
 		referralLink = baseURL + "/signup?ref=" + aff.ReferralCode
 	} else {
 		referralLink = "" // Will show "درحال آماده سازی لینک شما..." in frontend

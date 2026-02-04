@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -1932,6 +1933,7 @@ func GetAffiliates(c *gin.Context) {
 			"name":           a.Name,
 			"username":       a.Username,
 			"referral_code":  a.ReferralCode,
+			"referral_link":  a.ReferralLink,
 			"balance":        a.Balance,
 			"total_earnings": a.TotalEarnings,
 			"is_active":      a.IsActive,
@@ -1970,6 +1972,7 @@ func GetAffiliate(c *gin.Context) {
 			"name":           aff.Name,
 			"username":       aff.Username,
 			"referral_code":  aff.ReferralCode,
+			"referral_link":  aff.ReferralLink,
 			"balance":        aff.Balance,
 			"total_earnings": aff.TotalEarnings,
 			"is_active":      aff.IsActive,
@@ -1992,28 +1995,28 @@ func CreateAffiliate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است: " + err.Error()})
 		return
 	}
-	
+
 	// Normalize username: trim spaces and convert to lowercase for consistency
 	usernameNormalized := strings.TrimSpace(strings.ToLower(req.Username))
 	if usernameNormalized == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "نام کاربری نمی‌تواند خالی باشد"})
 		return
 	}
-	
+
 	// Check for existing affiliate (case-insensitive check)
 	var existing models.Affiliate
 	if err := db.Where("LOWER(TRIM(username)) = ? AND deleted_at IS NULL", usernameNormalized).First(&existing).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "نام کاربری قبلاً استفاده شده است"})
 		return
 	}
-	
+
 	// Hash password
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رمزگذاری رمز عبور"})
 		return
 	}
-	
+
 	// Create affiliate with normalized username
 	aff := &models.Affiliate{
 		Name:     strings.TrimSpace(req.Name),
@@ -2021,12 +2024,12 @@ func CreateAffiliate(c *gin.Context) {
 		Password: hashedPassword,
 		IsActive: true,
 	}
-	
+
 	if err := models.CreateAffiliate(db, aff); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد افیلیت: " + err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "افیلیت با موفقیت ایجاد شد",
@@ -2035,6 +2038,7 @@ func CreateAffiliate(c *gin.Context) {
 			"name":          aff.Name,
 			"username":      aff.Username,
 			"referral_code": aff.ReferralCode,
+			"referral_link": aff.ReferralLink,
 			"is_active":     aff.IsActive,
 			"created_at":    aff.CreatedAt.Format(time.RFC3339),
 		},
@@ -2060,7 +2064,7 @@ func UpdateAffiliate(c *gin.Context) {
 		Password     *string  `json:"password"`
 		IsActive     *bool    `json:"is_active"`
 		Balance      *float64 `json:"balance"`
-		ReferralCode *string  `json:"referral_code"`
+		ReferralLink *string  `json:"referral_link"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
@@ -2080,16 +2084,9 @@ func UpdateAffiliate(c *gin.Context) {
 	if req.Balance != nil {
 		updates["balance"] = *req.Balance
 	}
-	if req.ReferralCode != nil {
-		code := strings.TrimSpace(strings.ToLower(*req.ReferralCode))
-		if code != "" {
-			var existing models.Affiliate
-			if err := db.Where("referral_code = ? AND id != ? AND deleted_at IS NULL", code, id).First(&existing).Error; err == nil {
-				c.JSON(http.StatusConflict, gin.H{"error": "این کد معرف قبلاً برای افیلیت دیگری استفاده شده است"})
-				return
-			}
-			updates["referral_code"] = code
-		}
+	if req.ReferralLink != nil {
+		link := strings.TrimSpace(*req.ReferralLink)
+		updates["referral_link"] = link
 	}
 	if len(updates) == 0 {
 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "بدون تغییر"})
@@ -2180,9 +2177,27 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 		return
 	}
 	defer file.Close()
-	reader := csv.NewReader(file)
+
+	// Read file content to handle encoding
+	content, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل: " + err.Error()})
+		return
+	}
+
+	// Try to detect and convert encoding (UTF-8, Windows-1256, etc.)
+	contentStr := string(content)
+	// Remove BOM if present
+	if len(contentStr) > 0 && contentStr[0] == '\ufeff' {
+		contentStr = contentStr[1:]
+	}
+
+	reader := csv.NewReader(strings.NewReader(contentStr))
 	reader.Comma = ','
-	reader.FieldsPerRecord = -1
+	reader.LazyQuotes = true // Allow unquoted quotes in fields
+	reader.TrimLeadingSpace = true
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
+
 	rows, err := reader.ReadAll()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن CSV: " + err.Error()})
@@ -2190,40 +2205,79 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 	}
 	var toInsert []models.AffiliateRegisteredUser
 	for i, row := range rows {
+		// Skip empty rows
+		if len(row) == 0 {
+			continue
+		}
+
+		// Skip header row (check first few rows)
 		if i == 0 && len(row) > 0 {
-			// skip header or detect header by content
-			if strings.Contains(row[0], "نام") || strings.Contains(row[0], "name") {
+			firstCell := strings.ToLower(strings.TrimSpace(row[0]))
+			if strings.Contains(firstCell, "نام") || strings.Contains(firstCell, "name") ||
+				strings.Contains(firstCell, "نام و نام") || firstCell == "" {
 				continue
 			}
 		}
+
+		// Need at least name and phone (columns 0 and 1)
 		if len(row) < 2 {
 			continue
 		}
+
+		// Clean and extract name (column 0)
 		name := strings.TrimSpace(row[0])
-		phone := strings.TrimSpace(strings.ReplaceAll(row[1], "\"", ""))
-		if name == "" || phone == "" {
+		name = strings.Trim(name, "\"'\t ")
+		if name == "" {
 			continue
 		}
-		// normalize phone: digits only for matching
+
+		// Clean and extract phone (column 1)
+		phone := strings.TrimSpace(row[1])
+		phone = strings.Trim(phone, "\"'\t ")
+		if phone == "" {
+			continue
+		}
+
+		// Normalize phone: extract digits only
 		phone = strings.Map(func(r rune) rune {
 			if r >= '0' && r <= '9' {
 				return r
 			}
 			return -1
 		}, phone)
-		if len(phone) < 10 {
+
+		// Validate phone length (Iranian phones: 10-11 digits)
+		if len(phone) < 10 || len(phone) > 11 {
 			continue
 		}
+
+		// Extract registration date (column 4 - "ایجاد شده در")
 		var regAt *time.Time
 		if len(row) >= 5 {
-			s := strings.TrimSpace(row[4])
-			if t, e := time.Parse("2006-01-02 15:04:05", s); e == nil {
-				regAt = &t
-			} else if t, e := time.Parse("2006-01-02", s); e == nil {
-				regAt = &t
+			dateStr := strings.TrimSpace(row[4])
+			dateStr = strings.Trim(dateStr, "\"'\t ")
+			if dateStr != "" {
+				// Try different date formats
+				formats := []string{
+					"2006-01-02 15:04:05",
+					"2006-01-02",
+					"02/01/2006 15:04:05",
+					"02/01/2006",
+				}
+				for _, fmt := range formats {
+					if t, e := time.Parse(fmt, dateStr); e == nil {
+						regAt = &t
+						break
+					}
+				}
 			}
 		}
-		toInsert = append(toInsert, models.AffiliateRegisteredUser{Name: name, Phone: phone, RegisteredAt: regAt})
+
+		toInsert = append(toInsert, models.AffiliateRegisteredUser{
+			Name:         name,
+			Phone:        phone,
+			RegisteredAt: regAt,
+		})
 	}
 	if len(toInsert) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ رکورد معتبری در فایل یافت نشد"})
@@ -2305,7 +2359,10 @@ func MatchAffiliateSales(c *gin.Context) {
 
 // ConfirmAffiliateBuyersRequestBody for confirming matched buyers
 type ConfirmAffiliateBuyersRequestBody struct {
-	Buyers      []struct { Name string `json:"name"`; Phone string `json:"phone"` } `json:"buyers"`
+	Buyers []struct {
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
+	} `json:"buyers"`
 	PurchasedAt string `json:"purchased_at"` // optional date for week, e.g. "2026-02-03"
 }
 

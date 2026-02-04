@@ -9,7 +9,7 @@ import { affiliateApi } from "@/lib/affiliateApi";
 export default function Dashboard() {
   const [data, setData] = useState<{
     referral_link: string;
-    referral_code: string;
+    referral_code?: string;
     total_signups: number;
     total_income: number;
     balance: number;
@@ -36,7 +36,7 @@ export default function Dashboard() {
   }, []);
 
   const copyLink = () => {
-    if (!data?.referral_link) return;
+    if (!data?.referral_link || data.referral_link === '') return;
     navigator.clipboard.writeText(data.referral_link);
     setCopied(true);
     toast.success("لینک افیلیت کپی شد");
@@ -73,17 +73,14 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-2">
-            <input readOnly value={data.referral_link || "درحال آماده سازی لینک شما..."} className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm font-mono text-left dir-ltr" dir="ltr" />
-            {data.referral_link && (
+            <input readOnly value={data.referral_link && data.referral_link.trim() !== "" ? data.referral_link : "درحال آماده سازی لینک شما..."} className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm font-mono text-left dir-ltr" dir="ltr" />
+            {data.referral_link && data.referral_link.trim() !== "" && (
               <Button onClick={copyLink} className="shrink-0">
                 {copied ? <Check className="w-4 h-4 ml-2" /> : <Copy className="w-4 h-4 ml-2" />}
                 {copied ? "کپی شد" : "کپی لینک"}
               </Button>
             )}
           </div>
-          {data.referral_code && (
-            <p className="text-xs text-muted-foreground">کد معرف: <code className="bg-muted px-1 rounded">{data.referral_code}</code></p>
-          )}
         </CardContent>
       </Card>
 

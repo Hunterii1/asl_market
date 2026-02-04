@@ -15,8 +15,9 @@ type Affiliate struct {
 	Name          string         `json:"name" gorm:"size:100;not null"`
 	Username      string         `json:"username" gorm:"size:100;uniqueIndex;not null"`
 	Password      string         `json:"-" gorm:"size:255;not null"`
-	ReferralCode  string         `json:"referral_code" gorm:"size:32;uniqueIndex;not null"` // used in ?ref=XXX
-	Balance       float64        `json:"balance" gorm:"type:decimal(14,2);default:0"`       // withdrawable balance
+	ReferralCode  string         `json:"referral_code" gorm:"size:32"`                // Auto-generated, optional (no longer unique)
+	ReferralLink  string         `json:"referral_link" gorm:"size:500"`               // Custom referral link (full URL)
+	Balance       float64        `json:"balance" gorm:"type:decimal(14,2);default:0"` // withdrawable balance
 	TotalEarnings float64        `json:"total_earnings" gorm:"type:decimal(14,2);default:0"`
 	IsActive      bool           `json:"is_active" gorm:"default:true"`
 	LastLogin     *time.Time     `json:"last_login"`
@@ -58,23 +59,23 @@ func GetAffiliateByUsername(db *gorm.DB, username string) (*Affiliate, error) {
 	// Normalize username: trim spaces and convert to lowercase for consistent comparison
 	usernameNormalized := strings.TrimSpace(strings.ToLower(username))
 	usernameTrimmed := strings.TrimSpace(username)
-	
+
 	// Try multiple strategies for maximum compatibility:
 	// 1. Exact match with normalized username (most common case for new affiliates)
 	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", usernameNormalized, true).First(&a).Error; err == nil {
 		return &a, nil
 	}
-	
+
 	// 2. Case-insensitive match with normalized username
 	if err := db.Where("LOWER(username) = ? AND is_active = ? AND deleted_at IS NULL", usernameNormalized, true).First(&a).Error; err == nil {
 		return &a, nil
 	}
-	
+
 	// 3. Exact match with trimmed original username (for backward compatibility)
 	if err := db.Where("username = ? AND is_active = ? AND deleted_at IS NULL", usernameTrimmed, true).First(&a).Error; err == nil {
 		return &a, nil
 	}
-	
+
 	// 4. Case-insensitive match with trimmed original username (last resort)
 	if err := db.Where("LOWER(username) = LOWER(?) AND is_active = ? AND deleted_at IS NULL", usernameTrimmed, true).First(&a).Error; err != nil {
 		return nil, err
@@ -114,7 +115,9 @@ func GetAllAffiliates(db *gorm.DB, page, perPage int, status string) ([]Affiliat
 
 // CreateAffiliate creates a new affiliate
 func CreateAffiliate(db *gorm.DB, a *Affiliate) error {
-	if a.ReferralCode == "" {
+	// ReferralCode is optional now - admin can set ReferralLink directly
+	// But we still generate one if not provided for backward compatibility
+	if a.ReferralCode == "" && a.ReferralLink == "" {
 		code, err := GenerateReferralCode(db)
 		if err != nil {
 			return err
