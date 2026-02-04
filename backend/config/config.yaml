@@ -21,10 +21,16 @@ cors:
     - "http://127.0.0.1:3000"
     - "http://82.115.24.33:5173"
     - "http://82.115.24.33:3000"
+    # Iran domains
     - "https://asllmarket.ir"
     - "https://www.asllmarket.ir"
     - "http://asllmarket.ir"
     - "http://www.asllmarket.ir"
+    # Global domains
+    - "https://aslmarket.com"
+    - "https://www.aslmarket.com"
+    - "http://aslmarket.com"
+    - "http://www.aslmarket.com"
   allowed_methods:
     - "GET"
     - "POST"
@@ -57,3 +63,8 @@ push:
   # Firebase VAPID Private Key
   vapid_private_key: "COwX4A6BaINVy-2XkoURUR0A0owtWgZLepFSDMZDij4"
   vapid_subject: "mailto:rapexamrs@gmail.com"
+
+environment:
+  # اگر روی سرور ایران هستید این مقدار را true کنید
+  # در این حالت ربات تلگرام غیرفعال می‌شود
+  is_in_iran: false

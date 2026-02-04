@@ -16,13 +16,25 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  // For production (admin.asllmarket.ir or asllmarket.ir)
+  // For production (.ir / .com)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname === 'admin.asllmarket.ir' || hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
-      // In production, images are served directly by Nginx from /uploads/
-      // Admin panel and main site share the same domain structure
+    // Iran domains (admin + main)
+    if (
+      hostname === 'admin.asllmarket.ir' ||
+      hostname === 'asllmarket.ir' ||
+      hostname === 'www.asllmarket.ir'
+    ) {
       return `https://asllmarket.ir${imagePath}`;
+    }
+
+    // Global domains (admin + main)
+    if (
+      hostname === 'admin.aslmarket.com' ||
+      hostname === 'aslmarket.com' ||
+      hostname === 'www.aslmarket.com'
+    ) {
+      return `https://aslmarket.com${imagePath}`;
     }
   }
 

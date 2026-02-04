@@ -9,7 +9,8 @@
 
 @layer base {
   :root {
-    --background: 220 25% 97%;
+    /* حالت روز: لاین‌ها و سطوح واضح و خوانا مثل حالت شب */
+    --background: 220 20% 97%;
     --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
@@ -21,13 +22,13 @@
     --primary: 35 92% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 92%;
+    --secondary: 220 18% 91%;
     --secondary-foreground: 220 25% 15%;
 
-    --muted: 220 15% 94%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 18% 91%;
+    --muted-foreground: 220 10% 38%;
 
-    --accent: 220 20% 92%;
+    --accent: 220 18% 91%;
     --accent-foreground: 220 25% 15%;
 
     --destructive: 0 72% 51%;
@@ -42,8 +43,9 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
+    /* بوردر و لاین‌ها واضح و قابل تشخیص */
+    --border: 220 15% 72%;
+    --input: 220 15% 78%;
     --ring: 35 92% 50%;
 
     --radius: 0.75rem;
@@ -52,15 +54,15 @@
     --sidebar-foreground: 220 25% 25%;
     --sidebar-primary: 35 92% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 96%;
+    --sidebar-accent: 220 18% 94%;
     --sidebar-accent-foreground: 220 25% 15%;
-    --sidebar-border: 220 15% 92%;
+    --sidebar-border: 220 15% 72%;
     --sidebar-ring: 35 92% 50%;
 
     /* Custom tokens */
     --gradient-primary: linear-gradient(135deg, hsl(35 92% 50%) 0%, hsl(25 95% 53%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 20% 98%) 100%);
-    --shadow-card: 0 4px 24px -4px hsl(220 25% 10% / 0.08);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 18% 98%) 100%);
+    --shadow-card: 0 4px 24px -4px hsl(220 25% 10% / 0.12);
     --shadow-glow: 0 0 40px hsl(35 92% 50% / 0.15);
   }
 

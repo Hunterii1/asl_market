@@ -169,9 +169,15 @@ export async function forgotPassword(email: string): Promise<void> {
     const getApiBaseUrl = () => {
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
+        // Global (.com)
+        if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+          return 'https://aslmarket.com/backend/api/v1';
+        }
+        // Iran (.ir)
         if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
           return 'https://asllmarket.ir/backend/api/v1';
         }
+        // Dev / local
         if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
           return '/api/v1';
         }

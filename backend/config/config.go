@@ -7,13 +7,14 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Database DatabaseConfig `mapstructure:"database"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	CORS     CORSConfig     `mapstructure:"cors"`
-	OpenAI   OpenAIConfig   `mapstructure:"openai"`
-	SMS      SMSConfig      `mapstructure:"sms"`
-	Push     PushConfig     `mapstructure:"push"`
+	Server      ServerConfig      `mapstructure:"server"`
+	Database    DatabaseConfig    `mapstructure:"database"`
+	JWT         JWTConfig         `mapstructure:"jwt"`
+	CORS        CORSConfig        `mapstructure:"cors"`
+	OpenAI      OpenAIConfig      `mapstructure:"openai"`
+	SMS         SMSConfig         `mapstructure:"sms"`
+	Push        PushConfig        `mapstructure:"push"`
+	Environment EnvironmentConfig `mapstructure:"environment"`
 }
 
 type ServerConfig struct {
@@ -62,6 +63,13 @@ type PushConfig struct {
 	FCMServerKey    string `mapstructure:"fcm_server_key"` // FCM Server Key for REST API
 }
 
+// EnvironmentConfig controls high-level deployment behaviour (e.g. Iran vs global)
+// When IsInIran is true, features that are blocked/limited in Iran (like Telegram bot)
+// can be disabled safely at runtime.
+type EnvironmentConfig struct {
+	IsInIran bool `mapstructure:"is_in_iran"`
+}
+
 var AppConfig *Config
 
 func LoadConfig() {
@@ -80,6 +88,8 @@ func LoadConfig() {
 	viper.SetDefault("openai.max_tokens", 1000)
 	viper.SetDefault("openai.temperature", 0.7)
 	viper.SetDefault("sms.pattern_code", "9i276pvpwvuj40w")
+	// By default assume non-Iran environment; can be overridden in config.yaml / production.yaml
+	viper.SetDefault("environment.is_in_iran", false)
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Printf("Error reading config file: %v", err)

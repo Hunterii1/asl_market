@@ -21,10 +21,14 @@ func main() {
 	// Connect to database
 	models.ConnectDatabase()
 
-	// Initialize Telegram bot service
-	// TODO: unccoment this on new server
-	// telegramService := services.GetTelegramService()
-	// log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
+	// Initialize Telegram bot service (only when not running on Iran servers)
+	var telegramService *services.TelegramService
+	if !config.AppConfig.Environment.IsInIran {
+		telegramService = services.GetTelegramService()
+		log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
+	} else {
+		log.Println("Running in Iran environment - Telegram bot is disabled")
+	}
 
 	// Initialize SMS service
 	if config.AppConfig.SMS.APIKey != "" {
@@ -95,8 +99,7 @@ func main() {
 	}()
 
 	// Setup routes
-	// TODO : add telegram service here
-	routes.SetupRoutes(router, nil)
+	routes.SetupRoutes(router, telegramService)
 
 	// Start server
 	serverAddr := fmt.Sprintf("%s:%s", config.AppConfig.Server.Host, config.AppConfig.Server.Port)

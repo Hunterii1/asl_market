@@ -3,8 +3,9 @@ package controllers
 import (
 	"net/http"
 
+	"asl-market-backend/config"
 	"asl-market-backend/models"
-	// "asl-market-backend/services"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -37,14 +38,15 @@ func SubmitProduct(c *gin.Context) {
 	// Set status to pending for admin review
 	db.Model(product).Update("status", "pending")
 
-	// Send notification to Telegram bot
-	// TODO: unccoment this on new server
-	// go func() {
-	// 	telegramService := services.GetTelegramService()
-	// 	if telegramService != nil {
-	// 		telegramService.NotifyNewProductSubmission(product, &user)
-	// 	}
-	// }()
+	// Send notification to Telegram bot (only when Telegram is enabled and not in Iran)
+	if !config.AppConfig.Environment.IsInIran {
+		go func() {
+			telegramService := services.GetTelegramService()
+			if telegramService != nil {
+				telegramService.NotifyNewProductSubmission(product, &user)
+			}
+		}()
+	}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":    "Product submitted successfully and is pending admin review",

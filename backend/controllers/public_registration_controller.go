@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	"asl-market-backend/config"
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -193,9 +195,6 @@ func (c *PublicRegistrationController) RegisterPublicSupplier(ctx *gin.Context) 
 		return
 	}
 
-	// Send Telegram notification to admin
-	// TODO: unccoment this on new server
-	// telegramService := services.GetTelegramService()
 	message := "🆕 درخواست ثبت‌نام تأمین‌کننده جدید\n\n"
 	message += "📋 اطلاعات تأمین‌کننده:\n"
 	message += "👤 نام: " + req.FullName + "\n"
@@ -208,16 +207,15 @@ func (c *PublicRegistrationController) RegisterPublicSupplier(ctx *gin.Context) 
 	message += "🔘 عملیات: /view" + strconv.Itoa(int(supplier.ID)) + " | /approve" + strconv.Itoa(int(supplier.ID)) + " | /reject" + strconv.Itoa(int(supplier.ID)) + "\n"
 	message += "➖➖➖➖➖➖➖➖"
 
-	// Create a dummy support ticket to use the notification system
-	_ = &models.SupportTicket{
-		ID:          0,
-		UserID:      tempUser.ID,
-		Title:       "ثبت‌نام تأمین‌کننده جدید",
-		Description: message,
-		Status:      "open",
+	// Send Telegram notification to admin (only when Telegram is enabled and not in Iran)
+	if !config.AppConfig.Environment.IsInIran {
+		go func() {
+			telegramService := services.GetTelegramService()
+			if telegramService != nil {
+				telegramService.NotifyAdminPlainMessage(message)
+			}
+		}()
 	}
-	// TODO: unccoment this on new server
-	// telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Supplier registration submitted successfully. Awaiting admin approval.",
@@ -332,9 +330,6 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 		return
 	}
 
-	// Send Telegram notification to admin
-	// TODO: unccoment this on new server
-	// telegramService := services.GetTelegramService()
 	message := "🆕 درخواست ثبت‌نام ویزیتور جدید\n\n"
 	message += "📋 اطلاعات ویزیتور:\n"
 	message += "👤 نام: " + req.FullName + "\n"
@@ -348,16 +343,15 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 	message += "🔘 عملیات: /vview" + strconv.Itoa(int(visitor.ID)) + " | /vapprove" + strconv.Itoa(int(visitor.ID)) + " | /vreject" + strconv.Itoa(int(visitor.ID)) + "\n"
 	message += "➖➖➖➖➖➖➖➖"
 
-	// Create a dummy support ticket to use the notification system
-	_ = &models.SupportTicket{
-		ID:          0,
-		UserID:      tempUser.ID,
-		Title:       "ثبت‌نام ویزیتور جدید",
-		Description: message,
-		Status:      "open",
+	// Send Telegram notification to admin (only when Telegram is enabled and not in Iran)
+	if !config.AppConfig.Environment.IsInIran {
+		go func() {
+			telegramService := services.GetTelegramService()
+			if telegramService != nil {
+				telegramService.NotifyAdminPlainMessage(message)
+			}
+		}()
 	}
-	// TODO: unccoment this on new server
-	// telegramService.NotifyNewSupportTicket(dummyTicket, &tempUser)
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Visitor registration submitted successfully. Awaiting admin approval.",

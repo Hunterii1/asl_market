@@ -3,7 +3,7 @@
  * اتصال به Backend اصلی پروژه ASL Market
  */
 
-// Determine API base URL based on environment
+// Determine API base URL based on environment / current hostname
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -12,10 +12,20 @@ const getApiBaseUrl = () => {
     if (hostname === 'admin.asllmarket.ir') {
       return 'https://admin.asllmarket.ir/api/v1';
     }
+
+    // Admin Panel Global (.com)
+    if (hostname === 'admin.aslmarket.com') {
+      return 'https://admin.aslmarket.com/api/v1';
+    }
     
     // Main site Production
     if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
       return 'https://asllmarket.ir/backend/api/v1';
+    }
+
+    // Main site Global (.com)
+    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+      return 'https://aslmarket.com/backend/api/v1';
     }
     
     // Development server - use proxy for testing

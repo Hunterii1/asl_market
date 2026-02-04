@@ -9,7 +9,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    /* Light mode: واضح و خوانا مثل حالت شب */
+    --background: 210 20% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -21,29 +22,32 @@ All colors MUST be HSL.
     --primary: 24.6 95% 53.1%;
     --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 210 25% 93%;
     --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 35.9%; /* Darker for better contrast: was 44.9% */
+    --muted: 210 25% 93%;
+    --muted-foreground: 215.4 16.3% 32%;
 
-    --accent: 210 40% 96%;
+    --accent: 210 25% 93%;
     --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 75%; /* Darker border: was 80% */
-    --input: 214.3 31.8% 80%; /* Darker input: was 85% */
+    /* لاین‌ها و بوردرها واضح و قابل تشخیص */
+    --border: 214.3 25% 65%;
+    --input: 214.3 25% 70%;
     --ring: 24.6 95% 53.1%;
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222.2 84% 4.9%;
     --sidebar-primary: 24.6 95% 53.1%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent: 210 25% 93%;
     --sidebar-accent-foreground: 222.2 84% 4.9%;
-    --sidebar-border: 214.3 31.8% 75%; /* Darker sidebar border: was 80% */
+    --sidebar-border: 214.3 25% 65%;
     --sidebar-ring: 24.6 95% 53.1%;
+    /* سایه ملایم برای جدا شدن کارت‌ها از پس‌زمینه در حالت روز */
+    --card-shadow: 0 1px 3px hsl(222.2 84% 4.9% / 0.08);
   }
 
   .dark {
@@ -82,6 +86,7 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 24.6 95% 53.1%;
+    --card-shadow: 0 1px 3px hsl(0 0% 0% / 0.3);
   }
 }
 

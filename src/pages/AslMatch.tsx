@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,8 +26,13 @@ import {
   CalendarClock,
   XCircle,
   AlertTriangle,
-  Activity
+  Activity,
+  HelpCircle
 } from "lucide-react";
+import {
+  AslMatchOnboardingStory,
+  hasSeenOnboarding,
+} from "@/components/AslMatchOnboardingStory";
 
 interface MatchingRequest {
   id: number;
@@ -51,16 +56,29 @@ interface MatchingRequest {
   }>;
 }
 
+const ONBOARDING_DELAY_MS = 800;
+
 export default function AslMatch() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const openFromFirstTimeRef = useRef(false);
 
   useEffect(() => {
     setLoading(false);
-    // Don't check visitor/supplier status here - let each page check it when needed
   }, [isAuthenticated]);
+
+  // اولین بازدید: یک بار استوری‌لاین را خودکار نشان بده؛ بعد از دیدن دیگر نشان نده.
+  useEffect(() => {
+    if (hasSeenOnboarding()) return;
+    const t = setTimeout(() => {
+      openFromFirstTimeRef.current = true;
+      setHelpOpen(true);
+    }, ONBOARDING_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   // Page is accessible to everyone - no authentication/license required
   // Users can see all features, but checks will be done in target pages
@@ -407,15 +425,29 @@ export default function AslMatch() {
                 <div className="absolute bottom-0 left-0 w-2 h-2 bg-white rounded-full animate-ping opacity-75" style={{ animationDelay: '0.5s' }}></div>
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-orange-600 via-orange-700 to-red-600 bg-clip-text text-transparent flex items-center gap-2 sm:gap-3 animate-in fade-in-0 slide-in-from-right-4 duration-700">
-                  <span className="relative">
-                    ASL MATCH
-                    <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg blur opacity-20 animate-pulse"></div>
-                  </span>
-                  <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 font-bold shadow-lg animate-pulse hover:scale-110 transition-transform duration-300">
-                    BETA
-                  </Badge>
-                </h1>
+                <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black bg-gradient-to-r from-orange-600 via-orange-700 to-red-600 bg-clip-text text-transparent flex items-center gap-2 sm:gap-3 animate-in fade-in-0 slide-in-from-right-4 duration-700">
+                    <span className="relative">
+                      ASL MATCH
+                      <div className="absolute -inset-1 bg-gradient-to-r from-orange-600 to-red-600 rounded-lg blur opacity-20 animate-pulse"></div>
+                    </span>
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-600 text-white text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 font-bold shadow-lg animate-pulse hover:scale-110 transition-transform duration-300">
+                      BETA
+                    </Badge>
+                  </h1>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      openFromFirstTimeRef.current = false;
+                      setHelpOpen(true);
+                    }}
+                    className="rounded-full h-9 w-9 sm:h-10 sm:w-10 border-2 border-orange-300 dark:border-orange-700 bg-orange-50/50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:scale-110 transition-all duration-300 shrink-0"
+                    title="راهنمای کامل ASL Match"
+                  >
+                    <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 dark:text-orange-400" />
+                  </Button>
+                </div>
                 <p className="text-sm sm:text-base text-muted-foreground mt-1 flex items-center gap-2 animate-in fade-in-0 slide-in-from-right-4 duration-700" style={{ animationDelay: '0.2s' }}>
                   <Activity className="w-4 h-4 text-orange-500 animate-pulse" />
                   سیستم هوشمند اتصال تأمین‌کنندگان و ویزیتورها
@@ -424,6 +456,12 @@ export default function AslMatch() {
             </div>
           </div>
         </div>
+
+        <AslMatchOnboardingStory
+          open={helpOpen}
+          onOpenChange={setHelpOpen}
+          markAsSeenOnClose={openFromFirstTimeRef.current}
+        />
 
         {/* Content */}
         <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-700" style={{ animationDelay: '0.3s' }}>

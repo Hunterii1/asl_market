@@ -1,4 +1,8 @@
 import { useState, useEffect } from "react";
+import {
+  SiteOnboardingStory,
+  hasSeenSiteOnboarding,
+} from "@/components/SiteOnboardingStory";
 import { apiService } from "@/services/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +59,8 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import Slider from "@/components/Slider";
 import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 
+const SITE_ONBOARDING_DELAY_MS = 1000;
+
 const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -63,8 +69,16 @@ const Index = () => {
   const navigate = useNavigate();
   const [hasSupplier, setHasSupplier] = useState(false);
   const [hasVisitor, setHasVisitor] = useState(false);
+  const [siteOnboardingOpen, setSiteOnboardingOpen] = useState(false);
 
-  // Don't check visitor/supplier status here - let each page check it when needed
+  // اولین بازدید سایت: یک بار استوری‌لاین معرفی کل سایت را نشان بده.
+  useEffect(() => {
+    if (hasSeenSiteOnboarding()) return;
+    const t = setTimeout(() => {
+      setSiteOnboardingOpen(true);
+    }, SITE_ONBOARDING_DELAY_MS);
+    return () => clearTimeout(t);
+  }, []);
 
   // Convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -150,6 +164,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      <SiteOnboardingStory
+        open={siteOnboardingOpen}
+        onOpenChange={setSiteOnboardingOpen}
+        markAsSeenOnClose
+      />
       {/* Header */}
       <HeaderAuth />
       

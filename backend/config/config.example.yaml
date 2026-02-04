@@ -16,7 +16,10 @@ jwt:
 cors:
   allowed_origins:
     - "http://localhost:3000"
+    # Iran domains
     - "https://asllmarket.ir"
+    # Global domains
+    - "https://aslmarket.com"
   allowed_methods:
     - "GET"
     - "POST"

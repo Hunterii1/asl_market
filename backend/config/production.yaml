@@ -15,10 +15,16 @@ jwt:
 
 cors:
   allowed_origins: 
+    # Iran domains
     - "https://asllmarket.ir"
     - "https://www.asllmarket.ir"
     - "http://asllmarket.ir"
     - "http://www.asllmarket.ir"
+    # Global domains (in case same config is reused)
+    - "https://aslmarket.com"
+    - "https://www.aslmarket.com"
+    - "http://aslmarket.com"
+    - "http://www.aslmarket.com"
   allowed_methods:
     - "GET"
     - "POST"
@@ -37,4 +43,9 @@ openai:
   api_url: "https://api.openai.com/v1/chat/completions"
   model: "gpt-4"
   max_tokens: 2000
-  temperature: 0.7 
+  temperature: 0.7  
+
+environment:
+  # این فایل معمولاً برای سرور ایران استفاده می‌شود
+  # بنابراین به‌صورت پیش‌فرض ایران را true می‌گذاریم
+  is_in_iran: true
