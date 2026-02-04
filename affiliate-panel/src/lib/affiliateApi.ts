@@ -1,13 +1,14 @@
+// استفاده از همان API پنل مدیریت تا لیست ثبت‌نامی و همهٔ داده‌ها از یک بک‌اند و یک دیتابیس بیاید (ادمین و افیلیت هر دو به یک سرور متصل شوند)
 const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
-    // Global (.com)
+    // Global (.com) — همان دامنهٔ API ادمین تا دادهٔ import شده در پنل افیلیت دیده شود
     if (hostname === "asllmarket.com" || hostname === "www.asllmarket.com") {
-      return "https://asllmarket.com/backend/api/v1";
+      return "https://admin.asllmarket.com/api/v1";
     }
     // Iran (.ir)
     if (hostname === "asllmarket.ir" || hostname === "www.asllmarket.ir") {
-      return "https://asllmarket.ir/backend/api/v1";
+      return "https://admin.asllmarket.ir/api/v1";
     }
     // Dev / local
     if (hostname === "localhost" || hostname === "127.0.0.1") {
