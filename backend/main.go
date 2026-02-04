@@ -49,40 +49,30 @@ func main() {
 	// Create Gin router
 	router := gin.Default()
 
-	// Setup CORS
+	// Setup CORS — فقط یک لایه (همین) تا هدر Access-Control-Allow-Origin فقط یک بار ست شود.
+	// اگر nginx هم CORS ست کند، مقدار دو بار می‌آید و مرورگر خطای "multiple values" می‌دهد.
 	corsConfig := cors.DefaultConfig()
-
-	// Allow all origins for development and testing
-	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowCredentials = true
 	corsConfig.AllowMethods = config.AppConfig.CORS.AllowedMethods
 	corsConfig.AllowHeaders = config.AppConfig.CORS.AllowedHeaders
-	corsConfig.AllowCredentials = true
 	corsConfig.ExposeHeaders = []string{"Content-Length", "Content-Range", "Accept-Ranges"}
 	corsConfig.MaxAge = 12 * 60 * 60 // 12 hours
+	// اُرژین‌های مجاز صریح (با credentials نمی‌شود از * استفاده کرد)
+	corsConfig.AllowOrigins = []string{
+		"https://asllmarket.com",
+		"https://www.asllmarket.com",
+		"https://admin.asllmarket.com",
+		"https://asllmarket.ir",
+		"https://www.asllmarket.ir",
+		"https://admin.asllmarket.ir",
+		"http://localhost:5173",
+		"http://localhost:5174",
+		"http://localhost:5175",
+		"http://127.0.0.1:5173",
+		"http://127.0.0.1:5174",
+		"http://127.0.0.1:5175",
+	}
 	router.Use(cors.New(corsConfig))
-
-	// Static files are served in routes.go
-
-	// Add video streaming middleware
-	router.Use(func(c *gin.Context) {
-		// Get origin from request
-		origin := c.Request.Header.Get("Origin")
-
-		// Allow all origins for development and testing
-		c.Header("Access-Control-Allow-Origin", origin)
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization, X-Requested-With, Range")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges")
-		c.Header("Access-Control-Allow-Credentials", "true")
-
-		// Handle preflight requests
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
-			return
-		}
-
-		c.Next()
-	})
 
 	// Start matching expiration checker in background
 	go func() {
