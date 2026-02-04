@@ -42,6 +42,26 @@ export default function Users() {
     load();
   }, [load]);
 
+  // نمودار: از API یا از روی لیست کاربران (گروه‌بندی بر اساس روز)
+  const chartDataToShow = (() => {
+    if (chartData.length > 0) return chartData;
+    const byDate: Record<string, number> = {};
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 90);
+    for (const u of users) {
+      const dateStr = u.registered_at || u.created_at;
+      if (!dateStr) continue;
+      const d = new Date(dateStr);
+      if (d < cutoff) continue;
+      const key = d.toISOString().slice(0, 10);
+      byDate[key] = (byDate[key] ?? 0) + 1;
+    }
+    return Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, count]) => ({ name, count }));
+  })();
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -49,8 +69,8 @@ export default function Users() {
         <p className="text-muted-foreground">همان لیستی که پشتیبانی برای شما در پنل مدیریت ثبت کرده است</p>
       </div>
 
-      {/* نمودار ثبت‌نام‌ها در روزهای مختلف */}
-      {chartData.length > 0 && !error && (
+      {/* نمودار ثبت‌نام‌ها در روزهای مختلف — بالای لیست کاربران */}
+      {!error && (
         <Card className="rounded-2xl overflow-hidden">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -60,7 +80,15 @@ export default function Users() {
             <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisteredUsersChart data={chartData} />
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : chartDataToShow.length > 0 ? (
+              <RegisteredUsersChart data={chartDataToShow} />
+            ) : (
+              <p className="text-muted-foreground text-center py-12">در ۹۰ روز گذشته داده‌ای برای نمودار ثبت نشده است.</p>
+            )}
           </CardContent>
         </Card>
       )}

@@ -61,6 +61,28 @@ export default function Dashboard() {
   const regChart = (data.registrations_chart || []).map((d: { name: string; count?: number }) => ({ ...d, count: Number(d.count) || 0 }));
   const salesChart = (data.sales_chart || []).map((d: { name: string; sales?: number; count?: number }) => ({ ...d, sales: Number(d.sales) || Number((d as { count?: number }).count) || 0 }));
 
+  // نمودار ثبت‌نامی: از API یا از روی لیست کاربران (گروه‌بندی بر اساس روز)
+  const registeredChartRaw = data.registered_users_chart ?? [];
+  const registeredChartFromList = (() => {
+    if (registeredChartRaw.length > 0) return registeredChartRaw;
+    const list = data.registered_users ?? [];
+    const byDate: Record<string, number> = {};
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 90);
+    for (const u of list) {
+      const dateStr = u.registered_at || u.created_at;
+      if (!dateStr) continue;
+      const d = new Date(dateStr);
+      if (d < cutoff) continue;
+      const key = d.toISOString().slice(0, 10);
+      byDate[key] = (byDate[key] ?? 0) + 1;
+    }
+    return Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, count]) => ({ name, count }));
+  })();
+
   return (
     <div className="space-y-6" dir="rtl">
       <div>
@@ -160,21 +182,23 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* نمودار ثبت‌نامی‌ها در روزهای مختلف (لیست پشتیبانی) */}
-      {(data.registered_users_chart?.length ?? 0) > 0 && (
-        <Card className="rounded-2xl overflow-hidden">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-primary" />
-              نمودار ثبت‌نام‌ها (بر اساس روز)
-            </CardTitle>
-            <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RegisteredUsersChart data={data.registered_users_chart ?? []} />
-          </CardContent>
-        </Card>
-      )}
+      {/* نمودار ثبت‌نامی‌ها در روزهای مختلف (لیست پشتیبانی) — بالای لیست ثبت‌نامی */}
+      <Card className="rounded-2xl overflow-hidden">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            نمودار ثبت‌نام‌ها (بر اساس روز)
+          </CardTitle>
+          <CardDescription>تعداد ثبت‌نام‌های لیست پشتیبانی در ۹۰ روز گذشته</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {registeredChartFromList.length > 0 ? (
+            <RegisteredUsersChart data={registeredChartFromList} />
+          ) : (
+            <p className="text-muted-foreground text-center py-12">در ۹۰ روز گذشته داده‌ای برای نمودار ثبت نشده است.</p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* لیست ثبت‌نامی (همان لیستی که پشتیبانی از CSV آپلود کرده) — از همان API داشبورد می‌آید */}
       <Card className="rounded-2xl">
