@@ -94,6 +94,22 @@ export const affiliateApi = {
     const data = await request(`/affiliate/users?${q}`);
     return data?.data ?? data;
   },
+  /** لیست ثبت‌نامی (همان لیستی که پشتیبانی از CSV/اکسل آپلود کرده) */
+  async getRegisteredUsers(params?: { page?: number; per_page?: number }) {
+    const q = new URLSearchParams();
+    if (params?.page) q.set("page", String(params.page));
+    if (params?.per_page) q.set("per_page", String(params.per_page));
+    const data = await request(`/affiliate/registered-users?${q}`);
+    return data?.data ?? data;
+  },
+  /** لیست خریداران تأییدشده */
+  async getBuyers(params?: { page?: number; per_page?: number }) {
+    const q = new URLSearchParams();
+    if (params?.page) q.set("page", String(params.page));
+    if (params?.per_page) q.set("per_page", String(params.per_page));
+    const data = await request(`/affiliate/buyers?${q}`);
+    return data?.data ?? data;
+  },
   async getPayments() {
     const data = await request("/affiliate/payments");
     return data?.data ?? data;

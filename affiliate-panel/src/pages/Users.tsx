@@ -3,19 +3,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users as UsersIcon, Loader2 } from "lucide-react";
 import { affiliateApi } from "@/lib/affiliateApi";
 
+type RegisteredUser = { id: number; name: string; phone: string; registered_at: string; created_at: string };
+
 export default function Users() {
-  const [users, setUsers] = useState<{ id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[]>([]);
+  const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const perPage = 20;
+  const perPage = 50;
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const res = await affiliateApi.getUsers({ page, per_page: perPage });
+        const res = await affiliateApi.getRegisteredUsers({ page, per_page: perPage });
         if (!cancelled) {
           setUsers(res?.users ?? []);
           setTotal(Number(res?.total ?? 0));
@@ -32,16 +34,16 @@ export default function Users() {
   return (
     <div className="space-y-6" dir="rtl">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">کاربران</h1>
-        <p className="text-muted-foreground">لیست کاربران ثبت‌نام شده از طریق لینک شما</p>
+        <h1 className="text-2xl font-bold text-foreground">لیست ثبت‌نامی</h1>
+        <p className="text-muted-foreground">همان لیستی که پشتیبانی برای شما در پنل مدیریت ثبت کرده است</p>
       </div>
       <Card className="rounded-2xl">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UsersIcon className="w-5 h-5" />
-            کاربران ({total.toLocaleString("fa-IR")})
+            ثبت‌نام‌ها ({total.toLocaleString("fa-IR")})
           </CardTitle>
-          <CardDescription>دیتابیس کاربران معرفی شده</CardDescription>
+          <CardDescription>کاربران معرفی‌شده توسط شما (ارسال‌شده از طرف پشتیبانی)</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -49,7 +51,7 @@ export default function Users() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : users.length === 0 ? (
-            <p className="text-muted-foreground text-center py-12">کاربری ثبت نشده است.</p>
+            <p className="text-muted-foreground text-center py-12">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
           ) : (
             <>
               <div className="overflow-x-auto">
@@ -57,7 +59,6 @@ export default function Users() {
                   <thead>
                     <tr className="border-b border-border">
                       <th className="text-right py-3 px-2">نام</th>
-                      <th className="text-right py-3 px-2">ایمیل</th>
                       <th className="text-right py-3 px-2">موبایل</th>
                       <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
                     </tr>
@@ -65,10 +66,9 @@ export default function Users() {
                   <tbody>
                     {users.map((u) => (
                       <tr key={u.id} className="border-b border-border/50">
-                        <td className="py-2 px-2">{u.first_name} {u.last_name}</td>
-                        <td className="py-2 px-2">{u.email || "—"}</td>
+                        <td className="py-2 px-2">{u.name}</td>
                         <td className="py-2 px-2">{u.phone || "—"}</td>
-                        <td className="py-2 px-2">{u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—"}</td>
+                        <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
                       </tr>
                     ))}
                   </tbody>
