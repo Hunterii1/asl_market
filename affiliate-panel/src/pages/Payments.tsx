@@ -16,8 +16,25 @@ export default function Payments() {
         const res = await affiliateApi.getPayments();
         if (!cancelled) {
           const raw = res?.payments_chart ?? [];
-          setPaymentsChart(raw.map((d: { name: string; amount?: number; count?: number }) => ({ name: d.name, amount: Number(d.amount ?? d.count ?? 0) || 0 })));
-          setUsersList(res?.confirmed_buyers ?? []);
+          let chartData = raw.map((d: { name: string; amount?: number; count?: number }) => ({ name: d.name, amount: Number(d.amount ?? d.count ?? 0) || 0 }));
+          const buyers = res?.confirmed_buyers ?? [];
+          setUsersList(buyers);
+          // اگر بک‌اند payments_chart خالی فرستاد ولی لیست خریداران داریم، نمودار را از همان لیست بساز
+          if (chartData.length === 0 && buyers.length > 0) {
+            const dayTotals: Record<string, number> = {};
+            const defaultAmount = 6_000_000;
+            for (const u of buyers) {
+              const dateStr = u.purchased_at?.slice(0, 10) || (u.created_at ? new Date(u.created_at).toISOString().slice(0, 10)) : "";
+              if (dateStr) {
+                const amt = (u.amount_toman && u.amount_toman > 0) ? u.amount_toman : defaultAmount;
+                dayTotals[dateStr] = (dayTotals[dateStr] ?? 0) + amt;
+              }
+            }
+            chartData = Object.entries(dayTotals)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([name, amount]) => ({ name, amount }));
+          }
+          setPaymentsChart(chartData);
         }
       } finally {
         if (!cancelled) setLoading(false);
