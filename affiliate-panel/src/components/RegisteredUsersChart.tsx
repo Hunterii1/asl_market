@@ -23,6 +23,19 @@ function formatDateLabel(dateStr: string): string {
   }
 }
 
+function formatDateFull(dateStr: string): string {
+  try {
+    const d = new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString("fa-IR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
 type TimeRange = "all" | "month" | "week";
 
 export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
@@ -41,9 +54,16 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
 
   if ((data || []).length === 0) return null;
 
+  const dateRangeText =
+    chartData.length > 0
+      ? chartData.length === 1
+        ? formatDateFull(chartData[0].name)
+        : `از ${formatDateFull(chartData[0].name)} تا ${formatDateFull(chartData[chartData.length - 1].name)}`
+      : null;
+
   return (
     <div className="h-[280px] w-full" dir="ltr">
-      {/* هدر: سمت راست عنوان و آیکن، سمت چپ دکمه‌های بازه */}
+      {/* هدر: سمت راست عنوان و آیکن و بازه تاریخ، سمت چپ دکمه‌های بازه */}
       <div className="flex items-start justify-between gap-4 mb-4" dir="rtl">
         <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 p-1">
           {(["all", "month", "week"] as const).map((r) => (
@@ -68,6 +88,11 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
           <div>
             <p className="text-sm font-semibold text-foreground">ثبت‌نام روزانه</p>
             <p className="text-xs text-muted-foreground">تعداد کاربران ثبت‌نام‌شده</p>
+            {dateRangeText && (
+              <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                {dateRangeText}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -109,7 +134,7 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
               boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
               background: "hsl(var(--card))",
             }}
-            labelFormatter={formatDateLabel}
+            labelFormatter={formatDateFull}
             formatter={(value: number) => [
               value?.toLocaleString?.("fa-IR") ?? value,
               "تعداد ثبت‌نام",
