@@ -105,6 +105,23 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		})
 	}
 
+	// لیست ثبت‌نامی (همان لیستی که ادمین از CSV آپلود کرده) — در داشبورد هم برمی‌گردانیم تا حتماً در پنل دیده شود
+	registeredList, totalRegistered, _ := models.GetAffiliateRegisteredUsers(db, affID, 100, 0)
+	registeredUsersPayload := make([]map[string]interface{}, 0, len(registeredList))
+	for _, r := range registeredList {
+		regAt := ""
+		if r.RegisteredAt != nil {
+			regAt = r.RegisteredAt.Format("2006-01-02")
+		}
+		registeredUsersPayload = append(registeredUsersPayload, map[string]interface{}{
+			"id":            r.ID,
+			"name":          r.Name,
+			"phone":         r.Phone,
+			"registered_at": regAt,
+			"created_at":    r.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
 	// Base URL for referral link: main site (not admin/api subdomain)
 	baseURL := "https://asllmarket.com"
 	if c.Request.Host != "" {
@@ -133,14 +150,16 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"referral_link":       referralLink,
-			"referral_code":       aff.ReferralCode,
-			"total_signups":       totalSignups,
-			"total_income":        aff.TotalEarnings,
-			"balance":             aff.Balance,
-			"registrations_chart": chartData,
-			"sales_chart":         salesChartData,
-			"users_who_purchased": usersList,
+			"referral_link":          referralLink,
+			"referral_code":          aff.ReferralCode,
+			"total_signups":          totalSignups,
+			"total_income":           aff.TotalEarnings,
+			"balance":                aff.Balance,
+			"registrations_chart":    chartData,
+			"sales_chart":            salesChartData,
+			"users_who_purchased":    usersList,
+			"registered_users":       registeredUsersPayload,
+			"total_registered_users": totalRegistered,
 		},
 	})
 }

@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { Users, Wallet, Copy, Check, Link2, Loader2, UserCheck } from "lucide-react";
+import { Users, Wallet, Copy, Check, Link2, Loader2, UserCheck, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
 
@@ -16,6 +17,8 @@ export default function Dashboard() {
     registrations_chart: { name: string; count: number }[];
     sales_chart: { name: string; sales: number }[];
     users_who_purchased: { id: number; first_name: string; last_name: string; email: string; phone: string; created_at: string }[];
+    registered_users?: { id: number; name: string; phone: string; registered_at: string; created_at: string }[];
+    total_registered_users?: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -154,6 +157,48 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+
+      {/* لیست ثبت‌نامی (همان لیستی که پشتیبانی از CSV آپلود کرده) — از همان API داشبورد می‌آید */}
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            لیست ثبت‌نامی (ارسال‌شده توسط پشتیبانی)
+          </CardTitle>
+          <CardDescription>
+            {(data.total_registered_users ?? 0) > 0
+              ? `${Number(data.total_registered_users).toLocaleString("fa-IR")} نفر — `
+              : ""}
+            <Link to="/users" className="text-primary underline">مشاهده همه</Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {(data.registered_users?.length ?? 0) === 0 ? (
+            <p className="text-muted-foreground text-center py-8">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-right py-3 px-2">نام</th>
+                    <th className="text-right py-3 px-2">موبایل</th>
+                    <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(data.registered_users ?? []).map((u) => (
+                    <tr key={u.id} className="border-b border-border/50">
+                      <td className="py-2 px-2">{u.name}</td>
+                      <td className="py-2 px-2">{u.phone || "—"}</td>
+                      <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card className="rounded-2xl">
         <CardHeader>
