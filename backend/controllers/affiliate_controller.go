@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -176,12 +177,15 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		referralLink = "" // Will show "درحال آماده سازی لینک شما..." in frontend
 	}
 
-	// درآمد واقعی = مجموع مبلغ پرداخت‌های تأییدشده (لیست خریداران). هر پرداخت بدون مبلغ = ۶ میلیون تومان. درآمد کل = واقعی × (درصد افیلیت/۱۰۰)
+	// درآمد واقعی = مجموع مبلغ پرداخت‌های تأییدشده (همان لیست خریداران بالا). هر پرداخت بدون مبلغ یا ۰ = ۶ میلیون تومان. درآمد کل = واقعی × (درصد افیلیت/۱۰۰)
 	var realIncome float64
-	// هر پرداخت بدون مبلغ یا مبلغ ۰ = ۶ میلیون. با COUNT×۶M کار می‌کند حتی اگر ستون amount_toman نباشد.
-	var buyerCount int64
-	db.Raw(`SELECT COUNT(*) FROM affiliate_buyers WHERE affiliate_id = ? AND deleted_at IS NULL`, affID).Scan(&buyerCount)
-	realIncome = float64(buyerCount) * float64(models.DefaultAmountToman)
+	for _, b := range confirmedBuyers {
+		amt := int64(models.DefaultAmountToman)
+		if b.AmountToman != nil && *b.AmountToman > 0 {
+			amt = *b.AmountToman
+		}
+		realIncome += float64(amt)
+	}
 	percent := aff.CommissionPercent
 	if percent <= 0 {
 		percent = 100
@@ -256,16 +260,16 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 		Date   string  `gorm:"column:date"`
 		Amount float64 `gorm:"column:amount"`
 	}
-	// هر ردیف = یک روز؛ مبلغ = تعداد × ۶۰۰۰۰۰۰. محدود به ۳۶۵ روز اخیر تا نمودار خالی نشود (مشکل timezone/تاریخ).
+	// هر ردیف = یک روز؛ مبلغ = تعداد × ۶۰۰۰۰۰۰. بدون فیلتر تاریخ تا نمودار حتماً داده داشته باشد.
 	db.Raw(`
 		SELECT COALESCE(DATE(purchased_at), DATE(created_at)) AS date,
 		       (COUNT(*) * ?) AS amount
 		FROM affiliate_buyers
 		WHERE affiliate_id = ? AND deleted_at IS NULL
-		  AND COALESCE(purchased_at, created_at) >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)
 		GROUP BY COALESCE(DATE(purchased_at), DATE(created_at))
 		ORDER BY date ASC
 	`, models.DefaultAmountToman, affID).Scan(&paymentsChart)
+	confirmedBuyers, _, _ := models.GetAffiliateBuyers(ac.DB, affID, 100, 0)
 	paymentsChartData := make([]map[string]interface{}, 0, len(paymentsChart))
 	now := time.Now().Format("2006-01-02")
 	for _, r := range paymentsChart {
@@ -277,7 +281,32 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 			"name": dateStr, "count": int64(r.Amount), "amount": r.Amount,
 		})
 	}
-	confirmedBuyers, _, _ := models.GetAffiliateBuyers(ac.DB, affID, 100, 0)
+	// اگر کوئری خالی برگرداند ولی خریدار داریم، از لیست خریداران نمودار بساز (گروه‌بندی بر اساس روز)
+	if len(paymentsChartData) == 0 && len(confirmedBuyers) > 0 {
+		dayTotals := make(map[string]float64)
+		for _, b := range confirmedBuyers {
+			var d time.Time
+			if b.PurchasedAt != nil {
+				d = *b.PurchasedAt
+			} else {
+				d = b.CreatedAt
+			}
+			key := d.Format("2006-01-02")
+			amt := float64(models.DefaultAmountToman)
+			if b.AmountToman != nil && *b.AmountToman > 0 {
+				amt = float64(*b.AmountToman)
+			}
+			dayTotals[key] += amt
+		}
+		for k, v := range dayTotals {
+			paymentsChartData = append(paymentsChartData, map[string]interface{}{
+				"name": k, "count": int64(v), "amount": v,
+			})
+		}
+		sort.Slice(paymentsChartData, func(i, j int) bool {
+			return paymentsChartData[i]["name"].(string) < paymentsChartData[j]["name"].(string)
+		})
+	}
 	confirmedList := make([]map[string]interface{}, 0, len(confirmedBuyers))
 	for _, b := range confirmedBuyers {
 		pa := ""
