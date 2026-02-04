@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminApi } from '@/lib/api/adminApi';
-import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck, Percent } from 'lucide-react';
+import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck, Percent, Banknote } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -56,6 +56,17 @@ interface Buyer {
   created_at: string;
 }
 
+interface WithdrawalRequest {
+  id: number;
+  amount: number;
+  status: string;
+  admin_notes: string;
+  bank_card_number: string;
+  card_holder_name: string;
+  requested_at: string;
+  created_at: string;
+}
+
 export default function Affiliates() {
   const [list, setList] = useState<AffiliateRow[]>([]);
   const [total, setTotal] = useState(0);
@@ -88,6 +99,9 @@ export default function Affiliates() {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
   const [loadingRegistered, setLoadingRegistered] = useState(false);
   const [loadingBuyers, setLoadingBuyers] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
+  const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
+  const [withdrawalNote, setWithdrawalNote] = useState<Record<number, string>>({});
   const perPage = 10;
 
   const load = async () => {
@@ -154,9 +168,25 @@ export default function Affiliates() {
     setMatchedBuyers([]);
     setRegisteredUsers([]);
     setBuyers([]);
+    setWithdrawalRequests([]);
+    setWithdrawalNote({});
     setDetailOpen(true);
     loadRegisteredUsers(row.id);
     loadBuyers(row.id);
+    loadWithdrawals(row.id);
+  };
+
+  const loadWithdrawals = async (id: number) => {
+    setLoadingWithdrawals(true);
+    try {
+      const res = await adminApi.getAffiliateWithdrawalRequests(id, { page: 1, per_page: 100 });
+      const data = res?.data ?? res;
+      setWithdrawalRequests(data?.items ?? []);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'خطا', description: 'بارگذاری درخواست‌های برداشت ناموفق بود' });
+    } finally {
+      setLoadingWithdrawals(false);
+    }
   };
 
   const loadRegisteredUsers = async (id: number) => {
@@ -346,6 +376,21 @@ export default function Affiliates() {
     }
   };
 
+  const handleWithdrawalStatus = async (reqId: number, status: 'completed' | 'rejected') => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      const note = withdrawalNote[reqId] ?? '';
+      await adminApi.updateAffiliateWithdrawalStatus(selected.id, reqId, status, note);
+      toast({ title: status === 'completed' ? 'پرداخت شد' : 'رد شد', description: 'وضعیت به‌روزرسانی شد' });
+      setWithdrawalNote((prev) => { const p = { ...prev }; delete p[reqId]; return p; });
+      loadWithdrawals(selected.id);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'به‌روزرسانی ناموفق بود' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const totalPages = Math.ceil(total / perPage) || 1;
 
@@ -491,12 +536,13 @@ export default function Affiliates() {
           </DialogHeader>
           {selected && (
             <Tabs defaultValue="link" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="link"><Link2 className="w-4 h-4 ml-1" /> لینک اختصاصی</TabsTrigger>
                 <TabsTrigger value="registered"><Users className="w-4 h-4 ml-1" /> لیست ثبت‌نام‌ها</TabsTrigger>
                 <TabsTrigger value="sales"><ShoppingCart className="w-4 h-4 ml-1" /> لیست فروش</TabsTrigger>
                 <TabsTrigger value="buyers"><FileText className="w-4 h-4 ml-1" /> لیست خریداران</TabsTrigger>
-                <TabsTrigger value="discount"><Percent className="w-4 h-4 ml-1" /> کد تخفیف</TabsTrigger>
+                <TabsTrigger value="discount"><Percent className="w-4 h-4 ml-1" /> درصد افیلیت</TabsTrigger>
+                <TabsTrigger value="withdrawals"><Banknote className="w-4 h-4 ml-1" /> درخواست برداشت</TabsTrigger>
               </TabsList>
               
               <TabsContent value="link" className="space-y-4 mt-4">
@@ -620,7 +666,7 @@ export default function Affiliates() {
               <TabsContent value="discount" className="space-y-4 mt-4">
                 <div className="space-y-2">
                   <Label>درصد سهم افیلیت (۰–۱۰۰)</Label>
-                  <p className="text-xs text-muted-foreground">این درصد روی کادر «درآمد کل» در داشبورد پنل افیلیت اعمال می‌شود. مثلاً اگر درآمد واقعی ۱۰ میلیون تومان و درصد ۲۰ باشد، درآمد کل افیلیت می‌شود ۲ میلیون تومان.</p>
+                  <p className="text-xs text-muted-foreground">این درصد روی کادر «درآمد شما» در داشبورد پنل افیلیت اعمال می‌شود. مثلاً اگر درآمد کل ۱۰ میلیون تومان و درصد ۱۰ باشد، درآمد شما افیلیت می‌شود ۱ میلیون تومان.</p>
                   <div className="flex gap-2 items-center">
                     <Input
                       type="number"
@@ -640,6 +686,52 @@ export default function Affiliates() {
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}
                   ذخیره درصد سهم
                 </Button>
+              </TabsContent>
+
+              <TabsContent value="withdrawals" className="space-y-4 mt-4">
+                <div className="border rounded-lg p-4 max-h-96 overflow-y-auto space-y-4">
+                  <h4 className="font-semibold mb-2">درخواست‌های برداشت ({withdrawalRequests.length})</h4>
+                  {loadingWithdrawals ? (
+                    <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>
+                  ) : withdrawalRequests.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">درخواستی ثبت نشده است</p>
+                  ) : (
+                    withdrawalRequests.map((r) => (
+                      <div key={r.id} className="p-4 bg-muted rounded-lg space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <span className="font-semibold">{Number(r.amount).toLocaleString('fa-IR')} تومان</span>
+                            <span className="text-muted-foreground text-sm mr-2"> — {r.card_holder_name || '—'}</span>
+                          </div>
+                          <span className={`text-sm px-2 py-0.5 rounded ${r.status === 'completed' ? 'bg-green-500/20 text-green-700' : r.status === 'rejected' ? 'bg-red-500/20 text-red-700' : 'bg-muted-foreground/20'}`}>
+                            {r.status === 'completed' ? 'پرداخت شد' : r.status === 'rejected' ? 'رد شد' : 'در انتظار'}
+                          </span>
+                        </div>
+                        {r.admin_notes && <p className="text-xs text-muted-foreground">توضیح ادمین: {r.admin_notes}</p>}
+                        <p className="text-xs text-muted-foreground">تاریخ: {r.requested_at ? new Date(r.requested_at).toLocaleDateString('fa-IR') : '—'}</p>
+                        {(r.status === 'pending' || r.status === 'approved' || r.status === 'processing') && (
+                          <div className="flex gap-2 items-end pt-2">
+                            <Textarea
+                              placeholder="توضیح ادمین (اختیاری)"
+                              value={withdrawalNote[r.id] ?? ''}
+                              onChange={(e) => setWithdrawalNote((p) => ({ ...p, [r.id]: e.target.value }))}
+                              className="flex-1 min-h-[60px] text-sm"
+                              rows={2}
+                            />
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="default" onClick={() => handleWithdrawalStatus(r.id, 'completed')} disabled={submitting}>
+                                پرداخت شد
+                              </Button>
+                              <Button size="sm" variant="destructive" onClick={() => handleWithdrawalStatus(r.id, 'rejected')} disabled={submitting}>
+                                رد شد
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
               </TabsContent>
             </Tabs>
           )}
@@ -702,7 +794,7 @@ export default function Affiliates() {
               <div className="space-y-2">
                 <Label>درصد سهم افیلیت (۰–۱۰۰)</Label>
                 <Input type="number" min={0} max={100} step={0.5} value={editCommissionPercent} onChange={(e) => setEditCommissionPercent(e.target.value)} placeholder="100" dir="ltr" />
-                <p className="text-xs text-muted-foreground">اعمال روی درآمد کل در پنل افیلیت (مثلاً ۲۰ یعنی ۲۰٪ از درآمد واقعی)</p>
+                <p className="text-xs text-muted-foreground">اعمال روی درآمد شما در پنل افیلیت (مثلاً ۱۰ یعنی ۱۰٪ از درآمد کل)</p>
               </div>
             </div>
           )}

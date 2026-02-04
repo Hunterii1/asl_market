@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { affiliateApi, getAffiliateUser } from "@/lib/affiliateApi";
 
 export default function Withdrawals() {
-  const [requests, setRequests] = useState<{ id: number; amount: number; status: string; requested_at: string }[]>([]);
+  const [requests, setRequests] = useState<{ id: number; amount: number; status: string; admin_notes?: string; requested_at: string }[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -41,10 +41,7 @@ export default function Withdrawals() {
       toast.error("مبلغ معتبر وارد کنید");
       return;
     }
-    if (num > balance) {
-      toast.error("مبلغ بیشتر از موجودی است");
-      return;
-    }
+    // مبلغ بدون محدودیت موجودی ثبت می‌شود؛ ادمین در پنل مدیریت وضعیت را بررسی می‌کند
     setSubmitting(true);
     try {
       await affiliateApi.createWithdrawalRequest({
@@ -72,8 +69,8 @@ export default function Withdrawals() {
     pending: "در انتظار",
     approved: "تأیید شده",
     processing: "در حال پردازش",
-    completed: "تکمیل شده",
-    rejected: "رد شده",
+    completed: "پرداخت شد",
+    rejected: "رد شد",
   };
 
   return (
@@ -149,6 +146,7 @@ export default function Withdrawals() {
                   <tr className="border-b border-border">
                     <th className="text-right py-3 px-2">مبلغ</th>
                     <th className="text-right py-3 px-2">وضعیت</th>
+                    <th className="text-right py-3 px-2">توضیح ادمین</th>
                     <th className="text-right py-3 px-2">تاریخ درخواست</th>
                   </tr>
                 </thead>
@@ -157,6 +155,7 @@ export default function Withdrawals() {
                     <tr key={r.id} className="border-b border-border/50">
                       <td className="py-2 px-2">{Number(r.amount).toLocaleString("fa-IR")} تومان</td>
                       <td className="py-2 px-2">{statusLabel[r.status] ?? r.status}</td>
+                      <td className="py-2 px-2 text-muted-foreground text-xs max-w-[200px] truncate" title={r.admin_notes || ""}>{r.admin_notes || "—"}</td>
                       <td className="py-2 px-2">{r.requested_at ? new Date(r.requested_at).toLocaleDateString("fa-IR") : "—"}</td>
                     </tr>
                   ))}

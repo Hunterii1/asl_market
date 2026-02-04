@@ -171,7 +171,7 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">درآمد واقعی</p>
+                <p className="text-sm text-muted-foreground">درآمد کل</p>
                 <p className="text-3xl font-bold text-foreground mt-1">{realIncomeDisplay.toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
@@ -184,7 +184,7 @@ export default function Dashboard() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">درآمد کل</p>
+                <p className="text-sm text-muted-foreground">درآمد شما</p>
                 <p className="text-3xl font-bold text-foreground mt-1">{totalIncomeDisplay.toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-green-500/15 flex items-center justify-center">

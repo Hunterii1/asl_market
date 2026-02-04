@@ -312,6 +312,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/affiliates/:id/sales-match", controllers.MatchAffiliateSales)
 		protected.POST("/admin/affiliates/:id/buyers/confirm", controllers.ConfirmAffiliateBuyers)
 		protected.GET("/admin/affiliates/:id/buyers", controllers.GetAffiliateBuyers)
+		protected.GET("/admin/affiliates/:id/withdrawal-requests", controllers.GetAffiliateWithdrawalRequests)
+		protected.PUT("/admin/affiliates/:id/withdrawal-requests/:reqId/status", controllers.UpdateAffiliateWithdrawalStatus)
 
 		// Excel Export (Admin)
 		protected.GET("/admin/export/users", controllers.ExportUsersToExcel)

@@ -2608,11 +2608,102 @@ func GetAffiliateBuyers(c *gin.Context) {
 		if r.PurchasedAt != nil {
 			pa = r.PurchasedAt.Format("2006-01-02")
 		}
-		amt := models.DefaultAmountToman
+		amt := int64(models.DefaultAmountToman)
 		if r.AmountToman != nil && *r.AmountToman > 0 {
 			amt = *r.AmountToman
 		}
 		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "purchased_at": pa, "created_at": r.CreatedAt.Format(time.RFC3339), "amount_toman": amt})
 	}
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
+}
+
+// GetAffiliateWithdrawalRequests returns withdrawal requests for an affiliate (admin)
+func GetAffiliateWithdrawalRequests(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 100 {
+		perPage = 50
+	}
+	offset := (page - 1) * perPage
+	list, total, err := models.GetAffiliateWithdrawalRequests(db, uint(id), perPage, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		return
+	}
+	out := make([]gin.H, 0, len(list))
+	for _, r := range list {
+		out = append(out, gin.H{
+			"id":               r.ID,
+			"amount":           r.Amount,
+			"currency":         r.Currency,
+			"status":           r.Status,
+			"admin_notes":      r.AdminNotes,
+			"bank_card_number": r.BankCardNumber,
+			"card_holder_name": r.CardHolderName,
+			"sheba_number":     r.ShebaNumber,
+			"bank_name":        r.BankName,
+			"requested_at":     r.RequestedAt.Format(time.RFC3339),
+			"created_at":       r.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
+}
+
+// UpdateAffiliateWithdrawalStatus updates status of affiliate withdrawal request (admin): completed (پرداخت شد) or rejected (رد شد)
+func UpdateAffiliateWithdrawalStatus(c *gin.Context) {
+	db := models.GetDB()
+	affIDStr := c.Param("id")
+	reqIDStr := c.Param("reqId")
+	affID, err := strconv.ParseUint(affIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه افیلیت نامعتبر است"})
+		return
+	}
+	reqID, err := strconv.ParseUint(reqIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+	req, err := models.GetAffiliateWithdrawalByID(db, uint(reqID))
+	if err != nil || req.AffiliateID != uint(affID) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		return
+	}
+	var body struct {
+		Status     string `json:"status"`
+		AdminNotes string `json:"admin_notes"`
+	}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده نامعتبر"})
+		return
+	}
+	var newStatus models.AffiliateWithdrawalStatus
+	switch body.Status {
+	case "completed":
+		newStatus = models.AffiliateWithdrawalCompleted
+	case "rejected":
+		newStatus = models.AffiliateWithdrawalRejected
+	default:
+		c.JSON(http.StatusBadRequest, gin.H{"error": "وضعیت باید completed یا rejected باشد"})
+		return
+	}
+	if err := models.UpdateAffiliateWithdrawalStatus(db, uint(reqID), newStatus, body.AdminNotes); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "وضعیت به‌روزرسانی شد"})
 }

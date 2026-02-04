@@ -357,10 +357,7 @@ func (ac *AffiliateController) CreateWithdrawalRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "details": err.Error()})
 		return
 	}
-	if req.Amount > aff.Balance {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "مبلغ درخواستی بیشتر از موجودی است"})
-		return
-	}
+	// اجازه ثبت درخواست بدون بررسی موجودی — ادمین در بخش مدیریت افیلیت وضعیت را بررسی می‌کند
 	wr := &models.AffiliateWithdrawalRequest{
 		AffiliateID:    affID,
 		Amount:         req.Amount,
@@ -413,6 +410,7 @@ func (ac *AffiliateController) GetWithdrawalRequests(c *gin.Context) {
 			"amount":       r.Amount,
 			"currency":     r.Currency,
 			"status":       r.Status,
+			"admin_notes":  r.AdminNotes,
 			"requested_at": r.RequestedAt.Format(time.RFC3339),
 			"created_at":   r.CreatedAt.Format(time.RFC3339),
 		})

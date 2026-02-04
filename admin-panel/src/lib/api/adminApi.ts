@@ -1037,6 +1037,20 @@ class AdminApiService {
     return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/buyers?${queryParams}`, { method: 'GET' });
   }
 
+  async getAffiliateWithdrawalRequests(id: number, params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/withdrawal-requests?${queryParams}`, { method: 'GET' });
+  }
+
+  async updateAffiliateWithdrawalStatus(affiliateId: number, requestId: number, status: 'completed' | 'rejected', adminNotes?: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${affiliateId}/withdrawal-requests/${requestId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, admin_notes: adminNotes || '' }),
+    });
+  }
+
   // ==================== Telegram Admin Management ====================
   async getTelegramAdmins(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/telegram-admins`, {
