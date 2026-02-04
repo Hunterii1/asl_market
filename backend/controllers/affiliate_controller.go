@@ -105,8 +105,8 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		})
 	}
 
-	// لیست ثبت‌نامی (همان لیستی که ادمین از CSV آپلود کرده) — در داشبورد هم برمی‌گردانیم تا حتماً در پنل دیده شود
-	registeredList, totalRegistered, _ := models.GetAffiliateRegisteredUsers(db, affID, 100, 0)
+	// لیست ثبت‌نامی (همان لیستی که ادمین از CSV آپلود کرده) — در داشبورد برمی‌گردانیم تا صفحه کاربران و داشبورد هر دو از همین منبع استفاده کنند
+	registeredList, totalRegistered, _ := models.GetAffiliateRegisteredUsers(db, affID, 5000, 0)
 	registeredUsersPayload := make([]map[string]interface{}, 0, len(registeredList))
 	for _, r := range registeredList {
 		regAt := ""

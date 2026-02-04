@@ -9,19 +9,19 @@ type RegisteredUser = { id: number; name: string; phone: string; registered_at: 
 export default function Users() {
   const [users, setUsers] = useState<RegisteredUser[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const perPage = 50;
 
+  // از همان API داشبورد استفاده می‌کنیم (همان درخواستی که لینک اختصاصی را برمی‌گرداند) تا روی همهٔ سرورها یکسان کار کند
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await affiliateApi.getRegisteredUsers({ page, per_page: perPage });
-      const list = Array.isArray(res?.users) ? res.users : Array.isArray((res as { items?: unknown[] })?.items) ? (res as { items: RegisteredUser[] }).items : [];
+      const res = await affiliateApi.getDashboard();
+      const list = Array.isArray(res?.registered_users) ? res.registered_users : [];
+      const tot = Number(res?.total_registered_users ?? 0);
       setUsers(list);
-      setTotal(Number(res?.total ?? 0));
+      setTotal(tot);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "خطا در بارگذاری لیست ثبت‌نامی";
       setError(msg);
@@ -31,13 +31,11 @@ export default function Users() {
     } finally {
       setLoading(false);
     }
-  }, [page, perPage]);
+  }, []);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  const totalPages = Math.ceil(total / perPage) || 1;
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -74,35 +72,26 @@ export default function Users() {
           ) : users.length === 0 && !error ? (
             <p className="text-muted-foreground text-center py-12">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
           ) : users.length > 0 ? (
-            <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border">
-                      <th className="text-right py-3 px-2">نام</th>
-                      <th className="text-right py-3 px-2">موبایل</th>
-                      <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-right py-3 px-2">نام</th>
+                    <th className="text-right py-3 px-2">موبایل</th>
+                    <th className="text-right py-3 px-2">تاریخ ثبت‌نام</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id} className="border-b border-border/50">
+                      <td className="py-2 px-2">{u.name}</td>
+                      <td className="py-2 px-2">{u.phone || "—"}</td>
+                      <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id} className="border-b border-border/50">
-                        <td className="py-2 px-2">{u.name}</td>
-                        <td className="py-2 px-2">{u.phone || "—"}</td>
-                        <td className="py-2 px-2">{u.registered_at ? new Date(u.registered_at).toLocaleDateString("fa-IR") : (u.created_at ? new Date(u.created_at).toLocaleDateString("fa-IR") : "—")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-4">
-                  <button type="button" className="px-3 py-1 rounded border border-border disabled:opacity-50" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>قبلی</button>
-                  <span className="px-3 py-1 text-muted-foreground">{page} از {totalPages}</span>
-                  <button type="button" className="px-3 py-1 rounded border border-border disabled:opacity-50" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>بعدی</button>
-                </div>
-              )}
-            </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : null}
         </CardContent>
       </Card>
