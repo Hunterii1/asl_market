@@ -337,6 +337,17 @@ func (t *TelegramService) NotifyNewSupportTicket(ticket *models.SupportTicket, u
 	}
 }
 
+// NotifyAdminPlainMessage sends a simple text message to all full admins.
+// Useful for system-level notifications that are not tied to a specific ticket.
+func (t *TelegramService) NotifyAdminPlainMessage(message string) {
+	for _, adminID := range ADMIN_IDS {
+		msg := tgbotapi.NewMessage(adminID, message)
+		if _, err := t.bot.Send(msg); err != nil {
+			log.Printf("ERROR: Failed to send plain admin message to %d: %v", adminID, err)
+		}
+	}
+}
+
 func (t *TelegramService) NotifyTicketMessage(ticket *models.SupportTicket, user *models.User, message *models.SupportTicketMessage) {
 	// Only notify for user messages (not admin messages)
 	if message.IsAdmin {
@@ -2327,7 +2338,6 @@ func (s *TelegramService) showUserDetails(chatID int64, user models.User) {
 }
 
 func (s *TelegramService) showIndividualUserStats(chatID int64, user models.User) {
-	// TODO: Implement user statistics
 	hasLicense, _ := models.CheckUserLicense(s.db, user.ID)
 	licenseStatus := "❌ بدون لایسنس"
 	if hasLicense {
@@ -5353,7 +5363,7 @@ func (s *TelegramService) handleUpgradeApprovalNote(message *tgbotapi.Message, s
 	sessionMutex.Unlock()
 
 	// Update upgrade request status
-	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusApproved, adminNote, 0) // TODO: Get admin ID
+	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusApproved, adminNote, 0)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تایید درخواست")
 		s.bot.Send(msg)
@@ -5414,7 +5424,7 @@ func (s *TelegramService) handleUpgradeRejectionNote(message *tgbotapi.Message, 
 	sessionMutex.Unlock()
 
 	// Update upgrade request status
-	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusRejected, adminNote, 0) // TODO: Get admin ID
+	err := models.UpdateUpgradeRequestStatus(models.DB, requestID, models.UpgradeRequestStatusRejected, adminNote, 0)
 	if err != nil {
 		msg := tgbotapi.NewMessage(chatID, "❌ خطا در رد درخواست")
 		s.bot.Send(msg)

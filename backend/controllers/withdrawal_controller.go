@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
+	"asl-market-backend/config"
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -313,16 +315,19 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 		}
 	}
 
-	// Notify admin via Telegram about the receipt upload
-	// TODO: unccoment this on new server
-	// telegramService := services.GetTelegramService()
-	// if telegramService != nil {
-	// 	// Get updated request with receipt path
-	// 	updatedRequest, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
-	// 	if err == nil {
-	// 		telegramService.NotifyReceiptUploaded(updatedRequest)
-	// 	}
-	// }
+	// Notify admin via Telegram about the receipt upload (only when Telegram is enabled)
+	if !config.AppConfig.Environment.IsInIran {
+		go func() {
+			telegramService := services.GetTelegramService()
+			if telegramService != nil {
+				// Get updated request with receipt path
+				updatedRequest, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
+				if err == nil {
+					telegramService.NotifyReceiptUploaded(updatedRequest)
+				}
+			}
+		}()
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "فیش با موفقیت بارگذاری شد",

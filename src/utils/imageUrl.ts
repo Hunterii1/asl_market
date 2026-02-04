@@ -16,13 +16,18 @@ export function getImageUrl(imagePath: string | null | undefined): string {
     return imagePath;
   }
 
-  // For production (asllmarket.ir)
+  // For production (asllmarket.ir / aslmarket.com)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+
+    // Iran domains
     if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
-      // In production, images are served directly by Nginx from /uploads/
-      // So we just need to prepend the domain
       return `https://asllmarket.ir${imagePath}`;
+    }
+
+    // Global domains
+    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+      return `https://aslmarket.com${imagePath}`;
     }
   }
 

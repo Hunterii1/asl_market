@@ -1,8 +1,18 @@
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') return 'https://asllmarket.ir/backend/api/v1';
-    if (hostname === 'localhost' || hostname === '127.0.0.1') return '/api/v1';
+    // Global (.com)
+    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+      return 'https://aslmarket.com/backend/api/v1';
+    }
+    // Iran (.ir)
+    if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+      return 'https://asllmarket.ir/backend/api/v1';
+    }
+    // Dev / local
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '/api/v1';
+    }
   }
   return '/api/v1';
 };

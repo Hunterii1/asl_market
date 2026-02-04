@@ -21,15 +21,21 @@ const ForgotPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Determine API base URL based on environment
+  // Determine API base URL based on environment / hostname
   const getApiBaseUrl = () => {
     if (typeof window !== 'undefined') {
       const hostname = window.location.hostname;
+      // Global (.com)
+      if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+        return 'https://aslmarket.com/backend/api/v1';
+      }
+      // Iran (.ir)
       if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
         return 'https://asllmarket.ir/backend/api/v1';
       }
     }
-    return 'https://asllmarket.ir/backend/api/v1';
+    // Fallback (dev / unknown) - use proxy
+    return '/api/v1';
   };
 
   const handleRequestCode = async (e: React.FormEvent) => {

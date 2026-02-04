@@ -2,16 +2,21 @@ import { getErrorMessage, translateSuccess } from '@/utils/errorMessages';
 import { toast } from '@/hooks/use-toast';
 import { errorHandler } from '@/utils/errorHandler';
 
-// Determine API base URL based on environment
+// Determine API base URL based on environment / current hostname
 const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // Production server
+    // Iran production (.ir)
     if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
       return 'https://asllmarket.ir/backend/api/v1';
     }
-    
+
+    // Global production (.com)
+    if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+      return 'https://aslmarket.com/backend/api/v1';
+    }
+
     // Development server - use proxy for testing
     if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '82.115.24.33') {
       return '/api/v1';

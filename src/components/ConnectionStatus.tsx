@@ -23,9 +23,16 @@ export function ConnectionStatus() {
     const checkApiStatus = async () => {
       try {
         const hostname = window.location.hostname;
-        const apiUrl = hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir'
-          ? 'https://asllmarket.ir/backend/health'
-          : '/health';
+        let apiUrl = '/health';
+        
+        // Iran (.ir)
+        if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
+          apiUrl = 'https://asllmarket.ir/backend/health';
+        }
+        // Global (.com)
+        else if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+          apiUrl = 'https://aslmarket.com/backend/health';
+        }
         
         const response = await fetch(apiUrl, { 
           method: 'GET',

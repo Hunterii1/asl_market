@@ -385,8 +385,6 @@ func ApproveVisitorByAdmin(c *gin.Context) {
 		return
 	}
 
-	// TODO: Send Telegram notification when TelegramChatID is added to User model
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": "ویزیتور با موفقیت تایید شد",
 	})
@@ -424,8 +422,6 @@ func RejectVisitorByAdmin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در رد درخواست ویزیتور"})
 		return
 	}
-
-	// TODO: Send Telegram notification when TelegramChatID is added to User model
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "درخواست ویزیتور رد شد",

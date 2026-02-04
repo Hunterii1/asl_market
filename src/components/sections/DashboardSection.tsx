@@ -544,51 +544,6 @@ const DashboardSection = () => {
         </CardContent>
       </Card>
 
-      {/* Action Cards */}
-      {/**
-      <div className="grid md:grid-cols-3 gap-6 mt-8">
-        <Card 
-          className="bg-gradient-to-br from-orange-900/30 to-orange-800/20 border-orange-700/50 hover:border-orange-600/70 transition-all cursor-pointer group rounded-3xl"
-          onClick={() => setActiveModal('addProduct')}
-        >
-          <CardContent className="p-6 text-center">
-            <div className="w-12 h-12 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-              <Plus className="w-6 h-6 text-orange-400" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">افزودن محصول جدید</h3>
-            <p className="text-sm text-gray-600 dark:text-muted-foreground">محصول جدید خود را به کاتالوگ اضافه کنید</p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="bg-gradient-to-br from-green-900/30 to-green-800/20 border-green-700/50 hover:border-green-600/70 transition-all cursor-pointer group rounded-3xl"
-          onClick={() => setActiveModal('customerManagement')}
-        >
-          <CardContent className="p-6 text-center">
-            <div className="w-12 h-12 bg-green-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-              <Users className="w-6 h-6 text-green-400" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">مدیریت مشتریان</h3>
-            <p className="text-sm text-gray-600 dark:text-muted-foreground">مشتریان و سفارش‌هایشان را مدیریت کنید</p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 border-blue-700/50 hover:border-blue-600/70 transition-all cursor-pointer group rounded-3xl"
-          onClick={() => setActiveModal('analytics')}
-        >
-          <CardContent className="p-6 text-center">
-            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-6 h-6 text-blue-400" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">گزارش‌های تحلیلی</h3>
-            <p className="text-sm text-gray-600 dark:text-muted-foreground">عملکرد فروش خود را تحلیل کنید</p>
-          </CardContent>
-        </Card>
-      </div>
-      */}
-      {/* TODO: کارت‌های پایین داشبورد موقتاً غیرفعال شدند. برای استفاده مجدد فقط این بخش را از کامنت خارج کنید. */}
-
       {/* Modals */}
       {activeModal === 'addProduct' && <AddProductModal />}
       {activeModal === 'customerManagement' && <CustomerManagementModal />}

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/api';
+import { BASE_DOMAIN, getApiBaseUrl } from '../config/domain';
 import {
   Play,
   Pause,
@@ -119,8 +120,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const currentVideoUrl = videoRef.current?.src || video.video_url;
     console.log('🎬 Error with video URL:', currentVideoUrl);
     
-    // Check if URL looks malformed (has asllmarket.ir in the path)
-    if (currentVideoUrl && currentVideoUrl.includes('asllmarket.org/asllmarket.ir/')) {
+    // Check if URL looks malformed (duplicate or wrong domain in path)
+    const malformed = currentVideoUrl && (
+      currentVideoUrl.includes('asllmarket.org/asllmarket.ir/') ||
+      currentVideoUrl.includes(`${BASE_DOMAIN}/${BASE_DOMAIN}/`)
+    );
+    if (malformed) {
       errorMessage = 'خطا: URL ویدیو اشتباه است (مسیر تکراری)';
       shouldFallbackToExternal = true;
     }
@@ -266,17 +271,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       console.log('🎬 Using external link:', video.video_url);
       return video.video_url;
     } else if (video.type === 'video' && video.telegram_file_id) {
-      // Get API base URL
-      const getApiBaseUrl = () => {
-        if (typeof window !== 'undefined') {
-          const hostname = window.location.hostname;
-          if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
-            return 'https://asllmarket.ir/api/v1';
-          }
-        }
-        return 'http://localhost:8080/api/v1';
-      };
-      
       const streamUrl = `${getApiBaseUrl()}/training/video/${video.id}/stream`;
       console.log('🎬 Using streaming URL:', streamUrl);
       return streamUrl;
@@ -306,11 +300,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
              url.includes('.avi') ||
              url.includes('blob:');
       
-      // Check if URL is from our domains (asllmarket.ir or asllmarket.org)
+      // Check if URL is from our domain or legacy asllmarket.org
       const currentOrigin = window.location.origin;
       const videoOrigin = new URL(url).origin;
-      const isOurDomain = videoOrigin.includes('asllmarket.ir') || 
-                         videoOrigin.includes('asllmarket.org');
+      const isOurDomain = videoOrigin.includes(BASE_DOMAIN) || videoOrigin.includes('asllmarket.org');
       
       console.log('🎬 Link type, is direct video:', isDirectVideo);
       console.log('🎬 Current origin:', currentOrigin);
@@ -580,7 +573,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   ویدیو خارجی
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  {video.video_url && (video.video_url.includes('asllmarket.ir') || video.video_url.includes('asllmarket.org'))
+                  {video.video_url && (video.video_url.includes(BASE_DOMAIN) || video.video_url.includes('asllmarket.org'))
                     ? "این ویدیو روی سرور ما آپلود شده و باید inline پخش شود"
                     : "این ویدیو در پلتفرم خارجی میزبانی می‌شود و باید در صفحه جدید باز شود"
                   }
@@ -632,7 +625,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   </div>
                 )}
                 
-                {video.video_url && !video.video_url.includes('asllmarket.ir') && !video.video_url.includes('asllmarket.org') && (
+                {video.video_url && !video.video_url.includes(BASE_DOMAIN) && !video.video_url.includes('asllmarket.org') && (
                   <div className="mt-4 p-3 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
                     <p className="text-xs text-yellow-700 dark:text-yellow-300">
                       💡 نکته: اگر می‌خواهید ویدیو در همین صفحه پخش شود، لطفاً آن را روی سرور اصلی آپلود کنید.

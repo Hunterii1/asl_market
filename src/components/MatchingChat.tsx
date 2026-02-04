@@ -5,19 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
 
-// Helper to get static file base URL from API base URL
+// Helper to get static file base URL from current hostname
 const getStaticFileBaseUrl = (): string => {
   if (typeof window === 'undefined') return 'http://localhost:8080';
   
   const hostname = window.location.hostname;
   const protocol = window.location.protocol;
   
-  // Production server
+  // Iran production: api.asllmarket.ir
   if (hostname === 'asllmarket.ir' || hostname === 'www.asllmarket.ir') {
-    // Use api.asllmarket.ir for static files (backend serves them directly)
-    return `${protocol}//api.${hostname}`;
+    return `${protocol}//api.asllmarket.ir`;
   }
-  
+
+  // Global production: api.aslmarket.com
+  if (hostname === 'aslmarket.com' || hostname === 'www.aslmarket.com') {
+    return `${protocol}//api.aslmarket.com`;
+  }
+
   // Development server
   return 'http://localhost:8080';
 };

@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"asl-market-backend/config"
 	"asl-market-backend/models"
+	"asl-market-backend/services"
 	"asl-market-backend/utils"
 
 	"github.com/gin-gonic/gin"
@@ -679,15 +681,16 @@ func UpdateTicketStatusForAdmin(c *gin.Context) {
 			log.Printf("Error creating admin message: %v", err)
 		}
 
-		// Notify user via Telegram if service is available
-		// TODO: unccoment this on new server
-		// go func() {
-		// 	telegramService := services.GetTelegramService()
-		// 	if telegramService != nil {
-		// 		user, _ := models.GetUserByID(db, ticket.UserID)
-		// 		telegramService.NotifyTicketMessage(&ticket, user, &adminMessage)
-		// 	}
-		// }()
+		// Notify user via Telegram if service is available and Telegram is enabled (non-Iran)
+		if !config.AppConfig.Environment.IsInIran {
+			go func() {
+				telegramService := services.GetTelegramService()
+				if telegramService != nil {
+					user, _ := models.GetUserByID(db, ticket.UserID)
+					telegramService.NotifyTicketMessage(&ticket, user, &adminMessage)
+				}
+			}()
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -751,15 +754,16 @@ func AddAdminMessageToTicket(c *gin.Context) {
 		"updated_at": time.Now(),
 	})
 
-	// Notify user via Telegram
-	// TODO: unccoment this on new server
-	// go func() {
-	// 	telegramService := services.GetTelegramService()
-	// 	if telegramService != nil {
-	// 		user, _ := models.GetUserByID(db, ticket.UserID)
-	// 		telegramService.NotifyTicketMessage(&ticket, user, &message)
-	// 	}
-	// }()
+	// Notify user via Telegram (only when Telegram is enabled and not in Iran)
+	if !config.AppConfig.Environment.IsInIran {
+		go func() {
+			telegramService := services.GetTelegramService()
+			if telegramService != nil {
+				user, _ := models.GetUserByID(db, ticket.UserID)
+				telegramService.NotifyTicketMessage(&ticket, user, &message)
+			}
+		}()
+	}
 
 	// Get updated ticket with messages
 	var updatedTicket models.SupportTicket
