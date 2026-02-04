@@ -120,7 +120,13 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		}
 		baseURL = scheme + "://" + host
 	}
-	referralLink := baseURL + "/signup?ref=" + aff.ReferralCode
+	// Show referral link only if referral_code exists, otherwise show placeholder
+	var referralLink string
+	if aff.ReferralCode != "" {
+		referralLink = baseURL + "/signup?ref=" + aff.ReferralCode
+	} else {
+		referralLink = "" // Will show "درحال آماده سازی لینک شما..." in frontend
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
@@ -312,4 +318,94 @@ func parseInt(s string) (int, bool) {
 	var n int
 	_, err := fmt.Sscanf(s, "%d", &n)
 	return n, err == nil
+}
+
+// GetRegisteredUsers returns paginated registered users for affiliate panel
+func (ac *AffiliateController) GetRegisteredUsers(c *gin.Context) {
+	affID := getAffiliateID(c)
+	page := 1
+	perPage := 20
+	if p := c.Query("page"); p != "" {
+		if v, _ := parseInt(p); v > 0 {
+			page = v
+		}
+	}
+	if pp := c.Query("per_page"); pp != "" {
+		if v, _ := parseInt(pp); v > 0 && v <= 100 {
+			perPage = v
+		}
+	}
+	offset := (page - 1) * perPage
+	list, total, err := models.GetAffiliateRegisteredUsers(ac.DB, affID, perPage, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		return
+	}
+	out := make([]map[string]interface{}, 0, len(list))
+	for _, r := range list {
+		regAt := ""
+		if r.RegisteredAt != nil {
+			regAt = r.RegisteredAt.Format("2006-01-02")
+		}
+		out = append(out, map[string]interface{}{
+			"id":            r.ID,
+			"name":          r.Name,
+			"phone":         r.Phone,
+			"registered_at": regAt,
+			"created_at":    r.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"users":    out,
+			"total":    total,
+			"page":     page,
+			"per_page": perPage,
+		},
+	})
+}
+
+// GetBuyers returns paginated buyers for affiliate panel
+func (ac *AffiliateController) GetBuyers(c *gin.Context) {
+	affID := getAffiliateID(c)
+	page := 1
+	perPage := 20
+	if p := c.Query("page"); p != "" {
+		if v, _ := parseInt(p); v > 0 {
+			page = v
+		}
+	}
+	if pp := c.Query("per_page"); pp != "" {
+		if v, _ := parseInt(pp); v > 0 && v <= 100 {
+			perPage = v
+		}
+	}
+	offset := (page - 1) * perPage
+	list, total, err := models.GetAffiliateBuyers(ac.DB, affID, perPage, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		return
+	}
+	out := make([]map[string]interface{}, 0, len(list))
+	for _, r := range list {
+		pa := ""
+		if r.PurchasedAt != nil {
+			pa = r.PurchasedAt.Format("2006-01-02")
+		}
+		out = append(out, map[string]interface{}{
+			"id":           r.ID,
+			"name":         r.Name,
+			"phone":        r.Phone,
+			"purchased_at": pa,
+			"created_at":   r.CreatedAt.Format(time.RFC3339),
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"buyers":   out,
+			"total":    total,
+			"page":     page,
+			"per_page": perPage,
+		},
+	})
 }

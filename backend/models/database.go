@@ -36,7 +36,7 @@ func ConnectDatabase() {
 	log.Println("Database connected successfully")
 
 	// Auto-migrate models
-	if err := database.AutoMigrate(&User{}, &Chat{}, &Message{}, &License{}, &Supplier{}, &SupplierProduct{}, &Visitor{}, &ResearchProduct{}, &MarketingPopup{}, &AvailableProduct{}, &DailyViewLimit{}, &ContactViewLimit{}, &DailyContactViewLimit{}, &WithdrawalRequest{}, &UserProgress{}, &TrainingCategory{}, &TrainingVideo{}, &UpgradeRequest{}, &VideoWatch{}, &AIUsage{}, &SpotPlayerLicense{}, &SupportTicket{}, &SupportTicketMessage{}, &Notification{}, &TelegramAdmin{}, &WebAdmin{}, &Affiliate{}, &AffiliateWithdrawalRequest{}, &MatchingRequest{}, &MatchingResponse{}, &MatchingRating{}, &MatchingNotification{}, &PushSubscription{}, &MatchingChat{}, &MatchingMessage{}, &Slider{}); err != nil {
+	if err := database.AutoMigrate(&User{}, &Chat{}, &Message{}, &License{}, &Supplier{}, &SupplierProduct{}, &Visitor{}, &ResearchProduct{}, &MarketingPopup{}, &AvailableProduct{}, &DailyViewLimit{}, &ContactViewLimit{}, &DailyContactViewLimit{}, &WithdrawalRequest{}, &UserProgress{}, &TrainingCategory{}, &TrainingVideo{}, &UpgradeRequest{}, &VideoWatch{}, &AIUsage{}, &SpotPlayerLicense{}, &SupportTicket{}, &SupportTicketMessage{}, &Notification{}, &TelegramAdmin{}, &WebAdmin{}, &Affiliate{}, &AffiliateWithdrawalRequest{}, &AffiliateRegisteredUser{}, &AffiliateBuyer{}, &MatchingRequest{}, &MatchingResponse{}, &MatchingRating{}, &MatchingNotification{}, &PushSubscription{}, &MatchingChat{}, &MatchingMessage{}, &Slider{}); err != nil {
 		log.Fatal("Failed to migrate database:", err)
 	}
 

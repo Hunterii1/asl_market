@@ -989,7 +989,7 @@ class AdminApiService {
     });
   }
 
-  async updateAffiliate(id: number, data: { name?: string; password?: string; is_active?: boolean; balance?: number }): Promise<any> {
+  async updateAffiliate(id: number, data: { name?: string; password?: string; is_active?: boolean; balance?: number; referral_code?: string }): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -998,6 +998,43 @@ class AdminApiService {
 
   async deleteAffiliate(id: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, { method: 'DELETE' });
+  }
+
+  async getAffiliateRegisteredUsers(id: number, params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/registered-users?${queryParams}`, { method: 'GET' });
+  }
+
+  async importAffiliateRegisteredUsers(id: number, file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/registered-users/import`, {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async matchAffiliateSales(id: number, buyers: { name: string; phone: string }[]): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/sales-match`, {
+      method: 'POST',
+      body: JSON.stringify({ buyers }),
+    });
+  }
+
+  async confirmAffiliateBuyers(id: number, buyers: { name: string; phone: string }[], purchasedAt?: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/buyers/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ buyers, purchased_at: purchasedAt }),
+    });
+  }
+
+  async getAffiliateBuyers(id: number, params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}/buyers?${queryParams}`, { method: 'GET' });
   }
 
   // ==================== Telegram Admin Management ====================

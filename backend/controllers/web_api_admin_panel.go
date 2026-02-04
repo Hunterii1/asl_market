@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -2055,10 +2056,11 @@ func UpdateAffiliate(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Name     *string  `json:"name"`
-		Password *string  `json:"password"`
-		IsActive *bool    `json:"is_active"`
-		Balance  *float64 `json:"balance"`
+		Name         *string  `json:"name"`
+		Password     *string  `json:"password"`
+		IsActive     *bool    `json:"is_active"`
+		Balance      *float64 `json:"balance"`
+		ReferralCode *string  `json:"referral_code"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
@@ -2077,6 +2079,17 @@ func UpdateAffiliate(c *gin.Context) {
 	}
 	if req.Balance != nil {
 		updates["balance"] = *req.Balance
+	}
+	if req.ReferralCode != nil {
+		code := strings.TrimSpace(strings.ToLower(*req.ReferralCode))
+		if code != "" {
+			var existing models.Affiliate
+			if err := db.Where("referral_code = ? AND id != ? AND deleted_at IS NULL", code, id).First(&existing).Error; err == nil {
+				c.JSON(http.StatusConflict, gin.H{"error": "این کد معرف قبلاً برای افیلیت دیگری استفاده شده است"})
+				return
+			}
+			updates["referral_code"] = code
+		}
 	}
 	if len(updates) == 0 {
 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "بدون تغییر"})
@@ -2107,4 +2120,278 @@ func DeleteAffiliate(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "افیلیت با موفقیت حذف شد"})
+}
+
+// GetAffiliateRegisteredUsers returns paginated registered users for an affiliate (admin)
+func GetAffiliateRegisteredUsers(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 200 {
+		perPage = 50
+	}
+	offset := (page - 1) * perPage
+	list, total, err := models.GetAffiliateRegisteredUsers(db, uint(id), perPage, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		return
+	}
+	out := make([]gin.H, 0, len(list))
+	for _, r := range list {
+		regAt := ""
+		if r.RegisteredAt != nil {
+			regAt = r.RegisteredAt.Format("2006-01-02")
+		}
+		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "registered_at": regAt, "created_at": r.CreatedAt.Format(time.RFC3339)})
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
+}
+
+// ImportAffiliateRegisteredUsers parses CSV and saves registered users for an affiliate
+// CSV expected: name (col 0), phone (col 1), created_at (col 4 - "ایجاد شده در")
+func ImportAffiliateRegisteredUsers(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فایل CSV ارسال نشده است"})
+		return
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = ','
+	reader.FieldsPerRecord = -1
+	rows, err := reader.ReadAll()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن CSV: " + err.Error()})
+		return
+	}
+	var toInsert []models.AffiliateRegisteredUser
+	for i, row := range rows {
+		if i == 0 && len(row) > 0 {
+			// skip header or detect header by content
+			if strings.Contains(row[0], "نام") || strings.Contains(row[0], "name") {
+				continue
+			}
+		}
+		if len(row) < 2 {
+			continue
+		}
+		name := strings.TrimSpace(row[0])
+		phone := strings.TrimSpace(strings.ReplaceAll(row[1], "\"", ""))
+		if name == "" || phone == "" {
+			continue
+		}
+		// normalize phone: digits only for matching
+		phone = strings.Map(func(r rune) rune {
+			if r >= '0' && r <= '9' {
+				return r
+			}
+			return -1
+		}, phone)
+		if len(phone) < 10 {
+			continue
+		}
+		var regAt *time.Time
+		if len(row) >= 5 {
+			s := strings.TrimSpace(row[4])
+			if t, e := time.Parse("2006-01-02 15:04:05", s); e == nil {
+				regAt = &t
+			} else if t, e := time.Parse("2006-01-02", s); e == nil {
+				regAt = &t
+			}
+		}
+		toInsert = append(toInsert, models.AffiliateRegisteredUser{Name: name, Phone: phone, RegisteredAt: regAt})
+	}
+	if len(toInsert) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ رکورد معتبری در فایل یافت نشد"})
+		return
+	}
+	if err := models.CreateAffiliateRegisteredUserBatch(db, uint(id), toInsert); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": fmt.Sprintf("%d نفر به لیست ثبت‌نامی اضافه شد", len(toInsert)), "count": len(toInsert)})
+}
+
+// MatchAffiliateSalesRequestBody for POST body
+type MatchAffiliateSalesRequestBody struct {
+	Buyers []struct {
+		Name  string `json:"name"`
+		Phone string `json:"phone"`
+	} `json:"buyers"`
+}
+
+// MatchAffiliateSales matches a list of buyers (name+phone) against affiliate's registered users; returns matched list
+func MatchAffiliateSales(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	var req MatchAffiliateSalesRequestBody
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		return
+	}
+	normalizePhone := func(s string) string {
+		return strings.Map(func(r rune) rune {
+			if r >= '0' && r <= '9' {
+				return r
+			}
+			return -1
+		}, strings.TrimSpace(s))
+	}
+	normalizeName := func(s string) string {
+		return strings.TrimSpace(strings.ToLower(s))
+	}
+	// load all registered users for this affiliate (no pagination for matching)
+	var regUsers []models.AffiliateRegisteredUser
+	if err := db.Where("affiliate_id = ?", uint(id)).Find(&regUsers).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست ثبت‌نام‌ها"})
+		return
+	}
+	regMap := make(map[string]models.AffiliateRegisteredUser) // key: normalized phone + "|" + normalized name
+	for _, u := range regUsers {
+		key := normalizePhone(u.Phone) + "|" + normalizeName(u.Name)
+		regMap[key] = u
+	}
+	var matched []gin.H
+	for _, b := range req.Buyers {
+		name := strings.TrimSpace(b.Name)
+		phone := strings.TrimSpace(b.Phone)
+		if name == "" || phone == "" {
+			continue
+		}
+		key := normalizePhone(phone) + "|" + normalizeName(name)
+		if u, ok := regMap[key]; ok {
+			regAt := ""
+			if u.RegisteredAt != nil {
+				regAt = u.RegisteredAt.Format("2006-01-02")
+			}
+			matched = append(matched, gin.H{"name": u.Name, "phone": u.Phone, "registered_at": regAt})
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"matched": matched, "count": len(matched)}})
+}
+
+// ConfirmAffiliateBuyersRequestBody for confirming matched buyers
+type ConfirmAffiliateBuyersRequestBody struct {
+	Buyers      []struct { Name string `json:"name"`; Phone string `json:"phone"` } `json:"buyers"`
+	PurchasedAt string `json:"purchased_at"` // optional date for week, e.g. "2026-02-03"
+}
+
+// ConfirmAffiliateBuyers saves the matched buyers as affiliate buyers (after admin confirm)
+func ConfirmAffiliateBuyers(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	var req ConfirmAffiliateBuyersRequestBody
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		return
+	}
+	var purchasedAt *time.Time
+	if req.PurchasedAt != "" {
+		if t, e := time.Parse("2006-01-02", strings.TrimSpace(req.PurchasedAt)); e == nil {
+			purchasedAt = &t
+		}
+	}
+	if purchasedAt == nil {
+		// default: start of current week (Saturday in Iran)
+		now := time.Now()
+		purchasedAt = &now
+	}
+	var rows []models.AffiliateBuyer
+	for _, b := range req.Buyers {
+		name := strings.TrimSpace(b.Name)
+		phone := strings.TrimSpace(b.Phone)
+		if name == "" || phone == "" {
+			continue
+		}
+		rows = append(rows, models.AffiliateBuyer{Name: name, Phone: phone})
+	}
+	if len(rows) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "لیست خریداران خالی است"})
+		return
+	}
+	if err := models.CreateAffiliateBuyerBatch(db, uint(id), purchasedAt, rows); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره: " + err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": fmt.Sprintf("%d خریدار ثبت شد", len(rows)), "count": len(rows)})
+}
+
+// GetAffiliateBuyers returns paginated buyers for an affiliate (admin)
+func GetAffiliateBuyers(c *gin.Context) {
+	db := models.GetDB()
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		return
+	}
+	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		return
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+	if page < 1 {
+		page = 1
+	}
+	if perPage < 1 || perPage > 200 {
+		perPage = 50
+	}
+	offset := (page - 1) * perPage
+	list, total, err := models.GetAffiliateBuyers(db, uint(id), perPage, offset)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		return
+	}
+	out := make([]gin.H, 0, len(list))
+	for _, r := range list {
+		pa := ""
+		if r.PurchasedAt != nil {
+			pa = r.PurchasedAt.Format("2006-01-02")
+		}
+		out = append(out, gin.H{"id": r.ID, "name": r.Name, "phone": r.Phone, "purchased_at": pa, "created_at": r.CreatedAt.Format(time.RFC3339)})
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
 }

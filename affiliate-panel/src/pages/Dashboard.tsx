@@ -73,13 +73,17 @@ export default function Dashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-2">
-            <input readOnly value={data.referral_link} className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm font-mono text-left dir-ltr" dir="ltr" />
-            <Button onClick={copyLink} className="shrink-0">
-              {copied ? <Check className="w-4 h-4 ml-2" /> : <Copy className="w-4 h-4 ml-2" />}
-              {copied ? "کپی شد" : "کپی لینک"}
-            </Button>
+            <input readOnly value={data.referral_link || "درحال آماده سازی لینک شما..."} className="flex-1 rounded-xl border bg-background px-4 py-3 text-sm font-mono text-left dir-ltr" dir="ltr" />
+            {data.referral_link && (
+              <Button onClick={copyLink} className="shrink-0">
+                {copied ? <Check className="w-4 h-4 ml-2" /> : <Copy className="w-4 h-4 ml-2" />}
+                {copied ? "کپی شد" : "کپی لینک"}
+              </Button>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground">کد معرف: <code className="bg-muted px-1 rounded">{data.referral_code}</code></p>
+          {data.referral_code && (
+            <p className="text-xs text-muted-foreground">کد معرف: <code className="bg-muted px-1 rounded">{data.referral_code}</code></p>
+          )}
         </CardContent>
       </Card>
 
