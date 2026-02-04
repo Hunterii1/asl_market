@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users as UsersIcon, Loader2 } from "lucide-react";
+import { Users as UsersIcon, Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
 
 type RegisteredUser = { id: number; name: string; phone: string; registered_at: string; created_at: string };
@@ -10,24 +11,31 @@ export default function Users() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const perPage = 50;
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await affiliateApi.getRegisteredUsers({ page, per_page: perPage });
+      const list = Array.isArray(res?.users) ? res.users : Array.isArray((res as { items?: unknown[] })?.items) ? (res as { items: RegisteredUser[] }).items : [];
+      setUsers(list);
+      setTotal(Number(res?.total ?? 0));
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "خطا در بارگذاری لیست ثبت‌نامی";
+      setError(msg);
+      toast.error(msg);
+      setUsers([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, perPage]);
+
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await affiliateApi.getRegisteredUsers({ page, per_page: perPage });
-        if (!cancelled) {
-          setUsers(res?.users ?? []);
-          setTotal(Number(res?.total ?? 0));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [page]);
+    load();
+  }, [load]);
 
   const totalPages = Math.ceil(total / perPage) || 1;
 
@@ -46,13 +54,26 @@ export default function Users() {
           <CardDescription>کاربران معرفی‌شده توسط شما (ارسال‌شده از طرف پشتیبانی)</CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 shrink-0 text-destructive" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-destructive">{error}</p>
+                <p className="text-xs text-muted-foreground mt-1">اگر پشتیبانی لیست ثبت‌نامی برای شما آپلود کرده، لطفاً یک بار دیگر بارگذاری کنید یا با پشتیبانی تماس بگیرید.</p>
+              </div>
+              <button type="button" onClick={() => load()} className="px-3 py-1.5 rounded-lg border border-border hover:bg-muted flex items-center gap-2 text-sm">
+                <RefreshCw className="w-4 h-4" />
+                تلاش مجدد
+              </button>
+            </div>
+          )}
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ) : users.length === 0 ? (
+          ) : users.length === 0 && !error ? (
             <p className="text-muted-foreground text-center py-12">هنوز کاربری در لیست ثبت‌نامی شما ثبت نشده است.</p>
-          ) : (
+          ) : users.length > 0 ? (
             <>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -82,7 +103,7 @@ export default function Users() {
                 </div>
               )}
             </>
-          )}
+          ) : null}
         </CardContent>
       </Card>
     </div>

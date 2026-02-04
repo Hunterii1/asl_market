@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -322,7 +323,7 @@ func parseInt(s string) (int, bool) {
 	return n, err == nil
 }
 
-// GetRegisteredUsers returns paginated registered users for affiliate panel
+// GetRegisteredUsers returns paginated registered users for affiliate panel (لیست ثبت‌نامی آپلودشده توسط ادمین)
 func (ac *AffiliateController) GetRegisteredUsers(c *gin.Context) {
 	affID := getAffiliateID(c)
 	page := 1
@@ -333,7 +334,7 @@ func (ac *AffiliateController) GetRegisteredUsers(c *gin.Context) {
 		}
 	}
 	if pp := c.Query("per_page"); pp != "" {
-		if v, _ := parseInt(pp); v > 0 && v <= 100 {
+		if v, _ := parseInt(pp); v > 0 && v <= 500 {
 			perPage = v
 		}
 	}
@@ -343,6 +344,7 @@ func (ac *AffiliateController) GetRegisteredUsers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
 		return
 	}
+	log.Printf("[Affiliate] GetRegisteredUsers affiliate_id=%d page=%d per_page=%d total=%d", affID, page, perPage, total)
 	out := make([]map[string]interface{}, 0, len(list))
 	for _, r := range list {
 		regAt := ""
