@@ -76,6 +76,16 @@ async function request(path: string, options: RequestInit = {}) {
   return res.json();
 }
 
+/** یک یا دو سطح data را باز می‌کند تا همیشه همان آبجکت داخلی برگردد (برای یکسان بودن با پروکسی/سرور) */
+function unwrapData<T = Record<string, unknown>>(raw: T | { data?: T } | null | undefined): T | null {
+  if (raw == null) return null;
+  let inner = (raw as { data?: T }).data ?? raw;
+  if (inner && typeof inner === "object" && "data" in inner && typeof (inner as { data?: unknown }).data === "object" && (inner as { data?: unknown }).data !== null) {
+    inner = (inner as { data: T }).data;
+  }
+  return inner as T;
+}
+
 export const affiliateApi = {
   async login(username: string, password: string) {
     const data = await request("/auth/affiliate/login", {
@@ -85,8 +95,8 @@ export const affiliateApi = {
     return data;
   },
   async getDashboard() {
-    const data = await request("/affiliate/dashboard");
-    return data?.data ?? data;
+    const raw = await request("/affiliate/dashboard");
+    return unwrapData(raw) ?? raw;
   },
   async getUsers(params?: { page?: number; per_page?: number }) {
     const q = new URLSearchParams();
@@ -112,8 +122,8 @@ export const affiliateApi = {
     return data?.data ?? data;
   },
   async getPayments() {
-    const data = await request("/affiliate/payments");
-    return data?.data ?? data;
+    const raw = await request("/affiliate/payments");
+    return unwrapData(raw) ?? raw;
   },
   async createWithdrawalRequest(body: { amount: number; bank_card_number?: string; card_holder_name?: string; sheba_number?: string; bank_name?: string }) {
     const data = await request("/affiliate/withdrawal-request", { method: "POST", body: JSON.stringify(body) });

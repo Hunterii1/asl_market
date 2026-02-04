@@ -191,14 +191,19 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		percent = 100
 	}
 	totalIncome := realIncome * (percent / 100)
+	log.Printf("[Affiliate] GetDashboard affID=%d confirmedBuyers=%d realIncome=%.0f totalIncome=%.0f", affID, len(confirmedBuyers), realIncome, totalIncome)
+
+	// اعداد صحیح برای JSON تا فرانت بدون ابهام بخواند
+	realIncomeInt := int64(realIncome)
+	totalIncomeInt := int64(totalIncome)
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"referral_link":          referralLink,
 			"referral_code":          aff.ReferralCode,
 			"total_signups":          totalSignups,
-			"real_income":            realIncome,
-			"total_income":           totalIncome,
+			"real_income":            realIncomeInt,
+			"total_income":           totalIncomeInt,
 			"balance":                aff.Balance,
 			"registrations_chart":    chartData,
 			"sales_chart":            salesChartData,
@@ -323,6 +328,7 @@ func (ac *AffiliateController) GetPayments(c *gin.Context) {
 			"amount_toman": amt,
 		})
 	}
+	log.Printf("[Affiliate] GetPayments affID=%d confirmedBuyers=%d paymentsChartRows=%d", affID, len(confirmedBuyers), len(paymentsChartData))
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"payments_chart":   paymentsChartData,
