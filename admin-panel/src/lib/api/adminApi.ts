@@ -989,7 +989,7 @@ class AdminApiService {
     });
   }
 
-  async updateAffiliate(id: number, data: { name?: string; password?: string; is_active?: boolean; balance?: number; referral_link?: string }): Promise<any> {
+  async updateAffiliate(id: number, data: { name?: string; password?: string; is_active?: boolean; balance?: number; referral_link?: string; commission_percent?: number }): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/affiliates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

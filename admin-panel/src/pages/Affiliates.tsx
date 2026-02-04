@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminApi } from '@/lib/api/adminApi';
-import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart } from 'lucide-react';
+import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -27,10 +27,17 @@ interface AffiliateRow {
   referral_link: string;
   balance: number;
   total_earnings: number;
+  commission_percent: number;
   is_active: boolean;
   last_login: string | null;
   login_count: number;
   created_at: string;
+}
+
+interface AffiliateStats {
+  active_count: number;
+  total_affiliate_income: number;
+  total_leads: number;
 }
 
 interface RegisteredUser {
@@ -52,6 +59,7 @@ interface Buyer {
 export default function Affiliates() {
   const [list, setList] = useState<AffiliateRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<AffiliateStats | null>(null);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -66,6 +74,7 @@ export default function Affiliates() {
   const [editPassword, setEditPassword] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
   const [editBalance, setEditBalance] = useState('');
+  const [editCommissionPercent, setEditCommissionPercent] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   
@@ -94,12 +103,21 @@ export default function Affiliates() {
         referral_link: a.referral_link ?? '',
         balance: Number(a.balance) ?? 0,
         total_earnings: Number(a.total_earnings) ?? 0,
+        commission_percent: Number(a.commission_percent) ?? 100,
         is_active: a.is_active ?? true,
         last_login: a.last_login ?? null,
         login_count: a.login_count ?? 0,
         created_at: a.created_at ?? '',
       })));
       setTotal(Number(data?.total ?? 0));
+      const s = data?.stats;
+      if (s) {
+        setStats({
+          active_count: Number(s.active_count) ?? 0,
+          total_affiliate_income: Number(s.total_affiliate_income) ?? 0,
+          total_leads: Number(s.total_leads) ?? 0,
+        });
+      }
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'بارگذاری افیلیت‌ها ناموفق بود' });
     } finally {
@@ -117,6 +135,7 @@ export default function Affiliates() {
     setEditPassword('');
     setEditIsActive(row.is_active);
     setEditBalance(String(row.balance));
+    setEditCommissionPercent(row.commission_percent != null ? String(row.commission_percent) : '100');
     setEditOpen(true);
   };
 
@@ -195,6 +214,8 @@ export default function Affiliates() {
       if (editPassword.length >= 6) payload.password = editPassword;
       const bal = parseFloat(editBalance);
       if (!isNaN(bal) && bal >= 0) payload.balance = bal;
+      const pct = parseFloat(editCommissionPercent);
+      if (!isNaN(pct) && pct >= 0 && pct <= 100) payload.commission_percent = pct;
       await adminApi.updateAffiliate(selected.id, payload);
       toast({ title: 'به‌روزرسانی شد', description: 'افیلیت با موفقیت به‌روزرسانی شد' });
       setEditOpen(false);
@@ -321,6 +342,50 @@ export default function Affiliates() {
             افیلیت جدید
           </Button>
         </div>
+
+        {stats != null && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Card className="rounded-2xl overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">تعداد افیلیت‌های فعال</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{stats.active_count.toLocaleString('fa-IR')}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <UserCheck className="w-6 h-6 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">میزان درآمد افیلیت‌ها</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{Math.round(stats.total_affiliate_income).toLocaleString('fa-IR')} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-green-500/15 flex items-center justify-center">
+                    <Wallet className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl overflow-hidden">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">میزان لید گرفته از افیلیت‌ها</p>
+                    <p className="text-2xl font-bold text-foreground mt-1">{stats.total_leads.toLocaleString('fa-IR')}</p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-orange-500/15 flex items-center justify-center">
+                    <Users className="w-6 h-6 text-orange-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         <Card>
           <CardHeader>
@@ -587,6 +652,11 @@ export default function Affiliates() {
               <div className="space-y-2">
                 <Label>موجودی (تومان)</Label>
                 <Input type="number" min={0} value={editBalance} onChange={(e) => setEditBalance(e.target.value)} dir="ltr" />
+              </div>
+              <div className="space-y-2">
+                <Label>درصد سهم افیلیت (۰–۱۰۰)</Label>
+                <Input type="number" min={0} max={100} step={0.5} value={editCommissionPercent} onChange={(e) => setEditCommissionPercent(e.target.value)} placeholder="100" dir="ltr" />
+                <p className="text-xs text-muted-foreground">اعمال روی درآمد کل در پنل افیلیت (مثلاً ۲۰ یعنی ۲۰٪ از درآمد واقعی)</p>
               </div>
             </div>
           )}

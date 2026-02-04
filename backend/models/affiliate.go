@@ -11,20 +11,21 @@ import (
 
 // Affiliate represents an affiliate user (separate from WebAdmin and User)
 type Affiliate struct {
-	ID            uint           `json:"id" gorm:"primaryKey"`
-	Name          string         `json:"name" gorm:"size:100;not null"`
-	Username      string         `json:"username" gorm:"size:100;uniqueIndex;not null"`
-	Password      string         `json:"-" gorm:"size:255;not null"`
-	ReferralCode  string         `json:"referral_code" gorm:"size:32"`                // Auto-generated, optional (no longer unique)
-	ReferralLink  string         `json:"referral_link" gorm:"size:500"`               // Custom referral link (full URL)
-	Balance       float64        `json:"balance" gorm:"type:decimal(14,2);default:0"` // withdrawable balance
-	TotalEarnings float64        `json:"total_earnings" gorm:"type:decimal(14,2);default:0"`
-	IsActive      bool           `json:"is_active" gorm:"default:true"`
-	LastLogin     *time.Time     `json:"last_login"`
-	LoginCount    int            `json:"login_count" gorm:"default:0"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"`
+	ID                uint           `json:"id" gorm:"primaryKey"`
+	Name              string         `json:"name" gorm:"size:100;not null"`
+	Username          string         `json:"username" gorm:"size:100;uniqueIndex;not null"`
+	Password          string         `json:"-" gorm:"size:255;not null"`
+	ReferralCode      string         `json:"referral_code" gorm:"size:32"`                // Auto-generated, optional (no longer unique)
+	ReferralLink      string         `json:"referral_link" gorm:"size:500"`               // Custom referral link (full URL)
+	Balance           float64        `json:"balance" gorm:"type:decimal(14,2);default:0"` // withdrawable balance
+	TotalEarnings     float64        `json:"total_earnings" gorm:"type:decimal(14,2);default:0"`
+	CommissionPercent float64        `json:"commission_percent" gorm:"type:decimal(5,2);default:100"` // درصد سهم افیلیت از درآمد واقعی (۰–۱۰۰)
+	IsActive          bool           `json:"is_active" gorm:"default:true"`
+	LastLogin         *time.Time     `json:"last_login"`
+	LoginCount        int            `json:"login_count" gorm:"default:0"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
+	DeletedAt         gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // GenerateReferralCode creates a unique short code for the affiliate

@@ -170,12 +170,21 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		referralLink = "" // Will show "درحال آماده سازی لینک شما..." in frontend
 	}
 
+	// درآمد واقعی = همان TotalEarnings ذخیره‌شده؛ درآمد کل = واقعی × (درصد/۱۰۰)
+	realIncome := aff.TotalEarnings
+	percent := aff.CommissionPercent
+	if percent <= 0 {
+		percent = 100
+	}
+	totalIncome := realIncome * (percent / 100)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"referral_link":          referralLink,
 			"referral_code":          aff.ReferralCode,
 			"total_signups":          totalSignups,
-			"total_income":           aff.TotalEarnings,
+			"real_income":            realIncome,
+			"total_income":           totalIncome,
 			"balance":                aff.Balance,
 			"registrations_chart":    chartData,
 			"sales_chart":            salesChartData,

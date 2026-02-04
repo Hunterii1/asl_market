@@ -1909,7 +1909,7 @@ func DeleteWebAdmin(c *gin.Context) {
 
 // ==================== AFFILIATE MANAGEMENT (Admin Panel) ====================
 
-// GetAffiliates returns all affiliates with pagination
+// GetAffiliates returns all affiliates with pagination and aggregate stats
 func GetAffiliates(c *gin.Context) {
 	db := models.GetDB()
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -1929,25 +1929,40 @@ func GetAffiliates(c *gin.Context) {
 	list := make([]gin.H, 0, len(admins))
 	for _, a := range admins {
 		list = append(list, gin.H{
-			"id":             a.ID,
-			"name":           a.Name,
-			"username":       a.Username,
-			"referral_code":  a.ReferralCode,
-			"referral_link":  a.ReferralLink,
-			"balance":        a.Balance,
-			"total_earnings": a.TotalEarnings,
-			"is_active":      a.IsActive,
-			"last_login":     a.LastLogin,
-			"login_count":    a.LoginCount,
-			"created_at":     a.CreatedAt.Format(time.RFC3339),
+			"id":                 a.ID,
+			"name":               a.Name,
+			"username":           a.Username,
+			"referral_code":      a.ReferralCode,
+			"referral_link":      a.ReferralLink,
+			"balance":            a.Balance,
+			"total_earnings":     a.TotalEarnings,
+			"commission_percent": a.CommissionPercent,
+			"is_active":          a.IsActive,
+			"last_login":         a.LastLogin,
+			"login_count":        a.LoginCount,
+			"created_at":         a.CreatedAt.Format(time.RFC3339),
 		})
 	}
+
+	// آمار کلی: تعداد افیلیت‌های فعال، مجموع درآمد افیلیت‌ها، تعداد لیدها
+	var activeCount int64
+	db.Model(&models.Affiliate{}).Where("deleted_at IS NULL AND is_active = ?", true).Count(&activeCount)
+	var totalAffiliateIncome float64
+	db.Model(&models.Affiliate{}).Where("deleted_at IS NULL").Select("SUM(total_earnings * COALESCE(NULLIF(commission_percent, 0), 100) / 100)").Scan(&totalAffiliateIncome)
+	var totalLeads int64
+	db.Model(&models.AffiliateRegisteredUser{}).Where("deleted_at IS NULL").Count(&totalLeads)
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"affiliates": list,
 			"total":      total,
 			"page":       page,
 			"per_page":   perPage,
+			"stats": gin.H{
+				"active_count":           activeCount,
+				"total_affiliate_income": totalAffiliateIncome,
+				"total_leads":            totalLeads,
+			},
 		},
 	})
 }
@@ -1968,17 +1983,18 @@ func GetAffiliate(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"id":             aff.ID,
-			"name":           aff.Name,
-			"username":       aff.Username,
-			"referral_code":  aff.ReferralCode,
-			"referral_link":  aff.ReferralLink,
-			"balance":        aff.Balance,
-			"total_earnings": aff.TotalEarnings,
-			"is_active":      aff.IsActive,
-			"last_login":     aff.LastLogin,
-			"login_count":    aff.LoginCount,
-			"created_at":     aff.CreatedAt.Format(time.RFC3339),
+			"id":                 aff.ID,
+			"name":               aff.Name,
+			"username":           aff.Username,
+			"referral_code":      aff.ReferralCode,
+			"referral_link":      aff.ReferralLink,
+			"balance":            aff.Balance,
+			"total_earnings":     aff.TotalEarnings,
+			"commission_percent": aff.CommissionPercent,
+			"is_active":          aff.IsActive,
+			"last_login":         aff.LastLogin,
+			"login_count":        aff.LoginCount,
+			"created_at":         aff.CreatedAt.Format(time.RFC3339),
 		},
 	})
 }
@@ -2060,11 +2076,12 @@ func UpdateAffiliate(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Name         *string  `json:"name"`
-		Password     *string  `json:"password"`
-		IsActive     *bool    `json:"is_active"`
-		Balance      *float64 `json:"balance"`
-		ReferralLink *string  `json:"referral_link"`
+		Name              *string  `json:"name"`
+		Password          *string  `json:"password"`
+		IsActive          *bool    `json:"is_active"`
+		Balance           *float64 `json:"balance"`
+		ReferralLink      *string  `json:"referral_link"`
+		CommissionPercent *float64 `json:"commission_percent"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
@@ -2087,6 +2104,12 @@ func UpdateAffiliate(c *gin.Context) {
 	if req.ReferralLink != nil {
 		link := strings.TrimSpace(*req.ReferralLink)
 		updates["referral_link"] = link
+	}
+	if req.CommissionPercent != nil {
+		pct := *req.CommissionPercent
+		if pct >= 0 && pct <= 100 {
+			updates["commission_percent"] = pct
+		}
 	}
 	if len(updates) == 0 {
 		c.JSON(http.StatusOK, gin.H{"success": true, "message": "بدون تغییر"})

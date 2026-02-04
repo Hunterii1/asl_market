@@ -17,6 +17,7 @@ export default function Dashboard() {
     referral_link: string;
     referral_code?: string;
     total_signups: number;
+    real_income?: number;
     total_income: number;
     balance: number;
     registrations_chart: { name: string; count: number }[];
@@ -141,7 +142,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="rounded-2xl overflow-hidden">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
@@ -151,6 +152,19 @@ export default function Dashboard() {
               </div>
               <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center">
                 <Users className="w-7 h-7 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="rounded-2xl overflow-hidden">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">درآمد واقعی</p>
+                <p className="text-3xl font-bold text-foreground mt-1">{(data.real_income ?? data.total_income ?? 0).toLocaleString("fa-IR")} <span className="text-sm font-normal text-muted-foreground">تومان</span></p>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
+                <Wallet className="w-7 h-7 text-muted-foreground" />
               </div>
             </div>
           </CardContent>
