@@ -18,7 +18,7 @@ import {
 
 export type ChartPoint = { name: string; count: number };
 
-const TEAL = "#14b8a6";
+const ORANGE = "#f97316";
 
 type TimeRange = "all" | "month" | "week";
 
@@ -56,7 +56,7 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
               onClick={() => setRange(r)}
               className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                 range === r
-                  ? "bg-teal-500/90 text-white shadow-sm"
+                  ? "bg-orange-500/90 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
               }`}
             >
@@ -65,8 +65,8 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
           ))}
         </div>
         <div className="flex items-center gap-2 min-w-0">
-          <div className="rounded-lg bg-teal-500/10 p-1.5 shrink-0">
-            <TrendingUp className="h-4 w-4 text-teal-500" />
+          <div className="rounded-lg bg-orange-500/10 p-1.5 shrink-0">
+            <TrendingUp className="h-4 w-4 text-orange-500" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground">ثبت‌نام روزانه</p>
@@ -89,8 +89,8 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
           >
             <defs>
               <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={TEAL} stopOpacity={0.5} />
-                <stop offset="100%" stopColor={TEAL} stopOpacity={0.05} />
+                <stop offset="0%" stopColor={ORANGE} stopOpacity={0.5} />
+                <stop offset="100%" stopColor={ORANGE} stopOpacity={0.05} />
               </linearGradient>
             </defs>
             <CartesianGrid
@@ -131,7 +131,7 @@ export function RegisteredUsersChart({ data }: { data: ChartPoint[] }) {
             <Area
               type="monotone"
               dataKey="count"
-              stroke={TEAL}
+              stroke={ORANGE}
               strokeWidth={2}
               fill="url(#areaGradient)"
             />

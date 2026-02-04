@@ -117,7 +117,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">تعداد کل ثبت‌نام‌ها</p>
-                <p className="text-3xl font-bold text-foreground mt-1">{(data.total_signups ?? 0).toLocaleString("fa-IR")}</p>
+                <p className="text-3xl font-bold text-foreground mt-1">{(data.total_registered_users ?? data.total_signups ?? 0).toLocaleString("fa-IR")}</p>
               </div>
               <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center">
                 <Users className="w-7 h-7 text-primary" />
