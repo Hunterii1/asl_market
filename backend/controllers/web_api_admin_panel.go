@@ -2157,6 +2157,75 @@ func GetAffiliateRegisteredUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": gin.H{"items": out, "total": total, "page": page, "per_page": perPage}})
 }
 
+// truncate returns s limited to maxLen runes
+func truncate(s string, maxLen int) string {
+	r := []rune(s)
+	if len(r) <= maxLen {
+		return s
+	}
+	return string(r[:maxLen]) + "..."
+}
+
+// truncateSlice returns first max elements of slice as string for logging
+func truncateSlice(parts []string, max int) string {
+	if len(parts) == 0 {
+		return "[]"
+	}
+	var b strings.Builder
+	b.WriteString("[")
+	for i, p := range parts {
+		if i >= max {
+			b.WriteString("...")
+			break
+		}
+		if i > 0 {
+			b.WriteString(", ")
+		}
+		short := p
+		if len([]rune(p)) > 30 {
+			short = string([]rune(p)[:30]) + "..."
+		}
+		b.WriteString(`"` + short + `"`)
+	}
+	b.WriteString("]")
+	return b.String()
+}
+
+// parseCSVLine parses a single CSV line into fields. Handles quoted fields and bare quotes without failing.
+func parseCSVLine(line string) []string {
+	var fields []string
+	var cur strings.Builder
+	inQuote := false
+	for i := 0; i < len(line); i++ {
+		c := line[i]
+		switch c {
+		case '"':
+			if inQuote {
+				// Check for escaped quote ""
+				if i+1 < len(line) && line[i+1] == '"' {
+					cur.WriteByte('"')
+					i++
+				} else {
+					inQuote = false
+				}
+			} else {
+				inQuote = true
+			}
+		case ',':
+			if inQuote {
+				cur.WriteByte(c)
+			} else {
+				fields = append(fields, strings.TrimSpace(cur.String()))
+				cur.Reset()
+			}
+		default:
+			cur.WriteByte(c)
+		}
+	}
+	fields = append(fields, strings.TrimSpace(cur.String()))
+	return fields
+}
+
 // ImportAffiliateRegisteredUsers parses CSV and saves registered users for an affiliate
 // CSV expected: name (col 0), phone (col 1), created_at (col 4 - "ایجاد شده در")
 func ImportAffiliateRegisteredUsers(c *gin.Context) {
@@ -2181,6 +2250,7 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 	// Get file extension
 	filename := fileHeader.Filename
 	isExcel := strings.HasSuffix(strings.ToLower(filename), ".xlsx") || strings.HasSuffix(strings.ToLower(filename), ".xls")
+	log.Printf("[ImportAffiliate] filename=%s isExcel=%v", filename, isExcel)
 
 	var rows [][]string
 
@@ -2188,132 +2258,79 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 		// Handle Excel file
 		fileBytes, err := io.ReadAll(file)
 		if err != nil {
+			log.Printf("[ImportAffiliate] Excel read error: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل Excel: " + err.Error()})
 			return
 		}
+		log.Printf("[ImportAffiliate] Excel file size: %d bytes", len(fileBytes))
 
 		xlFile, err := excelize.OpenReader(bytes.NewReader(fileBytes))
 		if err != nil {
+			log.Printf("[ImportAffiliate] Excel open error: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در باز کردن فایل Excel: " + err.Error()})
 			return
 		}
 		defer xlFile.Close()
 
-		// Get first sheet
 		sheetName := xlFile.GetSheetName(0)
 		if sheetName == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "فایل Excel خالی است"})
 			return
 		}
 
-		// Read all rows
 		excelRows, err := xlFile.GetRows(sheetName)
 		if err != nil {
+			log.Printf("[ImportAffiliate] Excel GetRows error: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن داده‌های Excel: " + err.Error()})
 			return
 		}
-
+		log.Printf("[ImportAffiliate] Excel rows: %d", len(excelRows))
 		rows = excelRows
 	} else {
-		// Handle CSV file with improved parsing
+		// Handle CSV: read raw content and parse manually (no encoding/csv to avoid "bare quote" errors)
 		content, err := io.ReadAll(file)
 		if err != nil {
+			log.Printf("[ImportAffiliate] CSV read error: %v", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل: " + err.Error()})
 			return
 		}
-
-		// Try to detect and convert encoding (UTF-8, Windows-1256, etc.)
 		contentStr := string(content)
-		// Remove BOM if present
 		if len(contentStr) > 0 && contentStr[0] == '\ufeff' {
 			contentStr = contentStr[1:]
 		}
+		log.Printf("[ImportAffiliate] CSV size: %d bytes, first 200 chars: %q", len(contentStr), truncate(contentStr, 200))
 
-		// Use robust manual CSV parsing to handle all edge cases
-		// Split by newlines (handle both \n and \r\n)
+		// Character-by-character CSV parser: never fails on quotes
 		lines := strings.Split(contentStr, "\n")
 		csvRows := [][]string{}
-
-		for _, line := range lines {
-			// Clean line: remove \r
+		for lineNum, line := range lines {
 			line = strings.TrimRight(line, "\r")
 			if strings.TrimSpace(line) == "" {
 				continue
 			}
-
-			// More lenient CSV parsing: split by comma, then clean up quotes
-			// This handles malformed CSV better
-			rawParts := strings.Split(line, ",")
-			parts := []string{}
-			currentField := ""
-			inQuotes := false
-
-			for _, rawPart := range rawParts {
-				part := rawPart
-
-				// Check if this part starts with quote
-				trimmed := strings.TrimSpace(part)
-				if strings.HasPrefix(trimmed, `"`) && !inQuotes {
-					// Starting a quoted field
-					inQuotes = true
-					currentField = strings.TrimPrefix(trimmed, `"`)
-					// Check if it also ends with quote (single field)
-					if strings.HasSuffix(currentField, `"`) && len(currentField) > 0 {
-						currentField = strings.TrimSuffix(currentField, `"`)
-						// Handle escaped quotes
-						currentField = strings.ReplaceAll(currentField, `""`, `"`)
-						parts = append(parts, strings.TrimSpace(currentField))
-						currentField = ""
-						inQuotes = false
-					}
-				} else if inQuotes {
-					// Continue building quoted field
-					currentField += "," + part
-					// Check if this part ends the quoted field
-					if strings.HasSuffix(strings.TrimSpace(part), `"`) {
-						currentField = strings.TrimSuffix(currentField, `"`)
-						// Handle escaped quotes
-						currentField = strings.ReplaceAll(currentField, `""`, `"`)
-						parts = append(parts, strings.TrimSpace(currentField))
-						currentField = ""
-						inQuotes = false
-					}
-				} else {
-					// Regular unquoted field
-					field := strings.TrimSpace(part)
-					// Remove quotes if present (malformed CSV)
-					field = strings.Trim(field, `"`)
-					// Handle escaped quotes
-					field = strings.ReplaceAll(field, `""`, `"`)
-					parts = append(parts, field)
-				}
+			// Parse one line into fields (respect quotes, commas inside quotes don't split)
+			fields := parseCSVLine(line)
+			if lineNum == 0 {
+				log.Printf("[ImportAffiliate] Line 1 has %d fields, first 3: %q", len(fields), truncateSlice(fields, 3))
 			}
-
-			// Add any remaining field
-			if currentField != "" {
-				currentField = strings.Trim(currentField, `"`)
-				currentField = strings.ReplaceAll(currentField, `""`, `"`)
-				parts = append(parts, strings.TrimSpace(currentField))
-			}
-
-			// Only add non-empty rows (at least one non-empty field)
 			hasData := false
-			for _, p := range parts {
-				if strings.TrimSpace(p) != "" {
+			for _, f := range fields {
+				if strings.TrimSpace(f) != "" {
 					hasData = true
 					break
 				}
 			}
 			if hasData {
-				csvRows = append(csvRows, parts)
+				csvRows = append(csvRows, fields)
 			}
 		}
 
 		if len(csvRows) == 0 {
+			log.Printf("[ImportAffiliate] No rows parsed from CSV")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ داده‌ای در فایل CSV یافت نشد"})
 			return
 		}
-
+		log.Printf("[ImportAffiliate] CSV parsed %d rows", len(csvRows))
 		rows = csvRows
 	}
 	var toInsert []models.AffiliateRegisteredUser
@@ -2393,13 +2410,17 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 		})
 	}
 	if len(toInsert) == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ رکورد معتبری در فایل یافت نشد"})
+		log.Printf("[ImportAffiliate] No valid records (name+phone) after filtering")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ رکورد معتبری در فایل یافت نشد (نام و شماره موبایل معتبر)"})
 		return
 	}
+	log.Printf("[ImportAffiliate] Inserting %d valid records for affiliate id=%s", len(toInsert), idStr)
 	if err := models.CreateAffiliateRegisteredUserBatch(db, uint(id), toInsert); err != nil {
+		log.Printf("[ImportAffiliate] DB insert error: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره: " + err.Error()})
 		return
 	}
+	log.Printf("[ImportAffiliate] Success: %d records saved", len(toInsert))
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": fmt.Sprintf("%d نفر به لیست ثبت‌نامی اضافه شد", len(toInsert)), "count": len(toInsert)})
 }
 
