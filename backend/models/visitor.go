@@ -202,17 +202,29 @@ func GetApprovedVisitors(db *gorm.DB) ([]Visitor, error) {
 
 // GetApprovedVisitorsPaginated returns paginated list of approved visitors
 func GetApprovedVisitorsPaginated(db *gorm.DB, page, perPage int) ([]Visitor, int64, error) {
+	return GetApprovedVisitorsPaginatedWithFilters(db, page, perPage, "", "")
+}
+
+// GetApprovedVisitorsPaginatedWithFilters returns paginated approved visitors with search and city_province filter.
+func GetApprovedVisitorsPaginatedWithFilters(db *gorm.DB, page, perPage int, search, cityProvince string) ([]Visitor, int64, error) {
 	var visitors []Visitor
 	var total int64
 
 	query := db.Model(&Visitor{}).Preload("User").Where("status = ?", "approved")
 
-	// Get total count
+	if search != "" {
+		pattern := "%" + search + "%"
+		query = query.Where("(full_name LIKE ? OR mobile LIKE ? OR email LIKE ? OR city_province LIKE ? OR destination_cities LIKE ? OR COALESCE(special_skills,'') LIKE ? OR COALESCE(interested_products,'') LIKE ?)",
+			pattern, pattern, pattern, pattern, pattern, pattern, pattern)
+	}
+	if cityProvince != "" {
+		query = query.Where("(city_province LIKE ? OR destination_cities LIKE ?)", "%"+cityProvince+"%", "%"+cityProvince+"%")
+	}
+
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated results
 	offset := (page - 1) * perPage
 	err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&visitors).Error
 	return visitors, total, err

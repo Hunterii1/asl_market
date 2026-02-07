@@ -158,6 +158,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.DELETE("/admin/suppliers/:id", controllers.DeleteSupplierForAdmin)
 		protected.POST("/admin/suppliers/:id/approve", controllers.ApproveSupplier)
 		protected.POST("/admin/suppliers/:id/reject", controllers.RejectSupplier)
+		protected.POST("/admin/suppliers/:id/feature", controllers.FeatureSupplier)
+		protected.POST("/admin/suppliers/:id/unfeature", controllers.UnfeatureSupplier)
 
 		// Visitor routes
 		protected.POST("/visitor/register", controllers.RegisterVisitor)
@@ -178,6 +180,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.PUT("/admin/visitors/:id/status", controllers.UpdateVisitorStatus)
 		protected.PUT("/admin/visitors/:id", controllers.UpdateVisitorByAdmin)
 		protected.DELETE("/admin/visitors/:id", controllers.DeleteVisitorByAdmin)
+		protected.POST("/admin/visitors/:id/feature", controllers.FeatureVisitor)
+		protected.POST("/admin/visitors/:id/unfeature", controllers.UnfeatureVisitor)
 
 		// Research products routes (public access)
 		protected.GET("/research-products", controllers.GetResearchProducts)

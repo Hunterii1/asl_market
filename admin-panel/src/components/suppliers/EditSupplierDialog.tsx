@@ -29,6 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { editSupplierSchema, type EditSupplierFormData } from '@/lib/validations/supplier';
 import { toast } from '@/hooks/use-toast';
@@ -54,6 +55,11 @@ interface Supplier {
   notes?: string;
   totalOrders: number;
   totalAmount: number;
+  tag_first_class?: boolean;
+  tag_good_price?: boolean;
+  tag_export_experience?: boolean;
+  tag_export_packaging?: boolean;
+  tag_supply_without_capital?: boolean;
 }
 
 interface EditSupplierDialogProps {
@@ -92,6 +98,11 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
       notes: '',
       totalOrders: 0,
       totalAmount: 0,
+      tag_first_class: false,
+      tag_good_price: false,
+      tag_export_experience: false,
+      tag_export_packaging: false,
+      tag_supply_without_capital: false,
     },
   });
 
@@ -119,6 +130,11 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
         notes: supplier.notes || '',
         totalOrders: supplier.totalOrders || 0,
         totalAmount: supplier.totalAmount || 0,
+        tag_first_class: supplier.tag_first_class ?? false,
+        tag_good_price: supplier.tag_good_price ?? false,
+        tag_export_experience: supplier.tag_export_experience ?? false,
+        tag_export_packaging: supplier.tag_export_packaging ?? false,
+        tag_supply_without_capital: supplier.tag_supply_without_capital ?? false,
       });
       setCurrentTab('basic');
     }
@@ -138,6 +154,11 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
       if (data.status) {
         apiData.status = data.status === 'active' ? 'approved' : data.status === 'inactive' ? 'pending' : 'rejected';
       }
+      if (data.tag_first_class !== undefined) apiData.tag_first_class = data.tag_first_class;
+      if (data.tag_good_price !== undefined) apiData.tag_good_price = data.tag_good_price;
+      if (data.tag_export_experience !== undefined) apiData.tag_export_experience = data.tag_export_experience;
+      if (data.tag_export_packaging !== undefined) apiData.tag_export_packaging = data.tag_export_packaging;
+      if (data.tag_supply_without_capital !== undefined) apiData.tag_supply_without_capital = data.tag_supply_without_capital;
 
       await adminApi.updateSupplier(parseInt(data.id), apiData);
       toast({
@@ -186,9 +207,10 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <Tabs value={currentTab} onValueChange={setCurrentTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="basic">اطلاعات پایه</TabsTrigger>
                 <TabsTrigger value="contact">اطلاعات تماس</TabsTrigger>
+                <TabsTrigger value="tags">تگ‌ها</TabsTrigger>
                 <TabsTrigger value="additional">اطلاعات تکمیلی</TabsTrigger>
               </TabsList>
 
@@ -445,6 +467,85 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
                         />
                       </FormControl>
                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+
+              <TabsContent value="tags" className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground mb-4">تگ‌های تأمین‌کننده را برای نمایش در سایت انتخاب کنید.</p>
+                <FormField
+                  control={form.control}
+                  name="tag_first_class"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-x-reverse">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>تأمین‌کننده دسته اول</FormLabel>
+                        <FormDescription className="text-xs">مزرعه، باغدار، کارخانه‌دار، تولیدکننده دسته اول</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tag_good_price"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-x-reverse">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>تأمین‌کننده خوش قیمت</FormLabel>
+                        <FormDescription className="text-xs">جنس با کیفیت و قیمت مناسب، تخفیف‌های مناسب</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tag_export_experience"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-x-reverse">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>تأمین‌کننده سابقه صادرات</FormLabel>
+                        <FormDescription className="text-xs">پیشینه صادرات به کشورهای دیگر</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tag_export_packaging"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-x-reverse">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>دارایی بسته‌بندی صادراتی</FormLabel>
+                        <FormDescription className="text-xs">ارائه محصول با بسته‌بندی صادراتی</FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tag_supply_without_capital"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-x-reverse">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <div className="space-y-0.5">
+                        <FormLabel>تأمین بدون سرمایه</FormLabel>
+                        <FormDescription className="text-xs">از طریق تأمین‌کنندگان بالا محصول را فراهم می‌کنند</FormDescription>
+                      </div>
                     </FormItem>
                   )}
                 />

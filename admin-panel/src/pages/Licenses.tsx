@@ -250,8 +250,8 @@ export default function Licenses() {
               className="w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 md:ml-2" />
-              <span className="hidden sm:inline">لایسنس جدید</span>
-              <span className="sm:hidden">جدید</span>
+              <span className="hidden sm:inline">تولید لایسنس</span>
+              <span className="sm:hidden">تولید</span>
             </Button>
           </div>
         </div>

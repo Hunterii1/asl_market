@@ -72,16 +72,21 @@ func GlobalSearch(c *gin.Context) {
 		}
 
 		results.Suppliers = append(results.Suppliers, models.SupplierResponse{
-			ID:            supplier.ID,
-			UserID:        supplier.UserID,
-			FullName:      supplier.FullName,
-			Mobile:        supplier.Mobile,
-			BrandName:     supplier.BrandName,
-			ImageURL:      supplier.ImageURL,
-			City:          supplier.City,
-			IsFeatured:    supplier.IsFeatured,
-			AverageRating: displayRating,
-			TotalRatings:  totalRatings,
+			ID:                     supplier.ID,
+			UserID:                 supplier.UserID,
+			FullName:               supplier.FullName,
+			Mobile:                 supplier.Mobile,
+			BrandName:              supplier.BrandName,
+			ImageURL:               supplier.ImageURL,
+			City:                   supplier.City,
+			IsFeatured:             supplier.IsFeatured,
+			TagFirstClass:          supplier.TagFirstClass,
+			TagGoodPrice:           supplier.TagGoodPrice,
+			TagExportExperience:    supplier.TagExportExperience,
+			TagExportPackaging:     supplier.TagExportPackaging,
+			TagSupplyWithoutCapital: supplier.TagSupplyWithoutCapital,
+			AverageRating:          displayRating,
+			TotalRatings:           totalRatings,
 		})
 	}
 

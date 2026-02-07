@@ -621,6 +621,7 @@ export default function Visitors() {
         open={!!viewVisitor}
         onOpenChange={(open) => !open && setViewVisitor(null)}
         visitor={viewVisitor}
+        onFeaturedChange={reloadVisitors}
       />
 
       {/* Dialog حذف ویزیتور */}

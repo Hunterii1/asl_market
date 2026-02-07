@@ -2045,6 +2045,30 @@ func (s *TelegramService) handleCallbackQuery(query *tgbotapi.CallbackQuery) {
 		return
 	}
 
+	// Handle supplier tag toggle: tag_supplier_{id}_{tagkey}
+	if strings.HasPrefix(data, "tag_supplier_") {
+		rest := strings.TrimPrefix(data, "tag_supplier_")
+		parts := strings.SplitN(rest, "_", 2)
+		if len(parts) == 2 {
+			if supplierID, err := strconv.ParseUint(parts[0], 10, 32); err == nil {
+				tagKey := parts[1]
+				s.handleSupplierTagToggle(chatID, query, uint(supplierID), tagKey)
+			}
+		}
+		return
+	}
+
+	// Handle "show tag management" for supplier: tags_supplier_{id}
+	if strings.HasPrefix(data, "tags_supplier_") {
+		supplierIDStr := strings.TrimPrefix(data, "tags_supplier_")
+		if supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32); err == nil {
+			callback := tgbotapi.NewCallback(query.ID, "🏷️ تگ‌ها")
+			s.bot.Request(callback)
+			s.sendSupplierTagKeyboard(chatID, uint(supplierID))
+		}
+		return
+	}
+
 	// Handle edit callbacks from search
 	if strings.HasPrefix(data, "edit_supplier_") {
 		supplierIDStr := strings.TrimPrefix(data, "edit_supplier_")
@@ -3050,6 +3074,90 @@ func (s *TelegramService) handleVisitorReject(chatID int64, visitorID uint, reas
 	s.showVisitorsList(chatID, "pending", 1)
 }
 
+// handleSupplierTagToggle toggles a single tag for a supplier and updates the inline message
+func (s *TelegramService) handleSupplierTagToggle(chatID int64, query *tgbotapi.CallbackQuery, supplierID uint, tagKey string) {
+	var supplier models.Supplier
+	if err := s.db.Where("id = ?", supplierID).First(&supplier).Error; err != nil {
+		callback := tgbotapi.NewCallback(query.ID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Request(callback)
+		return
+	}
+
+	switch tagKey {
+	case "first_class":
+		supplier.TagFirstClass = !supplier.TagFirstClass
+	case "good_price":
+		supplier.TagGoodPrice = !supplier.TagGoodPrice
+	case "export_experience":
+		supplier.TagExportExperience = !supplier.TagExportExperience
+	case "export_packaging":
+		supplier.TagExportPackaging = !supplier.TagExportPackaging
+	case "supply_without_capital":
+		supplier.TagSupplyWithoutCapital = !supplier.TagSupplyWithoutCapital
+	default:
+		callback := tgbotapi.NewCallback(query.ID, "❌ تگ نامعتبر")
+		s.bot.Request(callback)
+		return
+	}
+
+	if err := s.db.Save(&supplier).Error; err != nil {
+		callback := tgbotapi.NewCallback(query.ID, "❌ خطا در به‌روزرسانی تگ")
+		s.bot.Request(callback)
+		return
+	}
+
+	callback := tgbotapi.NewCallback(query.ID, "✅ تگ به‌روز شد")
+	s.bot.Request(callback)
+
+	// Edit the message to refresh the keyboard with new tag state
+	newKeyboard := s.buildSupplierTagKeyboard(&supplier)
+	edit := tgbotapi.NewEditMessageReplyMarkup(chatID, query.Message.MessageID, newKeyboard)
+	s.bot.Request(edit)
+}
+
+// sendSupplierTagKeyboard sends a standalone message with tag toggle keyboard (for "تگ‌ها" from search result)
+func (s *TelegramService) sendSupplierTagKeyboard(chatID int64, supplierID uint) {
+	var supplier models.Supplier
+	if err := s.db.Where("id = ?", supplierID).First(&supplier).Error; err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ تأمین‌کننده یافت نشد")
+		s.bot.Send(msg)
+		return
+	}
+	tagKeyboard := s.buildSupplierTagKeyboard(&supplier)
+	tagMsg := tgbotapi.NewMessage(chatID, fmt.Sprintf("🏷️ **تگ‌های تأمین‌کننده #%d** (کلیک برای تغییر)", supplierID))
+	tagMsg.ParseMode = "Markdown"
+	tagMsg.ReplyMarkup = tagKeyboard
+	s.bot.Send(tagMsg)
+}
+
+// buildSupplierTagKeyboard builds inline keyboard for toggling supplier tags (تگ‌های تأمین‌کننده)
+func (s *TelegramService) buildSupplierTagKeyboard(supplier *models.Supplier) tgbotapi.InlineKeyboardMarkup {
+	label := func(on bool, name string) string {
+		if on {
+			return name + " ✅"
+		}
+		return name + " ❌"
+	}
+	idStr := strconv.FormatUint(uint64(supplier.ID), 10)
+	return tgbotapi.NewInlineKeyboardMarkup(
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label(supplier.TagFirstClass, "دسته اول"), "tag_supplier_"+idStr+"_first_class"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label(supplier.TagGoodPrice, "خوش قیمت"), "tag_supplier_"+idStr+"_good_price"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label(supplier.TagExportExperience, "سابقه صادرات"), "tag_supplier_"+idStr+"_export_experience"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label(supplier.TagExportPackaging, "بسته‌بندی صادراتی"), "tag_supplier_"+idStr+"_export_packaging"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(label(supplier.TagSupplyWithoutCapital, "تأمین بدون سرمایه"), "tag_supplier_"+idStr+"_supply_without_capital"),
+		),
+	)
+}
+
 func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 	var supplier models.Supplier
 	err := s.db.Preload("User").Preload("Products").Where("id = ?", supplierID).First(&supplier).Error
@@ -3129,7 +3237,36 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 	} else {
 		message.WriteString("**⭐ برگزیده:** ❌ خیر\n")
 	}
-	message.WriteString(fmt.Sprintf("**🗓️ تاریخ ثبت‌نام:** %s\n", supplier.CreatedAt.Format("2006/01/02 15:04")))
+
+	// Supplier tags (تگ‌های تأمین‌کننده)
+	message.WriteString("\n**🏷️ تگ‌ها:**\n")
+	if supplier.TagFirstClass {
+		message.WriteString("• تأمین‌کننده دسته اول: ✅\n")
+	} else {
+		message.WriteString("• تأمین‌کننده دسته اول: ❌\n")
+	}
+	if supplier.TagGoodPrice {
+		message.WriteString("• تأمین‌کننده خوش قیمت: ✅\n")
+	} else {
+		message.WriteString("• تأمین‌کننده خوش قیمت: ❌\n")
+	}
+	if supplier.TagExportExperience {
+		message.WriteString("• سابقه صادرات: ✅\n")
+	} else {
+		message.WriteString("• سابقه صادرات: ❌\n")
+	}
+	if supplier.TagExportPackaging {
+		message.WriteString("• بسته‌بندی صادراتی: ✅\n")
+	} else {
+		message.WriteString("• بسته‌بندی صادراتی: ❌\n")
+	}
+	if supplier.TagSupplyWithoutCapital {
+		message.WriteString("• تأمین بدون سرمایه: ✅\n")
+	} else {
+		message.WriteString("• تأمین بدون سرمایه: ❌\n")
+	}
+
+	message.WriteString(fmt.Sprintf("\n**🗓️ تاریخ ثبت‌نام:** %s\n", supplier.CreatedAt.Format("2006/01/02 15:04")))
 	if supplier.ApprovedAt != nil {
 		message.WriteString(fmt.Sprintf("**✅ تاریخ تأیید:** %s\n", supplier.ApprovedAt.Format("2006/01/02 15:04")))
 	}
@@ -3230,6 +3367,13 @@ func (s *TelegramService) showSupplierDetails(chatID int64, supplierID uint) {
 				s.bot.Send(msg2)
 			}
 		}
+
+		// Send tag management inline keyboard (تگ‌های تأمین‌کننده)
+		tagKeyboard := s.buildSupplierTagKeyboard(&supplier)
+		tagMsg := tgbotapi.NewMessage(chatID, "🏷️ **تگ‌های تأمین‌کننده** (کلیک برای تغییر)")
+		tagMsg.ParseMode = "Markdown"
+		tagMsg.ReplyMarkup = tagKeyboard
+		s.bot.Send(tagMsg)
 	}
 }
 
@@ -3343,7 +3487,7 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 
 	// Show results
 	if len(suppliers) == 1 {
-		// Single result - show details with feature/unfeature button
+		// Single result - show details with feature/unfeature and tags
 		supplier := suppliers[0]
 		text := fmt.Sprintf("🔍 **نتیجه جستجو**\n\n"+
 			"🏪 **تأمین‌کننده #%d**\n"+
@@ -3362,12 +3506,39 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 			text += "⭐ **برگزیده:** ❌ خیر\n"
 		}
 
-		// Create inline keyboard with feature/unfeature, edit and delete buttons
+		// تگ‌های تأمین‌کننده
+		text += "\n**🏷️ تگ‌ها:** "
+		tags := []string{}
+		if supplier.TagFirstClass {
+			tags = append(tags, "دسته اول")
+		}
+		if supplier.TagGoodPrice {
+			tags = append(tags, "خوش قیمت")
+		}
+		if supplier.TagExportExperience {
+			tags = append(tags, "صادرات")
+		}
+		if supplier.TagExportPackaging {
+			tags = append(tags, "بسته‌بندی صادراتی")
+		}
+		if supplier.TagSupplyWithoutCapital {
+			tags = append(tags, "بدون سرمایه")
+		}
+		if len(tags) > 0 {
+			text += strings.Join(tags, " • ") + "\n"
+		} else {
+			text += "ندارد\n"
+		}
+
+		// Create inline keyboard with feature/unfeature, tags, edit and delete buttons
 		var keyboard tgbotapi.InlineKeyboardMarkup
 		if supplier.IsFeatured {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ حذف برگزیده", fmt.Sprintf("unfeature_supplier_%d", supplier.ID)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🏷️ تگ‌ها", fmt.Sprintf("tags_supplier_%d", supplier.ID)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_supplier_%d", supplier.ID)),
@@ -3378,6 +3549,9 @@ func (s *TelegramService) handleSupplierSearch(chatID int64, query string) {
 			keyboard = tgbotapi.NewInlineKeyboardMarkup(
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("⭐ برگزیده کن", fmt.Sprintf("feature_supplier_%d", supplier.ID)),
+				),
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("🏷️ تگ‌ها", fmt.Sprintf("tags_supplier_%d", supplier.ID)),
 				),
 				tgbotapi.NewInlineKeyboardRow(
 					tgbotapi.NewInlineKeyboardButtonData("✏️ ویرایش", fmt.Sprintf("edit_supplier_%d", supplier.ID)),

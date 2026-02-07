@@ -196,11 +196,13 @@ func GetMyVisitorStatus(c *gin.Context) {
 	})
 }
 
-// GetApprovedVisitors returns list of approved visitors with pagination
+// GetApprovedVisitors returns list of approved visitors with pagination and filters
 func GetApprovedVisitors(c *gin.Context) {
-	// Parse pagination parameters
+	// Parse pagination and filter parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "12"))
+	search := strings.TrimSpace(c.DefaultQuery("search", ""))
+	cityProvince := strings.TrimSpace(c.DefaultQuery("city_province", ""))
 
 	// Validate pagination
 	if page < 1 {
@@ -210,7 +212,7 @@ func GetApprovedVisitors(c *gin.Context) {
 		perPage = 12
 	}
 
-	visitors, total, err := models.GetApprovedVisitorsPaginated(models.GetDB(), page, perPage)
+	visitors, total, err := models.GetApprovedVisitorsPaginatedWithFilters(models.GetDB(), page, perPage, search, cityProvince)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست ویزیتورها"})
 		return
@@ -426,6 +428,46 @@ func RejectVisitorByAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "درخواست ویزیتور رد شد",
 	})
+}
+
+// FeatureVisitor sets a visitor as featured (admin only)
+func FeatureVisitor(c *gin.Context) {
+	adminID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+	visitorIDStr := c.Param("id")
+	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		return
+	}
+	if err := models.SetVisitorFeatured(models.GetDB(), uint(visitorID), adminID.(uint), true); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در برگزیده کردن ویزیتور"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "ویزیتور برگزیده شد"})
+}
+
+// UnfeatureVisitor removes featured from a visitor (admin only)
+func UnfeatureVisitor(c *gin.Context) {
+	adminID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+	visitorIDStr := c.Param("id")
+	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		return
+	}
+	if err := models.SetVisitorFeatured(models.GetDB(), uint(visitorID), adminID.(uint), false); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف برگزیده ویزیتور"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "برگزیده حذف شد"})
 }
 
 // GetVisitorByID returns visitor by ID (for debugging)

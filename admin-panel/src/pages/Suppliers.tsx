@@ -64,6 +64,11 @@ interface Supplier {
   totalAmount: number;
   createdAt: string;
   updatedAt: string;
+  tag_first_class?: boolean;
+  tag_good_price?: boolean;
+  tag_export_experience?: boolean;
+  tag_export_packaging?: boolean;
+  tag_supply_without_capital?: boolean;
 }
 
 // داده‌های اولیه
@@ -243,6 +248,11 @@ export default function Suppliers() {
         totalAmount: 0,
         createdAt: s.created_at || new Date().toISOString(),
         updatedAt: s.updated_at || new Date().toISOString(),
+        tag_first_class: s.tag_first_class || false,
+        tag_good_price: s.tag_good_price || false,
+        tag_export_experience: s.tag_export_experience || false,
+        tag_export_packaging: s.tag_export_packaging || false,
+        tag_supply_without_capital: s.tag_supply_without_capital || false,
       }));
 
       setSuppliers(transformedSuppliers);
@@ -915,6 +925,7 @@ export default function Suppliers() {
         open={!!viewSupplier}
         onOpenChange={(open) => !open && setViewSupplier(null)}
         supplier={viewSupplier}
+        onFeaturedChange={reloadSuppliers}
       />
 
       {/* Dialog ویرایش تامین‌کننده */}

@@ -504,12 +504,14 @@ class ApiService {
     }
   }
 
-  async getApprovedSuppliers(params: { page?: number; per_page?: number; search?: string; product_type?: string } = {}): Promise<any> {
+  async getApprovedSuppliers(params: { page?: number; per_page?: number; search?: string; product_type?: string; city?: string; tag?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.search) queryParams.append('search', params.search);
     if (params.product_type) queryParams.append('product_type', params.product_type);
+    if (params.city) queryParams.append('city', params.city);
+    if (params.tag) queryParams.append('tag', params.tag);
 
     const url = `${API_BASE_URL}/suppliers${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(url, {
@@ -567,11 +569,12 @@ class ApiService {
     }
   }
 
-  async getApprovedVisitors(params: { page?: number; per_page?: number; search?: string } = {}): Promise<any> {
+  async getApprovedVisitors(params: { page?: number; per_page?: number; search?: string; city_province?: string } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.search) queryParams.append('search', params.search);
+    if (params.city_province) queryParams.append('city_province', params.city_province);
 
     const url = `${API_BASE_URL}/visitors${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
     return this.makeRequest(url, {

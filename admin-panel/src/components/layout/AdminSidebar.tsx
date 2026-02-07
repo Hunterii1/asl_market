@@ -186,7 +186,7 @@ export function AdminSidebar({ mobileOpen = false, onMobileClose }: AdminSidebar
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-sidebar-foreground truncate">مدیر سیستم</p>
-              <p className="text-xs text-muted-foreground truncate">admin@asllmarket.ir</p>
+              <p className="text-xs text-muted-foreground truncate">admin@asllmarket.com</p>
             </div>
           </div>
         )}

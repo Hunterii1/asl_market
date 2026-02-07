@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -42,6 +43,13 @@ type Supplier struct {
 	IsFeatured bool       `json:"is_featured" gorm:"default:false"`
 	FeaturedAt *time.Time `json:"featured_at"`
 	FeaturedBy *uint      `json:"featured_by"`
+
+	// Supplier tags (پیرامون تگ برای تأمین‌کنندگان)
+	TagFirstClass         bool `json:"tag_first_class" gorm:"default:false"`          // تأمین‌کننده دسته اول (مزرعه، باغدار، کارخانه‌دار، تولیدکننده دسته اول)
+	TagGoodPrice          bool `json:"tag_good_price" gorm:"default:false"`          // تأمین‌کننده خوش قیمت
+	TagExportExperience   bool `json:"tag_export_experience" gorm:"default:false"`   // تأمین‌کننده سابقه صادرات
+	TagExportPackaging    bool `json:"tag_export_packaging" gorm:"default:false"`   // تأمین‌کننده دارایی بسته‌بندی صادراتی
+	TagSupplyWithoutCapital bool `json:"tag_supply_without_capital" gorm:"default:false"` // تأمین بدون سرمایه
 
 	// Relations
 	Products []SupplierProduct `json:"products" gorm:"foreignKey:SupplierID"`
@@ -130,10 +138,15 @@ type SupplierResponse struct {
 	ApprovedAt               *time.Time                `json:"approved_at"`
 	IsFeatured               bool                      `json:"is_featured"`
 	FeaturedAt               *time.Time                `json:"featured_at"`
-	AverageRating            float64                   `json:"average_rating"` // Average rating from matching requests (1-5)
-	TotalRatings             int                       `json:"total_ratings"`  // Total number of ratings received
-	CreatedAt                time.Time                 `json:"created_at"`
-	Products                 []SupplierProductResponse `json:"products"`
+	TagFirstClass             bool                     `json:"tag_first_class"`
+	TagGoodPrice              bool                     `json:"tag_good_price"`
+	TagExportExperience       bool                     `json:"tag_export_experience"`
+	TagExportPackaging        bool                     `json:"tag_export_packaging"`
+	TagSupplyWithoutCapital   bool                     `json:"tag_supply_without_capital"`
+	AverageRating             float64                  `json:"average_rating"` // Average rating from matching requests (1-5)
+	TotalRatings              int                      `json:"total_ratings"`  // Total number of ratings received
+	CreatedAt                 time.Time                `json:"created_at"`
+	Products                  []SupplierProductResponse `json:"products"`
 }
 
 type SupplierProductResponse struct {
@@ -228,19 +241,75 @@ func GetApprovedSuppliers(db *gorm.DB) ([]Supplier, error) {
 
 // GetApprovedSuppliersPaginated returns paginated list of approved suppliers
 func GetApprovedSuppliersPaginated(db *gorm.DB, page, perPage int) ([]Supplier, int64, error) {
+	return GetApprovedSuppliersPaginatedWithFilters(db, page, perPage, "", "", "", nil)
+}
+
+// GetApprovedSuppliersPaginatedWithFilters returns paginated approved suppliers with search and filters.
+// tagKeys: optional list of tag keys (first_class, good_price, export_experience, export_packaging, supply_without_capital); if non-empty, supplier must have at least one of these tags.
+func GetApprovedSuppliersPaginatedWithFilters(db *gorm.DB, page, perPage int, search, productType, city string, tagKeys []string) ([]Supplier, int64, error) {
 	var suppliers []Supplier
 	var total int64
 
-	query := db.Model(&Supplier{}).Preload("User").Preload("Products").Where("status = ?", "approved")
+	query := db.Model(&Supplier{}).Preload("User").Preload("Products").Where("suppliers.status = ?", "approved")
 
-	// Get total count
+	// Search: full_name, brand_name, mobile, city, address
+	if search != "" {
+		pattern := "%" + search + "%"
+		query = query.Where("(suppliers.full_name LIKE ? OR suppliers.brand_name LIKE ? OR suppliers.mobile LIKE ? OR suppliers.city LIKE ? OR suppliers.address LIKE ?)",
+			pattern, pattern, pattern, pattern, pattern)
+	}
+
+	// City filter (exact or contains)
+	if city != "" {
+		query = query.Where("suppliers.city LIKE ?", "%"+city+"%")
+	}
+
+	// Product type: supplier must have at least one product of this type (subquery to avoid duplicate rows)
+	if productType != "" {
+		var ids []uint
+		db.Model(&Supplier{}).Distinct("suppliers.id").Joins("INNER JOIN supplier_products ON supplier_products.supplier_id = suppliers.id AND supplier_products.deleted_at IS NULL").
+			Where("suppliers.status = ? AND supplier_products.product_type = ?", "approved", productType).Pluck("suppliers.id", &ids)
+		if len(ids) == 0 {
+			return []Supplier{}, 0, nil
+		}
+		query = query.Where("suppliers.id IN ?", ids)
+	}
+
+	// Tag filter: at least one of the selected tags must be true
+	if len(tagKeys) > 0 {
+		var orConditions []string
+		var args []interface{}
+		for _, key := range tagKeys {
+			switch key {
+			case "first_class":
+				orConditions = append(orConditions, "suppliers.tag_first_class = ?")
+				args = append(args, true)
+			case "good_price":
+				orConditions = append(orConditions, "suppliers.tag_good_price = ?")
+				args = append(args, true)
+			case "export_experience":
+				orConditions = append(orConditions, "suppliers.tag_export_experience = ?")
+				args = append(args, true)
+			case "export_packaging":
+				orConditions = append(orConditions, "suppliers.tag_export_packaging = ?")
+				args = append(args, true)
+			case "supply_without_capital":
+				orConditions = append(orConditions, "suppliers.tag_supply_without_capital = ?")
+				args = append(args, true)
+			}
+		}
+		if len(orConditions) > 0 {
+			query = query.Where(strings.Join(orConditions, " OR "), args...)
+		}
+	}
+
+	// Count total (on a copy of the query to avoid affecting Limit/Offset)
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// Get paginated results
 	offset := (page - 1) * perPage
-	err := query.Offset(offset).Limit(perPage).Order("is_featured DESC, created_at DESC").Find(&suppliers).Error
+	err := query.Offset(offset).Limit(perPage).Order("suppliers.is_featured DESC, suppliers.created_at DESC").Find(&suppliers).Error
 	return suppliers, total, err
 }
 

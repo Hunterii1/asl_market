@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,8 +29,17 @@ import {
   Clock,
   AlertTriangle,
   Plus,
-  Building
+  Building,
+  X
 } from "lucide-react";
+
+const SUPPLIER_TAG_OPTIONS = [
+  { id: 'first_class', name: 'دسته اول' },
+  { id: 'good_price', name: 'خوش قیمت' },
+  { id: 'export_experience', name: 'سابقه صادرات' },
+  { id: 'export_packaging', name: 'بسته‌بندی صادراتی' },
+  { id: 'supply_without_capital', name: 'تأمین بدون سرمایه' },
+];
 
 const AslSupplier = () => {
   const navigate = useNavigate();
@@ -38,14 +47,47 @@ const AslSupplier = () => {
   const { user } = useAuth();
   const [selectedProduct, setSelectedProduct] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [cityFilter, setCityFilter] = useState("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   
-  // Read search query from URL on mount
+  // Read filters from URL on mount
   useEffect(() => {
     const urlSearch = searchParams.get('search');
-    if (urlSearch) {
-      setSearchTerm(urlSearch);
+    const urlProduct = searchParams.get('product_type');
+    const urlCity = searchParams.get('city');
+    const urlTag = searchParams.get('tag');
+    if (urlSearch != null) setSearchTerm(urlSearch);
+    if (urlProduct != null && urlProduct !== 'all') setSelectedProduct(urlProduct);
+    if (urlCity != null) setCityFilter(urlCity);
+    if (urlTag != null) {
+      const tags = urlTag.split(',').map(t => t.trim()).filter(Boolean);
+      setSelectedTags(tags);
     }
   }, [searchParams]);
+  
+  // Debounce search input (400ms)
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      debounceRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [searchTerm]);
+  
+  // Sync URL with filters
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (searchTerm.trim()) next.set('search', searchTerm.trim()); else next.delete('search');
+    if (selectedProduct !== 'all') next.set('product_type', selectedProduct); else next.delete('product_type');
+    if (cityFilter.trim()) next.set('city', cityFilter.trim()); else next.delete('city');
+    if (selectedTags.length) next.set('tag', selectedTags.join(',')); else next.delete('tag');
+    setSearchParams(next, { replace: true });
+  }, [searchTerm, selectedProduct, cityFilter, selectedTags]);
 
   const [approvedSuppliers, setApprovedSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
@@ -64,7 +106,7 @@ const AslSupplier = () => {
     { id: "handicrafts", name: "صنایع دستی" }
   ];
 
-  // Load suppliers data from API with pagination and search
+  // Load suppliers data from API with pagination, search, city and tags
   useEffect(() => {
     const loadSuppliersData = async () => {
       try {
@@ -72,15 +114,16 @@ const AslSupplier = () => {
         const response = await apiService.getApprovedSuppliers({
           page: currentPage,
           per_page: itemsPerPage,
-          search: searchTerm.trim() || undefined,
+          search: debouncedSearch || undefined,
           product_type: selectedProduct !== "all" ? selectedProduct : undefined,
+          city: cityFilter.trim() || undefined,
+          tag: selectedTags.length ? selectedTags.join(',') : undefined,
         });
         setApprovedSuppliers(response.suppliers || []);
         setTotalPages(response.total_pages || 1);
         setTotalItems(response.total || 0);
       } catch (error) {
         console.error('Error loading suppliers:', error);
-        // Set empty array on error to prevent map error
         setApprovedSuppliers([]);
         setTotalPages(1);
       } finally {
@@ -89,7 +132,7 @@ const AslSupplier = () => {
     };
 
     loadSuppliersData();
-  }, [currentPage, searchTerm, selectedProduct]);
+  }, [currentPage, debouncedSearch, selectedProduct, cityFilter, selectedTags]);
 
   // Helper function to convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -108,10 +151,23 @@ const AslSupplier = () => {
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
 
-  // Reset to page 1 when filter changes
+  // Reset to page 1 when any filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedProduct]);
+  }, [searchTerm, selectedProduct, cityFilter, selectedTags]);
+
+  const hasActiveFilters = !!(searchTerm.trim() || selectedProduct !== 'all' || cityFilter.trim() || selectedTags.length);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedProduct('all');
+    setCityFilter('');
+    setSelectedTags([]);
+    setCurrentPage(1);
+  };
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]);
+  };
 
 
 
@@ -170,17 +226,33 @@ const AslSupplier = () => {
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4 mb-4">
-            <div className="flex-1 relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-              <Input
-                placeholder="جستجو در تأمین‌کنندگان..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pr-10 bg-muted border-border text-foreground rounded-2xl"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  placeholder="جستجو در تأمین‌کنندگان (نام، برند، شهر، آدرس...)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 bg-muted border-border text-foreground rounded-2xl"
+                />
+              </div>
+              <div className="flex gap-2 items-center shrink-0">
+                <Input
+                  placeholder="شهر"
+                  value={cityFilter}
+                  onChange={(e) => setCityFilter(e.target.value)}
+                  className="w-32 bg-muted border-border rounded-2xl"
+                />
+                {hasActiveFilters && (
+                  <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-2xl">
+                    <X className="w-4 h-4 ml-1" />
+                    پاک کردن فیلترها
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="flex gap-2 overflow-x-auto">
+            <div className="flex gap-2 overflow-x-auto flex-wrap">
               {productCategories.map((category) => (
                 <Button
                   key={category.id}
@@ -197,9 +269,25 @@ const AslSupplier = () => {
                 </Button>
               ))}
             </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-sm text-muted-foreground ml-2">تگ‌ها:</span>
+              {SUPPLIER_TAG_OPTIONS.map((tag) => (
+                <Button
+                  key={tag.id}
+                  variant={selectedTags.includes(tag.id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleTag(tag.id)}
+                  className={`rounded-2xl ${
+                    selectedTags.includes(tag.id)
+                      ? "bg-orange-500 hover:bg-orange-600"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {tag.name}
+                </Button>
+              ))}
+            </div>
           </div>
-
-
         </CardContent>
       </Card>
 
@@ -216,7 +304,7 @@ const AslSupplier = () => {
             </div>
             <div className="mr-auto">
               <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30 rounded-2xl">
-                {totalItems > 0 ? toFarsiNumber(totalItems) : filteredSuppliers.length} تأمین‌کننده
+                {toFarsiNumber(totalItems)} تأمین‌کننده
               </Badge>
             </div>
           </div>
@@ -234,8 +322,16 @@ const AslSupplier = () => {
             <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">هیچ تأمین‌کننده‌ای یافت نشد</h3>
             <p className="text-muted-foreground">
-              {searchTerm ? 'برای جستجوی مورد نظر نتیجه‌ای یافت نشد' : 'هنوز تأمین‌کننده تأیید شده‌ای وجود ندارد'}
+              {hasActiveFilters
+                ? 'با فیلترهای فعلی نتیجه‌ای یافت نشد. فیلترها را تغییر دهید یا پاک کنید.'
+                : 'هنوز تأمین‌کننده تأیید شده‌ای وجود ندارد'}
             </p>
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="mt-4 rounded-2xl">
+                <X className="w-4 h-4 ml-2" />
+                پاک کردن فیلترها
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -358,6 +454,26 @@ const AslSupplier = () => {
                 </div>
               </div>
 
+              {/* تگ‌های تأمین‌کننده */}
+              {(supplier.tag_first_class || supplier.tag_good_price || supplier.tag_export_experience || supplier.tag_export_packaging || supplier.tag_supply_without_capital) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {supplier.tag_first_class && (
+                    <Badge variant="secondary" className="bg-amber-500/20 text-amber-400 border-amber-500/30 rounded-xl text-xs">تأمین‌کننده دسته اول</Badge>
+                  )}
+                  {supplier.tag_good_price && (
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400 border-green-500/30 rounded-xl text-xs">خوش قیمت</Badge>
+                  )}
+                  {supplier.tag_export_experience && (
+                    <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-xl text-xs">سابقه صادرات</Badge>
+                  )}
+                  {supplier.tag_export_packaging && (
+                    <Badge variant="secondary" className="bg-violet-500/20 text-violet-400 border-violet-500/30 rounded-xl text-xs">بسته‌بندی صادراتی</Badge>
+                  )}
+                  {supplier.tag_supply_without_capital && (
+                    <Badge variant="secondary" className="bg-slate-500/20 text-slate-400 border-slate-500/30 rounded-xl text-xs">تأمین بدون سرمایه</Badge>
+                  )}
+                </div>
+              )}
 
               {/* محصولات */}
               <div className="mb-4">

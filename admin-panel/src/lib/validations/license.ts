@@ -1,42 +1,38 @@
 import { z } from "zod";
 
-// Schema برای افزودن لایسنس جدید
-export const addLicenseSchema = z.object({
-  licenseKey: z
-    .string()
-    .min(10, "کد لایسنس باید حداقل ۱۰ کاراکتر باشد")
-    .max(100, "کد لایسنس نمی‌تواند بیشتر از ۱۰۰ کاراکتر باشد")
-    .regex(/^[A-Z0-9\-]+$/, "کد لایسنس فقط می‌تواند شامل حروف بزرگ انگلیسی، اعداد و خط تیره باشد"),
-  
-  userId: z.string().min(1, "شناسه کاربر الزامی است"),
-  userName: z.string().min(2, "نام کاربر باید حداقل ۲ کاراکتر باشد"),
-  
-  productId: z.string().min(1, "شناسه محصول الزامی است"),
-  productName: z.string().min(2, "نام محصول باید حداقل ۲ کاراکتر باشد"),
-  
-  licenseType: z.enum(["trial", "monthly", "yearly", "lifetime"], {
+// Schema for generating licenses (same as backend / Telegram: count + type)
+export const generateLicenseSchema = z.object({
+  count: z
+    .number()
+    .int("تعداد باید عدد صحیح باشد")
+    .min(1, "حداقل ۱ لایسنس")
+    .max(100, "حداکثر ۱۰۰ لایسنس"),
+  type: z.enum(["pro", "plus", "plus4"], {
     required_error: "نوع لایسنس را انتخاب کنید",
   }),
-  
-  activatedAt: z.string().optional(),
-  expiresAt: z.string().optional(),
-  
-  status: z.enum(["active", "expired", "suspended", "revoked"], {
-    required_error: "وضعیت لایسنس را انتخاب کنید",
-  }).default("active"),
-  
-  maxActivations: z.number().int().min(1, "حداقل تعداد فعال‌سازی ۱ است").max(100, "حداکثر تعداد فعال‌سازی ۱۰۰ است").default(1),
-  currentActivations: z.number().int().min(0).default(0),
-  
-  notes: z.string().max(500, "یادداشت حداکثر ۵۰۰ کاراکتر باشد").optional(),
 });
 
-export type AddLicenseFormData = z.infer<typeof addLicenseSchema>;
+export type GenerateLicenseFormData = z.infer<typeof generateLicenseSchema>;
 
-// Schema برای ویرایش لایسنس
-export const editLicenseSchema = addLicenseSchema.extend({
+// Alias for Add dialog (which is now Generate)
+export const addLicenseSchema = generateLicenseSchema;
+export type AddLicenseFormData = GenerateLicenseFormData;
+
+// Schema for edit license dialog (legacy form; backend does not support editing license fields)
+export const editLicenseSchema = z.object({
   id: z.string().min(1, "شناسه لایسنس الزامی است"),
+  licenseKey: z.string().min(1).optional(),
+  userId: z.string().optional(),
+  userName: z.string().optional(),
+  productId: z.string().optional(),
+  productName: z.string().optional(),
+  licenseType: z.enum(["trial", "monthly", "yearly", "lifetime"]).optional(),
+  activatedAt: z.string().optional(),
+  expiresAt: z.string().optional(),
+  status: z.enum(["active", "expired", "suspended", "revoked"]).optional(),
+  maxActivations: z.number().optional(),
+  currentActivations: z.number().optional(),
+  notes: z.string().optional(),
 });
 
 export type EditLicenseFormData = z.infer<typeof editLicenseSchema>;
-

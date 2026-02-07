@@ -25,6 +25,8 @@ import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 import { adminApi } from '@/lib/api/adminApi';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/hooks/use-toast';
 
 interface VisitorData {
   id: string;
@@ -61,6 +63,7 @@ interface ViewVisitorDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   visitor: VisitorData | null;
+  onFeaturedChange?: () => void;
 }
 
 const statusConfig = {
@@ -81,63 +84,91 @@ const statusConfig = {
   },
 };
 
-export function ViewVisitorDialog({ open, onOpenChange, visitor: initialVisitor }: ViewVisitorDialogProps) {
+export function ViewVisitorDialog({ open, onOpenChange, visitor: initialVisitor, onFeaturedChange }: ViewVisitorDialogProps) {
   const [fullVisitor, setFullVisitor] = useState<VisitorData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [featureLoading, setFeatureLoading] = useState(false);
+
+  const loadFullVisitor = async () => {
+    if (!initialVisitor) return;
+    try {
+      setLoading(true);
+      const response = await adminApi.getVisitor(Number(initialVisitor.id));
+      if (response && response.visitor) {
+        const v = response.visitor;
+        setFullVisitor({
+          id: v.id?.toString() || '',
+          full_name: v.full_name || '',
+          national_id: v.national_id || '',
+          passport_number: v.passport_number || '',
+          birth_date: v.birth_date || '',
+          mobile: v.mobile || '',
+          whatsapp_number: v.whatsapp_number || '',
+          email: v.email || '',
+          residence_address: v.residence_address || '',
+          city_province: v.city_province || '',
+          destination_cities: v.destination_cities || '',
+          has_local_contact: v.has_local_contact || false,
+          local_contact_details: v.local_contact_details || '',
+          bank_account_iban: v.bank_account_iban || '',
+          bank_name: v.bank_name || '',
+          account_holder_name: v.account_holder_name || '',
+          has_marketing_experience: v.has_marketing_experience || false,
+          marketing_experience_desc: v.marketing_experience_desc || '',
+          language_level: v.language_level || '',
+          special_skills: v.special_skills || '',
+          interested_products: v.interested_products || '',
+          status: (v.status || 'pending') as 'pending' | 'approved' | 'rejected',
+          is_featured: v.is_featured || false,
+          average_rating: v.average_rating || 0,
+          admin_notes: v.admin_notes || '',
+          approved_at: v.approved_at,
+          created_at: v.created_at,
+          createdAt: v.created_at || new Date().toISOString(),
+        });
+      } else {
+        setFullVisitor(initialVisitor);
+      }
+    } catch (error) {
+      console.error('Error loading full visitor:', error);
+      setFullVisitor(initialVisitor);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (open && initialVisitor) {
-      const loadFullVisitor = async () => {
-        try {
-          setLoading(true);
-          const response = await adminApi.getVisitor(Number(initialVisitor.id));
-          if (response && response.visitor) {
-            const v = response.visitor;
-            setFullVisitor({
-              id: v.id?.toString() || '',
-              full_name: v.full_name || '',
-              national_id: v.national_id || '',
-              passport_number: v.passport_number || '',
-              birth_date: v.birth_date || '',
-              mobile: v.mobile || '',
-              whatsapp_number: v.whatsapp_number || '',
-              email: v.email || '',
-              residence_address: v.residence_address || '',
-              city_province: v.city_province || '',
-              destination_cities: v.destination_cities || '',
-              has_local_contact: v.has_local_contact || false,
-              local_contact_details: v.local_contact_details || '',
-              bank_account_iban: v.bank_account_iban || '',
-              bank_name: v.bank_name || '',
-              account_holder_name: v.account_holder_name || '',
-              has_marketing_experience: v.has_marketing_experience || false,
-              marketing_experience_desc: v.marketing_experience_desc || '',
-              language_level: v.language_level || '',
-              special_skills: v.special_skills || '',
-              interested_products: v.interested_products || '',
-              status: (v.status || 'pending') as 'pending' | 'approved' | 'rejected',
-              is_featured: v.is_featured || false,
-              average_rating: v.average_rating || 0,
-              admin_notes: v.admin_notes || '',
-              approved_at: v.approved_at,
-              created_at: v.created_at,
-              createdAt: v.created_at || new Date().toISOString(),
-            });
-          } else {
-            setFullVisitor(initialVisitor);
-          }
-        } catch (error) {
-          console.error('Error loading full visitor:', error);
-          setFullVisitor(initialVisitor);
-        } finally {
-          setLoading(false);
-        }
-      };
       loadFullVisitor();
     } else {
       setFullVisitor(null);
     }
-  }, [open, initialVisitor]);
+  }, [open, initialVisitor?.id]);
+
+  const handleToggleFeatured = async () => {
+    if (!initialVisitor?.id) return;
+    setFeatureLoading(true);
+    try {
+      const current = fullVisitor || initialVisitor;
+      if (current.is_featured) {
+        await adminApi.unfeatureVisitor(parseInt(current.id));
+        toast({ title: 'برگزیده حذف شد', description: 'ویزیتور از لیست برگزیده‌ها حذف شد.' });
+      } else {
+        await adminApi.featureVisitor(parseInt(current.id));
+        toast({ title: 'برگزیده شد', description: 'ویزیتور به لیست برگزیده‌ها اضافه شد.' });
+      }
+      await loadFullVisitor();
+      onFeaturedChange?.();
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'عملیات انجام نشد',
+        variant: 'destructive',
+      });
+    } finally {
+      setFeatureLoading(false);
+    }
+  };
 
   if (!fullVisitor && !initialVisitor) return null;
   const visitor = fullVisitor || initialVisitor!;
@@ -195,6 +226,23 @@ export function ViewVisitorDialog({ open, onOpenChange, visitor: initialVisitor 
                     )}
                   </div>
                 </div>
+                {visitor.status === 'approved' && (
+                  <Button
+                    variant={visitor.is_featured ? 'outline' : 'default'}
+                    size="sm"
+                    disabled={featureLoading}
+                    onClick={handleToggleFeatured}
+                    className="shrink-0"
+                  >
+                    {featureLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : visitor.is_featured ? (
+                      <>حذف برگزیده</>
+                    ) : (
+                      <>⭐ برگزیده کن</>
+                    )}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

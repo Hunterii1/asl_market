@@ -98,6 +98,13 @@ export const addSupplierSchema = z.object({
   
   totalOrders: z.number().int().min(0).default(0),
   totalAmount: z.number().min(0).default(0),
+
+  // تگ‌های تأمین‌کننده
+  tag_first_class: z.boolean().optional().default(false),
+  tag_good_price: z.boolean().optional().default(false),
+  tag_export_experience: z.boolean().optional().default(false),
+  tag_export_packaging: z.boolean().optional().default(false),
+  tag_supply_without_capital: z.boolean().optional().default(false),
 });
 
 export type AddSupplierFormData = z.infer<typeof addSupplierSchema>;
