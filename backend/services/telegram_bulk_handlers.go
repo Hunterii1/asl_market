@@ -533,7 +533,7 @@ func (s *TelegramService) promptAddSingleSupplier(chatID int64) {
 		"قیمت حجم بالا: [قیمت حجم بالا]\n" +
 		"برند خصوصی: [بله/خیر]\n" +
 		"محصول: [نام محصول]\n" +
-		"نوع محصول: [نوع]\n" +
+		"نوع محصول: [یکی از دسته‌های زیر]\n" +
 		"توضیحات: [توضیحات محصول]\n" +
 		"مجوز: [بله/خیر]\n" +
 		"نوع مجوز: [نوع مجوز]\n" +
@@ -555,12 +555,14 @@ func (s *TelegramService) promptAddSingleSupplier(chatID int64) {
 		"قیمت حجم بالا: 45000\n" +
 		"برند خصوصی: بله\n" +
 		"محصول: خشکبار\n" +
-		"نوع محصول: غذایی\n" +
+		"نوع محصول: agriculture_food\n" +
 		"توضیحات: خشکبار درجه یک\n" +
 		"مجوز: خیر\n" +
 		"نوع مجوز: \n" +
 		"تولید ماهانه: 1000\n" +
 		"```\n\n" +
+		"**دسته‌بندی نوع محصول (همان مقدار را عیناً وارد کنید):**\n" +
+		"`oil_petro` نفت و پتروشیمی | `mineral` معدنی | `agriculture_food` کشاورزی و غذایی | `carpet_handicraft` فرش و صنایع دستی | `processed_food_industrial_agri` غذایی فرآوری شده | `chemical_pharma` شیمیایی و دارویی | `textile` نساجی | `machinery_industrial` ماشین‌آلات صنعتی | `glass_ceramic` شیشه و سرامیک | `building_materials` مصالح ساختمانی | `household_appliances` لوازم خانگی | `other` سایر\n\n" +
 		"⚠️ برای لغو /cancel تایپ کنید"
 
 	// Set session state

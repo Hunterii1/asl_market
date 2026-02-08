@@ -97,12 +97,13 @@ const (
 	MENU_USER_STATS       = "📊 آمار کاربران"
 
 	// Supplier management sub-menus
-	MENU_SUPPLIERS          = "🏪 مدیریت تأمین‌کنندگان"
-	MENU_PENDING_SUPPLIERS  = "⏳ تأمین‌کنندگان در انتظار"
-	MENU_APPROVED_SUPPLIERS = "✅ تأمین‌کنندگان تأیید شده"
-	MENU_REJECTED_SUPPLIERS = "❌ تأمین‌کنندگان رد شده"
-	MENU_ALL_SUPPLIERS      = "📋 همه تأمین‌کنندگان"
-	MENU_SUPPLIER_STATS     = "📊 آمار تأمین‌کنندگان"
+	MENU_SUPPLIERS                      = "🏪 مدیریت تأمین‌کنندگان"
+	MENU_PENDING_SUPPLIERS              = "⏳ تأمین‌کنندگان در انتظار"
+	MENU_APPROVED_SUPPLIERS             = "✅ تأمین‌کنندگان تأیید شده"
+	MENU_REJECTED_SUPPLIERS             = "❌ تأمین‌کنندگان رد شده"
+	MENU_ALL_SUPPLIERS                  = "📋 همه تأمین‌کنندگان"
+	MENU_BULK_APPROVE_PENDING_SUPPLIERS = "✅ تأیید کلی تأمین‌کنندگان در انتظار"
+	MENU_SUPPLIER_STATS                 = "📊 آمار تأمین‌کنندگان"
 
 	// Supplier action buttons
 	MENU_APPROVE_SUPPLIER   = "✅ تأیید"
@@ -116,16 +117,17 @@ const (
 	MENU_SEARCH_SUPPLIER    = "🔍 جستجوی تأمین‌کننده"
 
 	// Visitor management sub-menus
-	MENU_VISITORS          = "🚶‍♂️ مدیریت ویزیتورها"
-	MENU_PENDING_VISITORS  = "⏳ ویزیتورهای در انتظار"
-	MENU_APPROVED_VISITORS = "✅ ویزیتورهای تأیید شده"
-	MENU_REJECTED_VISITORS = "❌ ویزیتورهای رد شده"
-	MENU_ALL_VISITORS      = "📋 همه ویزیتورها"
-	MENU_VISITOR_STATS     = "📊 آمار ویزیتورها"
-	MENU_FEATURE_VISITOR   = "⭐ برگزیده"
-	MENU_UNFEATURE_VISITOR = "⭐ حذف برگزیده"
-	MENU_FEATURED_VISITORS = "⭐ ویزیتورهای برگزیده"
-	MENU_SEARCH_VISITOR    = "🔍 جستجوی ویزیتور"
+	MENU_VISITORS                      = "🚶‍♂️ مدیریت ویزیتورها"
+	MENU_PENDING_VISITORS              = "⏳ ویزیتورهای در انتظار"
+	MENU_APPROVED_VISITORS             = "✅ ویزیتورهای تأیید شده"
+	MENU_REJECTED_VISITORS             = "❌ ویزیتورهای رد شده"
+	MENU_ALL_VISITORS                  = "📋 همه ویزیتورها"
+	MENU_BULK_APPROVE_PENDING_VISITORS = "✅ تأیید کلی ویزیتورهای در انتظار"
+	MENU_VISITOR_STATS                 = "📊 آمار ویزیتورها"
+	MENU_FEATURE_VISITOR               = "⭐ برگزیده"
+	MENU_UNFEATURE_VISITOR             = "⭐ حذف برگزیده"
+	MENU_FEATURED_VISITORS             = "⭐ ویزیتورهای برگزیده"
+	MENU_SEARCH_VISITOR                = "🔍 جستجوی ویزیتور"
 
 	// Withdrawal management
 	MENU_WITHDRAWALS_PENDING    = "⏳ درخواست‌های در انتظار"
@@ -161,13 +163,17 @@ const (
 	MENU_TICKET_STATS        = "📊 آمار تیکت‌ها"
 
 	// Available products management sub-menus
-	MENU_AVAILABLE_PRODUCTS       = "📦 مدیریت کالاهای موجود"
-	MENU_ADD_AVAILABLE_PRODUCT    = "➕ اضافه کردن کالا"
-	MENU_LIST_AVAILABLE_PRODUCTS  = "📋 لیست کالاها"
-	MENU_AVAILABLE_PRODUCT_STATS  = "📊 آمار کالاها"
-	MENU_EDIT_AVAILABLE_PRODUCT   = "✏️ ویرایش کالا"
-	MENU_DELETE_AVAILABLE_PRODUCT = "🗑️ حذف کالا"
-	MENU_SEARCH_AVAILABLE_PRODUCT = "🔍 جستجوی کالا"
+	MENU_AVAILABLE_PRODUCTS            = "📦 مدیریت کالاهای موجود"
+	MENU_ADD_AVAILABLE_PRODUCT         = "➕ اضافه کردن کالا"
+	MENU_LIST_AVAILABLE_PRODUCTS       = "📋 لیست کالاها"
+	MENU_PENDING_AVAILABLE_PRODUCTS    = "⏳ کالاهای در انتظار"
+	MENU_ALL_AVAILABLE_PRODUCTS        = "📋 همه کالاها"
+	MENU_INACTIVE_AVAILABLE_PRODUCTS   = "❌ کالاهای غیرفعال/رد شده"
+	MENU_BULK_APPROVE_PENDING_PRODUCTS = "✅ تأیید کلی کالاهای در انتظار"
+	MENU_AVAILABLE_PRODUCT_STATS       = "📊 آمار کالاها"
+	MENU_EDIT_AVAILABLE_PRODUCT        = "✏️ ویرایش کالا"
+	MENU_DELETE_AVAILABLE_PRODUCT      = "🗑️ حذف کالا"
+	MENU_SEARCH_AVAILABLE_PRODUCT      = "🔍 جستجوی کالا"
 
 	// Visitor action buttons
 	MENU_APPROVE_VISITOR = "✅ تأیید"
@@ -191,6 +197,9 @@ const (
 	MENU_EXCEL_EXPORT_AVAILABLE = "📊 خروجی اکسل کالاهای موجود"
 	MENU_EXCEL_EXPORT_RESEARCH  = "📊 خروجی اکسل محصولات تحقیقی"
 	MENU_EXCEL_EXPORT_USERS     = "📊 خروجی اکسل تمامی کاربران"
+
+	// Backup
+	MENU_BACKUP = "💾 بک‌آپ کامل"
 
 	// Navigation
 	MENU_PREV_PAGE = "⬅️ صفحه قبل"
@@ -559,6 +568,14 @@ type TicketPagination struct {
 	Status  string // "open", "in_progress", "waiting_response", "closed", "all"
 }
 
+// Pagination structure for available products list
+type AvailableProductPagination struct {
+	ChatID  int64
+	Page    int
+	PerPage int
+	Status  string // "pending", "active", "inactive", "all"
+}
+
 // Global map to store user pagination state
 var userPaginationStates = make(map[int64]*UserPagination)
 
@@ -570,6 +587,9 @@ var visitorPaginationStates = make(map[int64]*VisitorPagination)
 
 // Global map to store ticket pagination state
 var ticketPaginationStates = make(map[int64]*TicketPagination)
+
+// Global map to store available product pagination state
+var availableProductPaginationStates = make(map[int64]*AvailableProductPagination)
 var paginationMutex = sync.RWMutex{}
 
 // User session states
@@ -698,8 +718,8 @@ func (s *TelegramService) showMainMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_EXCEL_EXPORT),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_BACKUP),
 			tgbotapi.NewKeyboardButton(MENU_ADMIN_MANAGEMENT),
-			tgbotapi.NewKeyboardButton(MENU_SETTINGS),
 		),
 	)
 	keyboard.ResizeKeyboard = true
@@ -827,10 +847,17 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 	case MENU_NEXT_PAGE:
 		s.handlePagination(message.Chat.ID, 1)
 	case MENU_BACK:
-		// Clear any active session state when going back
+		// Clear any active session state and pagination when going back
 		sessionMutex.Lock()
 		delete(sessionStates, message.Chat.ID)
 		sessionMutex.Unlock()
+		paginationMutex.Lock()
+		delete(userPaginationStates, message.Chat.ID)
+		delete(supplierPaginationStates, message.Chat.ID)
+		delete(visitorPaginationStates, message.Chat.ID)
+		delete(ticketPaginationStates, message.Chat.ID)
+		delete(availableProductPaginationStates, message.Chat.ID)
+		paginationMutex.Unlock()
 		s.showMainMenu(message.Chat.ID)
 	case MENU_STATS:
 		s.showStats(message.Chat.ID)
@@ -858,6 +885,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showSupplierSearchPrompt(message.Chat.ID)
 	case MENU_SUPPLIER_STATS:
 		s.showSupplierStats(message.Chat.ID)
+	case MENU_BULK_APPROVE_PENDING_SUPPLIERS:
+		s.handleBulkApprovePendingSuppliers(message.Chat.ID)
 	case MENU_VISITORS:
 		s.showVisitorMenu(message.Chat.ID)
 	case MENU_PENDING_VISITORS:
@@ -874,6 +903,8 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showVisitorSearchPrompt(message.Chat.ID)
 	case MENU_VISITOR_STATS:
 		s.showVisitorStats(message.Chat.ID)
+	case MENU_BULK_APPROVE_PENDING_VISITORS:
+		s.handleBulkApprovePendingVisitors(message.Chat.ID)
 
 	// Withdrawal management cases
 	case MENU_WITHDRAWALS_PENDING:
@@ -928,6 +959,14 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.promptAddAvailableProduct(message.Chat.ID)
 	case MENU_LIST_AVAILABLE_PRODUCTS:
 		s.showAvailableProductsList(message.Chat.ID)
+	case MENU_PENDING_AVAILABLE_PRODUCTS:
+		s.showAvailableProductsListByStatus(message.Chat.ID, "pending", 1)
+	case MENU_ALL_AVAILABLE_PRODUCTS:
+		s.showAvailableProductsListByStatus(message.Chat.ID, "all", 1)
+	case MENU_INACTIVE_AVAILABLE_PRODUCTS:
+		s.showAvailableProductsListByStatus(message.Chat.ID, "inactive", 1)
+	case MENU_BULK_APPROVE_PENDING_PRODUCTS:
+		s.handleBulkApprovePendingProducts(message.Chat.ID)
 	case MENU_SEARCH_AVAILABLE_PRODUCT:
 		s.showAvailableProductSearchPrompt(message.Chat.ID)
 	case MENU_AVAILABLE_PRODUCT_STATS:
@@ -970,6 +1009,15 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showNotificationStats(message.Chat.ID)
 	case MENU_ADMIN_MANAGEMENT:
 		s.showAdminManagementMenu(message.Chat.ID)
+	case MENU_BACKUP:
+		if !isAdmin(message.Chat.ID) {
+			msg := tgbotapi.NewMessage(message.Chat.ID, "❌ فقط ادمین‌ها می‌توانند بک‌آپ بگیرند.")
+			s.bot.Send(msg)
+			return
+		}
+		msg := tgbotapi.NewMessage(message.Chat.ID, "⏳ در حال تهیه بک‌آپ کامل (uploads + دیتابیس)... لطفاً چند لحظه صبر کنید.")
+		s.bot.Send(msg)
+		go RunBackupForChat(s, message.Chat.ID)
 	case MENU_ADD_ADMIN:
 		s.showAddAdminTypeMenu(message.Chat.ID)
 	case MENU_ADD_FULL_ADMIN:
@@ -980,8 +1028,6 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 		s.showAdminsList(message.Chat.ID)
 	case MENU_REMOVE_ADMIN:
 		s.promptRemoveAdmin(message.Chat.ID)
-	case MENU_SETTINGS:
-		s.showMainMenu(message.Chat.ID) // Just redirect to main menu for now
 	case MENU_EXCEL_EXPORT:
 		s.showExcelExportMenu(message.Chat.ID)
 	case MENU_EXCEL_EXPORT_SUPPLIERS:
@@ -1325,7 +1371,7 @@ func (s *TelegramService) handleMessage(message *tgbotapi.Message) {
 					tgbotapi.NewKeyboardButton(MENU_SINGLE_ADD),
 				),
 				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton(MENU_SETTINGS),
+					tgbotapi.NewKeyboardButton(MENU_BACKUP),
 				),
 			)
 			msg.ReplyMarkup = keyboard
@@ -1469,6 +1515,7 @@ func (s *TelegramService) showUsersList(chatID int64, filterType string, page in
 	delete(supplierPaginationStates, chatID)
 	delete(visitorPaginationStates, chatID)
 	delete(ticketPaginationStates, chatID)
+	delete(availableProductPaginationStates, chatID)
 	userPaginationStates[chatID] = &UserPagination{
 		ChatID:     chatID,
 		Page:       page,
@@ -1641,7 +1688,8 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 	var supplierState *SupplierPagination
 	var visitorState *VisitorPagination
 	var ticketState *TicketPagination
-	var isUser, isSupplier, isVisitor, isTicket bool
+	var productState *AvailableProductPagination
+	var isUser, isSupplier, isVisitor, isTicket, isProduct bool
 
 	if state, exists := userPaginationStates[chatID]; exists {
 		userState = state
@@ -1659,6 +1707,10 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 		ticketState = state
 		isTicket = true
 		log.Printf("DEBUG: Found ticket pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
+	} else if state, exists := availableProductPaginationStates[chatID]; exists {
+		productState = state
+		isProduct = true
+		log.Printf("DEBUG: Found available product pagination state for chatID %d, page %d, status %s", chatID, state.Page, state.Status)
 	} else {
 		log.Printf("DEBUG: No pagination state found for chatID %d. User states: %d, Supplier states: %d, Visitor states: %d, Ticket states: %d",
 			chatID, len(userPaginationStates), len(supplierPaginationStates), len(visitorPaginationStates), len(ticketPaginationStates))
@@ -1703,6 +1755,16 @@ func (s *TelegramService) handlePagination(chatID int64, direction int) {
 		}
 		log.Printf("DEBUG: Navigating ticket list to page %d", newPage)
 		s.showSupportTicketsList(chatID, ticketState.Status, newPage)
+		return
+	}
+
+	if isProduct {
+		newPage := productState.Page + direction
+		if newPage < 1 {
+			newPage = 1
+		}
+		log.Printf("DEBUG: Navigating available product list to page %d", newPage)
+		s.showAvailableProductsListByStatus(chatID, productState.Status, newPage)
 		return
 	}
 
@@ -2395,7 +2457,7 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_PENDING_SUPPLIERS),
-			tgbotapi.NewKeyboardButton(MENU_SUPPLIER_STATS),
+			tgbotapi.NewKeyboardButton(MENU_BULK_APPROVE_PENDING_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_APPROVED_SUPPLIERS),
@@ -2406,21 +2468,19 @@ func (s *TelegramService) showSupplierMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_ALL_SUPPLIERS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_SUPPLIER_STATS),
 			tgbotapi.NewKeyboardButton(MENU_SEARCH_SUPPLIER),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
 
 	msg := tgbotapi.NewMessage(chatID,
 		"🏪 **مدیریت تأمین‌کنندگان**\n\n"+
-			"لطفا گزینه مورد نظر خود را انتخاب کنید:\n\n"+
-			"⏳ **در انتظار**: تأمین‌کنندگان منتظر بررسی\n"+
-			"✅ **تأیید شده**: تأمین‌کنندگان فعال\n"+
-			"❌ **رد شده**: تأمین‌کنندگان رد شده\n"+
-			"⭐ **برگزیده**: تأمین‌کنندگان برگزیده\n"+
-			"📋 **همه**: تمام تأمین‌کنندگان\n"+
-			"🔍 **جستجو**: جستجوی تأمین‌کننده برای برگزیده کردن\n"+
-			"📊 **آمار**: آمار کلی تأمین‌کنندگان")
+			"⏳ **در انتظار** / ✅ **تأیید کلی در انتظار**\n"+
+			"✅ تأیید شده | ❌ رد شده | ⭐ برگزیده | 📋 همه\n"+
+			"📊 آمار | 🔍 جستجو")
 
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
@@ -2436,6 +2496,7 @@ func (s *TelegramService) showSuppliersList(chatID int64, status string, page in
 	delete(userPaginationStates, chatID)
 	delete(visitorPaginationStates, chatID)
 	delete(ticketPaginationStates, chatID)
+	delete(availableProductPaginationStates, chatID)
 	supplierPaginationStates[chatID] = &SupplierPagination{
 		ChatID:  chatID,
 		Page:    page,
@@ -2654,6 +2715,27 @@ func (s *TelegramService) showSupplierStats(chatID int64) {
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleBulkApprovePendingSuppliers(chatID int64) {
+	var count int64
+	s.db.Model(&models.Supplier{}).Where("status = ?", "pending").Count(&count)
+	if count == 0 {
+		msg := tgbotapi.NewMessage(chatID, "⏳ تأمین‌کننده‌ای در وضعیت در انتظار وجود ندارد.")
+		s.bot.Send(msg)
+		s.showSupplierMenu(chatID)
+		return
+	}
+	result := s.db.Model(&models.Supplier{}).Where("status = ?", "pending").Update("status", "approved")
+	if result.Error != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تأیید کلی: "+result.Error.Error())
+		s.bot.Send(msg)
+		return
+	}
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✅ **تأیید کلی انجام شد**\n\n%d تأمین‌کننده در انتظار به‌صورت یکجا تأیید شدند.", result.RowsAffected))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+	s.showSupplierMenu(chatID)
 }
 
 func (s *TelegramService) showFeaturedSuppliersList(chatID int64) {
@@ -4562,7 +4644,7 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_PENDING_VISITORS),
-			tgbotapi.NewKeyboardButton(MENU_VISITOR_STATS),
+			tgbotapi.NewKeyboardButton(MENU_BULK_APPROVE_PENDING_VISITORS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_APPROVED_VISITORS),
@@ -4573,21 +4655,19 @@ func (s *TelegramService) showVisitorMenu(chatID int64) {
 			tgbotapi.NewKeyboardButton(MENU_ALL_VISITORS),
 		),
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_VISITOR_STATS),
 			tgbotapi.NewKeyboardButton(MENU_SEARCH_VISITOR),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_BACK),
 		),
 	)
 
 	msg := tgbotapi.NewMessage(chatID,
 		"🚶‍♂️ **مدیریت ویزیتورها**\n\n"+
-			"لطفا گزینه مورد نظر خود را انتخاب کنید:\n\n"+
-			"⏳ **در انتظار**: ویزیتورهای منتظر بررسی\n"+
-			"✅ **تأیید شده**: ویزیتورهای فعال\n"+
-			"❌ **رد شده**: ویزیتورهای رد شده\n"+
-			"⭐ **برگزیده**: ویزیتورهای برگزیده\n"+
-			"📋 **همه**: تمام ویزیتورها\n"+
-			"🔍 **جستجو**: جستجوی ویزیتور برای برگزیده کردن\n"+
-			"📊 **آمار**: آمار کلی ویزیتورها")
+			"⏳ **در انتظار** / ✅ **تأیید کلی در انتظار**\n"+
+			"✅ تأیید شده | ❌ رد شده | ⭐ برگزیده | 📋 همه\n"+
+			"📊 آمار | 🔍 جستجو")
 
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
@@ -4603,6 +4683,7 @@ func (s *TelegramService) showVisitorsList(chatID int64, status string, page int
 	delete(userPaginationStates, chatID)
 	delete(supplierPaginationStates, chatID)
 	delete(ticketPaginationStates, chatID)
+	delete(availableProductPaginationStates, chatID)
 	visitorPaginationStates[chatID] = &VisitorPagination{
 		ChatID:  chatID,
 		Page:    page,
@@ -4845,6 +4926,27 @@ func (s *TelegramService) showVisitorStats(chatID int64) {
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
 	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleBulkApprovePendingVisitors(chatID int64) {
+	var count int64
+	s.db.Model(&models.Visitor{}).Where("status = ?", "pending").Count(&count)
+	if count == 0 {
+		msg := tgbotapi.NewMessage(chatID, "⏳ ویزیتوری در وضعیت در انتظار وجود ندارد.")
+		s.bot.Send(msg)
+		s.showVisitorMenu(chatID)
+		return
+	}
+	result := s.db.Model(&models.Visitor{}).Where("status = ?", "pending").Update("status", "approved")
+	if result.Error != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تأیید کلی: "+result.Error.Error())
+		s.bot.Send(msg)
+		return
+	}
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✅ **تأیید کلی انجام شد**\n\n%d ویزیتور در انتظار به‌صورت یکجا تأیید شدند.", result.RowsAffected))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+	s.showVisitorMenu(chatID)
 }
 
 // =================== NEW EDIT/DELETE HANDLERS ===================
@@ -5212,6 +5314,14 @@ func (s *TelegramService) confirmAvailableProductDelete(chatID int64, productID 
 func (s *TelegramService) showAvailableProductsMenu(chatID int64) {
 	keyboard := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_PENDING_AVAILABLE_PRODUCTS),
+			tgbotapi.NewKeyboardButton(MENU_BULK_APPROVE_PENDING_PRODUCTS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
+			tgbotapi.NewKeyboardButton(MENU_ALL_AVAILABLE_PRODUCTS),
+			tgbotapi.NewKeyboardButton(MENU_INACTIVE_AVAILABLE_PRODUCTS),
+		),
+		tgbotapi.NewKeyboardButtonRow(
 			tgbotapi.NewKeyboardButton(MENU_ADD_AVAILABLE_PRODUCT),
 			tgbotapi.NewKeyboardButton(MENU_LIST_AVAILABLE_PRODUCTS),
 		),
@@ -5226,12 +5336,9 @@ func (s *TelegramService) showAvailableProductsMenu(chatID int64) {
 
 	msg := tgbotapi.NewMessage(chatID,
 		"📦 **مدیریت کالاهای موجود**\n\n"+
-			"با استفاده از این بخش می‌توانید:\n\n"+
-			"➕ **اضافه کردن کالا**: افزودن کالای جدید به لیست\n"+
-			"📋 **لیست کالاها**: مشاهده و مدیریت کالاهای موجود\n"+
-			"📊 **آمار کالاها**: نمایش آمار کلی کالاها\n"+
-			"🔍 **جستجو**: جستجوی کالا برای برگزیده کردن\n\n"+
-			"لطفا گزینه مورد نظر خود را انتخاب کنید:")
+			"⏳ **در انتظار** / ✅ **تأیید کلی در انتظار**\n"+
+			"📋 **همه کالاها** | ❌ **غیرفعال/رد شده**\n"+
+			"➕ اضافه کردن | 📋 لیست | 📊 آمار | 🔍 جستجو")
 
 	msg.ParseMode = "Markdown"
 	msg.ReplyMarkup = keyboard
@@ -5274,6 +5381,8 @@ func (s *TelegramService) showAvailableProductsList(chatID int64) {
 			statusEmoji = "❌"
 		case "out_of_stock":
 			statusEmoji = "📤"
+		case "pending":
+			statusEmoji = "⏳"
 		}
 
 		text += fmt.Sprintf("%d. **%s**\n", i+1, product.ProductName)
@@ -5291,22 +5400,144 @@ func (s *TelegramService) showAvailableProductsList(chatID int64) {
 	s.bot.Send(msg)
 }
 
+func (s *TelegramService) showAvailableProductsListByStatus(chatID int64, status string, page int) {
+	const perPage = 5
+
+	paginationMutex.Lock()
+	delete(userPaginationStates, chatID)
+	delete(supplierPaginationStates, chatID)
+	delete(visitorPaginationStates, chatID)
+	delete(ticketPaginationStates, chatID)
+	availableProductPaginationStates[chatID] = &AvailableProductPagination{
+		ChatID:  chatID,
+		Page:    page,
+		PerPage: perPage,
+		Status:  status,
+	}
+	paginationMutex.Unlock()
+
+	products, total, err := models.GetAvailableProducts(s.db, page, perPage, "", status, false)
+	if err != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در دریافت لیست کالاها")
+		s.bot.Send(msg)
+		return
+	}
+
+	var filterName string
+	switch status {
+	case "pending":
+		filterName = "⏳ کالاهای در انتظار"
+	case "active":
+		filterName = "✅ کالاهای فعال"
+	case "inactive":
+		filterName = "❌ کالاهای غیرفعال/رد شده"
+	default:
+		filterName = "📋 همه کالاها"
+	}
+
+	totalPages := (int(total) + perPage - 1) / perPage
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	startItem := (page-1)*perPage + 1
+	endItem := startItem + len(products) - 1
+
+	var message strings.Builder
+	message.WriteString(fmt.Sprintf("**%s**\n\n", filterName))
+	message.WriteString(fmt.Sprintf("📊 **آمار**: %d کالا | صفحه %d از %d\n", total, page, totalPages))
+	message.WriteString(fmt.Sprintf("👀 **نمایش**: %d تا %d\n\n", startItem, endItem))
+
+	if len(products) == 0 {
+		message.WriteString("❌ کالایی با این فیلتر یافت نشد.")
+	} else {
+		for _, product := range products {
+			statusEmoji := "📦"
+			switch product.Status {
+			case "active":
+				statusEmoji = "✅"
+			case "inactive":
+				statusEmoji = "❌"
+			case "out_of_stock":
+				statusEmoji = "📤"
+			case "pending":
+				statusEmoji = "⏳"
+			}
+			message.WriteString(fmt.Sprintf("📦 **#%d** %s\n", product.ID, product.ProductName))
+			message.WriteString(fmt.Sprintf("🏷️ دسته: %s | %s وضعیت: %s\n", product.Category, statusEmoji, product.Status))
+			message.WriteString(fmt.Sprintf("💰 قیمت: %s %s | 📍 %s\n", product.WholesalePrice, product.Currency, product.Location))
+			message.WriteString(fmt.Sprintf("📊 موجودی: %d %s | 📞 %s\n", product.AvailableQuantity, product.Unit, product.ContactPhone))
+			if product.Description != "" && len(product.Description) > 0 {
+				desc := product.Description
+				if len(desc) > 80 {
+					desc = desc[:80] + "..."
+				}
+				message.WriteString(fmt.Sprintf("📝 %s\n", desc))
+			}
+			message.WriteString(fmt.Sprintf("🔧 /ap_edit%d | /ap_delete%d\n", product.ID, product.ID))
+			message.WriteString("➖➖➖➖➖➖➖➖\n")
+		}
+	}
+
+	var keyboardRows [][]tgbotapi.KeyboardButton
+	var navRow []tgbotapi.KeyboardButton
+	if page > 1 {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_PREV_PAGE))
+	}
+	if page < totalPages {
+		navRow = append(navRow, tgbotapi.NewKeyboardButton(MENU_NEXT_PAGE))
+	}
+	if len(navRow) > 0 {
+		keyboardRows = append(keyboardRows, navRow)
+	}
+	keyboardRows = append(keyboardRows, []tgbotapi.KeyboardButton{tgbotapi.NewKeyboardButton(MENU_BACK)})
+	keyboard := tgbotapi.NewReplyKeyboard(keyboardRows...)
+
+	msg := tgbotapi.NewMessage(chatID, message.String())
+	msg.ParseMode = "Markdown"
+	msg.ReplyMarkup = keyboard
+	s.bot.Send(msg)
+}
+
+func (s *TelegramService) handleBulkApprovePendingProducts(chatID int64) {
+	var count int64
+	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "pending").Count(&count)
+	if count == 0 {
+		msg := tgbotapi.NewMessage(chatID, "⏳ کالایی در وضعیت در انتظار وجود ندارد.")
+		s.bot.Send(msg)
+		s.showAvailableProductsMenu(chatID)
+		return
+	}
+	result := s.db.Model(&models.AvailableProduct{}).Where("status = ?", "pending").Update("status", "active")
+	if result.Error != nil {
+		msg := tgbotapi.NewMessage(chatID, "❌ خطا در تأیید کلی: "+result.Error.Error())
+		s.bot.Send(msg)
+		return
+	}
+	msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("✅ **تأیید کلی انجام شد**\n\n%d کالای در انتظار به‌صورت یکجا تأیید (فعال) شدند.", result.RowsAffected))
+	msg.ParseMode = "Markdown"
+	s.bot.Send(msg)
+	s.showAvailableProductsMenu(chatID)
+}
+
 func (s *TelegramService) showAvailableProductsStats(chatID int64) {
-	var total, active, inactive, outOfStock int64
+	var total, active, inactive, outOfStock, pending int64
 
 	s.db.Model(&models.AvailableProduct{}).Count(&total)
 	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "active").Count(&active)
 	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "inactive").Count(&inactive)
 	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "out_of_stock").Count(&outOfStock)
+	s.db.Model(&models.AvailableProduct{}).Where("status = ?", "pending").Count(&pending)
 
 	text := fmt.Sprintf(
 		"📊 **آمار کالاهای موجود**\n\n"+
 			"📈 **آمار کلی:**\n"+
 			"• تعداد کل کالاها: `%d`\n"+
+			"• در انتظار: `%d` کالا (%.1f%%)\n"+
 			"• فعال: `%d` کالا (%.1f%%)\n"+
 			"• غیرفعال: `%d` کالا (%.1f%%)\n"+
 			"• تمام شده: `%d` کالا (%.1f%%)\n",
 		total,
+		pending, getSafePercentage(pending, total),
 		active, getSafePercentage(active, total),
 		inactive, getSafePercentage(inactive, total),
 		outOfStock, getSafePercentage(outOfStock, total),
@@ -6083,6 +6314,7 @@ func (s *TelegramService) showSupportTicketsList(chatID int64, status string, pa
 	delete(userPaginationStates, chatID)
 	delete(supplierPaginationStates, chatID)
 	delete(visitorPaginationStates, chatID)
+	delete(availableProductPaginationStates, chatID)
 	ticketPaginationStates[chatID] = &TicketPagination{
 		ChatID:  chatID,
 		Page:    page,
@@ -7662,6 +7894,34 @@ func (s *TelegramService) sendExcelFile(chatID int64, f *excelize.File, title, i
 		time.Sleep(5 * time.Minute)
 		os.Remove(filePath)
 	}()
+}
+
+// SendBackupToAdmins sends backup files (uploads zip + DB SQL) to all static admins.
+func (t *TelegramService) SendBackupToAdmins(uploadsZipPath, dbSQLPath string) {
+	dateStr := time.Now().Format("2006-01-02")
+	for _, adminID := range ADMIN_IDS {
+		t.sendBackupFilesToChat(adminID, uploadsZipPath, dbSQLPath, dateStr)
+	}
+}
+
+// SendBackupToChat sends backup files (uploads zip + DB SQL) to a single chat (e.g. admin who requested manual backup).
+func (t *TelegramService) SendBackupToChat(chatID int64, uploadsZipPath, dbSQLPath string) {
+	t.sendBackupFilesToChat(chatID, uploadsZipPath, dbSQLPath, time.Now().Format("2006-01-02"))
+}
+
+func (t *TelegramService) sendBackupFilesToChat(chatID int64, uploadsZipPath, dbSQLPath, dateStr string) {
+	doc1 := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(uploadsZipPath))
+	doc1.Caption = fmt.Sprintf("📁 بک‌آپ پوشه uploads – %s", dateStr)
+	doc1.ParseMode = "Markdown"
+	if _, err := t.bot.Send(doc1); err != nil {
+		log.Printf("backup: failed to send uploads zip to chat %d: %v", chatID, err)
+	}
+	doc2 := tgbotapi.NewDocument(chatID, tgbotapi.FilePath(dbSQLPath))
+	doc2.Caption = fmt.Sprintf("🗄️ بک‌آپ دیتابیس (full) – %s", dateStr)
+	doc2.ParseMode = "Markdown"
+	if _, err := t.bot.Send(doc2); err != nil {
+		log.Printf("backup: failed to send DB backup to chat %d: %v", chatID, err)
+	}
 }
 
 // boolToPersian converts boolean to Persian text

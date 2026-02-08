@@ -9,6 +9,7 @@ import HeaderAuth from '@/components/ui/HeaderAuth';
 import { Badge } from "@/components/ui/badge";
 import { apiService } from "@/services/api";
 import { getFirstImageUrl } from '@/utils/imageUrl';
+import { PRODUCT_CATEGORIES } from '@/constants/productCategories';
 import { Pagination } from "@/components/ui/pagination";
 import { ContactViewButton } from '@/components/ContactViewButton';
 import { 
@@ -101,7 +102,9 @@ const AslAvailable = () => {
   
   // Real data states
   const [products, setProducts] = useState<AvailableProduct[]>([]);
-  const [categories, setCategoriesData] = useState<string[]>(['زعفران', 'خرما', 'خشکبار', 'صنایع دستی']); // Fallback categories
+  const [categories, setCategoriesData] = useState<string[]>(() =>
+    PRODUCT_CATEGORIES.map((c) => c.name)
+  ); // Fallback: ۱۲ دسته‌بندی محصولات
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -171,18 +174,19 @@ const AslAvailable = () => {
           
           if (categories.length > 0) {
             setCategoriesData(categories);
+          } else {
+            setCategoriesData(PRODUCT_CATEGORIES.map((c) => c.name));
           }
-          // Keep fallback categories if API returns empty
         } catch (categoriesErr) {
           console.error('Error loading categories:', categoriesErr);
-          // Keep fallback categories
+          setCategoriesData(PRODUCT_CATEGORIES.map((c) => c.name));
         }
         
       } catch (err) {
         console.error('Error loading available products:', err);
         setError('خطا در بارگذاری کالاها');
         setProducts([]);
-        setCategoriesData([]);
+        setCategoriesData(PRODUCT_CATEGORIES.map((c) => c.name));
       } finally {
         setLoading(false);
       }

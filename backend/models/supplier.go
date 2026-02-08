@@ -45,10 +45,10 @@ type Supplier struct {
 	FeaturedBy *uint      `json:"featured_by"`
 
 	// Supplier tags (پیرامون تگ برای تأمین‌کنندگان)
-	TagFirstClass         bool `json:"tag_first_class" gorm:"default:false"`          // تأمین‌کننده دسته اول (مزرعه، باغدار، کارخانه‌دار، تولیدکننده دسته اول)
-	TagGoodPrice          bool `json:"tag_good_price" gorm:"default:false"`          // تأمین‌کننده خوش قیمت
-	TagExportExperience   bool `json:"tag_export_experience" gorm:"default:false"`   // تأمین‌کننده سابقه صادرات
-	TagExportPackaging    bool `json:"tag_export_packaging" gorm:"default:false"`   // تأمین‌کننده دارایی بسته‌بندی صادراتی
+	TagFirstClass           bool `json:"tag_first_class" gorm:"default:false"`            // تأمین‌کننده دسته اول (مزرعه، باغدار، کارخانه‌دار، تولیدکننده دسته اول)
+	TagGoodPrice            bool `json:"tag_good_price" gorm:"default:false"`             // تأمین‌کننده خوش قیمت
+	TagExportExperience     bool `json:"tag_export_experience" gorm:"default:false"`      // تأمین‌کننده سابقه صادرات
+	TagExportPackaging      bool `json:"tag_export_packaging" gorm:"default:false"`       // تأمین‌کننده دارایی بسته‌بندی صادراتی
 	TagSupplyWithoutCapital bool `json:"tag_supply_without_capital" gorm:"default:false"` // تأمین بدون سرمایه
 
 	// Relations
@@ -66,7 +66,7 @@ type SupplierProduct struct {
 	Supplier   Supplier `json:"supplier" gorm:"foreignKey:SupplierID"`
 
 	ProductName          string `json:"product_name" gorm:"size:255;not null"`
-	ProductType          string `json:"product_type" gorm:"size:50;not null"` // food, herbal, health, handicraft, industrial, home, other
+	ProductType          string `json:"product_type" gorm:"size:50;not null"` // oil_petro, mineral, agriculture_food, carpet_handicraft, processed_food_industrial_agri, chemical_pharma, textile, machinery_industrial, glass_ceramic, building_materials, household_appliances, other
 	Description          string `json:"description" gorm:"type:text;not null"`
 	NeedsExportLicense   bool   `json:"needs_export_license" gorm:"default:false"`
 	RequiredLicenseType  string `json:"required_license_type" gorm:"size:255"`
@@ -138,15 +138,15 @@ type SupplierResponse struct {
 	ApprovedAt               *time.Time                `json:"approved_at"`
 	IsFeatured               bool                      `json:"is_featured"`
 	FeaturedAt               *time.Time                `json:"featured_at"`
-	TagFirstClass             bool                     `json:"tag_first_class"`
-	TagGoodPrice              bool                     `json:"tag_good_price"`
-	TagExportExperience       bool                     `json:"tag_export_experience"`
-	TagExportPackaging        bool                     `json:"tag_export_packaging"`
-	TagSupplyWithoutCapital   bool                     `json:"tag_supply_without_capital"`
-	AverageRating             float64                  `json:"average_rating"` // Average rating from matching requests (1-5)
-	TotalRatings              int                      `json:"total_ratings"`  // Total number of ratings received
-	CreatedAt                 time.Time                `json:"created_at"`
-	Products                  []SupplierProductResponse `json:"products"`
+	TagFirstClass            bool                      `json:"tag_first_class"`
+	TagGoodPrice             bool                      `json:"tag_good_price"`
+	TagExportExperience      bool                      `json:"tag_export_experience"`
+	TagExportPackaging       bool                      `json:"tag_export_packaging"`
+	TagSupplyWithoutCapital  bool                      `json:"tag_supply_without_capital"`
+	AverageRating            float64                   `json:"average_rating"` // Average rating from matching requests (1-5)
+	TotalRatings             int                       `json:"total_ratings"`  // Total number of ratings received
+	CreatedAt                time.Time                 `json:"created_at"`
+	Products                 []SupplierProductResponse `json:"products"`
 }
 
 type SupplierProductResponse struct {

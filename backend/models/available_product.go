@@ -62,7 +62,7 @@ type AvailableProduct struct {
 	CatalogURL string `json:"catalog_url" gorm:"size:500"`
 
 	// Status & Metadata
-	Status     string `json:"status" gorm:"size:20;default:'active'"` // active, inactive, out_of_stock
+	Status     string `json:"status" gorm:"size:20;default:'active'"` // active, inactive, out_of_stock, pending
 	IsFeatured bool   `json:"is_featured" gorm:"default:false"`
 	IsHotDeal  bool   `json:"is_hot_deal" gorm:"default:false"`
 	Tags       string `json:"tags" gorm:"type:text;charset:utf8mb4;collation:utf8mb4_unicode_ci"` // Comma separated
@@ -265,7 +265,9 @@ func GetAvailableProducts(db *gorm.DB, page, perPage int, category, status strin
 	if category != "" {
 		query = query.Where("category = ?", category)
 	}
-	if status != "" {
+	if status == "all" {
+		// No status filter
+	} else if status != "" {
 		query = query.Where("status = ?", status)
 	} else {
 		query = query.Where("status = ?", "active") // Default to active only

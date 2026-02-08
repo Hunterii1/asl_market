@@ -13,6 +13,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_CATEGORIES } from "@/constants/productCategories";
 import { ImageUpload } from '@/components/ImageUpload';
 import { 
   Package, 
@@ -161,10 +162,8 @@ const MyProducts = () => {
     notes: ''
   });
 
-  const categories = [
-    'زعفران', 'خرما', 'خشکبار', 'صنایع دستی', 'فرش', 'مواد غذایی', 
-    'لباس', 'کیف و کفش', 'لوازم خانگی', 'الکترونیک', 'کتاب', 'ورزش', 'سایر'
-  ];
+  const categories = PRODUCT_CATEGORIES;
+  const getCategoryLabel = (id: string) => categories.find((c) => c.id === id)?.name ?? id;
 
   const currencies = [
     { value: 'USD', label: 'دلار آمریکا (USD)' },
@@ -436,7 +435,7 @@ const MyProducts = () => {
                         </CardTitle>
                         <div className="flex items-center gap-2 mb-2">
                           <Badge variant="outline" className="text-xs">
-                            {product.category}
+                            {getCategoryLabel(product.category)}
                           </Badge>
                           {getStatusBadge(product.status)}
                         </div>
@@ -535,9 +534,9 @@ const MyProducts = () => {
                         <SelectValue placeholder="انتخاب دسته‌بندی" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

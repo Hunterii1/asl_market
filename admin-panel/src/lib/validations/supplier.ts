@@ -76,7 +76,12 @@ export const addSupplierSchema = z.object({
     .optional()
     .or(z.literal('')),
   
-  category: z.enum(["electronics", "clothing", "food", "books", "furniture", "automotive", "other"], {
+  category: z.enum([
+    "oil_petro", "mineral", "agriculture_food", "carpet_handicraft",
+    "processed_food_industrial_agri", "chemical_pharma", "textile",
+    "machinery_industrial", "glass_ceramic", "building_materials",
+    "household_appliances", "other"
+  ], {
     required_error: "دسته‌بندی را انتخاب کنید",
   }).optional(),
   

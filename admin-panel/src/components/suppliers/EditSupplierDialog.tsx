@@ -70,6 +70,7 @@ interface EditSupplierDialogProps {
 }
 
 import { adminApi } from '@/lib/api/adminApi';
+import { PRODUCT_CATEGORIES } from '@/lib/constants/productCategories';
 
 export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: EditSupplierDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -557,7 +558,7 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>دسته‌بندی</FormLabel>
+                      <FormLabel>دسته‌بندی محصولات</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -569,13 +570,11 @@ export function EditSupplierDialog({ open, onOpenChange, supplier, onSuccess }: 
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="electronics">الکترونیک</SelectItem>
-                          <SelectItem value="clothing">پوشاک</SelectItem>
-                          <SelectItem value="food">غذا</SelectItem>
-                          <SelectItem value="books">کتاب</SelectItem>
-                          <SelectItem value="furniture">مبلمان</SelectItem>
-                          <SelectItem value="automotive">خودرو</SelectItem>
-                          <SelectItem value="other">سایر</SelectItem>
+                          {PRODUCT_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

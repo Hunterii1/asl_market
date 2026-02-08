@@ -11,6 +11,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_CATEGORIES } from "@/constants/productCategories";
 import { ImageUpload } from '@/components/ImageUpload';
 import { 
   Package, 
@@ -108,10 +109,7 @@ const SubmitProduct = () => {
     notes: ''
   });
 
-  const categories = [
-    'زعفران', 'خرما', 'خشکبار', 'صنایع دستی', 'فرش', 'مواد غذایی', 
-    'لباس', 'کیف و کفش', 'لوازم خانگی', 'الکترونیک', 'کتاب', 'ورزش', 'سایر'
-  ];
+  const categories = PRODUCT_CATEGORIES;
 
   const currencies = [
     { value: 'USD', label: 'دلار آمریکا (USD)' },
@@ -360,9 +358,9 @@ const SubmitProduct = () => {
                         <SelectValue placeholder="انتخاب دسته‌بندی" />
                       </SelectTrigger>
                       <SelectContent>
-                        {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

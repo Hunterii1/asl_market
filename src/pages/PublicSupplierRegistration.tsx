@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import HeaderAuth from "@/components/ui/HeaderAuth";
+import { PRODUCT_CATEGORIES, SUPPLIER_SERVICES_DISCLAIMER } from "@/constants/productCategories";
 import { 
   Building, 
   Package, 
@@ -73,15 +74,7 @@ const PublicSupplierRegistration = () => {
     }] as ProductData[]
   });
 
-  const productTypes = [
-    { id: "food", name: "مواد غذایی" },
-    { id: "herbal", name: "گیاهان دارویی" },
-    { id: "health", name: "محصولات سلامت" },
-    { id: "handicraft", name: "صنایع دستی" },
-    { id: "industrial", name: "صنعتی" },
-    { id: "home", name: "لوازم خانگی" },
-    { id: "other", name: "سایر" }
-  ];
+  const productTypes = PRODUCT_CATEGORIES.map((c) => ({ id: c.id, name: c.name }));
 
   const cities = [
     "تهران", "اصفهان", "مشهد", "شیراز", "تبریز", "کرج", "اهواز", "قم", "کرمانشاه", "ارومیه",
@@ -615,6 +608,10 @@ const PublicSupplierRegistration = () => {
           </CardHeader>
 
           <CardContent className="p-4 sm:p-8">
+            <Alert className="mb-6 border-amber-500/50 bg-amber-500/5">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{SUPPLIER_SERVICES_DISCLAIMER}</AlertDescription>
+            </Alert>
             <form onSubmit={handleSubmit}>
               {currentStep === 1 && Step1}
               {currentStep === 2 && Step2}

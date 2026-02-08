@@ -3,6 +3,7 @@ import { apiService } from "@/services/api";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { LicenseGate } from '@/components/LicenseGate';
 import { VisitorLimitsDisplay } from '@/components/VisitorLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
@@ -24,7 +25,9 @@ import {
   Award,
   Lock,
   Home,
-  Plane
+  Plane,
+  Search,
+  X
 } from "lucide-react";
 
 const AslVisit = () => {
@@ -39,12 +42,12 @@ const AslVisit = () => {
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
   
-  // Read search query from URL on mount
+  // Read search and country from URL on mount
   useEffect(() => {
     const urlSearch = searchParams.get('search');
-    if (urlSearch) {
-      setSearchTerm(urlSearch);
-    }
+    const urlCountry = searchParams.get('country');
+    if (urlSearch != null) setSearchTerm(urlSearch);
+    if (urlCountry != null) setSelectedCountry(urlCountry);
   }, [searchParams]);
 
   const countries = [
@@ -92,7 +95,17 @@ const AslVisit = () => {
     }
   ];
 
-  // Load visitors data from API with pagination and search
+  // Sync URL with filters
+  useEffect(() => {
+    const next = new URLSearchParams(searchParams);
+    if (searchTerm.trim()) next.set('search', searchTerm.trim()); else next.delete('search');
+    if (selectedCountry) next.set('country', selectedCountry); else next.delete('country');
+    setSearchParams(next, { replace: true });
+  }, [searchTerm, selectedCountry]);
+
+  const cityProvinceForApi = selectedCountry ? (countries.find(c => c.code === selectedCountry)?.name || '') : '';
+
+  // Load visitors data from API with pagination, search and city_province
   useEffect(() => {
     const loadVisitorsData = async () => {
       try {
@@ -101,6 +114,7 @@ const AslVisit = () => {
           page: currentPage,
           per_page: itemsPerPage,
           search: searchTerm.trim() || undefined,
+          city_province: cityProvinceForApi || undefined,
         });
         setVisitors(response.visitors || []);
         setTotalPages(response.total_pages || 1);
@@ -115,7 +129,7 @@ const AslVisit = () => {
     };
 
     loadVisitorsData();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, cityProvinceForApi]);
 
   // Helper function to convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
@@ -133,15 +147,20 @@ const AslVisit = () => {
     }
   };
 
-  // Client-side filtering for country (server handles pagination)
-  const filteredVisitors = selectedCountry 
-    ? visitors.filter(visitor => visitor.city_province?.includes(countries.find(c => c.code === selectedCountry)?.name || ''))
-    : visitors;
+  // Server returns filtered list; no client-side filter needed
+  const filteredVisitors = visitors;
 
   // Reset to page 1 when filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCountry]);
+  }, [searchTerm, selectedCountry]);
+
+  const hasActiveFilters = !!(searchTerm.trim() || selectedCountry);
+  const clearFilters = () => {
+    setSearchTerm('');
+    setSelectedCountry('');
+    setCurrentPage(1);
+  };
 
   const VisitorBrowser = () => (
     <div className="space-y-6">
@@ -165,10 +184,27 @@ const AslVisit = () => {
         </CardContent>
       </Card>
 
-      {/* Country Filter */}
+      {/* Search and Country Filter */}
       <Card className="bg-card border-border rounded-3xl transition-colors duration-300">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1 relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  placeholder="جستجو در ویزیتورها (نام، موبایل، شهر، مهارت...)"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10 bg-muted border-border rounded-2xl"
+                />
+              </div>
+              {hasActiveFilters && (
+                <Button variant="outline" onClick={clearFilters} className="rounded-2xl shrink-0">
+                  <X className="w-4 h-4 ml-2" />
+                  پاک کردن فیلترها
+                </Button>
+              )}
+            </div>
             <div className="flex-1">
               <h4 className="text-foreground font-medium mb-3">انتخاب کشور</h4>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -210,8 +246,16 @@ const AslVisit = () => {
             <Users className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-xl font-semibold text-foreground mb-2">هیچ ویزیتوری یافت نشد</h3>
             <p className="text-muted-foreground">
-              {selectedCountry ? 'برای کشور انتخاب شده ویزیتوری یافت نشد' : 'هنوز ویزیتوری برای نمایش وجود ندارد'}
+              {hasActiveFilters
+                ? 'با فیلترهای فعلی نتیجه‌ای یافت نشد. فیلترها را تغییر دهید یا پاک کنید.'
+                : 'هنوز ویزیتوری برای نمایش وجود ندارد'}
             </p>
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={clearFilters} className="mt-4 rounded-2xl">
+                <X className="w-4 h-4 ml-2" />
+                پاک کردن فیلترها
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -403,7 +447,7 @@ const AslVisit = () => {
             </div>
             <div className="mr-auto">
               <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 rounded-2xl">
-                {totalItems > 0 ? totalItems : filteredVisitors.length} ویزیتور
+                {toFarsiNumber(totalItems)} ویزیتور
               </Badge>
             </div>
           </div>

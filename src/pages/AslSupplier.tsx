@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from '@/hooks/useAuth';
 import { apiService } from "@/services/api";
 import { getImageUrl } from '@/utils/imageUrl';
+import { PRODUCT_CATEGORIES, SUPPLIER_SERVICES_DISCLAIMER } from '@/constants/productCategories';
 import { Pagination } from "@/components/ui/pagination";
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { 
@@ -39,6 +40,11 @@ const SUPPLIER_TAG_OPTIONS = [
   { id: 'export_experience', name: 'سابقه صادرات' },
   { id: 'export_packaging', name: 'بسته‌بندی صادراتی' },
   { id: 'supply_without_capital', name: 'تأمین بدون سرمایه' },
+];
+
+const productCategoriesForFilter = [
+  { id: 'all', name: 'همه محصولات' },
+  ...PRODUCT_CATEGORIES.map((c) => ({ id: c.id, name: c.name })),
 ];
 
 const AslSupplier = () => {
@@ -96,15 +102,6 @@ const AslSupplier = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
-
-  const productCategories = [
-    { id: "all", name: "همه محصولات" },
-    { id: "saffron", name: "زعفران" },
-    { id: "dates", name: "خرما" },
-    { id: "pistachios", name: "پسته" },
-    { id: "carpets", name: "فرش" },
-    { id: "handicrafts", name: "صنایع دستی" }
-  ];
 
   // Load suppliers data from API with pagination, search, city and tags
   useEffect(() => {
@@ -191,18 +188,21 @@ const AslSupplier = () => {
       {/* Supplier Registration Link */}
       <Card className="bg-gradient-to-r from-green-900/20 to-green-800/20 border-green-700/50 rounded-3xl">
         <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-foreground mb-2">تأمین‌کننده هستید؟</h3>
-              <p className="text-green-600 dark:text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-foreground mb-2">تأمین‌کننده هستید؟</h3>
+                <p className="text-green-600 dark:text-green-300">در شبکه تأمین‌کنندگان اصل مارکت عضو شوید</p>
+              </div>
+              <Button
+                className="bg-green-500 hover:bg-green-600 rounded-2xl"
+                onClick={() => navigate('/supplier-registration')}
+              >
+                <Plus className="w-4 h-4 ml-2" />
+                ثبت‌نام تأمین‌کننده
+              </Button>
             </div>
-            <Button 
-              className="bg-green-500 hover:bg-green-600 rounded-2xl"
-              onClick={() => navigate('/supplier-registration')}
-            >
-              <Plus className="w-4 h-4 ml-2" />
-              ثبت‌نام تأمین‌کننده
-            </Button>
+            <p className="text-sm text-muted-foreground">{SUPPLIER_SERVICES_DISCLAIMER}</p>
           </div>
         </CardContent>
       </Card>
@@ -253,7 +253,7 @@ const AslSupplier = () => {
               </div>
             </div>
             <div className="flex gap-2 overflow-x-auto flex-wrap">
-              {productCategories.map((category) => (
+              {productCategoriesForFilter.map((category) => (
                 <Button
                   key={category.id}
                   variant={selectedProduct === category.id ? "default" : "outline"}

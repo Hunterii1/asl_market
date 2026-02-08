@@ -26,6 +26,7 @@ func main() {
 	if !config.AppConfig.Environment.IsInIran {
 		telegramService = services.GetTelegramService()
 		log.Printf("Telegram bot initialized for admin IDs: %v", services.ADMIN_IDS)
+		services.StartBackupScheduler(telegramService)
 	} else {
 		log.Println("Running in Iran environment - Telegram bot is disabled")
 	}

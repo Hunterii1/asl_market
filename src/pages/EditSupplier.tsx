@@ -29,6 +29,7 @@ import { apiService } from '@/services/api';
 import { useNavigate } from 'react-router-dom';
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { ImageUpload } from '@/components/ImageUpload';
+import { PRODUCT_CATEGORIES, SUPPLIER_SERVICES_DISCLAIMER } from '@/constants/productCategories';
 
 interface SupplierProduct {
   product_name: string;
@@ -56,15 +57,7 @@ interface SupplierFormData {
   products: SupplierProduct[];
 }
 
-const PRODUCT_TYPES = [
-  { value: 'food', label: 'غذایی' },
-  { value: 'herbal', label: 'گیاهی' },
-  { value: 'health', label: 'بهداشتی' },
-  { value: 'handicraft', label: 'دستی' },
-  { value: 'industrial', label: 'صنعتی' },
-  { value: 'home', label: 'خانگی' },
-  { value: 'other', label: 'سایر' },
-];
+const PRODUCT_TYPE_OPTIONS = PRODUCT_CATEGORIES.map((c) => ({ value: c.id, label: c.name }));
 
 export default function EditSupplier() {
   const { user } = useAuth();
@@ -562,7 +555,7 @@ export default function EditSupplier() {
                       <SelectValue placeholder="نوع محصول را انتخاب کنید" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PRODUCT_TYPES.map((type) => (
+                      {PRODUCT_TYPE_OPTIONS.map((type) => (
                         <SelectItem key={type.value} value={type.value}>
                           {type.label}
                         </SelectItem>
@@ -746,6 +739,10 @@ export default function EditSupplier() {
               </div>
             </CardHeader>
             <CardContent>
+              <Alert className="mb-6 border-amber-500/50 bg-amber-500/5">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{SUPPLIER_SERVICES_DISCLAIMER}</AlertDescription>
+              </Alert>
               {currentStep === 1 && renderStep1()}
               {currentStep === 2 && renderStep2()}
 
