@@ -233,36 +233,48 @@ const App = () => (
                 </ProtectedRoute>
               } />
 
-              {/* ASL Match routes - Public access, no license required */}
+              {/* ASL Match: صفحه اصلی برای همه؛ بخش‌های داخلی با حساب + لایسنس */}
               <Route path="/asl-match" element={<AslMatch />} />
               <Route path="/matching/create" element={
                 <ProtectedRoute>
-                  <CreateMatchingRequest />
+                  <LicenseRequiredRoute>
+                    <CreateMatchingRequest />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               <Route path="/matching/my-requests" element={
                 <ProtectedRoute>
-                  <MyMatchingRequests />
+                  <LicenseRequiredRoute>
+                    <MyMatchingRequests />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               <Route path="/matching/available-requests" element={
                 <ProtectedRoute>
-                  <AvailableMatchingRequests />
+                  <LicenseRequiredRoute>
+                    <AvailableMatchingRequests />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               <Route path="/matching/requests/:id" element={
                 <ProtectedRoute>
-                  <MatchingRequestDetails />
+                  <LicenseRequiredRoute>
+                    <MatchingRequestDetails />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               <Route path="/matching/chats" element={
                 <ProtectedRoute>
-                  <MatchingChats />
+                  <LicenseRequiredRoute>
+                    <MatchingChats />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               <Route path="/matching/ratings" element={
                 <ProtectedRoute>
-                  <MatchingRatings />
+                  <LicenseRequiredRoute>
+                    <MatchingRatings />
+                  </LicenseRequiredRoute>
                 </ProtectedRoute>
               } />
               

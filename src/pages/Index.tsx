@@ -204,10 +204,9 @@ const Index = () => {
               );
             })}
             
-            {/* ASL Match Button - Desktop only, below quick links */}
-            {isAuthenticated && (
-              <Button
-                onClick={() => navigate('/asl-match')}
+            {/* ASL Match - برای همه (مهمان هم بنر را ببیند؛ با کلیک روی بخش‌ها حساب/لایسنس می‌خواهد) */}
+            <Button
+              onClick={() => navigate('/asl-match')}
                 className="w-full h-20 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-2xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden mt-2"
               >
                 {/* Animated gradient background */}
@@ -241,12 +240,11 @@ const Index = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
-                    <span className="text-sm font-semibold">ورود</span>
+                    <span className="text-sm font-semibold">{isAuthenticated ? 'ورود' : 'مشاهده'}</span>
                     <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                   </div>
                 </div>
               </Button>
-            )}
           </div>
 
           {/* Slider - Right side on desktop, full width on mobile */}
@@ -258,11 +256,10 @@ const Index = () => {
 
       <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
 
-        {/* ASL Match - Prominent Horizontal Button - Mobile and Tablet only */}
-        {isAuthenticated && (
-          <div className="mb-4 sm:mb-6 lg:hidden">
-            <Button
-              onClick={() => navigate('/asl-match')}
+        {/* ASL Match - برای همه (مهمان هم بنر را ببیند) */}
+        <div className="mb-4 sm:mb-6 lg:hidden">
+          <Button
+            onClick={() => navigate('/asl-match')}
               className="w-full h-16 sm:h-20 md:h-24 bg-gradient-to-r from-orange-500 via-orange-600 to-red-600 hover:from-orange-600 hover:via-orange-700 hover:to-red-700 text-white rounded-2xl sm:rounded-3xl shadow-2xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center gap-3 sm:gap-4 group relative overflow-hidden"
             >
               {/* Animated gradient background */}
@@ -296,13 +293,12 @@ const Index = () => {
                   </p>
                 </div>
                 <div className="hidden sm:flex items-center gap-2 text-white/80 group-hover:text-white transition-colors">
-                  <span className="text-sm font-semibold">ورود</span>
+                  <span className="text-sm font-semibold">{isAuthenticated ? 'ورود' : 'مشاهده'}</span>
                   <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </div>
               </div>
             </Button>
-          </div>
-        )}
+        </div>
 
         {/* Navigation Menu - 9 Main Buttons */}
         <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">

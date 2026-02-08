@@ -58,17 +58,50 @@ interface MatchingRequest {
 
 const ONBOARDING_DELAY_MS = 800;
 
+// برای دسترسی به بخش‌های داخلی اصل مچ: مهمان → حساب باز کنه؛ لاگین بدون لایسنس → لایسنس تهیه کنه.
+function useMatchingAccess() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { isAuthenticated, licenseStatus } = useAuth();
+  const hasLicense = Boolean(licenseStatus?.has_license && licenseStatus?.is_active);
+
+  const guardAndNavigate = (path: string): boolean => {
+    if (!isAuthenticated) {
+      toast({
+        title: "حساب کاربری",
+        description: "برای استفاده از این بخش حساب کاربری بسازید یا وارد شوید.",
+        variant: "default",
+      });
+      navigate("/login", { state: { from: path } });
+      return false;
+    }
+    if (!hasLicense) {
+      toast({
+        title: "لایسنس",
+        description: "برای استفاده از این بخش لایسنس تهیه کنید.",
+        variant: "default",
+      });
+      navigate("/license-info");
+      return false;
+    }
+    return true;
+  };
+
+  return { canAccess: isAuthenticated && hasLicense, hasLicense, guardAndNavigate };
+}
+
 export default function AslMatch() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, licenseStatus } = useAuth();
   const { toast } = useToast();
+  const { canAccess, hasLicense, guardAndNavigate } = useMatchingAccess();
   const [loading, setLoading] = useState(true);
   const [helpOpen, setHelpOpen] = useState(false);
   const openFromFirstTimeRef = useRef(false);
 
   useEffect(() => {
     setLoading(false);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, licenseStatus]);
 
   // اولین بازدید: یک بار استوری‌لاین را خودکار نشان بده؛ بعد از دیدن دیگر نشان نده.
   useEffect(() => {
@@ -80,125 +113,93 @@ export default function AslMatch() {
     return () => clearTimeout(t);
   }, []);
 
-  // Page is accessible to everyone - no authentication/license required
-  // Users can see all features, but checks will be done in target pages
-
-  // Handle navigation - checks will be done in the target pages
+  // صفحه برای همه قابل مشاهده است؛ با کلیک روی هر بخش داخلی چک می‌کنیم (حساب / لایسنس).
   const handleCreateRequest = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "نیاز به ورود",
-        description: "برای ایجاد درخواست، ابتدا باید وارد شوید.",
-        variant: "default",
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/matching/create');
+    if (!guardAndNavigate("/matching/create")) return;
+    navigate("/matching/create");
   };
 
   const handleMyRequests = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "نیاز به ورود",
-        description: "برای مشاهده درخواست‌های خود، ابتدا باید وارد شوید.",
-        variant: "default",
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/matching/my-requests');
+    if (!guardAndNavigate("/matching/my-requests")) return;
+    navigate("/matching/my-requests");
   };
 
   const handleAvailableRequests = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "نیاز به ورود",
-        description: "برای مشاهده درخواست‌های موجود، ابتدا باید وارد شوید.",
-        variant: "default",
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/matching/available-requests');
+    if (!guardAndNavigate("/matching/available-requests")) return;
+    navigate("/matching/available-requests");
   };
 
   const handleChats = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "نیاز به ورود",
-        description: "برای دسترسی به مکالمات، ابتدا باید وارد شوید.",
-        variant: "default",
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/matching/chats');
+    if (!guardAndNavigate("/matching/chats")) return;
+    navigate("/matching/chats");
   };
 
   const handleRatings = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "نیاز به ورود",
-        description: "برای مشاهده امتیازها، ابتدا باید وارد شوید.",
-        variant: "default",
-      });
-      navigate('/login');
-      return;
-    }
-    navigate('/matching/ratings');
+    if (!guardAndNavigate("/matching/ratings")) return;
+    navigate("/matching/ratings");
   };
 
+  const getAccessBadge = () => {
+    if (!isAuthenticated) return "حساب باز کنید یا وارد شوید";
+    if (!hasLicense) return "لایسنس تهیه کنید";
+    return undefined;
+  };
+
+  const getAccessButtonLabel = () => {
+    if (!isAuthenticated) return "حساب باز کنید یا وارد شوید";
+    if (!hasLicense) return "لایسنس تهیه کنید";
+    return "ورود به بخش";
+  };
+
+  const accessBadge = getAccessBadge();
+  const accessButtonLabel = getAccessButtonLabel();
+  const isBlocked = !canAccess;
+
   const menuItems = [
-    // Always show - Create Request
     {
       id: "create",
       label: "ایجاد درخواست",
       description: "ایجاد درخواست جدید برای فروش محصول",
       icon: PlusCircle,
       color: "from-orange-500 to-orange-600",
-      action: handleCreateRequest
+      action: handleCreateRequest,
+      badge: accessBadge
     },
-    // Always show - My Requests
     {
       id: "my-requests",
       label: "درخواست‌های من",
       description: "مشاهده و مدیریت درخواست‌های شما",
       icon: List,
       color: "from-orange-600 to-red-600",
-      action: handleMyRequests
+      action: handleMyRequests,
+      badge: accessBadge
     },
-    // Always show - Available Requests
     {
       id: "available",
       label: "درخواست‌های موجود",
       description: "مشاهده درخواست‌های مناسب برای شما",
       icon: Package,
       color: "from-red-500 to-orange-600",
-      action: handleAvailableRequests
+      action: handleAvailableRequests,
+      badge: accessBadge
     },
-    // Common for all - Always available (but require authentication)
     {
       id: "chats",
       label: "مکالمات",
-      description: isAuthenticated 
-        ? "چت با تأمین‌کنندگان و ویزیتورها" 
-        : "برای دسترسی به مکالمات، ابتدا وارد شوید",
+      description: canAccess ? "چت با تأمین‌کنندگان و ویزیتورها" : (!isAuthenticated ? "برای دسترسی حساب بسازید یا وارد شوید" : "برای دسترسی لایسنس تهیه کنید"),
       icon: MessageCircle,
       color: "from-orange-500 via-red-500 to-orange-600",
       action: handleChats,
-      badge: !isAuthenticated ? "نیاز به ورود" : undefined
+      badge: accessBadge
     },
     {
       id: "ratings",
       label: "امتیازها",
-      description: isAuthenticated 
-        ? "مشاهده امتیازهای دریافتی و داده شده" 
-        : "برای مشاهده امتیازها، ابتدا وارد شوید",
+      description: canAccess ? "مشاهده امتیازهای دریافتی و داده شده" : (!isAuthenticated ? "برای مشاهده حساب بسازید یا وارد شوید" : "برای مشاهده لایسنس تهیه کنید"),
       icon: Star,
       color: "from-amber-500 to-orange-600",
       action: handleRatings,
-      badge: !isAuthenticated ? "نیاز به ورود" : undefined
+      badge: accessBadge
     }
   ];
 
@@ -278,7 +279,7 @@ export default function AslMatch() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {menuItems.map((item, index) => {
           const Icon = item.icon;
-          const isDisabled = item.badge !== undefined;
+          const isDisabled = isBlocked;
           return (
             <Card
               key={item.id}
@@ -351,15 +352,14 @@ export default function AslMatch() {
                   </div>
                   <Button
                     variant="outline"
-                    disabled={isDisabled}
-                    className={`w-full relative overflow-hidden ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'group-hover:bg-gradient-to-r group-hover:from-orange-50 group-hover:to-red-50 dark:group-hover:from-orange-900/20 dark:group-hover:to-red-900/20 group-hover:border-orange-300 dark:group-hover:border-orange-700 group-hover:text-orange-700 dark:group-hover:text-orange-400 group-hover:shadow-lg group-hover:scale-105'} transition-all duration-300`}
+                    className={`w-full relative overflow-hidden ${isDisabled ? 'opacity-90 border-amber-300 dark:border-amber-700' : 'group-hover:bg-gradient-to-r group-hover:from-orange-50 group-hover:to-red-50 dark:group-hover:from-orange-900/20 dark:group-hover:to-red-900/20 group-hover:border-orange-300 dark:group-hover:border-orange-700 group-hover:text-orange-700 dark:group-hover:text-orange-400 group-hover:shadow-lg group-hover:scale-105'} transition-all duration-300`}
                   >
                     {/* Button shimmer */}
                     {!isDisabled && (
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     )}
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                      {isDisabled ? 'نیاز به ثبت‌نام' : 'ورود'}
+                      {isDisabled ? accessButtonLabel : 'ورود به بخش'}
                       {!isDisabled && <ArrowLeft className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />}
                     </span>
                   </Button>
