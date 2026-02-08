@@ -87,6 +87,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// but will include user info if authenticated
 		publicOptional.GET("/dashboard/stats", getDashboardStats)
 		publicOptional.GET("/products", getProducts)
+		// اسلایدر بنر برای همه (لاگین نشده هم ببیند)
+		publicOptional.GET("/sliders/active", controllers.GetActiveSliders)
 	}
 
 	// Protected routes (authentication required)
@@ -224,8 +226,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.PUT("/admin/marketing-popups/:id", controllers.UpdateMarketingPopup)
 		protected.DELETE("/admin/marketing-popups/:id", controllers.DeleteMarketingPopup)
 
-		// Slider routes (public access for active sliders)
-		protected.GET("/sliders/active", controllers.GetActiveSliders)
+		// Slider routes (GET /sliders/active is public via publicOptional; track requires auth)
 		protected.POST("/sliders/:id/click", controllers.TrackSliderClick)
 		protected.POST("/sliders/:id/view", controllers.TrackSliderView)
 
