@@ -128,16 +128,11 @@ export default function UserProfile() {
       loadProfile();
     }
   }, [id]);
-
   const loadProfile = async () => {
+    if (!id) return;
     try {
       setLoading(true);
-      const response = await fetch(`/api/v1/profile/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      const data = await response.json();
+      const data = await apiService.getUserProfile(parseInt(id, 10));
       setProfile(data);
     } catch (error: any) {
       toast({
@@ -158,15 +153,7 @@ export default function UserProfile() {
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await fetch("/api/v1/profile/upload-profile-image", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
+      await apiService.uploadProfileImage(formData);
       
       toast({
         title: "موفق",
@@ -193,15 +180,7 @@ export default function UserProfile() {
       const formData = new FormData();
       formData.append("image", file);
 
-      const response = await fetch("/api/v1/profile/upload-cover-image", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      });
-
-      const data = await response.json();
+      await apiService.uploadCoverImage(formData);
       
       toast({
         title: "موفق",
