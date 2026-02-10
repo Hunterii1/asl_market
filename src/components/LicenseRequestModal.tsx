@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { apiService, type LicenseStatus } from '@/services/api';
+import { apiService } from '@/services/api';
 
 interface LicenseRequestModalProps {
   onClose: () => void;
@@ -47,10 +47,13 @@ export function LicenseRequestModal({ onClose }: LicenseRequestModalProps) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center">فعال‌سازی لایسنس</DialogTitle>
+          <DialogDescription className="text-center">
+            برای استفاده از امکانات سایت، لطفا لایسنس خود را وارد کنید
+          </DialogDescription>
         </DialogHeader>
         <Alert>
           <AlertDescription>
-            برای استفاده از امکانات سایت، لطفا لایسنس پلتفرم ASL را وارد کنید.
+            کد لایسنس پلتفرم ASL را در کادر زیر وارد کنید.
           </AlertDescription>
         </Alert>
         <form onSubmit={handleSubmit} className="space-y-4">

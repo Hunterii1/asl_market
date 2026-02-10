@@ -22,7 +22,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [showLicenseModal, setShowLicenseModal] = useState(false);
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
 
   const checkLicenseStatus = async () => {
@@ -76,15 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           console.error('❌ Failed to fetch license info:', err);
         }
       } else if (!status.has_license) {
-        console.log('⚠️ User has no license, attempting recovery...');
-        // کاربر لایسنس ندارد، سعی در بازیابی از storage محلی
-        const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
-        console.log('🔄 Recovery attempted:', recoveryAttempted);
-        
-        if (!recoveryAttempted) {
-          console.log('🔔 Showing license modal');
-          setShowLicenseModal(true);
-        }
+        console.log('⚠️ User has no license');
+        // فقط وضعیت را ست می‌کنیم، بدون نمایش modal
+        // کاربر می‌تواند بدون لایسنس هم وارد شود
+        // modal فقط در صفحات خاص (مثل LicenseRequiredRoute) نمایش داده می‌شود
       }
     } catch (error) {
       console.error('❌ Error in checkLicenseStatus:', error);
@@ -101,13 +95,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLicenseStatus(fallbackStatus);
       } else {
         console.log('❌ Error fallback: no license');
-        // لایسنس نیست
+        // لایسنس نیست، فقط وضعیت را ست می‌کنیم
         setLicenseStatus({
           has_license: false,
           is_active: false,
           is_approved: false,
         });
-        setShowLicenseModal(true);
       }
     }
   };
@@ -176,7 +169,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     licenseStorage.clearStoredLicense(); // پاک کردن اطلاعات لایسنس محلی
     setUser(null);
     setLicenseStatus(null);
-    setShowLicenseModal(false);
   };
 
   useEffect(() => {
@@ -211,9 +203,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {showLicenseModal && (
-        <LicenseRequestModal onClose={() => setShowLicenseModal(false)} />
-      )}
     </AuthContext.Provider>
   );
 };
