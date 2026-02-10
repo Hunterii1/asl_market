@@ -27,44 +27,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkLicenseStatus = async () => {
     try {
-      if (user) {
-        const status = await apiService.checkLicenseStatus();
-        
-        // اگر status null بود، چک کن localStorage
-        if (!status || status === null) {
-          const storedLicense = localStorage.getItem('asl_license_code');
-          if (storedLicense) {
-            const fallbackStatus: LicenseStatus = {
-              has_license: true,
-              is_active: true,
-              is_approved: true,
-            };
-            setLicenseStatus(fallbackStatus);
-            return;
-          }
+      // وضعیت لایسنس را همیشه از API بگیر؛ وابسته به state فعلی user نباش
+      const status = await apiService.checkLicenseStatus();
+
+      // اگر status null بود، چک کن localStorage (هرچند در apiService هم هندل شده)
+      if (!status || status === null) {
+        const storedLicense = localStorage.getItem('asl_license_code');
+        if (storedLicense) {
+          const fallbackStatus: LicenseStatus = {
+            has_license: true,
+            is_active: true,
+            is_approved: true,
+          };
+          setLicenseStatus(fallbackStatus);
+          return;
         }
-        
-        setLicenseStatus(status);
-        
-        if (status.has_license && status.is_active) {
-          // کاربر لایسنس دارد، اطلاعات لایسنس را دریافت و ذخیره کن
-          try {
-            const licenseInfo = await apiService.getLicenseInfo();
+        setLicenseStatus({
+          has_license: false,
+          is_active: false,
+          is_approved: false,
+        });
+        return;
+      }
+      
+      setLicenseStatus(status);
+      
+      if (status.has_license && status.is_active) {
+        // کاربر لایسنس دارد، اطلاعات لایسنس را دریافت و در صورت داشتن user ذخیره کن
+        try {
+          const licenseInfo = await apiService.getLicenseInfo();
+          if (user) {
             licenseStorage.storeLicenseInfo(
               licenseInfo.license_code,
               licenseInfo.activated_at,
               user.email
             );
-          } catch (err) {
-            console.error('Failed to fetch license info:', err);
           }
-        } else if (!status.has_license) {
-          // کاربر لایسنس ندارد، سعی در بازیابی از storage محلی
-          const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
-          
-          if (!recoveryAttempted) {
-            setShowLicenseModal(true);
-          }
+        } catch (err) {
+          console.error('Failed to fetch license info:', err);
+        }
+      } else if (!status.has_license) {
+        // کاربر لایسنس ندارد، سعی در بازیابی از storage محلی
+        const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
+        
+        if (!recoveryAttempted) {
+          setShowLicenseModal(true);
         }
       }
     } catch (error) {
