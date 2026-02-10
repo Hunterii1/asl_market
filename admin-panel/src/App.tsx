@@ -25,6 +25,9 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { SupportAdminRoute } from "./components/auth/SupportAdminRoute";
 import SupportTickets from "./pages/SupportTickets";
 import Affiliates from "./pages/Affiliates";
+import AdminMatchingRequests from "./pages/AdminMatchingRequests";
+import AdminVisitorProjects from "./pages/AdminVisitorProjects";
+import AdminChats from "./pages/AdminChats";
 
 const queryClient = new QueryClient();
 
@@ -173,6 +176,30 @@ const App = () => (
             element={
               <ProtectedRoute>
                 <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matching/requests"
+            element={
+              <ProtectedRoute>
+                <AdminMatchingRequests />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matching/projects"
+            element={
+              <ProtectedRoute>
+                <AdminVisitorProjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/matching/chats"
+            element={
+              <ProtectedRoute>
+                <AdminChats />
               </ProtectedRoute>
             }
           />

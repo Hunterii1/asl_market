@@ -418,20 +418,19 @@ const Index = () => {
                 {featuredSuppliers.map((supplier) => (
                   <div
                     key={supplier.id}
-                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/80 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 group cursor-pointer snap-start"
-                    onClick={() => {
-                      setPreviewSupplier(supplier);
-                      setIsPreviewOpen(true);
-                    }}
+                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/80 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 group snap-start"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                         <Building className="w-3 h-3 sm:w-4 sm:h-4 text-amber-100" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                        <button
+                          onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                          className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 hover:text-orange-400 transition-colors text-right w-full"
+                        >
                           {supplier.brand_name || supplier.full_name}
-                        </div>
+                        </button>
                         <div className="text-[10px] sm:text-[11px] text-amber-100 flex items-center gap-1">
                           <Star className="w-3 h-3 text-yellow-300 flex-shrink-0" />
                           <span>
@@ -468,10 +467,15 @@ const Index = () => {
                       </div>
                     )}
 
-                    <div className="mt-2 flex items-center justify-between text-[10px] sm:text-[11px] text-amber-100/90">
-                      <span className="truncate">مشاهده همه تأمین‌کنندگان</span>
-                      <ArrowLeft className="w-3 h-3 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
-                    </div>
+                    <Button
+                      onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                      size="sm"
+                      variant="outline"
+                      className="w-full rounded-xl text-[10px] sm:text-xs mt-2 hover:bg-amber-500/20 hover:border-amber-500/50"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      مشاهده پروفایل
+                    </Button>
                   </div>
                 ))}
               </div>

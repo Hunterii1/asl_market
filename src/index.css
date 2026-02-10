@@ -345,3 +345,18 @@ input, textarea, [contenteditable="true"], .selectable {
 .registration-reminder-toast {
   animation: toast-slide-in 0.4s ease-out, reminder-pulse 2s ease-in-out 2s !important;
 }
+
+/* Gradient animation for profile backgrounds */
+@keyframes gradient-xy {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-xy {
+  background-size: 400% 400%;
+  animation: gradient-xy 15s ease infinite;
+}

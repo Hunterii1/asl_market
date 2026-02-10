@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { adminApi } from "@/lib/api/adminApi";
 import {
   Package,
   Eye,
@@ -11,13 +13,9 @@ import {
   Filter,
   TrendingUp,
   CheckCircle,
-  XCircle,
-  Clock,
   Users,
-  MessageCircle,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 const API_BASE_URL = "/api/v1";
 
@@ -28,40 +26,39 @@ const toFarsiNumber = (num: number | string) => {
   return num.toLocaleString("fa-IR");
 };
 
-interface MatchingRequest {
+interface VisitorProject {
   id: number;
-  supplier: {
+  visitor: {
     id: number;
     full_name: string;
-    brand_name: string;
-    city: string;
   };
+  project_title: string;
   product_name: string;
   quantity: string;
   unit: string;
-  destination_countries: string;
-  price: string;
+  target_countries: string;
+  budget?: string;
   currency: string;
   status: string;
-  matched_visitor_count: number;
-  responses_count: number;
+  matched_supplier_count: number;
+  proposals_count: number;
   remaining_time: string;
   is_expired: boolean;
   created_at: string;
 }
 
 interface Stats {
-  total_requests: number;
-  active_requests: number;
-  accepted_requests: number;
-  expired_requests: number;
-  completed_requests: number;
-  total_responses: number;
+  total_projects: number;
+  active_projects: number;
+  accepted_projects: number;
+  expired_projects: number;
+  completed_projects: number;
+  total_proposals: number;
   total_chats: number;
 }
 
-export default function AdminMatchingRequests() {
-  const [requests, setRequests] = useState<MatchingRequest[]>([]);
+export default function AdminVisitorProjects() {
+  const [projects, setProjects] = useState<VisitorProject[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
@@ -71,13 +68,13 @@ export default function AdminMatchingRequests() {
 
   useEffect(() => {
     loadStats();
-    loadRequests();
+    loadProjects();
   }, [statusFilter, page]);
 
   const loadStats = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/admin/matching/requests/stats`, {
+      const response = await fetch(`${API_BASE_URL}/admin/visitor-projects/stats`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,12 +86,12 @@ export default function AdminMatchingRequests() {
     }
   };
 
-  const loadRequests = async () => {
+  const loadProjects = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `${API_BASE_URL}/admin/matching/requests?status=${statusFilter}&page=${page}&per_page=20`,
+        `${API_BASE_URL}/admin/visitor-projects?status=${statusFilter}&page=${page}&per_page=20`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,12 +99,12 @@ export default function AdminMatchingRequests() {
         }
       );
       const data = await response.json();
-      setRequests(data.data || []);
+      setProjects(data.data || []);
       setTotalPages(data.total_pages || 1);
     } catch (error: any) {
       toast({
         title: "خطا",
-        description: error.message || "خطا در بارگذاری درخواست‌ها",
+        description: error.message || "خطا در بارگذاری پروژه‌ها",
         variant: "destructive",
       });
     } finally {
@@ -153,19 +150,19 @@ export default function AdminMatchingRequests() {
     }
   };
 
-  const filteredRequests = requests.filter(
-    (req) =>
-      req.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.supplier?.brand_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      req.supplier?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProjects = projects.filter(
+    (proj) =>
+      proj.project_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      proj.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      proj.visitor?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">مدیریت درخواست‌های مچینگ</h1>
-        <p className="text-muted-foreground">مشاهده و مدیریت تمام درخواست‌های مچینگ تأمین‌کننده‌ها</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">مدیریت پروژه‌های ویزیتوری</h1>
+        <p className="text-muted-foreground">مشاهده و مدیریت تمام پروژه‌های ویزیتوری</p>
       </div>
 
       {/* Stats */}
@@ -174,13 +171,13 @@ export default function AdminMatchingRequests() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-blue-400" />
+                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                  <Package className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">کل درخواست‌ها</p>
+                  <p className="text-sm text-muted-foreground">کل پروژه‌ها</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.total_requests)}
+                    {toFarsiNumber(stats.total_projects)}
                   </p>
                 </div>
               </div>
@@ -196,7 +193,7 @@ export default function AdminMatchingRequests() {
                 <div>
                   <p className="text-sm text-muted-foreground">فعال</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.active_requests)}
+                    {toFarsiNumber(stats.active_projects)}
                   </p>
                 </div>
               </div>
@@ -206,13 +203,13 @@ export default function AdminMatchingRequests() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-purple-400" />
+                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">مختوم شده</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.completed_requests)}
+                    {toFarsiNumber(stats.completed_projects)}
                   </p>
                 </div>
               </div>
@@ -226,9 +223,9 @@ export default function AdminMatchingRequests() {
                   <Users className="w-5 h-5 text-orange-400" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">کل پاسخ‌ها</p>
+                  <p className="text-sm text-muted-foreground">کل پیشنهادها</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.total_responses)}
+                    {toFarsiNumber(stats.total_proposals)}
                   </p>
                 </div>
               </div>
@@ -246,7 +243,7 @@ export default function AdminMatchingRequests() {
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="جستجو در نام محصول، تأمین‌کننده..."
+                placeholder="جستجو در عنوان، محصول، ویزیتور..."
                 className="pr-10"
               />
             </div>
@@ -268,32 +265,31 @@ export default function AdminMatchingRequests() {
         </CardContent>
       </Card>
 
-      {/* Requests List */}
+      {/* Projects List */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500" />
         </div>
-      ) : filteredRequests.length === 0 ? (
+      ) : filteredProjects.length === 0 ? (
         <Card>
           <CardContent className="py-20 text-center">
             <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">درخواستی یافت نشد</p>
+            <p className="text-muted-foreground">پروژه‌ای یافت نشد</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredRequests.map((request) => (
-            <Card key={request.id} className="hover:border-blue-500/50 transition-colors">
+          {filteredProjects.map((project) => (
+            <Card key={project.id} className="hover:border-purple-500/50 transition-colors">
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
-                    <CardTitle className="text-lg">{request.product_name}</CardTitle>
+                    <CardTitle className="text-lg">{project.project_title}</CardTitle>
                     <p className="text-sm text-muted-foreground mt-1">
-                      تأمین‌کننده: {request.supplier?.brand_name || request.supplier?.full_name} (
-                      {request.supplier?.city})
+                      ویزیتور: {project.visitor?.full_name} | محصول: {project.product_name}
                     </p>
                   </div>
-                  {getStatusBadge(request.status, request.is_expired)}
+                  {getStatusBadge(project.status, project.is_expired)}
                 </div>
               </CardHeader>
               <CardContent>
@@ -301,22 +297,20 @@ export default function AdminMatchingRequests() {
                   <div>
                     <p className="text-xs text-muted-foreground">مقدار</p>
                     <p className="text-sm font-semibold">
-                      {toFarsiNumber(request.quantity)} {request.unit}
+                      {toFarsiNumber(project.quantity)} {project.unit}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">قیمت</p>
-                    <p className="text-sm font-semibold">
-                      {toFarsiNumber(request.price)} {request.currency}
-                    </p>
+                    <p className="text-xs text-muted-foreground">کشورهای مقصد</p>
+                    <p className="text-sm font-semibold">{project.target_countries}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">تعداد پاسخ‌ها</p>
-                    <p className="text-sm font-semibold">{toFarsiNumber(request.responses_count)}</p>
+                    <p className="text-xs text-muted-foreground">تعداد پیشنهادها</p>
+                    <p className="text-sm font-semibold">{toFarsiNumber(project.proposals_count)}</p>
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">زمان باقیمانده</p>
-                    <p className="text-sm font-semibold">{request.remaining_time}</p>
+                    <p className="text-sm font-semibold">{project.remaining_time}</p>
                   </div>
                 </div>
                 <div className="flex gap-2">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import {
   Globe2,
   DollarSign,
   Users,
+  User,
   Clock,
   Send,
   AlertCircle,
@@ -32,6 +34,7 @@ interface VisitorProject {
   user_id: number;
   visitor: {
     id: number;
+    user_id: number;
     full_name: string;
     city_province: string;
     destination_cities: string;
@@ -63,6 +66,7 @@ const toFarsiNumber = (num: number | string) => {
 
 export default function SupplierVisitorProjects() {
   const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<VisitorProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [proposalDialogOpen, setProposalDialogOpen] = useState(false);
@@ -213,21 +217,35 @@ export default function SupplierVisitorProjects() {
                   </div>
 
                   {/* Visitor Info */}
-                  <div className="flex items-center gap-2 p-3 bg-slate-900/60 rounded-2xl">
-                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
-                      <Users className="w-4 h-4 text-purple-300" />
+                  <div className="p-3 bg-slate-900/60 rounded-2xl space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-purple-300" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => navigate(`/profile/${project.visitor.user_id}`)}
+                          className="text-sm font-semibold text-foreground line-clamp-1 hover:text-purple-400 transition-colors text-right w-full"
+                        >
+                          {project.visitor.full_name}
+                        </button>
+                        {(project.visitor.city_province || project.visitor.destination_cities) && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 line-clamp-1">
+                            <MapPin className="w-3 h-3" />
+                            {project.visitor.city_province || project.visitor.destination_cities}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground line-clamp-1">
-                        {project.visitor.full_name}
-                      </p>
-                      {(project.visitor.city_province || project.visitor.destination_cities) && (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 line-clamp-1">
-                          <MapPin className="w-3 h-3" />
-                          {project.visitor.city_province || project.visitor.destination_cities}
-                        </p>
-                      )}
-                    </div>
+                    <Button
+                      onClick={() => navigate(`/profile/${project.visitor.user_id}`)}
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-xl border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all text-xs"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      مشاهده پروفایل ویزیتور
+                    </Button>
                   </div>
                 </CardHeader>
 

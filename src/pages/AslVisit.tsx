@@ -399,12 +399,21 @@ const AslVisit = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => navigate(`/profile/${visitor.user_id}`)}
+                    variant="default"
+                    size="sm"
+                    className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    مشاهده پروفایل
+                  </Button>
                   <ContactViewButton
                     targetType="visitor"
                     targetId={visitor.id}
                     targetName={visitor.full_name}
-                    className="rounded-2xl"
+                    className="rounded-2xl w-full"
                     variant="outline"
                     size="sm"
                   />

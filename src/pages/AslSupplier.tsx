@@ -18,6 +18,7 @@ import HeaderAuth from '@/components/ui/HeaderAuth';
 import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
 import { 
   Users, 
+  User,
   Star, 
   MapPin, 
   Phone, 
@@ -436,20 +437,19 @@ const AslSupplier = () => {
                 return (
                   <div
                     key={supplier.id}
-                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/80 border border-red-500/30 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/60 hover:shadow-lg transition-all duration-300 snap-start cursor-pointer"
-                    onClick={() => {
-                      setPreviewSupplier(supplier);
-                      setIsPreviewOpen(true);
-                    }}
+                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/80 border border-red-500/30 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/60 hover:shadow-lg transition-all duration-300 snap-start"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-red-500/20 flex items-center justify-center">
                         <Users className="w-3 h-3 sm:w-4 sm:h-4 text-red-300" />
                       </div>
                       <div className="flex-1">
-                        <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                        <button
+                          onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                          className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 hover:text-orange-400 transition-colors text-right w-full"
+                        >
                           {supplier.brand_name || supplier.full_name}
-                        </div>
+                        </button>
                         <div className="text-[10px] sm:text-[11px] text-red-200 flex items-center gap-1">
                           <Star className="w-3 h-3 text-yellow-400 flex-shrink-0" />
                           <span>
@@ -475,12 +475,21 @@ const AslSupplier = () => {
                         {toFarsiNumber(activeRequests)} / {toFarsiNumber(capacity)}
                       </span>
                     </div>
-                    <div className="text-[11px] text-emerald-100 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-2 py-1 flex items-center justify-between">
+                    <div className="text-[11px] text-emerald-100 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-2 py-1 flex items-center justify-between mb-2">
                       <span>ظرفیت باقیمانده:</span>
                       <span className="font-bold">
                         {remainingSlots > 0 ? `${toFarsiNumber(remainingSlots)} جای خالی` : 'در حال تکمیل'}
                       </span>
                     </div>
+                    <Button
+                      onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                      size="sm"
+                      variant="outline"
+                      className="w-full rounded-xl text-[10px] sm:text-xs mt-2 hover:bg-purple-500/20 hover:border-purple-500/50"
+                    >
+                      <User className="w-3 h-3 mr-1" />
+                      پروفایل
+                    </Button>
                   </div>
                 );
               })}
@@ -489,64 +498,103 @@ const AslSupplier = () => {
         </Card>
       )}
 
-      {/* Search and Filter */}
-      <Card className="bg-card/80 border-border rounded-3xl">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1 relative">
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
-                <Input
-                  placeholder="جستجو در تأمین‌کنندگان (نام، برند، شهر، آدرس...)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-10 bg-muted border-border text-foreground rounded-2xl"
-                />
-              </div>
-              <div className="flex gap-2 items-center shrink-0">
+      {/* Search and Filter - Enhanced UI */}
+      <Card className="bg-gradient-to-br from-orange-900/10 via-purple-900/10 to-pink-900/10 border-orange-500/30 rounded-3xl shadow-xl">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500/20 to-purple-500/20 flex items-center justify-center">
+              <Search className="w-5 h-5 text-orange-300" />
+            </div>
+            <div>
+              <CardTitle className="text-lg text-foreground">جستجو و فیلتر تأمین‌کنندگان</CardTitle>
+              <p className="text-xs text-muted-foreground">تأمین‌کننده مورد نظر خود را پیدا کنید</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Search Bar */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 relative group">
+              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5 group-hover:text-orange-400 transition-colors" />
+              <Input
+                placeholder="جستجو در تأمین‌کنندگان (نام، برند، شهر، آدرس...)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-10 bg-background/50 border-orange-500/30 text-foreground rounded-2xl h-11 focus:border-orange-500/60 focus:ring-2 focus:ring-orange-500/20 transition-all"
+              />
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="relative group">
+                <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 group-hover:text-purple-400 transition-colors" />
                 <Input
                   placeholder="شهر"
                   value={cityFilter}
                   onChange={(e) => setCityFilter(e.target.value)}
-                  className="w-32 bg-muted border-border rounded-2xl"
+                  className="w-40 pr-9 bg-background/50 border-purple-500/30 rounded-2xl h-11 focus:border-purple-500/60 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 />
-                {hasActiveFilters && (
-                  <Button variant="outline" size="sm" onClick={clearFilters} className="rounded-2xl">
-                    <X className="w-4 h-4 ml-1" />
-                    پاک کردن فیلترها
-                  </Button>
-                )}
               </div>
+              {hasActiveFilters && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={clearFilters} 
+                  className="rounded-2xl h-11 border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 transition-all"
+                >
+                  <X className="w-4 h-4 ml-1" />
+                  پاک کردن
+                </Button>
+              )}
             </div>
-            <div className="flex gap-2 overflow-x-auto flex-wrap">
+          </div>
+
+          {/* Categories Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-orange-400" />
+              <span className="text-sm font-semibold text-foreground">دسته‌بندی محصولات:</span>
+              <Badge variant="outline" className="text-xs text-orange-300 border-orange-500/40">
+                {toFarsiNumber(productCategoriesForFilter.length)} دسته
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {productCategoriesForFilter.map((category) => (
                 <Button
                   key={category.id}
                   variant={selectedProduct === category.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => setSelectedProduct(category.id)}
-                  className={`rounded-2xl whitespace-nowrap ${
+                  className={`rounded-2xl whitespace-nowrap transition-all duration-300 ${
                     selectedProduct === category.id
-                      ? "bg-orange-500 hover:bg-orange-600"
-                      : "border-border text-muted-foreground hover:bg-muted"
+                      ? "bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/30 scale-105"
+                      : "border-orange-500/20 text-muted-foreground hover:bg-orange-500/10 hover:border-orange-500/40 hover:text-orange-300"
                   }`}
                 >
                   {category.name}
                 </Button>
               ))}
             </div>
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-sm text-muted-foreground ml-2">تگ‌ها:</span>
+          </div>
+
+          {/* Tags Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-purple-400" />
+              <span className="text-sm font-semibold text-foreground">تگ‌های ویژه:</span>
+              <Badge variant="outline" className="text-xs text-purple-300 border-purple-500/40">
+                {toFarsiNumber(selectedTags.length)} انتخاب شده
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {SUPPLIER_TAG_OPTIONS.map((tag) => (
                 <Button
                   key={tag.id}
                   variant={selectedTags.includes(tag.id) ? "default" : "outline"}
                   size="sm"
                   onClick={() => toggleTag(tag.id)}
-                  className={`rounded-2xl ${
+                  className={`rounded-2xl transition-all duration-300 ${
                     selectedTags.includes(tag.id)
-                      ? "bg-orange-500 hover:bg-orange-600"
-                      : "border-border text-muted-foreground hover:bg-muted"
+                      ? "bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 shadow-lg shadow-purple-500/30 scale-105"
+                      : "border-purple-500/20 text-muted-foreground hover:bg-purple-500/10 hover:border-purple-500/40 hover:text-purple-300"
                   }`}
                 >
                   {tag.name}
@@ -585,11 +633,7 @@ const AslSupplier = () => {
               {featuredSliderSuppliers.map((supplier) => (
                 <div
                   key={supplier.id}
-                  className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/40 rounded-2xl p-3 flex-shrink-0 hover:border-yellow-400/70 hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 group cursor-pointer snap-start"
-                  onClick={() => {
-                    setPreviewSupplier(supplier);
-                    setIsPreviewOpen(true);
-                  }}
+                  className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/40 rounded-2xl p-3 flex-shrink-0 hover:border-yellow-400/70 hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 group snap-start"
                 >
                   {/* Header */}
                   <div className="flex items-center gap-2 mb-2">
@@ -597,9 +641,12 @@ const AslSupplier = () => {
                       <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-200" />
                     </div>
                     <div className="flex-1">
-                      <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                      <button
+                        onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                        className="text-xs sm:text-sm font-bold text-foreground line-clamp-1 hover:text-orange-400 transition-colors text-right w-full"
+                      >
                         {supplier.brand_name || supplier.full_name}
-                      </div>
+                      </button>
                       <div className="text-[10px] sm:text-[11px] text-amber-100 flex items-center gap-1">
                         <Star className="w-3 h-3 text-yellow-300 flex-shrink-0" />
                         <span>
@@ -657,11 +704,16 @@ const AslSupplier = () => {
                     </div>
                   )}
 
-                  {/* CTA */}
-                  <div className="mt-2 flex items-center justify-between text-[10px] sm:text-[11px] text-amber-100/90">
-                    <span className="truncate">مشاهده تأمین‌کنندگان مشابه</span>
-                    <ArrowLeft className="w-3 h-3 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
-                  </div>
+                  {/* CTA Button */}
+                  <Button
+                    onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                    size="sm"
+                    variant="outline"
+                    className="w-full rounded-xl text-[10px] sm:text-xs mt-2 hover:bg-amber-500/20 hover:border-amber-500/50"
+                  >
+                    <User className="w-3 h-3 mr-1" />
+                    مشاهده پروفایل
+                  </Button>
                 </div>
               ))}
             </div>
@@ -894,12 +946,21 @@ const AslSupplier = () => {
                 </div>
               </div>
 
-              <div className="flex justify-center">
+              <div className="flex flex-col gap-2">
+                <Button
+                  onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                  variant="default"
+                  size="sm"
+                  className="w-full rounded-2xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  مشاهده پروفایل
+                </Button>
                 <ContactViewButton
                   targetType="supplier"
                   targetId={supplier.id}
                   targetName={supplier.business_name || supplier.full_name}
-                  className="rounded-2xl"
+                  className="rounded-2xl w-full"
                   variant="outline"
                   size="sm"
                 />

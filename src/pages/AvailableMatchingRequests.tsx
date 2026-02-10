@@ -45,6 +45,7 @@ interface MatchingRequest {
   created_at: string;
   supplier?: {
     id: number;
+    user_id: number;
     full_name: string;
     brand_name?: string;
     city: string;
@@ -289,9 +290,12 @@ export default function AvailableMatchingRequests() {
                                           <div className="absolute inset-0 rounded-xl bg-blue-400 animate-ping opacity-20"></div>
                                         </div>
                                         <div className="flex-1">
-                                          <p className="text-lg font-extrabold text-gray-900 dark:text-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                                          <button
+                                            onClick={() => navigate(`/profile/${request.supplier.user_id}`)}
+                                            className="text-lg font-extrabold text-gray-900 dark:text-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent hover:from-purple-600 hover:to-pink-600 dark:hover:from-purple-400 dark:hover:to-pink-400 transition-all duration-300 text-right"
+                                          >
                                             {request.supplier.full_name || "نام نامشخص"}
-                                          </p>
+                                          </button>
                                           {request.supplier.brand_name && (
                                             <p className="text-sm text-muted-foreground mt-1 font-medium">
                                               {request.supplier.brand_name}
@@ -307,6 +311,15 @@ export default function AvailableMatchingRequests() {
                                           {request.supplier.city || "شهر نامشخص"}
                                         </p>
                                       </div>
+                                      <Button
+                                        onClick={() => navigate(`/profile/${request.supplier.user_id}`)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full mt-3 rounded-xl border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all"
+                                      >
+                                        <User className="w-4 h-4 mr-2" />
+                                        مشاهده پروفایل تأمین‌کننده
+                                      </Button>
                                     </div>
                                   </div>
                                 )}

@@ -37,9 +37,38 @@ func (pc *ProfileController) GetUserProfile(c *gin.Context) {
 		return
 	}
 
+	// Build base user response
+	userResp := user.ToResponse()
+
+	// Determine viewer (for contact privacy)
+	viewerIDVal, hasViewer := c.Get("user_id")
+	isOwner := false
+	isAdmin := false
+
+	if hasViewer {
+		if viewerID, ok := viewerIDVal.(uint); ok {
+			if viewerID == uint(userID) {
+				isOwner = true
+			}
+
+			// Check if viewer is admin
+			if !isOwner {
+				if viewerUser, err := models.GetUserByID(pc.db, viewerID); err == nil && viewerUser.IsAdmin {
+					isAdmin = true
+				}
+			}
+		}
+	}
+
+	// If viewer is not owner or admin, hide email/phone (تماس فقط از طریق مکانیزم محدودیت)
+	if !isOwner && !isAdmin {
+		userResp.Email = ""
+		userResp.Phone = ""
+	}
+
 	// Build profile response
 	profile := gin.H{
-		"user": user.ToResponse(),
+		"user": userResp,
 	}
 
 	// Check if user is a supplier

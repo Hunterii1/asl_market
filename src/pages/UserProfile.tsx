@@ -108,6 +108,21 @@ export default function UserProfile() {
 
   const isOwnProfile = currentUser?.id === parseInt(id || "0");
 
+  // Parse social media links (stored as JSON string in backend, ولی کاربر JSON نمی‌بیند)
+  const socialLinks = (() => {
+    if (!profile?.user.social_media_links) return null;
+    try {
+      return JSON.parse(profile.user.social_media_links) as {
+        instagram?: string;
+        telegram?: string;
+        linkedin?: string;
+        whatsapp?: string;
+      };
+    } catch {
+      return null;
+    }
+  })();
+
   useEffect(() => {
     if (id) {
       loadProfile();
@@ -236,17 +251,17 @@ export default function UserProfile() {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Cover Image */}
-        <div className="relative w-full h-64 sm:h-80 rounded-3xl overflow-hidden mb-6 group">
+        <div className="relative w-full h-64 sm:h-80 lg:h-96 rounded-3xl overflow-hidden mb-6 group shadow-2xl">
           {profile.user.cover_image_url ? (
             <img
               src={getImageUrl(profile.user.cover_image_url)}
               alt="Cover"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-orange-500/20 via-purple-500/20 to-blue-500/20" />
+            <div className="w-full h-full bg-gradient-to-br from-orange-500/30 via-purple-500/30 to-blue-500/30 animate-gradient-xy" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
           
           {isOwnProfile && (
             <label className="absolute top-4 left-4 cursor-pointer">
@@ -264,23 +279,23 @@ export default function UserProfile() {
           )}
 
           {/* Profile Image (overlapping cover) */}
-          <div className="absolute -bottom-16 right-8 group/avatar">
+          <div className="absolute -bottom-20 right-8 sm:right-12 group/avatar">
             <div className="relative">
-              <div className="w-32 h-32 rounded-3xl border-4 border-slate-950 overflow-hidden bg-gradient-to-br from-orange-500 to-purple-600 shadow-2xl">
+              <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-44 lg:h-44 rounded-3xl border-4 border-slate-950 overflow-hidden bg-gradient-to-br from-orange-500 to-purple-600 shadow-2xl ring-4 ring-orange-500/20 group-hover/avatar:ring-orange-500/40 transition-all duration-300">
                 {profile.user.profile_image_url ? (
                   <img
                     src={getImageUrl(profile.user.profile_image_url)}
                     alt={`${profile.user.first_name} ${profile.user.last_name}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transform group-hover/avatar:scale-110 transition-transform duration-300"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <User className="w-16 h-16 text-white" />
+                    <User className="w-20 h-20 text-white" />
                   </div>
                 )}
               </div>
               {isOwnProfile && (
-                <label className="absolute bottom-2 left-2 cursor-pointer">
+                <label className="absolute bottom-2 left-2 cursor-pointer group">
                   <input
                     type="file"
                     accept="image/*"
@@ -288,8 +303,8 @@ export default function UserProfile() {
                     onChange={(e) => e.target.files?.[0] && handleUploadProfileImage(e.target.files[0])}
                     disabled={uploading}
                   />
-                  <div className="p-2 bg-orange-500 hover:bg-orange-600 rounded-full shadow-lg transition-all">
-                    <Camera className="w-4 h-4 text-white" />
+                  <div className="p-3 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-full shadow-lg transition-all transform group-hover:scale-110 ring-2 ring-white/30">
+                    <Camera className="w-5 h-5 text-white" />
                   </div>
                 </label>
               )}
@@ -298,7 +313,7 @@ export default function UserProfile() {
         </div>
 
         {/* User Info Section */}
-        <div className="mt-20 mb-8">
+        <div className="mt-24 mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
@@ -340,6 +355,58 @@ export default function UserProfile() {
                     <LinkIcon className="w-4 h-4" />
                     <span>{profile.user.website}</span>
                   </a>
+                )}
+                {socialLinks && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {socialLinks.instagram && (
+                      <a
+                        href={
+                          socialLinks.instagram.startsWith("http")
+                            ? socialLinks.instagram
+                            : `https://instagram.com/${socialLinks.instagram.replace("@", "")}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-full text-xs bg-pink-500/10 text-pink-300 border border-pink-500/30 hover:bg-pink-500/20 transition-colors"
+                      >
+                        اینستاگرام
+                      </a>
+                    )}
+                    {socialLinks.telegram && (
+                      <a
+                        href={
+                          socialLinks.telegram.startsWith("http")
+                            ? socialLinks.telegram
+                            : `https://t.me/${socialLinks.telegram.replace("@", "")}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-full text-xs bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20 transition-colors"
+                      >
+                        تلگرام
+                      </a>
+                    )}
+                    {socialLinks.linkedin && (
+                      <a
+                        href={socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-full text-xs bg-blue-500/10 text-blue-300 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
+                      >
+                        لینکدین
+                      </a>
+                    )}
+                    {socialLinks.whatsapp && (
+                      <a
+                        href={`https://wa.me/${socialLinks.whatsapp.replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-2 py-1 rounded-full text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors"
+                      >
+                        واتساپ
+                      </a>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
