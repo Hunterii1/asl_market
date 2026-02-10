@@ -30,8 +30,11 @@ const getApiBaseUrl = () => {
 const API_BASE_URL = getApiBaseUrl();
 
 // Debug logging
-console.log('🌐 API Base URL:', API_BASE_URL);
-console.log('🏠 Current hostname:', typeof window !== 'undefined' ? window.location.hostname : 'server-side');
+if (typeof window !== 'undefined') {
+  console.log('🌐 API Base URL:', API_BASE_URL);
+  console.log('🏠 Current hostname:', window.location.hostname);
+  console.log('📍 Example API call:', `${API_BASE_URL}/profile/1`);
+}
 
 export interface User {
   id: number;
@@ -144,10 +147,17 @@ class ApiService {
   }
 
   private async handleResponse(response: Response, url: string = '') {
+    console.log(`📡 Response for ${url}:`, {
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText,
+    });
+    
     if (!response.ok) {
       let errorData;
       try {
         errorData = await response.json();
+        console.log(`❌ Error data:`, errorData);
       } catch {
         errorData = { 
           error: 'خطا در دریافت پاسخ از سرور',
@@ -197,7 +207,10 @@ class ApiService {
       
       throw new Error(errorMessage);
     }
-    return response.json();
+    
+    const data = await response.json();
+    console.log(`✅ Success data for ${url}:`, data);
+    return data;
   }
 
   private async makeRequest(url: string, options: RequestInit = {}) {

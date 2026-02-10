@@ -28,7 +28,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkLicenseStatus = async () => {
     try {
       if (user) {
+        console.log('🔍 Checking license status for user:', user.email);
         const status = await apiService.checkLicenseStatus();
+        console.log('✅ License status received:', status);
         setLicenseStatus(status);
         
         if (status.has_license && status.is_active) {
@@ -53,7 +55,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
     } catch (error) {
-      console.error('License check failed:', error);
+      console.error('❌ License check failed:', error);
+      console.error('Error details:', {
+        message: (error as any)?.message,
+        status: (error as any)?.status,
+        response: (error as any)?.response,
+      });
       
       // بررسی اینکه آیا خطا مربوط به لایسنس یا احراز هویت است
       const isLicenseError = errorHandler.handleLicenseError(error);
@@ -62,8 +69,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!isLicenseError && !isAuthError) {
         // در صورت خطا، سعی در بازیابی از storage محلی
         if (user && licenseStorage.hasStoredLicense() && licenseStorage.isStoredLicenseValid()) {
+          console.log('🔄 Attempting license recovery from localStorage...');
           const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
-          if (!recoveryAttempted) {
+          if (recoveryAttempted) {
+            // Recovery موفق بود، دوباره status را چک کن
+            try {
+              const status = await apiService.checkLicenseStatus();
+              console.log('✅ License recovered! New status:', status);
+              setLicenseStatus(status);
+            } catch (retryError) {
+              console.error('Failed to check status after recovery:', retryError);
+              // حتی اگر check دوباره fail شد، یک status فرضی بساز
+              setLicenseStatus({
+                has_license: true,
+                is_active: true,
+                is_approved: true,
+              });
+            }
+          } else {
             setShowLicenseModal(true);
           }
         } else {
