@@ -146,6 +146,9 @@ type VisitorResponse struct {
 	AverageRating                 float64    `json:"average_rating"` // Average rating from matching requests (1-5)
 	TotalRatings                  int        `json:"total_ratings"`  // Total number of ratings received
 	CreatedAt                     time.Time  `json:"created_at"`
+	// User profile fields
+	UserProfileImageURL           string     `json:"user_profile_image_url"`
+	UserCoverImageURL             string     `json:"user_cover_image_url"`
 }
 
 // Helper functions for visitor management

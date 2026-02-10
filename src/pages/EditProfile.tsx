@@ -1,242 +1,233 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { Loader2, User, Mail, Phone, Save, ArrowLeft } from 'lucide-react';
-import { apiService } from '@/services/api';
-import { useNavigate } from 'react-router-dom';
-import HeaderAuth from '@/components/ui/HeaderAuth';
-
-interface ProfileFormData {
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-}
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { apiService } from "@/services/api";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import HeaderAuth from "@/components/ui/HeaderAuth";
+import { toast } from "@/hooks/use-toast";
+import { ArrowLeft, Save, User } from "lucide-react";
 
 export default function EditProfile() {
-  const { user, refreshUserData } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, refreshUserData } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  const [formData, setFormData] = useState<ProfileFormData>({
-    first_name: '',
-    last_name: '',
-    email: '',
-    phone: '',
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    bio: "",
+    location: "",
+    website: "",
+    social_media_links: "",
   });
 
   useEffect(() => {
     if (user) {
       setFormData({
-        first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || '',
+        first_name: user.first_name || "",
+        last_name: user.last_name || "",
+        email: user.email || "",
+        bio: (user as any).bio || "",
+        location: (user as any).location || "",
+        website: (user as any).website || "",
+        social_media_links: (user as any).social_media_links || "",
       });
     }
   }, [user]);
 
-  const updateFormData = (field: keyof ProfileFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.first_name || !formData.last_name || !formData.phone) {
-      toast({
-        variant: "destructive",
-        title: "خطا",
-        description: "لطفا تمام فیلدهای الزامی را پر کنید",
-      });
-      return;
-    }
-
-    setSaving(true);
     try {
-      await apiService.updateProfile(formData);
+      setLoading(true);
+      await apiService.updateProfileInfo(formData);
       
       toast({
-        title: "موفقیت‌آمیز",
+        title: "موفق",
         description: "پروفایل با موفقیت به‌روزرسانی شد",
       });
 
       // Refresh user data
-      await refreshUserData();
-      
-      // Navigate back to home page
-      navigate('/');
-      
+      if (refreshUserData) {
+        await refreshUserData();
+      }
+
+      // Navigate back to profile
+      navigate(`/profile/${user?.id}`);
     } catch (error: any) {
-      console.error('Error updating profile:', error);
       toast({
-        variant: "destructive",
         title: "خطا",
-        description: error?.message || "خطا در به‌روزرسانی پروفایل. لطفا دوباره تلاش کنید",
+        description: error.message || "خطا در به‌روزرسانی پروفایل",
+        variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
   if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert>
-          <AlertDescription>
-            برای ویرایش پروفایل، ابتدا وارد حساب کاربری خود شوید.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
       <HeaderAuth />
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/')}
-              className="mb-4 hover:bg-muted"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              بازگشت به صفحه اصلی
-            </Button>
-            
-            <Card className="mb-6 shadow-lg border-border">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-t-lg">
-                <div>
-                  <CardTitle className="text-2xl font-bold text-foreground flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
-                    </div>
-                    ویرایش پروفایل
-                  </CardTitle>
-                  <p className="text-muted-foreground mt-2">
-                    اطلاعات شخصی خود را به‌روزرسانی کنید
-                  </p>
-                </div>
-              </CardHeader>
-            </Card>
-          </div>
 
-          <Card className="shadow-lg border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-foreground">
-                <User className="h-5 w-5 text-blue-500" />
-                اطلاعات شخصی
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="first_name" className="text-foreground font-medium">
-                      نام *
-                    </Label>
-                    <Input
-                      id="first_name"
-                      value={formData.first_name}
-                      onChange={(e) => updateFormData('first_name', e.target.value)}
-                      placeholder="نام خود را وارد کنید"
-                      className="bg-background border-border"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="last_name" className="text-foreground font-medium">
-                      نام خانوادگی *
-                    </Label>
-                    <Input
-                      id="last_name"
-                      value={formData.last_name}
-                      onChange={(e) => updateFormData('last_name', e.target.value)}
-                      placeholder="نام خانوادگی خود را وارد کنید"
-                      className="bg-background border-border"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="flex items-center gap-2 text-foreground font-medium">
-                    <Phone className="h-4 w-4 text-blue-500" />
-                    شماره موبایل *
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => updateFormData('phone', e.target.value)}
-                    placeholder="شماره موبایل خود را وارد کنید"
-                    className="bg-background border-border"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="flex items-center gap-2 text-foreground font-medium">
-                    <Mail className="h-4 w-4 text-blue-500" />
-                    ایمیل (اختیاری)
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => updateFormData('email', e.target.value)}
-                    placeholder="ایمیل خود را وارد کنید"
-                    className="bg-background border-border"
-                  />
-                </div>
-
-                <div className="flex gap-4 pt-6 border-t border-border">
-                  <Button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl shadow-lg gap-2"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        در حال ذخیره...
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4" />
-                        ذخیره تغییرات
-                      </>
-                    )}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigate('/')}
-                    disabled={saving}
-                    className="rounded-xl border-border hover:bg-muted"
-                  >
-                    انصراف
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(`/profile/${user.id}`)}
+            className="mb-4"
+          >
+            <ArrowLeft className="w-4 h-4 ml-2" />
+            بازگشت به پروفایل
+          </Button>
         </div>
+
+        <Card className="bg-card/80 border-border rounded-3xl">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-500 to-purple-600 flex items-center justify-center">
+                <User className="w-5 h-5 text-white" />
+              </div>
+              ویرایش پروفایل
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">نام</Label>
+                  <Input
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, first_name: e.target.value })
+                    }
+                    className="rounded-2xl"
+                    placeholder="نام خود را وارد کنید"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">نام خانوادگی</Label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, last_name: e.target.value })
+                    }
+                    className="rounded-2xl"
+                    placeholder="نام خانوادگی خود را وارد کنید"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">ایمیل</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  className="rounded-2xl"
+                  placeholder="example@email.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">بیوگرافی</Label>
+                <Textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, bio: e.target.value })
+                  }
+                  className="rounded-2xl min-h-[100px]"
+                  placeholder="توضیحاتی درباره خود بنویسید..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">موقعیت</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                  className="rounded-2xl"
+                  placeholder="شهر، کشور"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="website">وبسایت</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  value={formData.website}
+                  onChange={(e) =>
+                    setFormData({ ...formData, website: e.target.value })
+                  }
+                  className="rounded-2xl"
+                  placeholder="https://example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="social_media_links">لینک‌های شبکه‌های اجتماعی</Label>
+                <Textarea
+                  id="social_media_links"
+                  value={formData.social_media_links}
+                  onChange={(e) =>
+                    setFormData({ ...formData, social_media_links: e.target.value })
+                  }
+                  className="rounded-2xl min-h-[80px]"
+                  placeholder='{"instagram": "@username", "telegram": "@username"}'
+                />
+                <p className="text-xs text-muted-foreground">
+                  فرمت JSON: مثال بالا را ببینید
+                </p>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      <span>در حال ذخیره...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      ذخیره تغییرات
+                    </>
+                  )}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(`/profile/${user.id}`)}
+                  className="rounded-2xl"
+                >
+                  انصراف
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

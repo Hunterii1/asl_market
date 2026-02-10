@@ -268,7 +268,12 @@ const AslVisit = () => {
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-bold text-foreground">{visitor.full_name}</h4>
+                      <button
+                        onClick={() => navigate(`/profile/${visitor.user_id}`)}
+                        className="font-bold text-foreground hover:text-purple-500 transition-colors underline decoration-dotted"
+                      >
+                        {visitor.full_name}
+                      </button>
                       {visitor.status === 'approved' && (
                         <CheckCircle className="w-5 h-5 text-green-400" />
                       )}

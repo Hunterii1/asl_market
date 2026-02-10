@@ -242,6 +242,8 @@ func GetApprovedSuppliers(c *gin.Context) {
 			TotalRatings:               totalRatings,
 			CreatedAt:                  supplier.CreatedAt,
 			Products:                   productsResponse,
+			UserProfileImageURL:        supplier.User.ProfileImageURL,
+			UserCoverImageURL:          supplier.User.CoverImageURL,
 		})
 	}
 
@@ -312,6 +314,8 @@ func GetFeaturedSuppliersPublic(c *gin.Context) {
 			"can_produce_private_label":   supplier.CanProducePrivateLabel,
 			"has_registered_business":     supplier.HasRegisteredBusiness,
 			"business_registration_exists": supplier.HasRegisteredBusiness,
+			"user_profile_image_url":      supplier.User.ProfileImageURL,
+			"user_cover_image_url":        supplier.User.CoverImageURL,
 		})
 	}
 

@@ -23,6 +23,9 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	publicRegistrationController := controllers.NewPublicRegistrationController(models.GetDB())
 	matchingController := controllers.NewMatchingController(models.GetDB())
 	pushController := controllers.NewPushController(models.GetDB())
+	visitorProjectController := controllers.NewVisitorProjectController(models.GetDB())
+	adminMatchingController := controllers.NewAdminMatchingController(models.GetDB())
+	profileController := controllers.NewProfileController(models.GetDB())
 
 	// Initialize OpenAI monitor
 	openaiMonitor := services.NewOpenAIMonitor(telegramService)
@@ -91,6 +94,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		publicOptional.GET("/sliders/active", controllers.GetActiveSliders)
 		// Featured suppliers slider برای همه (بدون نمایش اطلاعات تماس)
 		publicOptional.GET("/suppliers/featured", controllers.GetFeaturedSuppliersPublic)
+		// Public profile (everyone can view profiles)
+		publicOptional.GET("/profile/:id", profileController.GetUserProfile)
 	}
 
 	// Protected routes (authentication required)
@@ -100,6 +105,9 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// User routes
 		protected.GET("/me", authController.Me)
 		protected.PUT("/profile", authController.UpdateProfile)
+		protected.PUT("/profile/update", profileController.UpdateProfile)
+		protected.POST("/profile/upload-profile-image", profileController.UploadProfileImage)
+		protected.POST("/profile/upload-cover-image", profileController.UploadCoverImage)
 
 		// Progress tracking routes
 		protected.GET("/progress", controllers.GetUserProgress)
@@ -329,6 +337,18 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/admin/export/visitors", controllers.ExportVisitorsToExcel)
 		protected.GET("/admin/export/licenses", controllers.ExportLicensesToExcel)
 
+		// Admin Matching Management (Admin)
+		protected.GET("/admin/matching/requests", adminMatchingController.GetAllMatchingRequests)
+		protected.GET("/admin/matching/requests/stats", adminMatchingController.GetMatchingRequestStats)
+		protected.GET("/admin/matching/chats", adminMatchingController.GetAllMatchingChats)
+		protected.GET("/admin/matching/chats/:id/messages", adminMatchingController.GetMatchingChatMessages)
+
+		// Admin Visitor Projects Management (Admin)
+		protected.GET("/admin/visitor-projects", adminMatchingController.GetAllVisitorProjects)
+		protected.GET("/admin/visitor-projects/stats", adminMatchingController.GetVisitorProjectStats)
+		protected.GET("/admin/visitor-projects/chats", adminMatchingController.GetAllVisitorProjectChats)
+		protected.GET("/admin/visitor-projects/chats/:id/messages", adminMatchingController.GetVisitorProjectChatMessages)
+
 		// OpenAI Monitor routes (Admin only)
 		protected.GET("/admin/openai/usage", openaiMonitorController.GetUsageStats)
 		protected.POST("/admin/openai/check", openaiMonitorController.CheckUsage)
@@ -364,6 +384,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/matching/requests/:id", matchingController.GetMatchingRequestDetails)
 		protected.PUT("/matching/requests/:id", matchingController.UpdateMatchingRequest)
 		protected.DELETE("/matching/requests/:id", matchingController.CancelMatchingRequest)
+		protected.POST("/matching/requests/:id/close", matchingController.CloseMatchingRequest)
 		protected.POST("/matching/requests/:id/extend", matchingController.ExtendMatchingRequest)
 		protected.GET("/matching/requests/:id/suggested-visitors", matchingController.GetSuggestedVisitors)
 
@@ -379,6 +400,26 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/matching/chat/conversations", matchingController.GetMatchingChatConversations)
 		protected.GET("/matching/chat/:id/messages", matchingController.GetMatchingChatMessages)
 		protected.POST("/matching/chat/:id/send", matchingController.SendMatchingChatMessage)
+
+		// Visitor Project routes (Two-way matching: Visitors create projects, Suppliers propose)
+		// Visitor creates and manages their visitor projects
+		protected.POST("/visitor-projects", visitorProjectController.CreateVisitorProject)
+		protected.GET("/visitor-projects/my", visitorProjectController.GetMyVisitorProjects)
+		protected.GET("/visitor-projects/:id", visitorProjectController.GetVisitorProjectDetails)
+		protected.PUT("/visitor-projects/:id", visitorProjectController.UpdateVisitorProject)
+		protected.DELETE("/visitor-projects/:id", visitorProjectController.DeleteVisitorProject)
+		protected.POST("/visitor-projects/:id/close", visitorProjectController.CloseVisitorProject)
+
+		// Supplier views available visitor projects and submits proposals
+		protected.GET("/visitor-projects/available", visitorProjectController.GetAvailableVisitorProjects)
+		protected.POST("/visitor-projects/:id/proposal", visitorProjectController.SubmitProposal)
+		protected.GET("/visitor-projects/supplier-capacity", visitorProjectController.GetSupplierCapacityForVisitorProjects)
+
+		// Visitor Project Chat routes
+		protected.GET("/visitor-projects/chats", visitorProjectController.GetVisitorProjectChats)
+		protected.POST("/visitor-projects/:id/start-chat", visitorProjectController.StartVisitorProjectChat)
+		protected.GET("/visitor-projects/chats/:id/messages", visitorProjectController.GetVisitorProjectChatMessages)
+		protected.POST("/visitor-projects/chats/:id/send", visitorProjectController.SendVisitorProjectChatMessage)
 
 		// License-protected routes
 		licensed := protected.Group("/")

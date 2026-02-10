@@ -1812,6 +1812,250 @@ class ApiService {
       },
     });
   }
+
+  // Visitor Project API methods (Two-way matching)
+  // Visitor creates and manages their visitor projects
+  async createVisitorProject(data: {
+    project_title: string;
+    product_name: string;
+    quantity: string;
+    unit: string;
+    target_countries: string;
+    budget?: string;
+    currency: string;
+    payment_terms?: string;
+    delivery_time?: string;
+    description?: string;
+    expires_at: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyVisitorProjects(params: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/my?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async getVisitorProjectDetails(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${id}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateVisitorProject(id: number, data: {
+    project_title?: string;
+    product_name?: string;
+    quantity?: string;
+    unit?: string;
+    target_countries?: string;
+    budget?: string;
+    currency?: string;
+    payment_terms?: string;
+    delivery_time?: string;
+    description?: string;
+    expires_at?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${id}`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteVisitorProject(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Supplier views available visitor projects and submits proposals
+  async getAvailableVisitorProjects(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/available?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async submitVisitorProjectProposal(projectId: number, data: {
+    proposal_type: 'interested' | 'rejected' | 'question';
+    message?: string;
+    offered_price?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${projectId}/proposal`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSupplierCapacityForVisitorProjects(params: {
+    capacity?: number;
+    limit?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.capacity) queryParams.append('capacity', params.capacity.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/supplier-capacity?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async closeVisitorProject(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${id}/close`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Visitor Project Chat methods
+  async getVisitorProjectChats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/chats`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async startVisitorProjectChat(projectId: number, supplierId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/${projectId}/start-chat`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ supplier_id: supplierId }),
+    });
+  }
+
+  async getVisitorProjectChatMessages(chatId: number, params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/chats/${chatId}/messages?${queryParams}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async sendVisitorProjectChatMessage(chatId: number, message: string, imageUrl?: string): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/visitor-projects/chats/${chatId}/send`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify({ message, image_url: imageUrl }),
+    });
+  }
+
+  // Matching Request close method
+  async closeMatchingRequest(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/matching/requests/${id}/close`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  // Profile API methods
+  async getUserProfile(userId: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/profile/${userId}`, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
+  async updateProfileInfo(data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    bio?: string;
+    location?: string;
+    website?: string;
+    social_media_links?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/profile/update`, {
+      method: 'PUT',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async uploadProfileImage(formData: FormData): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/profile/upload-profile-image`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        // Don't set Content-Type - let browser set it with boundary
+      },
+      body: formData,
+    });
+  }
+
+  async uploadCoverImage(formData: FormData): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/profile/upload-cover-image`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        // Don't set Content-Type - let browser set it with boundary
+      },
+      body: formData,
+    });
+  }
 }
 
 export const apiService = new ApiService();

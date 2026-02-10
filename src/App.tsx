@@ -40,7 +40,6 @@ import SubmitProduct from "./pages/SubmitProduct";
 import MyProducts from "./pages/MyProducts";
 import Notifications from "./pages/Notifications";
 import SupportTicket from "./pages/SupportTicket";
-import EditProfile from "./pages/EditProfile";
 import EditVisitor from "./pages/EditVisitor";
 import EditSupplier from "./pages/EditSupplier";
 import CreateMatchingRequest from "./pages/CreateMatchingRequest";
@@ -50,6 +49,11 @@ import MatchingRequestDetails from "./pages/MatchingRequestDetails";
 import MatchingChats from "./pages/MatchingChats";
 import MatchingRatings from "./pages/MatchingRatings";
 import AslMatch from "./pages/AslMatch";
+import VisitorProjects from "./pages/VisitorProjects";
+import SupplierVisitorProjects from "./pages/SupplierVisitorProjects";
+import VisitorProjectChats from "./pages/VisitorProjectChats";
+import UserProfile from "./pages/UserProfile";
+import EditProfile from "./pages/EditProfile";
 import AffiliateProtected from "./components/AffiliateProtected";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateLogin from "./pages/affiliate/AffiliateLogin";
@@ -275,6 +279,39 @@ const App = () => (
                   <LicenseRequiredRoute>
                     <MatchingRatings />
                   </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+
+              {/* Visitor Projects (Two-way matching: Visitors create projects, Suppliers propose) */}
+              <Route path="/visitor-projects" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <VisitorProjects />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/supplier-visitor-projects" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <SupplierVisitorProjects />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+              <Route path="/visitor-project-chats" element={
+                <ProtectedRoute>
+                  <LicenseRequiredRoute>
+                    <VisitorProjectChats />
+                  </LicenseRequiredRoute>
+                </ProtectedRoute>
+              } />
+
+              {/* Public Profile (everyone can view) */}
+              <Route path="/profile/:id" element={<UserProfile />} />
+
+              {/* Edit Profile (protected) */}
+              <Route path="/edit-profile" element={
+                <ProtectedRoute>
+                  <EditProfile />
                 </ProtectedRoute>
               } />
               

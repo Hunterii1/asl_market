@@ -118,15 +118,18 @@ type SupplierProductRequest struct {
 }
 
 type SupplierResponse struct {
-	ID                       uint                      `json:"id"`
-	UserID                   uint                      `json:"user_id"`
-	FullName                 string                    `json:"full_name"`
-	Mobile                   string                    `json:"mobile"`
-	BrandName                string                    `json:"brand_name"`
-	ImageURL                 string                    `json:"image_url"`
-	City                     string                    `json:"city"`
-	Address                  string                    `json:"address"`
-	HasRegisteredBusiness    bool                      `json:"has_registered_business"`
+	ID                    uint   `json:"id"`
+	UserID                uint   `json:"user_id"`
+	FullName              string `json:"full_name"`
+	Mobile                string `json:"mobile"`
+	BrandName             string `json:"brand_name"`
+	ImageURL              string `json:"image_url"`
+	City                  string `json:"city"`
+	Address               string `json:"address"`
+	HasRegisteredBusiness bool   `json:"has_registered_business"`
+	// User profile fields
+	UserProfileImageURL      string                    `json:"user_profile_image_url"`
+	UserCoverImageURL        string                    `json:"user_cover_image_url"`
 	BusinessRegistrationNum  string                    `json:"business_registration_num"`
 	HasExportExperience      bool                      `json:"has_export_experience"`
 	ExportPrice              string                    `json:"export_price"`

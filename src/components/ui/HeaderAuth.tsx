@@ -469,10 +469,17 @@ const HeaderAuth = () => {
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 
                   className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
-                  onClick={() => navigate('/edit-profile')}
+                  onClick={() => navigate(`/profile/${user?.id}`)}
                 >
                   <span className="flex-1 text-right">پروفایل من</span>
                   <User className="w-4 h-4 ml-2 flex-shrink-0" />
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
+                  onClick={() => navigate('/edit-profile')}
+                >
+                  <span className="flex-1 text-right">ویرایش پروفایل</span>
+                  <Settings className="w-4 h-4 ml-2 flex-shrink-0" />
                 </DropdownMenuItem>
                 
                 {/* Visitor Status */}

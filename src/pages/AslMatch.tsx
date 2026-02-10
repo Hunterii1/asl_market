@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { MatchingRadar } from "@/components/MatchingRadar";
+import { OnboardingTutorial } from "@/components/OnboardingTutorial";
 import { 
   Users, 
   PlusCircle,
@@ -139,6 +140,16 @@ export default function AslMatch() {
     navigate("/matching/ratings");
   };
 
+  const handleVisitorProjects = () => {
+    if (!guardAndNavigate("/visitor-projects")) return;
+    navigate("/visitor-projects");
+  };
+
+  const handleSupplierVisitorProjects = () => {
+    if (!guardAndNavigate("/supplier-visitor-projects")) return;
+    navigate("/supplier-visitor-projects");
+  };
+
   const getAccessBadge = () => {
     if (!isAuthenticated) return "حساب باز کنید یا وارد شوید";
     if (!hasLicense) return "لایسنس تهیه کنید";
@@ -199,6 +210,24 @@ export default function AslMatch() {
       icon: Star,
       color: "from-amber-500 to-orange-600",
       action: handleRatings,
+      badge: accessBadge
+    },
+    {
+      id: "visitor-projects",
+      label: "پروژه‌های ویزیتوری (ویزیتور)",
+      description: canAccess ? "ثبت پروژه و دریافت پیشنهاد از تأمین‌کننده‌ها" : (!isAuthenticated ? "برای دسترسی حساب بسازید یا وارد شوید" : "برای دسترسی لایسنس تهیه کنید"),
+      icon: Package,
+      color: "from-purple-500 to-purple-600",
+      action: handleVisitorProjects,
+      badge: accessBadge
+    },
+    {
+      id: "supplier-visitor-projects",
+      label: "پروژه‌های ویزیتوری (تأمین‌کننده)",
+      description: canAccess ? "مشاهده پروژه‌های ویزیتوری و ارسال پیشنهاد" : (!isAuthenticated ? "برای دسترسی حساب بسازید یا وارد شوید" : "برای دسترسی لایسنس تهیه کنید"),
+      icon: Users,
+      color: "from-sky-500 to-blue-600",
+      action: handleSupplierVisitorProjects,
       badge: accessBadge
     }
   ];
@@ -456,6 +485,9 @@ export default function AslMatch() {
             </div>
           </div>
         </div>
+
+        {/* Onboarding Tutorial */}
+        <OnboardingTutorial section="match" />
 
         <AslMatchOnboardingStory
           open={helpOpen}

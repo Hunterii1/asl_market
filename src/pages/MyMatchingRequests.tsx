@@ -27,7 +27,8 @@ import {
   Edit,
   Trash2,
   CalendarClock,
-  Loader2
+  Loader2,
+  CheckSquare
 } from "lucide-react";
 
 interface MatchingRequest {
@@ -173,6 +174,27 @@ export default function MyMatchingRequests() {
         variant: "destructive",
         title: "خطا",
         description: error.message || "خطا در لغو درخواست",
+      });
+    }
+  };
+
+  const handleClose = async (id: number) => {
+    if (!confirm("آیا از مختوم کردن این درخواست اطمینان دارید؟")) {
+      return;
+    }
+
+    try {
+      await apiService.closeMatchingRequest(id);
+      toast({
+        title: "موفقیت",
+        description: "درخواست با موفقیت مختوم شد",
+      });
+      loadRequests();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "خطا",
+        description: error.message || "خطا در بستن درخواست",
       });
     }
   };
@@ -327,7 +349,7 @@ export default function MyMatchingRequests() {
                                       request.is_expired ? 'text-gray-600' :
                                       'text-white'
                                     }`} />
-                                    {(request.status === 'active' || request.status === 'pending') && !request.is_expired && request.status !== 'expired' && (
+                                    {(request.status === 'active' || request.status === 'pending') && !request.is_expired && (
                                       <div className="absolute inset-0 rounded-xl bg-blue-400 animate-ping opacity-75"></div>
                                     )}
                                   </div>
@@ -439,23 +461,40 @@ export default function MyMatchingRequests() {
                                   <Edit className="w-4 h-4 ml-2" />
                                   ویرایش
                                 </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="default"
-                                  onClick={() => handleCancel(request.id)}
-                                  className="w-full shadow-md hover:shadow-lg transition-all duration-300"
-                                >
-                                  <Trash2 className="w-4 h-4 ml-2" />
-                                  لغو درخواست
-                                </Button>
+                                <div className="flex gap-2">
+                                  <Button
+                                    variant="outline"
+                                    size="default"
+                                    onClick={() => handleClose(request.id)}
+                                    className="flex-1 border-2 text-emerald-600 hover:text-emerald-700 border-emerald-500/50 hover:border-emerald-500"
+                                  >
+                                    <CheckSquare className="w-4 h-4 ml-2" />
+                                    مختوم
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="default"
+                                    onClick={() => handleCancel(request.id)}
+                                    className="flex-1 shadow-md hover:shadow-lg transition-all duration-300"
+                                  >
+                                    <Trash2 className="w-4 h-4 ml-2" />
+                                    لغو
+                                  </Button>
+                                </div>
                               </>
                             ) : null}
                             {request.status === "accepted" && (
-                              <div className="w-full p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800">
-                                <p className="text-sm font-semibold text-green-800 dark:text-green-200 text-center">
-                                  ✓ پذیرفته شده
-                                </p>
-                              </div>
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="default"
+                                  onClick={() => handleClose(request.id)}
+                                  className="w-full border-2 text-emerald-600 hover:text-emerald-700 border-emerald-500/50 hover:border-emerald-500"
+                                >
+                                  <CheckSquare className="w-4 h-4 ml-2" />
+                                  مختوم کردن
+                                </Button>
+                              </>
                             )}
                           </div>
                         </div>

@@ -617,6 +617,26 @@ func CheckExpiredMatchingRequests(db *gorm.DB) error {
 		Update("status", "expired").Error
 }
 
+// CloseMatchingRequest closes/completes a matching request (supplier only)
+func CloseMatchingRequest(db *gorm.DB, id uint, userID uint) error {
+	// Verify ownership
+	var request MatchingRequest
+	if err := db.First(&request, id).Error; err != nil {
+		return err
+	}
+
+	if request.UserID != userID {
+		return gorm.ErrRecordNotFound
+	}
+
+	// Allow closing if active or accepted
+	if request.Status != "active" && request.Status != "accepted" {
+		return gorm.ErrInvalidValue
+	}
+
+	return db.Model(&MatchingRequest{}).Where("id = ?", id).Update("status", "completed").Error
+}
+
 // MatchingChat represents a chat conversation between supplier and visitor for a matching request
 type MatchingChat struct {
 	ID                uint            `json:"id" gorm:"primaryKey"`

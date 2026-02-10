@@ -784,7 +784,12 @@ const AslSupplier = () => {
 
               {/* نام تامین‌کننده - چهارم */}
               <div className="mb-3">
-                <span className="text-sm font-medium text-foreground">{supplier.brand_name || supplier.full_name}</span>
+                <button
+                  onClick={() => navigate(`/profile/${supplier.user_id}`)}
+                  className="text-sm font-medium text-foreground hover:text-orange-500 transition-colors underline decoration-dotted"
+                >
+                  {supplier.brand_name || supplier.full_name}
+                </button>
               </div>
 
               {/* اطلاعات کسب‌وکار */}

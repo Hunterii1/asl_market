@@ -450,6 +450,44 @@ func (mc *MatchingController) CancelMatchingRequest(c *gin.Context) {
 	})
 }
 
+// CloseMatchingRequest closes/completes a matching request (Supplier)
+func (mc *MatchingController) CloseMatchingRequest(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	if err := models.CloseMatchingRequest(mc.db, uint(requestID), userIDUint); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			return
+		}
+		if err == gorm.ErrInvalidValue {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "فقط درخواست‌های فعال یا پذیرفته شده را می‌توانید ببندید",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در بستن درخواست",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "درخواست با موفقیت مختوم شد",
+	})
+}
+
 // ExtendMatchingRequest extends the expiration time of a matching request (Supplier)
 func (mc *MatchingController) ExtendMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
