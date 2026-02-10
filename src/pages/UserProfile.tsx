@@ -128,12 +128,22 @@ export default function UserProfile() {
       loadProfile();
     }
   }, [id]);
+
   const loadProfile = async () => {
     if (!id) return;
     try {
       setLoading(true);
-      const data = await apiService.getUserProfile(parseInt(id, 10));
-      setProfile(data);
+      const raw = await apiService.getUserProfile(parseInt(id, 10));
+
+      // بعضی APIها مستقیماً پروفایل را برمی‌گردانند، بعضی داخل data
+      const data: any =
+        raw && (raw as any).user
+          ? raw
+          : raw && (raw as any).data && (raw as any).data.user
+          ? (raw as any).data
+          : raw;
+
+      setProfile(data as UserProfile);
     } catch (error: any) {
       toast({
         title: "خطا",
