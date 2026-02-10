@@ -85,6 +85,14 @@ export default function SupplierVisitorProjects() {
     }
   }, [isAuthenticated]);
 
+  // Debug: Check if user_id exists
+  useEffect(() => {
+    if (projects.length > 0) {
+      console.log("Sample project visitor:", projects[0]?.visitor);
+      console.log("Has user_id:", !!projects[0]?.visitor?.user_id);
+    }
+  }, [projects]);
+
   const loadProjects = async () => {
     try {
       setLoading(true);
@@ -224,7 +232,18 @@ export default function SupplierVisitorProjects() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <button
-                          onClick={() => navigate(`/profile/${project.visitor.user_id}`)}
+                          onClick={() => {
+                            const userId = project.visitor?.user_id;
+                            if (userId) {
+                              navigate(`/profile/${userId}`);
+                            } else {
+                              toast({
+                                title: "خطا",
+                                description: "شناسه کاربر یافت نشد",
+                                variant: "destructive",
+                              });
+                            }
+                          }}
                           className="text-sm font-semibold text-foreground line-clamp-1 hover:text-purple-400 transition-colors text-right w-full"
                         >
                           {project.visitor.full_name}
@@ -238,7 +257,18 @@ export default function SupplierVisitorProjects() {
                       </div>
                     </div>
                     <Button
-                      onClick={() => navigate(`/profile/${project.visitor.user_id}`)}
+                      onClick={() => {
+                        const userId = project.visitor?.user_id;
+                        if (userId) {
+                          navigate(`/profile/${userId}`);
+                        } else {
+                          toast({
+                            title: "خطا",
+                            description: "شناسه کاربر یافت نشد. لطفاً صفحه را رفرش کنید.",
+                            variant: "destructive",
+                          });
+                        }
+                      }}
                       variant="outline"
                       size="sm"
                       className="w-full rounded-xl border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all text-xs"

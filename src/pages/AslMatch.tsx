@@ -66,6 +66,15 @@ function useMatchingAccess() {
   const { isAuthenticated, licenseStatus } = useAuth();
   const hasLicense = Boolean(licenseStatus?.has_license && licenseStatus?.is_active);
 
+  // Debug log
+  console.log("🔍 License Status Check:", {
+    isAuthenticated,
+    licenseStatus,
+    hasLicense,
+    has_license: licenseStatus?.has_license,
+    is_active: licenseStatus?.is_active,
+  });
+
   const guardAndNavigate = (path: string): boolean => {
     if (!isAuthenticated) {
       toast({
@@ -77,6 +86,7 @@ function useMatchingAccess() {
       return false;
     }
     if (!hasLicense) {
+      console.log("❌ License check failed:", licenseStatus);
       toast({
         title: "لایسنس",
         description: "برای استفاده از این بخش لایسنس تهیه کنید.",

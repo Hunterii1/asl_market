@@ -83,6 +83,14 @@ export default function AvailableMatchingRequests() {
     }
   }, [page, isAuthenticated]);
 
+  // Debug: Check if supplier.user_id exists
+  useEffect(() => {
+    if (requests.length > 0) {
+      console.log("Sample request supplier:", requests[0]?.supplier);
+      console.log("Has user_id:", !!requests[0]?.supplier?.user_id);
+    }
+  }, [requests]);
+
   const checkVisitorStatus = async () => {
     try {
       const visitorStatus = await apiService.getMyVisitorStatus();
@@ -291,7 +299,18 @@ export default function AvailableMatchingRequests() {
                                         </div>
                                         <div className="flex-1">
                                           <button
-                                            onClick={() => navigate(`/profile/${request.supplier.user_id}`)}
+                                            onClick={() => {
+                                              const userId = request.supplier?.user_id;
+                                              if (userId) {
+                                                navigate(`/profile/${userId}`);
+                                              } else {
+                                                toast({
+                                                  title: "خطا",
+                                                  description: "شناسه کاربر یافت نشد",
+                                                  variant: "destructive",
+                                                });
+                                              }
+                                            }}
                                             className="text-lg font-extrabold text-gray-900 dark:text-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent hover:from-purple-600 hover:to-pink-600 dark:hover:from-purple-400 dark:hover:to-pink-400 transition-all duration-300 text-right"
                                           >
                                             {request.supplier.full_name || "نام نامشخص"}
@@ -312,7 +331,18 @@ export default function AvailableMatchingRequests() {
                                         </p>
                                       </div>
                                       <Button
-                                        onClick={() => navigate(`/profile/${request.supplier.user_id}`)}
+                                        onClick={() => {
+                                          const userId = request.supplier?.user_id;
+                                          if (userId) {
+                                            navigate(`/profile/${userId}`);
+                                          } else {
+                                            toast({
+                                              title: "خطا",
+                                              description: "شناسه کاربر یافت نشد. لطفاً صفحه را رفرش کنید.",
+                                              variant: "destructive",
+                                            });
+                                          }
+                                        }}
                                         variant="outline"
                                         size="sm"
                                         className="w-full mt-3 rounded-xl border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50 transition-all"
