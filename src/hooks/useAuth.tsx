@@ -26,12 +26,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [licenseStatus, setLicenseStatus] = useState<LicenseStatus | null>(null);
 
   const checkLicenseStatus = async () => {
+    console.log('📋 checkLicenseStatus called, user:', user?.email || 'no user');
     try {
       // وضعیت لایسنس را همیشه از API بگیر؛ وابسته به state فعلی user نباش
       const status = await apiService.checkLicenseStatus();
+      console.log('✅ License status received:', status);
 
       // اگر status null بود، چک کن localStorage (هرچند در apiService هم هندل شده)
       if (!status || status === null) {
+        console.log('⚠️ Status is null, checking localStorage');
         const storedLicense = localStorage.getItem('asl_license_code');
         if (storedLicense) {
           const fallbackStatus: LicenseStatus = {
@@ -39,9 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             is_active: true,
             is_approved: true,
           };
+          console.log('✅ Using fallback from localStorage:', fallbackStatus);
           setLicenseStatus(fallbackStatus);
           return;
         }
+        console.log('❌ No license in localStorage, setting to false');
         setLicenseStatus({
           has_license: false,
           is_active: false,
@@ -50,34 +55,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
+      console.log('💾 Setting license status:', status);
       setLicenseStatus(status);
       
       if (status.has_license && status.is_active) {
+        console.log('🎫 User has active license, fetching license info...');
         // کاربر لایسنس دارد، اطلاعات لایسنس را دریافت و در صورت داشتن user ذخیره کن
         try {
           const licenseInfo = await apiService.getLicenseInfo();
+          console.log('📄 License info received:', licenseInfo);
           if (user) {
             licenseStorage.storeLicenseInfo(
               licenseInfo.license_code,
               licenseInfo.activated_at,
               user.email
             );
+            console.log('💾 License info stored');
           }
         } catch (err) {
-          console.error('Failed to fetch license info:', err);
+          console.error('❌ Failed to fetch license info:', err);
         }
       } else if (!status.has_license) {
+        console.log('⚠️ User has no license, attempting recovery...');
         // کاربر لایسنس ندارد، سعی در بازیابی از storage محلی
         const recoveryAttempted = await licenseStorage.attemptLicenseRecovery(apiService);
+        console.log('🔄 Recovery attempted:', recoveryAttempted);
         
         if (!recoveryAttempted) {
+          console.log('🔔 Showing license modal');
           setShowLicenseModal(true);
         }
       }
     } catch (error) {
+      console.error('❌ Error in checkLicenseStatus:', error);
       // اگر خطا داد، مستقیماً از localStorage بخون
       const storedLicense = localStorage.getItem('asl_license_code');
       if (storedLicense && user) {
+        console.log('✅ Error fallback: using localStorage license');
         // لایسنس در localStorage هست، پس فعاله
         const fallbackStatus: LicenseStatus = {
           has_license: true,
@@ -86,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setLicenseStatus(fallbackStatus);
       } else {
+        console.log('❌ Error fallback: no license');
         // لایسنس نیست
         setLicenseStatus({
           has_license: false,
@@ -171,7 +186,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Check license whenever user changes (after login, register, or refresh)
   useEffect(() => {
     if (user) {
-      checkLicenseStatus();
+      console.log('🔄 User changed, checking license status...');
+      checkLicenseStatus().catch(err => {
+        console.error('❌ Error in checkLicenseStatus:', err);
+      });
+    } else {
+      console.log('⏸️ User is null, skipping license check');
     }
   }, [user]);
 
