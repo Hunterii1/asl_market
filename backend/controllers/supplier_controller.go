@@ -258,6 +258,111 @@ func GetApprovedSuppliers(c *gin.Context) {
 	})
 }
 
+// GetFeaturedSuppliersPublic returns a minimal list of featured suppliers for public/guest users
+func GetFeaturedSuppliersPublic(c *gin.Context) {
+	// Optional limit parameter to control number of suppliers
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "12"))
+	if limit < 1 || limit > 50 {
+		limit = 12
+	}
+
+	db := models.GetDB()
+
+	// Get featured suppliers (approved + is_featured = true)
+	suppliers, err := models.GetFeaturedSuppliers(db)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت تأمین‌کنندگان برگزیده"})
+		return
+	}
+
+	// Apply limit
+	if len(suppliers) > limit {
+		suppliers = suppliers[:limit]
+	}
+
+	// Build minimal, safe public response (بدون شماره تماس و آدرس)
+	publicSuppliers := make([]gin.H, 0, len(suppliers))
+	for _, supplier := range suppliers {
+		avgRating, totalRatings, _ := models.GetAverageRatingForUser(db, supplier.UserID)
+
+		// If supplier is featured, همیشه ۵ ستاره نمایش بدهیم (مثل بخش‌های دیگر)
+		displayRating := avgRating
+		if supplier.IsFeatured {
+			displayRating = 5.0
+		}
+
+		publicSuppliers = append(publicSuppliers, gin.H{
+			"id":                          supplier.ID,
+			"user_id":                     supplier.UserID,
+			"full_name":                   supplier.FullName,
+			"brand_name":                  supplier.BrandName,
+			"image_url":                   supplier.ImageURL,
+			"city":                        supplier.City,
+			"is_featured":                 supplier.IsFeatured,
+			"featured_at":                 supplier.FeaturedAt,
+			"tag_first_class":             supplier.TagFirstClass,
+			"tag_good_price":              supplier.TagGoodPrice,
+			"tag_export_experience":       supplier.TagExportExperience,
+			"tag_export_packaging":        supplier.TagExportPackaging,
+			"tag_supply_without_capital":  supplier.TagSupplyWithoutCapital,
+			"average_rating":              displayRating,
+			"total_ratings":               totalRatings,
+			"created_at":                  supplier.CreatedAt,
+			"has_export_experience":       supplier.HasExportExperience,
+			"can_produce_private_label":   supplier.CanProducePrivateLabel,
+			"has_registered_business":     supplier.HasRegisteredBusiness,
+			"business_registration_exists": supplier.HasRegisteredBusiness,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"suppliers": publicSuppliers,
+	})
+}
+
+// GetSuppliersMatchingCapacity returns suppliers with their matching capacity stats
+// This is used for sliders showing suppliers نزدیک پر شدن ظرفیت در ASL Match.
+func GetSuppliersMatchingCapacity(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		return
+	}
+
+	userIDUint := userID.(uint)
+
+	// Check license (similar to GetApprovedSuppliers)
+	hasLicense, err := models.CheckUserLicense(models.GetDB(), userIDUint)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بررسی وضعیت لایسنس"})
+		return
+	}
+	if !hasLicense {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "برای مشاهده این بخش نیاز به لایسنس معتبر دارید",
+			"license_status": gin.H{
+				"needs_license": true,
+				"has_license":   false,
+			},
+		})
+		return
+	}
+
+	// Optional query params: capacity, limit
+	capacity, _ := strconv.Atoi(c.DefaultQuery("capacity", "5"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	stats, err := models.GetSupplierMatchingCapacity(models.GetDB(), capacity, limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات ظرفیت Matching تأمین‌کنندگان"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"suppliers": stats,
+	})
+}
+
 // Admin functions for supplier management
 
 // GetSuppliersForAdmin returns paginated list of suppliers for admin

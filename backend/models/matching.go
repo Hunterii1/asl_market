@@ -243,6 +243,148 @@ type MatchingRatingResponse struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
+// SupplierMatchingCapacity represents matching load info for a supplier
+type SupplierMatchingCapacity struct {
+	Supplier        SupplierResponse `json:"supplier"`
+	ActiveRequests  int              `json:"active_requests"`
+	RemainingSlots  int              `json:"remaining_slots"`
+	Capacity        int              `json:"capacity"`
+}
+
+// GetSupplierMatchingCapacity returns suppliers with their active matching request counts.
+// capacity: max concurrent requests per supplier (business rule, e.g. 5)
+// limit: max number of suppliers to return.
+func GetSupplierMatchingCapacity(db *gorm.DB, capacity int, limit int) ([]SupplierMatchingCapacity, error) {
+	if capacity <= 0 {
+		capacity = 5
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+
+	type statRow struct {
+		SupplierID     uint
+		ActiveRequests int
+	}
+
+	var rows []statRow
+
+	// Count active/pending/accepted matching requests per approved supplier
+	if err := db.Model(&MatchingRequest{}).
+		Select("matching_requests.supplier_id as supplier_id, COUNT(*) as active_requests").
+		Joins("JOIN suppliers ON suppliers.id = matching_requests.supplier_id AND suppliers.deleted_at IS NULL").
+		Where("suppliers.status = ?", "approved").
+		Where("matching_requests.status IN ?", []string{"pending", "active", "accepted"}).
+		Group("matching_requests.supplier_id").
+		Having("COUNT(*) > 0").
+		Order("active_requests DESC").
+		Limit(limit).
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	if len(rows) == 0 {
+		return []SupplierMatchingCapacity{}, nil
+	}
+
+	// Collect supplier IDs
+	var supplierIDs []uint
+	for _, r := range rows {
+		supplierIDs = append(supplierIDs, r.SupplierID)
+	}
+
+	// Load suppliers
+	var suppliers []Supplier
+	if err := db.Preload("User").Preload("Products").
+		Where("id IN ?", supplierIDs).
+		Find(&suppliers).Error; err != nil {
+		return nil, err
+	}
+
+	// Index suppliers by ID
+	supplierByID := make(map[uint]Supplier)
+	for _, s := range suppliers {
+		supplierByID[s.ID] = s
+	}
+
+	// Build response
+	var result []SupplierMatchingCapacity
+	for _, row := range rows {
+		supplier, ok := supplierByID[row.SupplierID]
+		if !ok {
+			continue
+		}
+
+		// Load products for this supplier (lightweight: names/types only)
+		var products []SupplierProduct
+		db.Where("supplier_id = ?", supplier.ID).Find(&products)
+		var productsResponse []SupplierProductResponse
+		for _, p := range products {
+			productsResponse = append(productsResponse, SupplierProductResponse{
+				ID:                   p.ID,
+				ProductName:          p.ProductName,
+				ProductType:          p.ProductType,
+				Description:          p.Description,
+				NeedsExportLicense:   p.NeedsExportLicense,
+				RequiredLicenseType:  p.RequiredLicenseType,
+				MonthlyProductionMin: p.MonthlyProductionMin,
+				CreatedAt:            p.CreatedAt,
+			})
+		}
+
+		// Calculate rating for this supplier
+		avgRating, totalRatings, _ := GetAverageRatingForUser(db, supplier.UserID)
+		displayRating := avgRating
+		if supplier.IsFeatured {
+			displayRating = 5.0
+		}
+
+		remaining := capacity - row.ActiveRequests
+		if remaining < 0 {
+			remaining = 0
+		}
+
+		result = append(result, SupplierMatchingCapacity{
+			Supplier: SupplierResponse{
+				ID:                       supplier.ID,
+				UserID:                   supplier.UserID,
+				FullName:                 supplier.FullName,
+				Mobile:                   supplier.Mobile,
+				BrandName:                supplier.BrandName,
+				ImageURL:                 supplier.ImageURL,
+				City:                     supplier.City,
+				Address:                  supplier.Address,
+				HasRegisteredBusiness:    supplier.HasRegisteredBusiness,
+				BusinessRegistrationNum:  supplier.BusinessRegistrationNum,
+				HasExportExperience:      supplier.HasExportExperience,
+				ExportPrice:              supplier.ExportPrice,
+				WholesaleMinPrice:        supplier.WholesaleMinPrice,
+				WholesaleHighVolumePrice: supplier.WholesaleHighVolumePrice,
+				CanProducePrivateLabel:   supplier.CanProducePrivateLabel,
+				Status:                   supplier.Status,
+				AdminNotes:               supplier.AdminNotes,
+				ApprovedAt:               supplier.ApprovedAt,
+				IsFeatured:               supplier.IsFeatured,
+				FeaturedAt:               supplier.FeaturedAt,
+				TagFirstClass:            supplier.TagFirstClass,
+				TagGoodPrice:             supplier.TagGoodPrice,
+				TagExportExperience:      supplier.TagExportExperience,
+				TagExportPackaging:       supplier.TagExportPackaging,
+				TagSupplyWithoutCapital:  supplier.TagSupplyWithoutCapital,
+				AverageRating:            displayRating,
+				TotalRatings:             totalRatings,
+				CreatedAt:                supplier.CreatedAt,
+				Products:                 productsResponse,
+			},
+			ActiveRequests: row.ActiveRequests,
+			RemainingSlots: remaining,
+			Capacity:       capacity,
+		})
+	}
+
+	return result, nil
+}
+
 // Helper functions
 
 // CreateMatchingRequest creates a new matching request

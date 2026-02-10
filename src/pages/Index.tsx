@@ -41,7 +41,8 @@ import {
   Radio,
   Headphones,
   User,
-  Key
+  Key,
+  MapPin
 } from "lucide-react";
 import DashboardSection from "@/components/sections/DashboardSection";
 import StepsSection from "@/components/sections/StepsSection";
@@ -65,11 +66,15 @@ const Index = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedFeature, setSelectedFeature] = useState("");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, licenseStatus } = useAuth();
   const navigate = useNavigate();
   const [hasSupplier, setHasSupplier] = useState(false);
   const [hasVisitor, setHasVisitor] = useState(false);
   const [siteOnboardingOpen, setSiteOnboardingOpen] = useState(false);
+
+  // Featured suppliers preview for dashboard (only for licensed users)
+  const [featuredSuppliers, setFeaturedSuppliers] = useState<any[]>([]);
+  const [loadingFeaturedSuppliers, setLoadingFeaturedSuppliers] = useState(false);
 
   // اولین بازدید سایت: یک بار استوری‌لاین معرفی کل سایت را نشان بده.
   useEffect(() => {
@@ -85,6 +90,52 @@ const Index = () => {
     const farsiDigits = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
     return num.toString().replace(/\d/g, (digit) => farsiDigits[parseInt(digit)]);
   };
+
+  // Load featured suppliers for dashboard slider (for همه؛ مهمان از API عمومی، کاربر لایسنس‌دار از API کامل)
+  useEffect(() => {
+    const loadFeatured = async () => {
+      try {
+        setLoadingFeaturedSuppliers(true);
+        let suppliers: any[] = [];
+        if (isAuthenticated && licenseStatus?.has_license && licenseStatus.is_active) {
+          // کاربر لایسنس‌دار: از لیست کامل تأمین‌کننده‌ها استفاده کن
+          const response = await apiService.getApprovedSuppliers({
+            page: 1,
+            per_page: 24,
+          });
+          if (Array.isArray(response)) {
+            suppliers = response;
+          } else if (response?.suppliers && Array.isArray(response.suppliers)) {
+            suppliers = response.suppliers;
+          } else if (response?.data && Array.isArray(response.data)) {
+            suppliers = response.data;
+          }
+        } else {
+          // مهمان یا بدون لایسنس: از API عمومی برگزیده‌ها استفاده کن (بدون اطلاعات تماس)
+          const response = await apiService.getFeaturedSuppliersPublic(24);
+          if (Array.isArray(response)) {
+            suppliers = response;
+          } else if (response?.suppliers && Array.isArray(response.suppliers)) {
+            suppliers = response.suppliers;
+          } else if (response?.data && Array.isArray(response.data)) {
+            suppliers = response.data;
+          }
+        }
+
+        const featured = suppliers.filter((s) =>
+          s.hasOwnProperty('is_featured') ? s.is_featured === true : true
+        );
+        setFeaturedSuppliers(featured.slice(0, 12));
+      } catch (err) {
+        console.error('Error loading featured suppliers for dashboard:', err);
+        setFeaturedSuppliers([]);
+      } finally {
+        setLoadingFeaturedSuppliers(false);
+      }
+    };
+
+    loadFeatured();
+  }, [isAuthenticated, licenseStatus?.has_license, licenseStatus?.is_active]);
 
   const menuItems = [
     { id: "dashboard", label: "داشبورد", englishLabel: "DASHBOARD", icon: BarChart3 },
@@ -335,6 +386,90 @@ const Index = () => {
             );
           })}
         </div>
+
+        {/* Featured Suppliers Preview Slider (Dashboard) - برای همه (مهمان هم می‌بیند) */}
+        {!loadingFeaturedSuppliers && featuredSuppliers.length > 0 && (
+          <Card className="mb-6 bg-gradient-to-r from-amber-900/20 via-orange-900/20 to-red-900/20 border-amber-500/40 rounded-3xl">
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                    <Users className="w-4 h-4 sm:w-5 sm:h-5 text-amber-100" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-lg font-semibold text-foreground">
+                      تأمین‌کنندگان برتر امروز
+                    </h3>
+                    <p className="text-[11px] sm:text-sm text-amber-100/80">
+                      نگاهی سریع به برگزیده‌ترین تأمین‌کننده‌های فعال در پلتفرم
+                    </p>
+                  </div>
+                </div>
+                <Badge className="bg-amber-500/20 text-amber-100 border-amber-500/40 rounded-2xl text-xs">
+                  {toFarsiNumber(featuredSuppliers.length)} تأمین‌کننده برگزیده
+                </Badge>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
+                {featuredSuppliers.map((supplier) => (
+                  <div
+                    key={supplier.id}
+                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/80 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 group cursor-pointer snap-start"
+                    onClick={() => navigate('/aslsupplier')}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Building className="w-3 h-3 sm:w-4 sm:h-4 text-amber-100" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                          {supplier.brand_name || supplier.full_name}
+                        </div>
+                        <div className="text-[10px] sm:text-[11px] text-amber-100 flex items-center gap-1">
+                          <Star className="w-3 h-3 text-yellow-300 flex-shrink-0" />
+                          <span>
+                            {toFarsiNumber(
+                              (supplier.average_rating && supplier.average_rating > 0
+                                ? supplier.average_rating
+                                : 5
+                              ) || 5
+                            )}★
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {supplier.city && (
+                      <div className="text-[10px] sm:text-[11px] text-muted-foreground mb-2 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        <span className="line-clamp-1">{supplier.city}</span>
+                      </div>
+                    )}
+
+                    {(supplier.tag_first_class || supplier.tag_good_price) && (
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {supplier.tag_first_class && (
+                          <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-500/40 rounded-xl text-[10px]">
+                            دسته اول
+                          </Badge>
+                        )}
+                        {supplier.tag_good_price && (
+                          <Badge className="bg-sky-500/20 text-sky-100 border-sky-500/40 rounded-xl text-[10px]">
+                            خوش قیمت
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-2 flex items-center justify-between text-[10px] sm:text-[11px] text-amber-100/90">
+                      <span className="truncate">مشاهده همه تأمین‌کنندگان</span>
+                      <ArrowLeft className="w-3 h-3 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* PWA Install Prompt - Only for non-authenticated users */}
         {!isAuthenticated && <PWAInstallPrompt />}

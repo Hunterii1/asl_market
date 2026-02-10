@@ -522,6 +522,29 @@ class ApiService {
     });
   }
 
+  // Public featured suppliers (for guest / dashboard slider)
+  async getFeaturedSuppliersPublic(limit: number = 12): Promise<any> {
+    const url = `${API_BASE_URL}/suppliers/featured?limit=${limit}`;
+    return this.makeRequest(url, {
+      method: 'GET',
+    });
+  }
+
+  // Supplier matching capacity (for ASL Match slider in suppliers page)
+  async getSupplierMatchingCapacity(params: { capacity?: number; limit?: number } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.capacity) queryParams.append('capacity', params.capacity.toString());
+    if (params.limit) queryParams.append('limit', params.limit.toString());
+
+    const url = `${API_BASE_URL}/suppliers/matching-capacity${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: {
+        ...this.getAuthHeaders(),
+      },
+    });
+  }
+
   // Visitor methods
   async registerVisitor(visitorData: any): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/visitor/register`, {

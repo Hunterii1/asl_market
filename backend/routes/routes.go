@@ -89,6 +89,8 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		publicOptional.GET("/products", getProducts)
 		// اسلایدر بنر برای همه (لاگین نشده هم ببیند)
 		publicOptional.GET("/sliders/active", controllers.GetActiveSliders)
+		// Featured suppliers slider برای همه (بدون نمایش اطلاعات تماس)
+		publicOptional.GET("/suppliers/featured", controllers.GetFeaturedSuppliersPublic)
 	}
 
 	// Protected routes (authentication required)
@@ -152,6 +154,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.DELETE("/supplier/delete", controllers.DeleteMySupplier)
 		protected.GET("/supplier/status", controllers.GetMySupplierStatus)
 		protected.GET("/suppliers", controllers.GetApprovedSuppliers)
+		protected.GET("/suppliers/matching-capacity", controllers.GetSuppliersMatchingCapacity)
 
 		// Admin supplier management routes
 		protected.GET("/admin/suppliers", controllers.GetSuppliersForAdmin)

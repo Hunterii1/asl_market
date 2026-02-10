@@ -31,7 +31,9 @@ import {
   AlertTriangle,
   Plus,
   Building,
-  X
+  X,
+  Flame,
+  ArrowLeft
 } from "lucide-react";
 
 const SUPPLIER_TAG_OPTIONS = [
@@ -95,13 +97,17 @@ const AslSupplier = () => {
     setSearchParams(next, { replace: true });
   }, [searchTerm, selectedProduct, cityFilter, selectedTags]);
 
-  const [approvedSuppliers, setApprovedSuppliers] = useState([]);
+  const [approvedSuppliers, setApprovedSuppliers] = useState<any[]>([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(true);
   const [userSupplierStatus, setUserSupplierStatus] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
+
+  // Matching-capacity slider data (suppliers نزدیک پر شدن ظرفیت در ASL Match)
+  const [capacitySuppliers, setCapacitySuppliers] = useState<any[]>([]);
+  const [loadingCapacity, setLoadingCapacity] = useState(true);
 
   // Load suppliers data from API with pagination, search, city and tags
   useEffect(() => {
@@ -131,6 +137,28 @@ const AslSupplier = () => {
     loadSuppliersData();
   }, [currentPage, debouncedSearch, selectedProduct, cityFilter, selectedTags]);
 
+  // Load matching-capacity suppliers for slider (independent از صفحه‌بندی اصلی)
+  useEffect(() => {
+    const loadCapacityData = async () => {
+      try {
+        setLoadingCapacity(true);
+        // capacity=5 (سقف ۵ درخواست)، limit=20 و بعداً در فرانت دسته‌بندی می‌کنیم
+        const response = await apiService.getSupplierMatchingCapacity({
+          capacity: 5,
+          limit: 20,
+        });
+        setCapacitySuppliers(response.suppliers || []);
+      } catch (error) {
+        console.error('Error loading supplier matching capacity:', error);
+        setCapacitySuppliers([]);
+      } finally {
+        setLoadingCapacity(false);
+      }
+    };
+
+    loadCapacityData();
+  }, []);
+
   // Helper function to convert numbers to Farsi
   const toFarsiNumber = (num: number) => {
     return num.toLocaleString('fa-IR');
@@ -147,6 +175,13 @@ const AslSupplier = () => {
     // Then by creation date (newest first)
     return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
   });
+
+  // Featured suppliers slider (top suppliers)
+  const featuredSuppliers = filteredSuppliers.filter(
+    (supplier) => supplier.hasOwnProperty('is_featured') && supplier.is_featured === true
+  );
+  const featuredSliderSuppliers = featuredSuppliers.slice(0, 10);
+  const hasFeaturedSlider = featuredSliderSuppliers.length > 0;
 
   // Reset to page 1 when any filter changes
   useEffect(() => {
@@ -165,6 +200,19 @@ const AslSupplier = () => {
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev => prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]);
   };
+
+  // --- Matching-capacity slider helpers ---
+  const capacity = 5;
+
+  const nearFullSuppliers = capacitySuppliers.filter((item) => item.remaining_slots <= 1);
+  const midSuppliers = capacitySuppliers.filter(
+    (item) => item.remaining_slots >= 2 && item.remaining_slots <= 2
+  );
+
+  // اگر nearFull خالی بود، از mid پرش می‌کنیم که اسلایدر خالی نباشد
+  const sliderSuppliers = (nearFullSuppliers.length > 0 ? nearFullSuppliers : midSuppliers).slice(0, 9);
+
+  const hasSlider = !loadingCapacity && sliderSuppliers.length > 0;
 
 
 
@@ -222,6 +270,87 @@ const AslSupplier = () => {
 
       {/* Supplier Limits Display */}
       <SupplierLimitsDisplay className="mb-6" />
+
+      {/* Matching-capacity slider: تأمین‌کننده‌هایی که نزدیک پر شدن ظرفیت ASL Match هستند */}
+      {hasSlider && (
+        <Card className="bg-gradient-to-r from-red-900/20 via-orange-900/20 to-amber-900/20 border-red-700/40 rounded-3xl mb-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                  <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-red-400" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm sm:text-lg text-foreground">
+                    تأمین‌کنندگان پرتقاضا در ASL Match
+                  </CardTitle>
+                  <p className="text-[11px] sm:text-sm text-red-200">
+                    این تأمین‌کنندگان نزدیک پر شدن ظرفیت ۵ درخواست همزمان هستند
+                  </p>
+                </div>
+              </div>
+              <Badge className="bg-red-500/20 text-red-200 border-red-500/40 rounded-2xl text-xs">
+                {toFarsiNumber(sliderSuppliers.length)} تأمین‌کننده
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1">
+              {sliderSuppliers.map((item) => {
+                const supplier = item.supplier || item.Supplier || item;
+                const remainingSlots = item.remaining_slots ?? Math.max(0, capacity - (item.active_requests ?? 0));
+                const activeRequests = item.active_requests ?? (capacity - remainingSlots);
+                return (
+                  <div
+                    key={supplier.id}
+                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/80 border border-red-500/30 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/60 hover:shadow-lg transition-all duration-300 snap-start"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-red-500/20 flex items-center justify-center">
+                        <Users className="w-3 h-3 sm:w-4 sm:h-4 text-red-300" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                          {supplier.brand_name || supplier.full_name}
+                        </div>
+                        <div className="text-[10px] sm:text-[11px] text-red-200 flex items-center gap-1">
+                          <Star className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+                          <span>
+                            {toFarsiNumber(
+                              (supplier.average_rating && supplier.average_rating > 0
+                                ? supplier.average_rating
+                                : supplier.is_featured
+                                ? 5
+                                : 0
+                              ) || 0
+                            )}★
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] text-muted-foreground mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="line-clamp-1">{supplier.city}</span>
+                    </div>
+                    <div className="text-[10px] sm:text-[11px] text-red-100 bg-red-500/10 border border-red-500/30 rounded-xl px-2 py-1 flex items-center justify-between mb-2">
+                      <span>درخواست‌های فعال:</span>
+                      <span className="font-bold">
+                        {toFarsiNumber(activeRequests)} / {toFarsiNumber(capacity)}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-emerald-100 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-2 py-1 flex items-center justify-between">
+                      <span>ظرفیت باقیمانده:</span>
+                      <span className="font-bold">
+                        {remainingSlots > 0 ? `${toFarsiNumber(remainingSlots)} جای خالی` : 'در حال تکمیل'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search and Filter */}
       <Card className="bg-card/80 border-border rounded-3xl">
@@ -290,6 +419,118 @@ const AslSupplier = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Featured Suppliers Slider */}
+      {hasFeaturedSlider && (
+        <Card className="bg-gradient-to-r from-amber-900/20 via-yellow-900/20 to-orange-900/20 border-amber-500/40 rounded-3xl mb-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
+                </div>
+                <div>
+                  <CardTitle className="text-sm sm:text-lg text-foreground">
+                    تأمین‌کنندگان برگزیده اصل مارکت
+                  </CardTitle>
+                  <p className="text-[11px] sm:text-sm text-amber-100/80">
+                    بهترین تأمین‌کننده‌ها با امتیاز بالا و تگ‌های ویژه
+                  </p>
+                </div>
+              </div>
+              <Badge className="bg-amber-500/20 text-amber-200 border-amber-500/40 rounded-2xl text-xs">
+                {toFarsiNumber(featuredSliderSuppliers.length)} تأمین‌کننده برگزیده
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1">
+              {featuredSliderSuppliers.map((supplier) => (
+                <div
+                  key={supplier.id}
+                  className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/40 rounded-2xl p-3 flex-shrink-0 hover:border-yellow-400/70 hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 group cursor-pointer snap-start"
+                  onClick={() => {
+                    // هدایت کاربر به صفحه تأمین‌کنندگان با فیلتر برگزیده‌ها
+                    navigate('/aslsupplier?tag=first_class,good_price,export_experience');
+                  }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <Users className="w-3 h-3 sm:w-4 sm:h-4 text-amber-200" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                        {supplier.brand_name || supplier.full_name}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] text-amber-100 flex items-center gap-1">
+                        <Star className="w-3 h-3 text-yellow-300 flex-shrink-0" />
+                        <span>
+                          {toFarsiNumber(
+                            (supplier.average_rating && supplier.average_rating > 0
+                              ? supplier.average_rating
+                              : 5
+                            ) || 5
+                          )}★
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* City */}
+                  {supplier.city && (
+                    <div className="text-[10px] sm:text-[11px] text-muted-foreground mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="line-clamp-1">{supplier.city}</span>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {(supplier.tag_first_class ||
+                    supplier.tag_good_price ||
+                    supplier.tag_export_experience ||
+                    supplier.tag_export_packaging ||
+                    supplier.tag_supply_without_capital) && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {supplier.tag_first_class && (
+                        <Badge className="bg-amber-500/20 text-amber-200 border-amber-500/40 rounded-xl text-[10px]">
+                          دسته اول
+                        </Badge>
+                      )}
+                      {supplier.tag_good_price && (
+                        <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-500/40 rounded-xl text-[10px]">
+                          خوش قیمت
+                        </Badge>
+                      )}
+                      {supplier.tag_export_experience && (
+                        <Badge className="bg-sky-500/20 text-sky-200 border-sky-500/40 rounded-xl text-[10px]">
+                          سابقه صادرات
+                        </Badge>
+                      )}
+                      {supplier.tag_export_packaging && (
+                        <Badge className="bg-violet-500/20 text-violet-200 border-violet-500/40 rounded-xl text-[10px]">
+                          بسته‌بندی صادراتی
+                        </Badge>
+                      )}
+                      {supplier.tag_supply_without_capital && (
+                        <Badge className="bg-slate-500/20 text-slate-200 border-slate-500/40 rounded-xl text-[10px]">
+                          تأمین بدون سرمایه
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <div className="mt-2 flex items-center justify-between text-[10px] sm:text-[11px] text-amber-100/90">
+                    <span className="truncate">مشاهده تأمین‌کنندگان مشابه</span>
+                    <ArrowLeft className="w-3 h-3 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Approved Suppliers Section */}
       <Card className="bg-gradient-to-r from-orange-900/20 to-orange-800/20 border-orange-700/50 rounded-3xl mb-6">

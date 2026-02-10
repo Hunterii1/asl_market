@@ -19,6 +19,7 @@ import {
   Star, 
   MapPin, 
   User,
+  Users,
   Percent,
   CheckCircle,
   Clock,
@@ -30,7 +31,8 @@ import {
   Mail,
   MessageCircle,
   Weight,
-  Globe
+  Globe,
+  ArrowLeft
 } from "lucide-react";
 
 interface AvailableProduct {
@@ -111,6 +113,10 @@ const AslAvailable = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 12;
+
+  // Export-focused suppliers slider (tag-based suppliers)
+  const [exportSuppliers, setExportSuppliers] = useState<any[]>([]);
+  const [loadingExportSuppliers, setLoadingExportSuppliers] = useState(true);
 
   // Load data from API - load all products for client-side filtering and pagination
   useEffect(() => {
@@ -195,6 +201,41 @@ const AslAvailable = () => {
            loadData();
          }, [currentPage, selectedCategory, selectedCondition, searchTerm]);
 
+  // Load suppliers with export-related tags for slider
+  useEffect(() => {
+    const loadExportSuppliers = async () => {
+      try {
+        setLoadingExportSuppliers(true);
+        const response = await apiService.getApprovedSuppliers({
+          page: 1,
+          per_page: 20,
+          tag: 'export_experience,export_packaging',
+        });
+
+        let suppliers: any[] = [];
+        if (Array.isArray(response)) {
+          suppliers = response;
+        } else if (response?.suppliers && Array.isArray(response.suppliers)) {
+          suppliers = response.suppliers;
+        } else if (response?.data && Array.isArray(response.data)) {
+          suppliers = response.data;
+        }
+
+        const tagged = suppliers.filter(
+          (s) => s.tag_export_experience || s.tag_export_packaging
+        );
+        setExportSuppliers(tagged.slice(0, 12));
+      } catch (err) {
+        console.error('Error loading export suppliers for products slider:', err);
+        setExportSuppliers([]);
+      } finally {
+        setLoadingExportSuppliers(false);
+      }
+    };
+
+    loadExportSuppliers();
+  }, []);
+
   // Static filter options
   const conditions = [
     { id: "all", name: "همه وضعیت‌ها" },
@@ -266,6 +307,92 @@ const AslAvailable = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Export-focused Suppliers Slider */}
+      {!loadingExportSuppliers && exportSuppliers.length > 0 && (
+        <Card className="bg-gradient-to-r from-sky-900/20 via-blue-900/20 to-emerald-900/20 border-sky-500/40 rounded-3xl">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-sky-500/20 flex items-center justify-center">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 text-sky-200" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-lg font-semibold text-foreground">
+                    تأمین‌کنندگان ویژه محصولات صادراتی
+                  </h3>
+                  <p className="text-[11px] sm:text-sm text-sky-100/80">
+                    تأمین‌کننده‌هایی با سابقه صادرات و بسته‌بندی صادراتی برای این کالاها
+                  </p>
+                </div>
+              </div>
+              <Badge className="bg-sky-500/20 text-sky-100 border-sky-500/40 rounded-2xl text-xs">
+                {toFarsiNumber(exportSuppliers.length)} تأمین‌کننده صادراتی
+              </Badge>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
+              {exportSuppliers.map((supplier) => (
+                <div
+                  key={supplier.id}
+                  className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-sky-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-emerald-400/70 hover:shadow-xl hover:shadow-sky-500/20 transition-all duration-300 group cursor-pointer snap-start"
+                  onClick={() => navigate('/aslsupplier?tag=export_experience,export_packaging')}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                      <User className="w-3 h-3 sm:w-4 sm:h-4 text-sky-100" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs sm:text-sm font-bold text-foreground line-clamp-1">
+                        {supplier.brand_name || supplier.full_name}
+                      </div>
+                      <div className="text-[10px] sm:text-[11px] text-sky-100 flex items-center gap-1">
+                        <Star className="w-3 h-3 text-yellow-300 flex-shrink-0" />
+                        <span>
+                          {toFarsiNumber(
+                            (supplier.average_rating && supplier.average_rating > 0
+                              ? supplier.average_rating
+                              : supplier.is_featured
+                              ? 5
+                              : 0
+                            ) || 0
+                          )}★
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {supplier.city && (
+                    <div className="text-[10px] sm:text-[11px] text-muted-foreground mb-2 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="line-clamp-1">{supplier.city}</span>
+                    </div>
+                  )}
+
+                  {(supplier.tag_export_experience || supplier.tag_export_packaging) && (
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {supplier.tag_export_experience && (
+                        <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-500/40 rounded-xl text-[10px]">
+                          سابقه صادرات
+                        </Badge>
+                      )}
+                      {supplier.tag_export_packaging && (
+                        <Badge className="bg-violet-500/20 text-violet-100 border-violet-500/40 rounded-xl text-[10px]">
+                          بسته‌بندی صادراتی
+                        </Badge>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex items-center justify-between text-[10px] sm:text-[11px] text-sky-100/90">
+                    <span className="truncate">مشاهده جزئیات تأمین‌کنندگان</span>
+                    <ArrowLeft className="w-3 h-3 flex-shrink-0 group-hover:translate-x-1 transition-transform duration-300" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search and Filters */}
       <Card className="bg-card/80 border-border rounded-3xl">

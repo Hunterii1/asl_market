@@ -13,16 +13,6 @@ const AslExpress = () => {
   const shippingCompanies = [
     {
       id: 1,
-      name: "پرشین کارگو",
-      services: "ارسال / ترخیص/ مجوز",
-      contacts: [
-        { name: "آقایان داستان و پارسا", phone: "09902947686" },
-        { phone: "02188421424" },
-        { phone: "02141291101" }
-      ]
-    },
-    {
-      id: 2,
       name: "مجموعه PSP اکسپرس",
       services: "ارسال",
       contacts: [
@@ -32,7 +22,7 @@ const AslExpress = () => {
       ]
     },
     {
-      id: 3,
+      id: 2,
       name: "مجموعه PTD اکسپرس",
       services: "ارسال و ترخیص",
       contacts: [
