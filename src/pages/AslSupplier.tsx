@@ -15,6 +15,7 @@ import { getImageUrl } from '@/utils/imageUrl';
 import { PRODUCT_CATEGORIES, SUPPLIER_SERVICES_DISCLAIMER } from '@/constants/productCategories';
 import { Pagination } from "@/components/ui/pagination";
 import HeaderAuth from '@/components/ui/HeaderAuth';
+import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
 import { 
   Users, 
   Star, 
@@ -214,6 +215,10 @@ const AslSupplier = () => {
 
   const hasSlider = !loadingCapacity && sliderSuppliers.length > 0;
 
+  // Supplier preview dialog state (برای اسلایدرها)
+  const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
 
 
   useEffect(() => {
@@ -303,7 +308,11 @@ const AslSupplier = () => {
                 return (
                   <div
                     key={supplier.id}
-                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/80 border border-red-500/30 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/60 hover:shadow-lg transition-all duration-300 snap-start"
+                    className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/80 border border-red-500/30 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/60 hover:shadow-lg transition-all duration-300 snap-start cursor-pointer"
+                    onClick={() => {
+                      setPreviewSupplier(supplier);
+                      setIsPreviewOpen(true);
+                    }}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-red-500/20 flex items-center justify-center">
@@ -450,8 +459,8 @@ const AslSupplier = () => {
                   key={supplier.id}
                   className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/40 rounded-2xl p-3 flex-shrink-0 hover:border-yellow-400/70 hover:shadow-xl hover:shadow-amber-500/20 transition-all duration-300 group cursor-pointer snap-start"
                   onClick={() => {
-                    // هدایت کاربر به صفحه تأمین‌کنندگان با فیلتر برگزیده‌ها
-                    navigate('/aslsupplier?tag=first_class,good_price,export_experience');
+                    setPreviewSupplier(supplier);
+                    setIsPreviewOpen(true);
                   }}
                 >
                   {/* Header */}
@@ -779,6 +788,14 @@ const AslSupplier = () => {
           </div>
         </>
       )}
+
+      {/* Global Supplier Preview Dialog برای این صفحه (با دکمه دیدن اطلاعات تماس) */}
+      <SupplierPreviewDialog
+        supplier={previewSupplier}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+        showContactButton
+      />
     </div>
   );
 

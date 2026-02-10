@@ -12,6 +12,7 @@ import { getFirstImageUrl } from '@/utils/imageUrl';
 import { PRODUCT_CATEGORIES } from '@/constants/productCategories';
 import { Pagination } from "@/components/ui/pagination";
 import { ContactViewButton } from '@/components/ContactViewButton';
+import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
 import { 
   Package, 
   Search, 
@@ -117,6 +118,10 @@ const AslAvailable = () => {
   // Export-focused suppliers slider (tag-based suppliers)
   const [exportSuppliers, setExportSuppliers] = useState<any[]>([]);
   const [loadingExportSuppliers, setLoadingExportSuppliers] = useState(true);
+
+  // Supplier preview dialog state برای اسلایدر صادراتی
+  const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Load data from API - load all products for client-side filtering and pagination
   useEffect(() => {
@@ -335,7 +340,10 @@ const AslAvailable = () => {
                 <div
                   key={supplier.id}
                   className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-sky-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-emerald-400/70 hover:shadow-xl hover:shadow-sky-500/20 transition-all duration-300 group cursor-pointer snap-start"
-                  onClick={() => navigate('/aslsupplier?tag=export_experience,export_packaging')}
+                  onClick={() => {
+                    setPreviewSupplier(supplier);
+                    setIsPreviewOpen(true);
+                  }}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-sky-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -651,6 +659,13 @@ const AslAvailable = () => {
           </div>
         </>
       )}
+
+      {/* Supplier Preview Dialog برای اسلایدر صادراتی (بدون دکمه تماس، چون صفحه کالا عمومی است) */}
+      <SupplierPreviewDialog
+        supplier={previewSupplier}
+        open={isPreviewOpen}
+        onOpenChange={setIsPreviewOpen}
+      />
           </div>
         </div>
       </div>

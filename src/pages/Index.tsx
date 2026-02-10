@@ -59,6 +59,7 @@ import MarketingPopup from "@/components/MarketingPopup";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import Slider from "@/components/Slider";
 import { GlobalSearchBar } from "@/components/GlobalSearchBar";
+import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
 
 const SITE_ONBOARDING_DELAY_MS = 1000;
 
@@ -75,6 +76,10 @@ const Index = () => {
   // Featured suppliers preview for dashboard (only for licensed users)
   const [featuredSuppliers, setFeaturedSuppliers] = useState<any[]>([]);
   const [loadingFeaturedSuppliers, setLoadingFeaturedSuppliers] = useState(false);
+
+  // Supplier preview dialog state (برای اسلایدر داشبورد)
+  const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // اولین بازدید سایت: یک بار استوری‌لاین معرفی کل سایت را نشان بده.
   useEffect(() => {
@@ -414,7 +419,10 @@ const Index = () => {
                   <div
                     key={supplier.id}
                     className="min-w-[180px] sm:min-w-[220px] max-w-[230px] sm:max-w-[260px] bg-card/90 border border-amber-500/50 rounded-2xl p-3 flex-shrink-0 hover:border-orange-400/80 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 group cursor-pointer snap-start"
-                    onClick={() => navigate('/aslsupplier')}
+                    onClick={() => {
+                      setPreviewSupplier(supplier);
+                      setIsPreviewOpen(true);
+                    }}
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-2xl bg-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -537,6 +545,13 @@ const Index = () => {
 
         {/* Marketing Popup */}
         <MarketingPopup isAuthenticated={isAuthenticated} />
+
+        {/* Global Supplier Preview Dialog برای داشبورد (بدون دکمه تماس، دسترسی تماس از صفحات محافظت‌شده) */}
+        <SupplierPreviewDialog
+          supplier={previewSupplier}
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+        />
       </div>
     </div>
   );
