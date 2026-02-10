@@ -33,6 +33,10 @@ class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Component stack:', errorInfo.componentStack);
     
     this.setState({
       error,
@@ -90,21 +94,29 @@ class ErrorBoundary extends Component<Props, State> {
                 </AlertDescription>
               </Alert>
 
-              {/* نمایش جزئیات خطا در محیط development */}
-              {process.env.NODE_ENV === 'development' && this.state.error && (
-                <details className="mt-4 p-3 bg-muted rounded-md text-xs">
+              {/* نمایش جزئیات خطا همیشه (برای debug production) */}
+              {this.state.error && (
+                <details className="mt-4 p-3 bg-muted rounded-md text-xs" open>
                   <summary className="cursor-pointer font-medium mb-2">
-                    جزئیات خطا (Development)
+                    جزئیات خطا
                   </summary>
                   <div className="space-y-2">
                     <div>
-                      <strong>Error:</strong>
-                      <pre className="mt-1 overflow-auto">{this.state.error.toString()}</pre>
+                      <strong>Error Name:</strong>
+                      <pre className="mt-1 overflow-auto">{this.state.error.name}</pre>
+                    </div>
+                    <div>
+                      <strong>Error Message:</strong>
+                      <pre className="mt-1 overflow-auto">{this.state.error.message || 'No message'}</pre>
+                    </div>
+                    <div>
+                      <strong>Error Stack:</strong>
+                      <pre className="mt-1 overflow-auto whitespace-pre-wrap">{this.state.error.stack || 'No stack'}</pre>
                     </div>
                     {this.state.errorInfo && (
                       <div>
                         <strong>Component Stack:</strong>
-                        <pre className="mt-1 overflow-auto">{this.state.errorInfo.componentStack}</pre>
+                        <pre className="mt-1 overflow-auto whitespace-pre-wrap">{this.state.errorInfo.componentStack}</pre>
                       </div>
                     )}
                   </div>
