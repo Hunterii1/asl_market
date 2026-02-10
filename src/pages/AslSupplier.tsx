@@ -184,6 +184,11 @@ const AslSupplier = () => {
   const featuredSliderSuppliers = featuredSuppliers.slice(0, 10);
   const hasFeaturedSlider = featuredSliderSuppliers.length > 0;
 
+  // Radar visualization data (محدود به چند تأمین‌کننده نزدیک/برگزیده)
+  const radarSuppliers = featuredSuppliers.length > 0
+    ? featuredSuppliers.slice(0, 8)
+    : filteredSuppliers.slice(0, 8);
+
   // Reset to page 1 when any filter changes
   useEffect(() => {
     setCurrentPage(1);
@@ -275,6 +280,129 @@ const AslSupplier = () => {
 
       {/* Supplier Limits Display */}
       <SupplierLimitsDisplay className="mb-6" />
+
+      {/* Supplier Radar Map – نمایش تأمین‌کننده‌ها دور کاربر مثل نقشه */}
+      {radarSuppliers.length > 0 && (
+        <Card className="bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-slate-800/70 rounded-3xl mb-6 overflow-hidden">
+          <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row gap-5 sm:gap-6 items-stretch">
+            {/* Radar graphic */}
+            <div className="flex-1 flex items-center justify-center">
+              <div className="relative w-44 h-44 sm:w-52 sm:h-52">
+                {/* Outer soft ring */}
+                <div className="absolute inset-1 rounded-full border border-orange-500/15" />
+
+                {/* Rotating sweep line (radar effect) */}
+                <div
+                  className="absolute inset-3 rounded-full border-t-2 border-l-2 border-orange-400/60 border-transparent animate-spin"
+                  style={{ animationDuration: "14s" }}
+                />
+
+                {/* Middle glow */}
+                <div className="absolute inset-7 rounded-full bg-gradient-to-br from-orange-500/20 via-slate-900/90 to-purple-700/40 blur-xl animate-pulse" />
+
+                {/* Inner circle (user / Asl Market) */}
+                <div className="absolute inset-14 rounded-full bg-slate-950/95 border border-slate-700/70 flex flex-col items-center justify-center gap-1 shadow-lg shadow-orange-500/20">
+                  <div className="relative">
+                    {/* Ping effect */}
+                    <span className="absolute inset-0 rounded-2xl bg-orange-400/30 animate-ping" />
+                    <div className="relative w-9 h-9 rounded-2xl bg-orange-500/25 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-orange-200" />
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-100 font-semibold mt-1">
+                    اصل مارکت
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    مرکز شبکه تأمین
+                  </span>
+                </div>
+
+                {/* Orbiting suppliers */}
+                {radarSuppliers.map((supplier, index) => {
+                  const count = radarSuppliers.length;
+                  const angle = (index / count) * 2 * Math.PI;
+                  const radius = 38; // in percent
+                  const cx = 50 + radius * Math.cos(angle);
+                  const cy = 50 + radius * Math.sin(angle);
+                  const label =
+                    supplier.brand_name ||
+                    supplier.full_name ||
+                    supplier.city ||
+                    `#${supplier.id}`;
+
+                  return (
+                    <button
+                      key={supplier.id ?? index}
+                      type="button"
+                      className="absolute -translate-x-1/2 -translate-y-1/2 group focus:outline-none"
+                      style={{
+                        left: `${cx}%`,
+                        top: `${cy}%`,
+                      }}
+                      onClick={() => {
+                        setPreviewSupplier(supplier);
+                        setIsPreviewOpen(true);
+                      }}
+                    >
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-orange-500/70 to-amber-400/90 shadow-lg shadow-orange-500/40 flex items-center justify-center border border-white/70 group-hover:scale-110 group-hover:shadow-orange-400/70 transition-transform duration-300">
+                        <span className="text-[10px] sm:text-xs font-bold text-slate-950 line-clamp-1 px-1">
+                          {label.slice(0, 4)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Text + list on the side */}
+            <div className="flex-1 flex flex-col gap-3 justify-center">
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-foreground mb-1 flex items-center gap-2">
+                  تأمین‌کنندگان اطراف شما در شبکه اصل مارکت
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  این نقشه مفهومی، تأمین‌کننده‌های برگزیده و نزدیک به نیازهای شما را
+                  دور هستهٔ «اصل مارکت» نشان می‌دهد. روی هر نقطه کلیک کنید تا
+                  جزئیات آن تأمین‌کننده را ببینید.
+                </p>
+              </div>
+              <div className="space-y-2 max-h-32 sm:max-h-36 overflow-y-auto pr-1">
+                {radarSuppliers.map((supplier) => (
+                  <button
+                    key={`list-${supplier.id}`}
+                    type="button"
+                    onClick={() => {
+                      setPreviewSupplier(supplier);
+                      setIsPreviewOpen(true);
+                    }}
+                    className="w-full flex items-center justify-between gap-2 rounded-2xl bg-slate-900/70 border border-slate-700/70 px-3 py-1.5 hover:border-orange-500/60 hover:bg-slate-900 transition-colors text-right"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center">
+                        <Users className="w-3 h-3 text-orange-300" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-foreground truncate">
+                          {supplier.brand_name || supplier.full_name}
+                        </p>
+                        {supplier.city && (
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {supplier.city}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-orange-300 whitespace-nowrap">
+                      مشاهده
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Matching-capacity slider: تأمین‌کننده‌هایی که نزدیک پر شدن ظرفیت ASL Match هستند */}
       {hasSlider && (
