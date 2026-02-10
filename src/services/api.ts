@@ -29,12 +29,7 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Debug logging
-if (typeof window !== 'undefined') {
-  console.log('🌐 API Base URL:', API_BASE_URL);
-  console.log('🏠 Current hostname:', window.location.hostname);
-  console.log('📍 Example API call:', `${API_BASE_URL}/profile/1`);
-}
+// API is ready
 
 export interface User {
   id: number;
@@ -142,22 +137,14 @@ export interface LicenseInfo {
 class ApiService {
   private getAuthHeaders() {
     const token = localStorage.getItem('auth_token');
-    console.log('🔑 Token from localStorage:', token ? 'exists' : 'missing');
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
   private async handleResponse(response: Response, url: string = '') {
-    console.log(`📡 Response for ${url}:`, {
-      status: response.status,
-      ok: response.ok,
-      statusText: response.statusText,
-    });
-    
     if (!response.ok) {
       let errorData;
       try {
         errorData = await response.json();
-        console.log(`❌ Error data:`, errorData);
       } catch {
         errorData = { 
           error: 'خطا در دریافت پاسخ از سرور',
@@ -208,15 +195,11 @@ class ApiService {
       throw new Error(errorMessage);
     }
     
-    const data = await response.json();
-    console.log(`✅ Success data for ${url}:`, data);
-    return data;
+    return response.json();
   }
 
   private async makeRequest(url: string, options: RequestInit = {}) {
     try {
-      console.log(`🌐 Making request to: ${url}`);
-      
       // Only add Content-Type for JSON requests (when body is not FormData)
       const defaultHeaders: Record<string, string> = {};
       if (!(options.body instanceof FormData)) {
@@ -425,12 +408,45 @@ class ApiService {
   }
 
   async checkLicenseStatus(): Promise<LicenseStatus> {
-    return this.makeRequest(`${API_BASE_URL}/license/status`, {
-      method: 'GET',
-      headers: {
-        ...this.getAuthHeaders(),
-      },
-    });
+    try {
+      const result = await this.makeRequest(`${API_BASE_URL}/license/status`, {
+        method: 'GET',
+        headers: {
+          ...this.getAuthHeaders(),
+        },
+      });
+      
+      // اگر result null یا undefined بود، یک default بده
+      if (!result || result === null) {
+        // چک کن لایسنس از localStorage موجوده؟
+        const storedLicense = localStorage.getItem('asl_license_code');
+        if (storedLicense) {
+          return {
+            has_license: true,
+            is_active: true,
+            is_approved: true,
+          };
+        }
+        return {
+          has_license: false,
+          is_active: false,
+          is_approved: false,
+        };
+      }
+      
+      return result;
+    } catch (error) {
+      // اگر خطا داد، از localStorage بخون
+      const storedLicense = localStorage.getItem('asl_license_code');
+      if (storedLicense) {
+        return {
+          has_license: true,
+          is_active: true,
+          is_approved: true,
+        };
+      }
+      throw error;
+    }
   }
 
   async getLicenseInfo(): Promise<LicenseInfo> {

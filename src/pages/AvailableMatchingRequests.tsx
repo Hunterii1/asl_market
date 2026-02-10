@@ -83,14 +83,6 @@ export default function AvailableMatchingRequests() {
     }
   }, [page, isAuthenticated]);
 
-  // Debug: Check if supplier.user_id exists
-  useEffect(() => {
-    if (requests.length > 0) {
-      console.log("Sample request supplier:", requests[0]?.supplier);
-      console.log("Has user_id:", !!requests[0]?.supplier?.user_id);
-    }
-  }, [requests]);
-
   const checkVisitorStatus = async () => {
     try {
       const visitorStatus = await apiService.getMyVisitorStatus();

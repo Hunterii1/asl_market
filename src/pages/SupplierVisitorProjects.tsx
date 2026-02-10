@@ -85,14 +85,6 @@ export default function SupplierVisitorProjects() {
     }
   }, [isAuthenticated]);
 
-  // Debug: Check if user_id exists
-  useEffect(() => {
-    if (projects.length > 0) {
-      console.log("Sample project visitor:", projects[0]?.visitor);
-      console.log("Has user_id:", !!projects[0]?.visitor?.user_id);
-    }
-  }, [projects]);
-
   const loadProjects = async () => {
     try {
       setLoading(true);
