@@ -102,8 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (apiService.isAuthenticated()) {
         const userData = await apiService.getCurrentUser();
         setUser(userData);
-        // Check license status after getting user data
-        await checkLicenseStatus();
+        // License status will be checked in the useEffect when user changes
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -124,8 +123,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const authData = await apiService.login(credentials);
       setUser(authData.user);
-      // Check license status after login
-      await checkLicenseStatus();
+      // License status will be checked in the useEffect when user changes
     } catch (error) {
       throw error;
     } finally {
@@ -138,8 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const authData = await apiService.register(userData);
       setUser(authData.user);
-      // Check license status after registration
-      await checkLicenseStatus();
+      // License status will be checked in the useEffect when user changes
     } catch (error) {
       throw error;
     } finally {
@@ -152,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (apiService.isAuthenticated()) {
         const userData = await apiService.getCurrentUser();
         setUser(userData);
-        await checkLicenseStatus();
+        // License status will be checked in the useEffect when user changes
       }
     } catch (error) {
       console.error('Failed to refresh user data:', error);
@@ -170,6 +167,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Check license whenever user changes (after login, register, or refresh)
+  useEffect(() => {
+    if (user) {
+      checkLicenseStatus();
+    }
+  }, [user]);
 
   const value = {
     user,
