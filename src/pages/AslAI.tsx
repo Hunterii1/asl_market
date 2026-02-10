@@ -20,12 +20,12 @@ import {
   Loader2,
   Plus,
   Sparkles,
-
   Lock,
   LogIn,
   Menu,
   History
 } from "lucide-react";
+import HeaderAuth from "@/components/ui/HeaderAuth";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const AslAI = () => {
@@ -471,7 +471,7 @@ const AslAI = () => {
   return (
     <LicenseGate>
       <div className="min-h-screen bg-background" dir="rtl">
-        {isFromSearch && <HeaderAuth />}
+        <HeaderAuth />
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
         {/* Header */}
         <Card className="bg-gradient-to-r from-blue-100/40 to-purple-200/40 dark:from-blue-900/20 dark:to-purple-800/20 border-blue-200/70 dark:border-blue-700/50 rounded-3xl mb-6">

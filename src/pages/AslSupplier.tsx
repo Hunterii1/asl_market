@@ -805,7 +805,7 @@ const AslSupplier = () => {
   return (
     <LicenseGate>
       <div className="min-h-screen bg-background" dir="rtl">
-        {isFromSearch && <HeaderAuth />}
+        <HeaderAuth />
         <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
           <div className="space-y-6 animate-fade-in transition-colors duration-300">
         {/* Header */}

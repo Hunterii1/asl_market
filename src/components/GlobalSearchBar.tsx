@@ -123,6 +123,43 @@ export function GlobalSearchBar({ className, mobile = false }: GlobalSearchBarPr
     }
   };
 
+  // Navigate to best-matching page when user presses Enter (مثل سایت‌های بزرگ)
+  const handleSubmit = () => {
+    const searchQuery = query.trim();
+    if (!searchQuery) return;
+
+    const qp = `search=${encodeURIComponent(searchQuery)}`;
+
+    // اگر نتایج داریم، براساس اولویت به بهترین بخش ببریم
+    if (results) {
+      if (results.suppliers && results.suppliers.length > 0) {
+        navigate(`/aslsupplier?${qp}`);
+        return;
+      }
+      if (results.available_products && results.available_products.length > 0) {
+        navigate(`/aslavailable?${qp}`);
+        return;
+      }
+      if (results.visitors && results.visitors.length > 0) {
+        navigate(`/aslvisit?${qp}`);
+        return;
+      }
+      if (results.research_products && results.research_products.length > 0) {
+        navigate(`/?activeSection=products&${qp}`);
+        return;
+      }
+      if ((results.chats && results.chats.length > 0) || (results.messages && results.messages.length > 0)) {
+        navigate(`/aslai?${qp}`);
+        return;
+      }
+    }
+
+    // اگر هنوز نتیجه‌ای نیامده یا نتایج خالی است، به صورت پیش‌فرض به کالاهای موجود برو
+    navigate(`/aslavailable?${qp}`);
+    setIsOpen(false);
+    setFocused(false);
+  };
+
   const handleFocus = () => {
     setFocused(true);
     if (results && query.trim()) {
@@ -212,6 +249,12 @@ export function GlobalSearchBar({ className, mobile = false }: GlobalSearchBarPr
             "placeholder:text-muted-foreground/60",
             mobile ? "h-12 text-base" : "h-11 text-sm"
           )}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
         />
 
         {query && (
@@ -408,13 +451,52 @@ export function GlobalSearchBar({ className, mobile = false }: GlobalSearchBarPr
 
               {/* Total Results Badge */}
               {totalResults > 0 && (
-                <div className="px-4 py-2 border-t border-border bg-muted/20">
-                  <div className="flex items-center justify-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {totalResults} نتیجه یافت شد
-                    </Badge>
+              <div className="px-4 py-3 border-t border-border bg-muted/20 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <Badge variant="secondary" className="text-xs">
+                    {totalResults} نتیجه یافت شد
+                  </Badge>
+                  {/* Quick actions برای رفتن به صفحات اصلی جستجو */}
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {results?.suppliers && results.suppliers.length > 0 && (
+                      <button
+                        onClick={() => handleResultClick('supplier', 0)}
+                        className="text-[11px] px-2 py-1 rounded-full bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors flex items-center gap-1"
+                      >
+                        <Building className="w-3 h-3" />
+                        همه تأمین‌کنندگان
+                      </button>
+                    )}
+                    {results?.available_products && results.available_products.length > 0 && (
+                      <button
+                        onClick={() => handleResultClick('available_product', 0)}
+                        className="text-[11px] px-2 py-1 rounded-full bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 transition-colors flex items-center gap-1"
+                      >
+                        <Package className="w-3 h-3" />
+                        همه کالاهای موجود
+                      </button>
+                    )}
+                    {results?.visitors && results.visitors.length > 0 && (
+                      <button
+                        onClick={() => handleResultClick('visitor', 0)}
+                        className="text-[11px] px-2 py-1 rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                      >
+                        <User className="w-3 h-3" />
+                        همه ویزیتورها
+                      </button>
+                    )}
+                    {results?.research_products && results.research_products.length > 0 && (
+                      <button
+                        onClick={() => handleResultClick('research_product', 0)}
+                        className="text-[11px] px-2 py-1 rounded-full bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-colors flex items-center gap-1"
+                      >
+                        <Target className="w-3 h-3" />
+                        همه محصولات تحقیقی
+                      </button>
+                    )}
                   </div>
                 </div>
+              </div>
               )}
             </div>
           )}
