@@ -337,13 +337,12 @@ func CreateUser(c *gin.Context) {
 
 	// Create user
 	user := models.User{
-		FirstName:  firstName,
-		LastName:   lastName,
-		Email:      req.Email,
-		Phone:      req.Phone,
-		Password:   hashedPassword,
-		TelegramID: req.TelegramID,
-		IsActive:   isActive,
+		FirstName: firstName,
+		LastName:  lastName,
+		Email:     req.Email,
+		Phone:     req.Phone,
+		Password:  hashedPassword,
+		IsActive:  isActive,
 	}
 
 	if err := db.Create(&user).Error; err != nil {
@@ -400,7 +399,7 @@ func UpdateUser(c *gin.Context) {
 
 	// Prepare update data
 	updates := make(map[string]interface{})
-	
+
 	// Parse name into first_name and last_name
 	if req.Name != "" {
 		nameParts := strings.Fields(req.Name)
@@ -413,15 +412,15 @@ func UpdateUser(c *gin.Context) {
 			}
 		}
 	}
-	
+
 	if req.Email != "" {
 		updates["email"] = req.Email
 	}
-	
+
 	if req.Phone != "" {
 		updates["phone"] = req.Phone
 	}
-	
+
 	if req.IsActive != nil {
 		updates["is_active"] = *req.IsActive
 	}
@@ -1302,13 +1301,13 @@ func ImportUsersFromExcel(c *gin.Context) {
 
 	// Read file content
 	var rows [][]string
-	
+
 	if ext == ".csv" {
 		// Parse CSV
 		content := new(bytes.Buffer)
 		io.Copy(content, src)
 		lines := strings.Split(content.String(), "\n")
-		
+
 		for _, line := range lines {
 			if strings.TrimSpace(line) == "" {
 				continue
@@ -1370,12 +1369,7 @@ func ImportUsersFromExcel(c *gin.Context) {
 		name := strings.TrimSpace(row[0])
 		email := strings.TrimSpace(row[1])
 		phone := strings.TrimSpace(row[2])
-		
-		telegramID := ""
-		if len(row) > 3 {
-			telegramID = strings.TrimSpace(row[3])
-		}
-		
+
 		isActive := true
 		if len(row) > 4 {
 			statusStr := strings.TrimSpace(strings.ToLower(row[4]))
@@ -1439,13 +1433,12 @@ func ImportUsersFromExcel(c *gin.Context) {
 
 		// Create user
 		user := models.User{
-			FirstName:  firstName,
-			LastName:   lastName,
-			Email:      email,
-			Phone:      phone,
-			Password:   hashedPassword,
-			TelegramID: telegramID,
-			IsActive:   isActive,
+			FirstName: firstName,
+			LastName:  lastName,
+			Email:     email,
+			Phone:     phone,
+			Password:  hashedPassword,
+			IsActive:  isActive,
 		}
 
 		if err := db.Create(&user).Error; err != nil {
