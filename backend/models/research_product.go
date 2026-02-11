@@ -106,6 +106,7 @@ func CreateResearchProduct(req ResearchProductRequest, adminID uint) (*ResearchP
 
 	product := ResearchProduct{
 		Name:               req.Name,
+		HSCode:             req.HSCode,
 		Category:           req.Category,
 		Description:        req.Description,
 		ExportValue:        req.ExportValue,
@@ -242,6 +243,7 @@ func UpdateResearchProduct(id uint, req ResearchProductRequest) (*ResearchProduc
 
 	// Update fields
 	product.Name = req.Name
+	product.HSCode = req.HSCode
 	product.Category = req.Category
 	product.Description = req.Description
 	product.ExportValue = req.ExportValue
@@ -249,11 +251,26 @@ func UpdateResearchProduct(id uint, req ResearchProductRequest) (*ResearchProduc
 	product.MarketDemand = req.MarketDemand
 	product.ProfitPotential = req.ProfitPotential
 	product.CompetitionLevel = req.CompetitionLevel
+	product.TargetCountry = req.TargetCountry
+	product.IranPurchasePrice = req.IranPurchasePrice
+	product.TargetCountryPrice = req.TargetCountryPrice
+	product.PriceCurrency = req.PriceCurrency
 	product.TargetCountries = req.TargetCountries
 	product.SeasonalFactors = req.SeasonalFactors
 	product.RequiredLicenses = req.RequiredLicenses
 	product.QualityStandards = req.QualityStandards
 	product.Priority = req.Priority
+
+	// Recalculate profit margin if both prices are provided
+	product.ProfitMargin = ""
+	if req.IranPurchasePrice != "" && req.TargetCountryPrice != "" {
+		if iranPrice, err1 := strconv.ParseFloat(req.IranPurchasePrice, 64); err1 == nil {
+			if targetPrice, err2 := strconv.ParseFloat(req.TargetCountryPrice, 64); err2 == nil && iranPrice > 0 {
+				margin := ((targetPrice - iranPrice) / iranPrice) * 100
+				product.ProfitMargin = fmt.Sprintf("%.2f%%", margin)
+			}
+		}
+	}
 
 	err = db.Save(&product).Error
 	if err != nil {

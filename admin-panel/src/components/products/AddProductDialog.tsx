@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/form';
 import { addProductSchema, productCategories, type AddProductFormData } from '@/lib/validations/product';
 import { toast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
+import { adminApi } from '@/lib/api/adminApi';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AddProductDialogProps {
@@ -51,30 +51,6 @@ interface AddProductDialogProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-// Mock API function
-const createProduct = async (data: AddProductFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        // Save to localStorage
-        const products = JSON.parse(localStorage.getItem('asll-products') || '[]');
-        const newProduct = {
-          id: Date.now().toString(),
-          ...data,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          sales: 0,
-          revenue: 0,
-        };
-        products.push(newProduct);
-        localStorage.setItem('asll-products', JSON.stringify(products));
-        resolve();
-      }
-    }, 1500);
-  });
-};
 
 export function AddProductDialog({ open, onOpenChange, onSuccess }: AddProductDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,7 +74,64 @@ export function AddProductDialog({ open, onOpenChange, onSuccess }: AddProductDi
   const onSubmit = async (data: AddProductFormData) => {
     setIsSubmitting(true);
     try {
-      await createProduct(data);
+      // Map simple product form to AvailableProduct create payload
+      const tagsString =
+        data.tags && data.tags.length > 0 ? data.tags.join(',').trim() : '';
+
+      const imageUrls =
+        data.imageUrl && data.imageUrl.trim().length > 0
+          ? JSON.stringify([data.imageUrl.trim()])
+          : '';
+
+      const payload: any = {
+        sale_type: 'wholesale',
+        product_name: data.name,
+        category: data.category || 'other',
+        subcategory: '',
+        description: data.description || '',
+        wholesale_price: data.price ? String(data.price) : '0',
+        retail_price: '',
+        export_price: '',
+        currency: 'IRR',
+        available_quantity: data.stock ?? 0,
+        min_order_quantity: 1,
+        max_order_quantity: 0,
+        unit: 'unit',
+        brand: '',
+        model: data.sku || '',
+        origin: '',
+        quality: '',
+        packaging_type: '',
+        weight: '',
+        dimensions: '',
+        shipping_cost: '',
+        location: 'online',
+        contact_phone: '',
+        contact_email: '',
+        contact_whatsapp: '',
+        can_export: false,
+        requires_license: false,
+        license_type: '',
+        export_countries: '',
+        image_urls: imageUrls,
+        video_url: '',
+        catalog_url: '',
+        is_featured: false,
+        is_hot_deal: false,
+        tags: tagsString,
+        notes: '',
+      };
+
+      const created = await adminApi.createAvailableProduct(payload);
+
+      // If initial status is not active, update status after creation
+      if (data.status && data.status !== 'active' && created && (created.id || created.ID)) {
+        const createdId = Number(created.id || created.ID);
+        if (!Number.isNaN(createdId)) {
+          await adminApi.updateAvailableProductStatus(createdId, data.status);
+        }
+      }
+
       toast({
         title: 'موفقیت',
         description: 'محصول با موفقیت افزوده شد.',

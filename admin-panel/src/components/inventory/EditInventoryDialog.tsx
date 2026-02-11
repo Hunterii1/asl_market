@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/form';
 import { editInventorySchema, type EditInventoryFormData } from '@/lib/validations/inventory';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Inventory {
   id: string;
@@ -57,31 +58,6 @@ interface EditInventoryDialogProps {
   inventory: Inventory | null;
   onSuccess?: () => void;
 }
-
-// Mock API function
-const updateInventory = async (data: EditInventoryFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const inventories = JSON.parse(localStorage.getItem('asll-inventory') || '[]');
-        const index = inventories.findIndex((i: Inventory) => i.id === data.id);
-        if (index !== -1) {
-          const availableQuantity = data.quantity - (data.reservedQuantity || 0);
-          inventories[index] = {
-            ...inventories[index],
-            ...data,
-            availableQuantity: availableQuantity >= 0 ? availableQuantity : 0,
-            updatedAt: new Date().toLocaleDateString('fa-IR'),
-          };
-          localStorage.setItem('asll-inventory', JSON.stringify(inventories));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function EditInventoryDialog({ open, onOpenChange, inventory, onSuccess }: EditInventoryDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,7 +129,20 @@ export function EditInventoryDialog({ open, onOpenChange, inventory, onSuccess }
   const onSubmit = async (data: EditInventoryFormData) => {
     setIsSubmitting(true);
     try {
-      await updateInventory(data);
+      const payload: any = {
+        product_name: data.productName,
+        category: data.productId || 'general',
+        model: data.sku || '',
+        available_quantity: data.availableQuantity ?? data.quantity,
+        min_order_quantity: data.minStock ?? 0,
+        max_order_quantity: data.maxStock ?? 0,
+        location: data.location || 'warehouse',
+        origin: data.warehouse || '',
+        wholesale_price: data.cost ? String(data.cost) : '0',
+        notes: data.notes || '',
+      };
+
+      await adminApi.updateAvailableProduct(parseInt(data.id, 10), payload);
       toast({
         title: 'موفقیت',
         description: 'اطلاعات موجودی انبار با موفقیت به‌روزرسانی شد.',

@@ -32,36 +32,13 @@ import {
 } from '@/components/ui/form';
 import { addInventorySchema, type AddInventoryFormData } from '@/lib/validations/inventory';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddInventoryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-// Mock API function
-const createInventory = async (data: AddInventoryFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const inventories = JSON.parse(localStorage.getItem('asll-inventory') || '[]');
-        const availableQuantity = data.quantity - (data.reservedQuantity || 0);
-        const newInventory = {
-          id: Date.now().toString(),
-          ...data,
-          availableQuantity: availableQuantity >= 0 ? availableQuantity : 0,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          updatedAt: new Date().toLocaleDateString('fa-IR'),
-        };
-        inventories.push(newInventory);
-        localStorage.setItem('asll-inventory', JSON.stringify(inventories));
-        resolve();
-      }
-    }, 1500);
-  });
-};
 
 export function AddInventoryDialog({ open, onOpenChange, onSuccess }: AddInventoryDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,7 +87,47 @@ export function AddInventoryDialog({ open, onOpenChange, onSuccess }: AddInvento
   const onSubmit = async (data: AddInventoryFormData) => {
     setIsSubmitting(true);
     try {
-      await createInventory(data);
+      // Map inventory form to available product payload
+      const payload: any = {
+        sale_type: 'wholesale',
+        product_name: data.productName,
+        category: data.productId || 'general',
+        subcategory: '',
+        description: data.notes || '',
+        wholesale_price: data.cost ? String(data.cost) : '0',
+        retail_price: '',
+        export_price: '',
+        currency: 'IRR',
+        available_quantity: data.availableQuantity ?? data.quantity,
+        min_order_quantity: data.minStock ?? 0,
+        max_order_quantity: data.maxStock ?? 0,
+        unit: 'unit',
+        brand: '',
+        model: data.sku || '',
+        origin: data.warehouse || '',
+        quality: '',
+        packaging_type: '',
+        weight: '',
+        dimensions: '',
+        shipping_cost: '',
+        location: data.location || 'warehouse',
+        contact_phone: '',
+        contact_email: '',
+        contact_whatsapp: '',
+        can_export: false,
+        requires_license: false,
+        license_type: '',
+        export_countries: '',
+        image_urls: '',
+        video_url: '',
+        catalog_url: '',
+        is_featured: false,
+        is_hot_deal: false,
+        tags: '',
+        notes: data.notes || '',
+      };
+
+      await adminApi.createAvailableProduct(payload);
       toast({
         title: 'موفقیت',
         description: 'موجودی انبار با موفقیت ثبت شد.',

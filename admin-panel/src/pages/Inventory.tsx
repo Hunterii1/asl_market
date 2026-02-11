@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 import { AddInventoryDialog } from '@/components/inventory/AddInventoryDialog';
 import { EditInventoryDialog } from '@/components/inventory/EditInventoryDialog';
 import { ViewInventoryDialog } from '@/components/inventory/ViewInventoryDialog';
@@ -62,93 +63,6 @@ interface Inventory {
   createdAt: string;
   updatedAt: string;
 }
-
-// داده‌های اولیه
-const initialInventory: Inventory[] = [
-  {
-    id: '1',
-    productId: '1',
-    productName: 'پکیج آموزشی طلایی',
-    sku: 'PKG-001',
-    quantity: 50,
-    reservedQuantity: 5,
-    availableQuantity: 45,
-    minStock: 10,
-    maxStock: 100,
-    location: 'قفسه A-12',
-    warehouse: 'انبار مرکزی',
-    status: 'in_stock',
-    cost: 500000,
-    createdAt: '۱۴۰۳/۰۹/۱۵',
-    updatedAt: '۱۴۰۳/۰۹/۲۰',
-  },
-  {
-    id: '2',
-    productId: '2',
-    productName: 'اشتراک ویژه سالانه',
-    sku: 'SUB-001',
-    quantity: 100,
-    reservedQuantity: 0,
-    availableQuantity: 100,
-    minStock: 20,
-    maxStock: 200,
-    location: 'قفسه B-05',
-    warehouse: 'انبار مرکزی',
-    status: 'in_stock',
-    cost: 200000,
-    createdAt: '۱۴۰۳/۰۹/۱۴',
-    updatedAt: '۱۴۰۳/۰۹/۱۹',
-  },
-  {
-    id: '3',
-    productId: '3',
-    productName: 'دوره React پیشرفته',
-    sku: 'CRS-001',
-    quantity: 8,
-    reservedQuantity: 2,
-    availableQuantity: 6,
-    minStock: 10,
-    location: 'قفسه C-08',
-    warehouse: 'انبار فرعی',
-    status: 'low_stock',
-    cost: 300000,
-    notes: 'موجودی در حال اتمام است',
-    createdAt: '۱۴۰۳/۰۹/۱۲',
-    updatedAt: '۱۴۰۳/۰۹/۱۸',
-  },
-  {
-    id: '4',
-    productId: '4',
-    productName: 'لایسنس نرم‌افزار',
-    sku: 'LIC-001',
-    quantity: 0,
-    reservedQuantity: 0,
-    availableQuantity: 0,
-    minStock: 5,
-    location: 'قفسه D-03',
-    warehouse: 'انبار مرکزی',
-    status: 'out_of_stock',
-    cost: 100000,
-    createdAt: '۱۴۰۳/۰۹/۱۰',
-    updatedAt: '۱۴۰۳/۰۹/۱۷',
-  },
-  {
-    id: '5',
-    productId: '5',
-    productName: 'پکیج کامل آموزش',
-    sku: 'PKG-002',
-    quantity: 25,
-    reservedQuantity: 25,
-    availableQuantity: 0,
-    minStock: 10,
-    location: 'قفسه A-15',
-    warehouse: 'انبار مرکزی',
-    status: 'reserved',
-    cost: 400000,
-    createdAt: '۱۴۰۳/۰۹/۰۸',
-    updatedAt: '۱۴۰۳/۰۹/۱۵',
-  },
-];
 
 const statusConfig = {
   in_stock: {
@@ -193,23 +107,68 @@ export default function Inventory() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
-  const [inventory, setInventory] = useState<Inventory[]>(() => {
-    const stored = localStorage.getItem('asll-inventory');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        return parsed.length > 0 ? parsed : initialInventory;
-      } catch {
-        return initialInventory;
-      }
-    }
-    return initialInventory;
-  });
+  const [inventory, setInventory] = useState<Inventory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
 
-  // همگام‌سازی با localStorage
+  const mapStatusFromBackend = (status: string): Inventory['status'] => {
+    switch (status) {
+      case 'out_of_stock':
+        return 'out_of_stock';
+      case 'low_stock':
+        return 'low_stock';
+      case 'reserved':
+        return 'reserved';
+      default:
+        return 'in_stock';
+    }
+  };
+
+  const reloadInventory = async () => {
+    try {
+      setLoading(true);
+      const response = await adminApi.getAvailableProducts({
+        page: currentPage,
+        per_page: itemsPerPage,
+      });
+
+      const products = response.products || response.data?.products || [];
+      const transformed: Inventory[] = products.map((p: any) => ({
+        id: (p.id ?? p.ID ?? '').toString(),
+        productId: (p.id ?? p.ID ?? '').toString(),
+        productName: p.product_name || 'بدون نام',
+        sku: p.model || '',
+        quantity: p.available_quantity ?? 0,
+        reservedQuantity: 0,
+        availableQuantity: p.available_quantity ?? 0,
+        minStock: p.min_order_quantity ?? 0,
+        maxStock: p.max_order_quantity ?? 0,
+        location: p.location || '',
+        warehouse: p.origin || '',
+        status: mapStatusFromBackend(p.status || 'active'),
+        cost: parseInt(p.wholesale_price || '0', 10) || 0,
+        notes: p.notes || '',
+        createdAt: p.created_at || new Date().toISOString(),
+        updatedAt: p.updated_at || p.created_at || new Date().toISOString(),
+      }));
+
+      setInventory(transformed);
+      setTotalItems(response.total || response.data?.total || transformed.length);
+    } catch (error: any) {
+      console.error('Error loading inventory:', error);
+      toast({
+        title: 'خطا',
+        description: error?.message || 'خطا در بارگذاری موجودی انبار',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem('asll-inventory', JSON.stringify(inventory));
-  }, [inventory]);
+    reloadInventory();
+  }, [currentPage, itemsPerPage]);
 
   // Get unique warehouses for filter
   const uniqueWarehouses = Array.from(new Set(inventory.map(i => i.warehouse).filter(Boolean))) as string[];
@@ -267,14 +226,9 @@ export default function Inventory() {
     }
   }, [totalPages, currentPage]);
 
-  const handleInventoryAdded = () => {
-    const stored = localStorage.getItem('asll-inventory');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setInventory(parsed);
-      } catch {}
-    }
+  const handleInventoryAdded = async () => {
+    setCurrentPage(1);
+    await reloadInventory();
   };
 
   const toggleSelectInventory = (inventoryId: string) => {
@@ -299,20 +253,18 @@ export default function Inventory() {
     
     setIsDeleting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setInventory(prev => prev.filter(i => i.id !== deleteInventory.id));
-      setSelectedInventory(prev => prev.filter(id => id !== deleteInventory.id));
+      await adminApi.deleteAvailableProduct(parseInt(deleteInventory.id, 10));
       setDeleteInventory(null);
-      
+      setSelectedInventory(prev => prev.filter(id => id !== deleteInventory.id));
+      await reloadInventory();
       toast({
         title: 'موفقیت',
         description: 'موجودی انبار با موفقیت حذف شد.',
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: 'خطا در حذف موجودی انبار',
+        description: error?.message || 'خطا در حذف موجودی انبار',
         variant: 'destructive',
       });
     } finally {
@@ -324,22 +276,23 @@ export default function Inventory() {
     if (selectedInventory.length === 0) return;
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       if (action === 'delete') {
-        setInventory(prev => prev.filter(i => !selectedInventory.includes(i.id)));
+        for (const id of selectedInventory) {
+          await adminApi.deleteAvailableProduct(parseInt(id, 10));
+        }
       }
 
       setSelectedInventory([]);
+      await reloadInventory();
       
       toast({
         title: 'موفقیت',
         description: `عملیات با موفقیت انجام شد.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: 'خطا در انجام عملیات',
+        description: error?.message || 'خطا در انجام عملیات',
         variant: 'destructive',
       });
     }
