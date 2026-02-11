@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Schema برای افزودن تامین‌کننده جدید
-export const addSupplierSchema = z.object({
+// اسکیمای مشترک پایه برای تامین‌کننده
+const baseSupplierSchema = z.object({
   name: z
     .string()
     .min(3, "نام تامین‌کننده باید حداقل ۳ کاراکتر باشد")
@@ -112,10 +112,15 @@ export const addSupplierSchema = z.object({
   tag_supply_without_capital: z.boolean().optional().default(false),
 });
 
+// Schema برای افزودن تامین‌کننده جدید (به همراه شناسه کاربر)
+export const addSupplierSchema = baseSupplierSchema.extend({
+  userId: z.string().min(1, "انتخاب کاربر برای تامین‌کننده الزامی است"),
+});
+
 export type AddSupplierFormData = z.infer<typeof addSupplierSchema>;
 
 // Schema برای ویرایش تامین‌کننده
-export const editSupplierSchema = addSupplierSchema.extend({
+export const editSupplierSchema = baseSupplierSchema.extend({
   id: z.string().min(1, "شناسه تامین‌کننده الزامی است"),
 });
 

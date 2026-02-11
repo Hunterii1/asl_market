@@ -284,14 +284,9 @@ export default function Suppliers() {
     }
   }, [totalPages, currentPage]);
 
-  const handleSupplierAdded = () => {
-    const stored = localStorage.getItem('asll-suppliers');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setSuppliers(parsed);
-      } catch {}
-    }
+  const handleSupplierAdded = async () => {
+    setCurrentPage(1);
+    await reloadSuppliers();
   };
 
   const toggleSelectSupplier = (supplierId: string) => {

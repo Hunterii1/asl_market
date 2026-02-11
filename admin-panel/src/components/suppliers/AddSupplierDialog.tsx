@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Truck, Building2, Mail, Phone, MapPin, Globe, User, Star, FileText } from 'lucide-react';
@@ -33,6 +33,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { addSupplierSchema, type AddSupplierFormData } from '@/lib/validations/supplier';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddSupplierDialogProps {
   open: boolean;
@@ -40,35 +41,35 @@ interface AddSupplierDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const createSupplier = async (data: AddSupplierFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const suppliers = JSON.parse(localStorage.getItem('asll-suppliers') || '[]');
-        const newSupplier = {
-          id: Date.now().toString(),
-          ...data,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          updatedAt: new Date().toLocaleDateString('fa-IR'),
-        };
-        suppliers.push(newSupplier);
-        localStorage.setItem('asll-suppliers', JSON.stringify(suppliers));
-        resolve();
-      }
-    }, 1500);
-  });
-};
-
 export function AddSupplierDialog({ open, onOpenChange, onSuccess }: AddSupplierDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentTab, setCurrentTab] = useState('basic');
+  const [users, setUsers] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await adminApi.getUsers({ page: 1, per_page: 100 });
+        const usersData = response.users || response.data?.users || [];
+        setUsers(usersData);
+      } catch (error: any) {
+        toast({
+          title: 'خطا',
+          description: error?.message || 'خطا در بارگذاری فهرست کاربران',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (open) {
+      loadUsers();
+    }
+  }, [open]);
 
   const form = useForm<AddSupplierFormData>({
     resolver: zodResolver(addSupplierSchema),
     defaultValues: {
+      userId: '',
       name: '',
       companyName: '',
       email: '',
@@ -94,7 +95,23 @@ export function AddSupplierDialog({ open, onOpenChange, onSuccess }: AddSupplier
   const onSubmit = async (data: AddSupplierFormData) => {
     setIsSubmitting(true);
     try {
-      await createSupplier(data);
+      const payload = {
+        user_id: Number(data.userId),
+        name: data.name,
+        company_name: data.companyName,
+        phone: data.phone,
+        city: data.city,
+        address: data.address,
+        status: data.status,
+        notes: data.notes,
+        tag_first_class: data.tag_first_class,
+        tag_good_price: data.tag_good_price,
+        tag_export_experience: data.tag_export_experience,
+        tag_export_packaging: data.tag_export_packaging,
+        tag_supply_without_capital: data.tag_supply_without_capital,
+      };
+
+      await adminApi.createSupplier(payload);
       toast({
         title: 'موفقیت',
         description: 'تامین‌کننده با موفقیت ایجاد شد.',
@@ -148,6 +165,42 @@ export function AddSupplierDialog({ open, onOpenChange, onSuccess }: AddSupplier
               </TabsList>
 
               <TabsContent value="basic" className="space-y-4 mt-4">
+                {/* انتخاب کاربر صاحب حساب تامین‌کننده */}
+                <FormField
+                  control={form.control}
+                  name="userId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        کاربر مرتبط *
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isSubmitting}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="text-right">
+                            <SelectValue placeholder="کاربر را انتخاب کنید" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id.toString()}>
+                              {user.first_name && user.last_name
+                                ? `${user.first_name} ${user.last_name}`
+                                : user.name || `کاربر #${user.id}`}
+                              {user.email ? ` - ${user.email}` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 {/* نام */}
                 <FormField
                   control={form.control}

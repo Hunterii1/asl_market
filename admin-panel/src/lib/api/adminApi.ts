@@ -247,6 +247,48 @@ class AdminApiService {
     });
   }
 
+  async createSupplier(data: {
+    user_id: number;
+    name: string;
+    company_name?: string;
+    phone: string;
+    city?: string;
+    address?: string;
+    status: 'active' | 'inactive' | 'suspended';
+    notes?: string;
+    tag_first_class?: boolean;
+    tag_good_price?: boolean;
+    tag_export_experience?: boolean;
+    tag_export_packaging?: boolean;
+    tag_supply_without_capital?: boolean;
+  }): Promise<any> {
+    const payload = {
+      user_id: data.user_id,
+      full_name: data.name,
+      mobile: data.phone,
+      brand_name: data.company_name || '',
+      city: data.city || '',
+      address: data.address || '',
+      status:
+        data.status === 'active'
+          ? 'approved'
+          : data.status === 'suspended'
+          ? 'rejected'
+          : 'pending',
+      admin_notes: data.notes || '',
+      tag_first_class: data.tag_first_class ?? false,
+      tag_good_price: data.tag_good_price ?? false,
+      tag_export_experience: data.tag_export_experience ?? false,
+      tag_export_packaging: data.tag_export_packaging ?? false,
+      tag_supply_without_capital: data.tag_supply_without_capital ?? false,
+    };
+
+    return this.makeRequest(`${API_BASE_URL}/admin/suppliers`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
   async getSupplier(id: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/suppliers/${id}`, {
       method: 'GET',

@@ -165,6 +165,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.GET("/suppliers/matching-capacity", controllers.GetSuppliersMatchingCapacity)
 
 		// Admin supplier management routes
+		protected.POST("/admin/suppliers", controllers.CreateSupplierForAdmin)
 		protected.GET("/admin/suppliers", controllers.GetSuppliersForAdmin)
 		protected.GET("/admin/suppliers/:id", controllers.GetSupplierForAdmin)
 		protected.PUT("/admin/suppliers/:id", controllers.UpdateSupplierForAdmin)

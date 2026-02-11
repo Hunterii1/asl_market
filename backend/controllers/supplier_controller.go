@@ -111,16 +111,16 @@ func GetMySupplierStatus(c *gin.Context) {
 		Status:                   supplier.Status,
 		AdminNotes:               supplier.AdminNotes,
 		ApprovedAt:               supplier.ApprovedAt,
-		IsFeatured:                 supplier.IsFeatured,
-		FeaturedAt:                 supplier.FeaturedAt,
-		TagFirstClass:              supplier.TagFirstClass,
-		TagGoodPrice:               supplier.TagGoodPrice,
-		TagExportExperience:       supplier.TagExportExperience,
-		TagExportPackaging:        supplier.TagExportPackaging,
-		TagSupplyWithoutCapital:   supplier.TagSupplyWithoutCapital,
-		AverageRating:              displayRating,
-		TotalRatings:               totalRatings,
-		CreatedAt:                  supplier.CreatedAt,
+		IsFeatured:               supplier.IsFeatured,
+		FeaturedAt:               supplier.FeaturedAt,
+		TagFirstClass:            supplier.TagFirstClass,
+		TagGoodPrice:             supplier.TagGoodPrice,
+		TagExportExperience:      supplier.TagExportExperience,
+		TagExportPackaging:       supplier.TagExportPackaging,
+		TagSupplyWithoutCapital:  supplier.TagSupplyWithoutCapital,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
+		CreatedAt:                supplier.CreatedAt,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -220,30 +220,30 @@ func GetApprovedSuppliers(c *gin.Context) {
 		}
 
 		suppliersResponse = append(suppliersResponse, models.SupplierResponse{
-			ID:                         supplier.ID,
-			UserID:                     supplier.UserID,
-			FullName:                   supplier.FullName,
-			Mobile:                     supplier.Mobile,
-			BrandName:                  supplier.BrandName,
-			ImageURL:                   supplier.ImageURL,
-			City:                       supplier.City,
-			HasRegisteredBusiness:      supplier.HasRegisteredBusiness,
-			HasExportExperience:        supplier.HasExportExperience,
-			CanProducePrivateLabel:     supplier.CanProducePrivateLabel,
-			ApprovedAt:                 supplier.ApprovedAt,
-			IsFeatured:                 supplier.IsFeatured,
-			FeaturedAt:                 supplier.FeaturedAt,
-			TagFirstClass:              supplier.TagFirstClass,
-			TagGoodPrice:               supplier.TagGoodPrice,
-			TagExportExperience:        supplier.TagExportExperience,
-			TagExportPackaging:         supplier.TagExportPackaging,
-			TagSupplyWithoutCapital:    supplier.TagSupplyWithoutCapital,
-			AverageRating:              displayRating,
-			TotalRatings:               totalRatings,
-			CreatedAt:                  supplier.CreatedAt,
-			Products:                   productsResponse,
-			UserProfileImageURL:        supplier.User.ProfileImageURL,
-			UserCoverImageURL:          supplier.User.CoverImageURL,
+			ID:                      supplier.ID,
+			UserID:                  supplier.UserID,
+			FullName:                supplier.FullName,
+			Mobile:                  supplier.Mobile,
+			BrandName:               supplier.BrandName,
+			ImageURL:                supplier.ImageURL,
+			City:                    supplier.City,
+			HasRegisteredBusiness:   supplier.HasRegisteredBusiness,
+			HasExportExperience:     supplier.HasExportExperience,
+			CanProducePrivateLabel:  supplier.CanProducePrivateLabel,
+			ApprovedAt:              supplier.ApprovedAt,
+			IsFeatured:              supplier.IsFeatured,
+			FeaturedAt:              supplier.FeaturedAt,
+			TagFirstClass:           supplier.TagFirstClass,
+			TagGoodPrice:            supplier.TagGoodPrice,
+			TagExportExperience:     supplier.TagExportExperience,
+			TagExportPackaging:      supplier.TagExportPackaging,
+			TagSupplyWithoutCapital: supplier.TagSupplyWithoutCapital,
+			AverageRating:           displayRating,
+			TotalRatings:            totalRatings,
+			CreatedAt:               supplier.CreatedAt,
+			Products:                productsResponse,
+			UserProfileImageURL:     supplier.User.ProfileImageURL,
+			UserCoverImageURL:       supplier.User.CoverImageURL,
 		})
 	}
 
@@ -294,28 +294,28 @@ func GetFeaturedSuppliersPublic(c *gin.Context) {
 		}
 
 		publicSuppliers = append(publicSuppliers, gin.H{
-			"id":                          supplier.ID,
-			"user_id":                     supplier.UserID,
-			"full_name":                   supplier.FullName,
-			"brand_name":                  supplier.BrandName,
-			"image_url":                   supplier.ImageURL,
-			"city":                        supplier.City,
-			"is_featured":                 supplier.IsFeatured,
-			"featured_at":                 supplier.FeaturedAt,
-			"tag_first_class":             supplier.TagFirstClass,
-			"tag_good_price":              supplier.TagGoodPrice,
-			"tag_export_experience":       supplier.TagExportExperience,
-			"tag_export_packaging":        supplier.TagExportPackaging,
-			"tag_supply_without_capital":  supplier.TagSupplyWithoutCapital,
-			"average_rating":              displayRating,
-			"total_ratings":               totalRatings,
-			"created_at":                  supplier.CreatedAt,
-			"has_export_experience":       supplier.HasExportExperience,
-			"can_produce_private_label":   supplier.CanProducePrivateLabel,
-			"has_registered_business":     supplier.HasRegisteredBusiness,
+			"id":                           supplier.ID,
+			"user_id":                      supplier.UserID,
+			"full_name":                    supplier.FullName,
+			"brand_name":                   supplier.BrandName,
+			"image_url":                    supplier.ImageURL,
+			"city":                         supplier.City,
+			"is_featured":                  supplier.IsFeatured,
+			"featured_at":                  supplier.FeaturedAt,
+			"tag_first_class":              supplier.TagFirstClass,
+			"tag_good_price":               supplier.TagGoodPrice,
+			"tag_export_experience":        supplier.TagExportExperience,
+			"tag_export_packaging":         supplier.TagExportPackaging,
+			"tag_supply_without_capital":   supplier.TagSupplyWithoutCapital,
+			"average_rating":               displayRating,
+			"total_ratings":                totalRatings,
+			"created_at":                   supplier.CreatedAt,
+			"has_export_experience":        supplier.HasExportExperience,
+			"can_produce_private_label":    supplier.CanProducePrivateLabel,
+			"has_registered_business":      supplier.HasRegisteredBusiness,
 			"business_registration_exists": supplier.HasRegisteredBusiness,
-			"user_profile_image_url":      supplier.User.ProfileImageURL,
-			"user_cover_image_url":        supplier.User.CoverImageURL,
+			"user_profile_image_url":       supplier.User.ProfileImageURL,
+			"user_cover_image_url":         supplier.User.CoverImageURL,
 		})
 	}
 
@@ -422,16 +422,16 @@ func GetSuppliersForAdmin(c *gin.Context) {
 			Status:                   supplier.Status,
 			AdminNotes:               supplier.AdminNotes,
 			ApprovedAt:               supplier.ApprovedAt,
-			IsFeatured:                 supplier.IsFeatured,
-			FeaturedAt:                 supplier.FeaturedAt,
-			TagFirstClass:              supplier.TagFirstClass,
-			TagGoodPrice:               supplier.TagGoodPrice,
-			TagExportExperience:       supplier.TagExportExperience,
-			TagExportPackaging:        supplier.TagExportPackaging,
-			TagSupplyWithoutCapital:   supplier.TagSupplyWithoutCapital,
-			AverageRating:              displayRating,
-			TotalRatings:               totalRatings,
-			CreatedAt:                  supplier.CreatedAt,
+			IsFeatured:               supplier.IsFeatured,
+			FeaturedAt:               supplier.FeaturedAt,
+			TagFirstClass:            supplier.TagFirstClass,
+			TagGoodPrice:             supplier.TagGoodPrice,
+			TagExportExperience:      supplier.TagExportExperience,
+			TagExportPackaging:       supplier.TagExportPackaging,
+			TagSupplyWithoutCapital:  supplier.TagSupplyWithoutCapital,
+			AverageRating:            displayRating,
+			TotalRatings:             totalRatings,
+			CreatedAt:                supplier.CreatedAt,
 		})
 	}
 
@@ -775,17 +775,17 @@ func GetSupplierForAdmin(c *gin.Context) {
 		Status:                   supplier.Status,
 		AdminNotes:               supplier.AdminNotes,
 		ApprovedAt:               supplier.ApprovedAt,
-		IsFeatured:                 supplier.IsFeatured,
-		FeaturedAt:                 supplier.FeaturedAt,
-		TagFirstClass:              supplier.TagFirstClass,
-		TagGoodPrice:               supplier.TagGoodPrice,
-		TagExportExperience:       supplier.TagExportExperience,
-		TagExportPackaging:        supplier.TagExportPackaging,
-		TagSupplyWithoutCapital:   supplier.TagSupplyWithoutCapital,
-		AverageRating:              displayRating,
-		TotalRatings:               totalRatings,
-		CreatedAt:                  supplier.CreatedAt,
-		Products:                   productsResponse,
+		IsFeatured:               supplier.IsFeatured,
+		FeaturedAt:               supplier.FeaturedAt,
+		TagFirstClass:            supplier.TagFirstClass,
+		TagGoodPrice:             supplier.TagGoodPrice,
+		TagExportExperience:      supplier.TagExportExperience,
+		TagExportPackaging:       supplier.TagExportPackaging,
+		TagSupplyWithoutCapital:  supplier.TagSupplyWithoutCapital,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
+		CreatedAt:                supplier.CreatedAt,
+		Products:                 productsResponse,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -959,35 +959,35 @@ func UpdateSupplierForAdmin(c *gin.Context) {
 	}
 
 	response := models.SupplierResponse{
-		ID:                         updatedSupplier.ID,
-		UserID:                     updatedSupplier.UserID,
-		FullName:                   updatedSupplier.FullName,
-		Mobile:                     updatedSupplier.Mobile,
-		BrandName:                  updatedSupplier.BrandName,
-		ImageURL:                   updatedSupplier.ImageURL,
-		City:                       updatedSupplier.City,
-		Address:                    updatedSupplier.Address,
-		HasRegisteredBusiness:      updatedSupplier.HasRegisteredBusiness,
-		BusinessRegistrationNum:    updatedSupplier.BusinessRegistrationNum,
-		HasExportExperience:        updatedSupplier.HasExportExperience,
-		ExportPrice:                updatedSupplier.ExportPrice,
-		WholesaleMinPrice:          updatedSupplier.WholesaleMinPrice,
-		WholesaleHighVolumePrice:   updatedSupplier.WholesaleHighVolumePrice,
-		CanProducePrivateLabel:     updatedSupplier.CanProducePrivateLabel,
-		Status:                     updatedSupplier.Status,
-		AdminNotes:                 updatedSupplier.AdminNotes,
-		ApprovedAt:                 updatedSupplier.ApprovedAt,
-		IsFeatured:                 updatedSupplier.IsFeatured,
-		FeaturedAt:                 updatedSupplier.FeaturedAt,
-		TagFirstClass:              updatedSupplier.TagFirstClass,
-		TagGoodPrice:               updatedSupplier.TagGoodPrice,
-		TagExportExperience:        updatedSupplier.TagExportExperience,
-		TagExportPackaging:         updatedSupplier.TagExportPackaging,
-		TagSupplyWithoutCapital:    updatedSupplier.TagSupplyWithoutCapital,
-		AverageRating:              displayRating,
-		TotalRatings:               totalRatings,
-		CreatedAt:                  updatedSupplier.CreatedAt,
-		Products:                   productsResponse,
+		ID:                       updatedSupplier.ID,
+		UserID:                   updatedSupplier.UserID,
+		FullName:                 updatedSupplier.FullName,
+		Mobile:                   updatedSupplier.Mobile,
+		BrandName:                updatedSupplier.BrandName,
+		ImageURL:                 updatedSupplier.ImageURL,
+		City:                     updatedSupplier.City,
+		Address:                  updatedSupplier.Address,
+		HasRegisteredBusiness:    updatedSupplier.HasRegisteredBusiness,
+		BusinessRegistrationNum:  updatedSupplier.BusinessRegistrationNum,
+		HasExportExperience:      updatedSupplier.HasExportExperience,
+		ExportPrice:              updatedSupplier.ExportPrice,
+		WholesaleMinPrice:        updatedSupplier.WholesaleMinPrice,
+		WholesaleHighVolumePrice: updatedSupplier.WholesaleHighVolumePrice,
+		CanProducePrivateLabel:   updatedSupplier.CanProducePrivateLabel,
+		Status:                   updatedSupplier.Status,
+		AdminNotes:               updatedSupplier.AdminNotes,
+		ApprovedAt:               updatedSupplier.ApprovedAt,
+		IsFeatured:               updatedSupplier.IsFeatured,
+		FeaturedAt:               updatedSupplier.FeaturedAt,
+		TagFirstClass:            updatedSupplier.TagFirstClass,
+		TagGoodPrice:             updatedSupplier.TagGoodPrice,
+		TagExportExperience:      updatedSupplier.TagExportExperience,
+		TagExportPackaging:       updatedSupplier.TagExportPackaging,
+		TagSupplyWithoutCapital:  updatedSupplier.TagSupplyWithoutCapital,
+		AverageRating:            displayRating,
+		TotalRatings:             totalRatings,
+		CreatedAt:                updatedSupplier.CreatedAt,
+		Products:                 productsResponse,
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -1045,5 +1045,94 @@ func DeleteSupplierForAdmin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "تأمین‌کننده با موفقیت حذف شد",
+	})
+}
+
+// CreateSupplierForAdminRequest is the payload for creating a supplier by admin
+type CreateSupplierForAdminRequest struct {
+	UserID                  uint   `json:"user_id" binding:"required"`
+	FullName                string `json:"full_name" binding:"required"`
+	Mobile                  string `json:"mobile" binding:"required"`
+	BrandName               string `json:"brand_name"`
+	City                    string `json:"city"`
+	Address                 string `json:"address"`
+	Status                  string `json:"status"`
+	AdminNotes              string `json:"admin_notes"`
+	TagFirstClass           bool   `json:"tag_first_class"`
+	TagGoodPrice            bool   `json:"tag_good_price"`
+	TagExportExperience     bool   `json:"tag_export_experience"`
+	TagExportPackaging      bool   `json:"tag_export_packaging"`
+	TagSupplyWithoutCapital bool   `json:"tag_supply_without_capital"`
+}
+
+// CreateSupplierForAdmin creates a new supplier for a given user (admin only)
+func CreateSupplierForAdmin(c *gin.Context) {
+	db := models.GetDB()
+
+	var req CreateSupplierForAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسال‌شده نامعتبر است"})
+		return
+	}
+
+	if req.UserID == 0 || strings.TrimSpace(req.FullName) == "" || strings.TrimSpace(req.Mobile) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر، نام تأمین‌کننده و موبایل الزامی است"})
+		return
+	}
+
+	// Ensure user exists
+	var user models.User
+	if err := db.First(&user, req.UserID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "کاربر موردنظر یافت نشد"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت اطلاعات کاربر"})
+		}
+		return
+	}
+
+	// Prevent duplicate supplier for same user
+	if existing, err := models.GetSupplierByUserID(db, user.ID); err == nil && existing != nil && existing.ID > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "برای این کاربر قبلاً تأمین‌کننده ثبت شده است"})
+		return
+	}
+
+	// Map external status (active/inactive/suspended) to internal status (approved/pending/rejected)
+	status := strings.ToLower(strings.TrimSpace(req.Status))
+	internalStatus := "pending"
+	switch status {
+	case "approved", "active":
+		internalStatus = "approved"
+	case "rejected", "suspended":
+		internalStatus = "rejected"
+	case "pending", "inactive", "":
+		internalStatus = "pending"
+	}
+
+	supplier := models.Supplier{
+		UserID:                  user.ID,
+		FullName:                strings.TrimSpace(req.FullName),
+		Mobile:                  strings.TrimSpace(req.Mobile),
+		BrandName:               strings.TrimSpace(req.BrandName),
+		City:                    strings.TrimSpace(req.City),
+		Address:                 strings.TrimSpace(req.Address),
+		Status:                  internalStatus,
+		AdminNotes:              strings.TrimSpace(req.AdminNotes),
+		TagFirstClass:           req.TagFirstClass,
+		TagGoodPrice:            req.TagGoodPrice,
+		TagExportExperience:     req.TagExportExperience,
+		TagExportPackaging:      req.TagExportPackaging,
+		TagSupplyWithoutCapital: req.TagSupplyWithoutCapital,
+	}
+
+	if err := db.Create(&supplier).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد تأمین‌کننده"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":         "تأمین‌کننده با موفقیت ایجاد شد",
+		"supplier_id":     supplier.ID,
+		"supplier_status": supplier.Status,
 	})
 }
