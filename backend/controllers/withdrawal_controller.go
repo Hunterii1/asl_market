@@ -270,12 +270,12 @@ func (wc *WithdrawalController) CreateWithdrawalRequestAdmin(c *gin.Context) {
 
 	// Create withdrawal request with minimal required fields
 	withdrawalRequest := &models.WithdrawalRequest{
-		UserID:        req.UserID,
-		Amount:        req.Amount,
-		Currency:      "USD", // Default currency for admin-created requests
-		SourceCountry: "AE",  // Default source country
+		UserID:         req.UserID,
+		Amount:         req.Amount,
+		Currency:       "USD", // Default currency for admin-created requests
+		SourceCountry:  "AE",  // Default source country
 		BankCardNumber: req.AccountInfo,
-		AdminNotes:    req.AdminNotes,
+		AdminNotes:     req.AdminNotes,
 	}
 
 	if err := models.CreateWithdrawalRequest(wc.db, withdrawalRequest); err != nil {

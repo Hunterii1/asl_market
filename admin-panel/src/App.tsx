@@ -13,7 +13,6 @@ import Admins from "./pages/Admins";
 import Statistics from "./pages/Statistics";
 import Withdrawals from "./pages/Withdrawals";
 import Licenses from "./pages/Licenses";
-import Tickets from "./pages/Tickets";
 import Suppliers from "./pages/Suppliers";
 import Visitors from "./pages/Visitors";
 import Popups from "./pages/Popups";
@@ -127,7 +126,7 @@ const App = () => (
             path="/tickets"
             element={
               <ProtectedRoute>
-                <Tickets />
+                <SupportTickets />
               </ProtectedRoute>
             }
           />

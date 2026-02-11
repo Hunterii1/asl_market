@@ -19,6 +19,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Edit,
+  Trash2,
 } from 'lucide-react';
 import {
   Select,
@@ -36,6 +38,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { EditTicketDialog } from '@/components/tickets/EditTicketDialog';
+import { DeleteTicketDialog } from '@/components/tickets/DeleteTicketDialog';
 
 interface Ticket {
   id: number;
@@ -43,7 +47,7 @@ interface Ticket {
   description: string;
   status: 'open' | 'in_progress' | 'waiting_response' | 'closed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: string;
+  category: 'general' | 'technical' | 'billing' | 'license' | 'other';
   user_id: number;
   user_name?: string;
   user_email?: string;
@@ -101,6 +105,9 @@ export default function SupportTickets() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalTickets, setTotalTickets] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [editTicket, setEditTicket] = useState<Ticket | null>(null);
+  const [deleteTicket, setDeleteTicket] = useState<Ticket | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load tickets from API
   useEffect(() => {
@@ -122,11 +129,12 @@ export default function SupportTickets() {
             description: t.description || '',
             status: t.status || 'open',
             priority: t.priority || 'medium',
-            category: t.category || 'general',
+            category: (t.category || 'general') as Ticket['category'],
             user_id: t.user_id || t.user?.id || 0,
-            user_name: t.user?.first_name && t.user?.last_name 
-              ? `${t.user.first_name} ${t.user.last_name}` 
-              : t.user?.name || 'کاربر ناشناس',
+            user_name:
+              t.user?.first_name && t.user?.last_name
+                ? `${t.user.first_name} ${t.user.last_name}`
+                : t.user?.name || 'کاربر ناشناس',
             user_email: t.user?.email || '',
             created_at: t.created_at || new Date().toISOString(),
             updated_at: t.updated_at || t.created_at || new Date().toISOString(),
@@ -230,11 +238,12 @@ export default function SupportTickets() {
           description: t.description || '',
           status: t.status || 'open',
           priority: t.priority || 'medium',
-          category: t.category || 'general',
+          category: (t.category || 'general') as Ticket['category'],
           user_id: t.user_id || t.user?.id || 0,
-          user_name: t.user?.first_name && t.user?.last_name 
-            ? `${t.user.first_name} ${t.user.last_name}` 
-            : t.user?.name || 'کاربر ناشناس',
+          user_name:
+            t.user?.first_name && t.user?.last_name
+              ? `${t.user.first_name} ${t.user.last_name}`
+              : t.user?.name || 'کاربر ناشناس',
           user_email: t.user?.email || '',
           created_at: t.created_at || new Date().toISOString(),
           updated_at: t.updated_at || t.created_at || new Date().toISOString(),
@@ -279,11 +288,12 @@ export default function SupportTickets() {
           description: t.description || '',
           status: t.status || 'open',
           priority: t.priority || 'medium',
-          category: t.category || 'general',
+          category: (t.category || 'general') as Ticket['category'],
           user_id: t.user_id || t.user?.id || 0,
-          user_name: t.user?.first_name && t.user?.last_name 
-            ? `${t.user.first_name} ${t.user.last_name}`
-            : t.user?.name || 'کاربر ناشناس',
+          user_name:
+            t.user?.first_name && t.user?.last_name
+              ? `${t.user.first_name} ${t.user.last_name}`
+              : t.user?.name || 'کاربر ناشناس',
           user_email: t.user?.email || '',
           created_at: t.created_at || new Date().toISOString(),
           updated_at: t.updated_at || t.created_at || new Date().toISOString(),
@@ -297,6 +307,29 @@ export default function SupportTickets() {
         description: error.message || 'خطا در بستن تیکت',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDeleteTicketConfirm = async () => {
+    if (!deleteTicket) return;
+    setIsDeleting(true);
+    try {
+      await adminApi.deleteTicket(deleteTicket.id);
+      toast({
+        title: 'موفقیت',
+        description: 'تیکت با موفقیت حذف شد',
+      });
+      setTickets(prev => prev.filter(t => t.id !== deleteTicket.id));
+      setDeleteTicket(null);
+      setTotalTickets(prev => Math.max(prev - 1, 0));
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در حذف تیکت',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -422,6 +455,14 @@ export default function SupportTickets() {
                                 <MessageSquare className="w-4 h-4 ml-1" />
                                 مشاهده
                               </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditTicket(ticket)}
+                              >
+                                <Edit className="w-4 h-4 ml-1" />
+                                ویرایش
+                              </Button>
                               {ticket.status !== 'closed' && (
                                 <Button
                                   variant="outline"
@@ -433,6 +474,15 @@ export default function SupportTickets() {
                                   بستن
                                 </Button>
                               )}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setDeleteTicket(ticket)}
+                                className="text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="w-4 h-4 ml-1" />
+                                حذف
+                              </Button>
                             </div>
                           </td>
                         </tr>
@@ -638,6 +688,71 @@ export default function SupportTickets() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Ticket Dialog */}
+        <EditTicketDialog
+          open={!!editTicket}
+          onOpenChange={(open) => !open && setEditTicket(null)}
+          ticket={
+            editTicket
+              ? {
+                  id: editTicket.id.toString(),
+                  subject: editTicket.title,
+                  message: editTicket.description,
+                  category: editTicket.category,
+                  priority: editTicket.priority,
+                  status: editTicket.status,
+                  assignedTo: undefined,
+                }
+              : null
+          }
+          onSuccess={async () => {
+            const response = await adminApi.getTickets({
+              page: currentPage,
+              per_page: itemsPerPage,
+              status: statusFilter !== 'all' ? statusFilter : undefined,
+            });
+            if (response && (response.tickets || response.data?.tickets)) {
+              const ticketsData = response.tickets || response.data?.tickets || [];
+              const transformedTickets: Ticket[] = ticketsData.map((t: any) => ({
+                id: t.id || t.ID || 0,
+                title: t.title || 'بدون عنوان',
+                description: t.description || '',
+                status: t.status || 'open',
+                priority: t.priority || 'medium',
+                category: (t.category || 'general') as Ticket['category'],
+                user_id: t.user_id || t.user?.id || 0,
+                user_name:
+                  t.user?.first_name && t.user?.last_name
+                    ? `${t.user.first_name} ${t.user.last_name}`
+                    : t.user?.name || 'کاربر ناشناس',
+                user_email: t.user?.email || '',
+                created_at: t.created_at || new Date().toISOString(),
+                updated_at: t.updated_at || t.created_at || new Date().toISOString(),
+                messages: t.messages || [],
+              }));
+              setTickets(transformedTickets);
+            }
+            setEditTicket(null);
+          }}
+        />
+
+        {/* Delete Ticket Dialog */}
+        <DeleteTicketDialog
+          open={!!deleteTicket}
+          onOpenChange={(open) => !open && setDeleteTicket(null)}
+          ticket={
+            deleteTicket
+              ? {
+                  id: deleteTicket.id.toString(),
+                  subject: deleteTicket.title,
+                  userName: deleteTicket.user_name || 'کاربر',
+                }
+              : null
+          }
+          onConfirm={handleDeleteTicketConfirm}
+          isDeleting={isDeleting}
+        />
       </div>
     </AdminLayout>
   );
