@@ -290,6 +290,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		// User Management (Admin)
 		protected.GET("/admin/users", controllers.GetUsersForAdmin)
 		protected.GET("/admin/users/:id", controllers.GetUserDetailsForAdmin)
+		protected.PUT("/admin/users/:id", controllers.UpdateUser)
 		protected.PUT("/admin/users/:id/status", controllers.UpdateUserStatus)
 		protected.DELETE("/admin/users/:id", controllers.DeleteUser)
 

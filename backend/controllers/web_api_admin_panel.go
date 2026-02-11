@@ -273,6 +273,93 @@ func GetUserDetailsForAdmin(c *gin.Context) {
 	})
 }
 
+// UpdateUser updates user information (name, email, phone, status)
+func UpdateUser(c *gin.Context) {
+	db := models.GetDB()
+
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Phone    string `json:"phone"`
+		IsActive *bool  `json:"is_active"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		return
+	}
+
+	// Check if user exists
+	var user models.User
+	if err := db.First(&user, userID).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بازیابی اطلاعات کاربر"})
+		return
+	}
+
+	// Prepare update data
+	updates := make(map[string]interface{})
+	
+	// Parse name into first_name and last_name
+	if req.Name != "" {
+		nameParts := strings.Fields(req.Name)
+		if len(nameParts) > 0 {
+			updates["first_name"] = nameParts[0]
+			if len(nameParts) > 1 {
+				updates["last_name"] = strings.Join(nameParts[1:], " ")
+			} else {
+				updates["last_name"] = ""
+			}
+		}
+	}
+	
+	if req.Email != "" {
+		updates["email"] = req.Email
+	}
+	
+	if req.Phone != "" {
+		updates["phone"] = req.Phone
+	}
+	
+	if req.IsActive != nil {
+		updates["is_active"] = *req.IsActive
+	}
+
+	// Update user
+	if err := db.Model(&user).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی اطلاعات کاربر"})
+		return
+	}
+
+	// Reload user to get updated data
+	if err := db.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بازیابی اطلاعات به‌روز شده"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "اطلاعات کاربر با موفقیت به‌روزرسانی شد",
+		"data": gin.H{
+			"id":         user.ID,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"email":      user.Email,
+			"phone":      user.Phone,
+			"is_active":  user.IsActive,
+		},
+	})
+}
+
 // UpdateUserStatus updates a user's active status
 func UpdateUserStatus(c *gin.Context) {
 	db := models.GetDB()
