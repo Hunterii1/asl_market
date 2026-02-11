@@ -187,6 +187,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/submit-product", controllers.SubmitProduct)
 
 		// Admin visitor management routes
+		protected.POST("/admin/visitors", controllers.CreateVisitorForAdmin)
 		protected.GET("/admin/visitors", controllers.GetVisitorsForAdmin)
 		protected.GET("/admin/visitors/:id", controllers.GetVisitorDetails)
 		protected.POST("/admin/visitors/:id/approve", controllers.ApproveVisitorByAdmin)

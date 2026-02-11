@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { AddVisitorDialog } from '@/components/visitors/AddVisitorDialog';
 import { EditVisitorDialog } from '@/components/visitors/EditVisitorDialog';
 import { ViewVisitorDialog } from '@/components/visitors/ViewVisitorDialog';
 import { DeleteVisitorDialog } from '@/components/visitors/DeleteVisitorDialog';
@@ -96,6 +97,7 @@ const statusConfig = {
 export default function Visitors() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisitors, setSelectedVisitors] = useState<string[]>([]);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editVisitor, setEditVisitor] = useState<Visitor | null>(null);
   const [viewVisitor, setViewVisitor] = useState<Visitor | null>(null);
   const [deleteVisitor, setDeleteVisitor] = useState<Visitor | null>(null);
@@ -303,6 +305,11 @@ export default function Visitors() {
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت ویزیتورها</h1>
             <p className="text-sm md:text-base text-muted-foreground">لیست تمامی ویزیتورهای سیستم</p>
+          </div>
+          <div className="flex items-center justify-end">
+            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+              ثبت ویزیتور جدید
+            </Button>
           </div>
         </div>
 
@@ -604,6 +611,16 @@ export default function Visitors() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog افزودن ویزیتور */}
+      <AddVisitorDialog
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        onSuccess={() => {
+          reloadVisitors();
+          setIsAddDialogOpen(false);
+        }}
+      />
 
       {/* Dialog ویرایش ویزیتور */}
       <EditVisitorDialog

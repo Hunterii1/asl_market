@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, Globe, Monitor, Smartphone, Tablet, Bot, Clock, FileText } from 'lucide-react';
+import { Loader2, User, Phone, Mail, MapPin, FileText, Shield } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -30,8 +29,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { addVisitorSchema, type AddVisitorFormData } from '@/lib/validations/visitor';
+import { addAdminVisitorSchema, type AddAdminVisitorFormData } from '@/lib/validations/admin-visitor';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddVisitorDialogProps {
   open: boolean;
@@ -39,57 +39,96 @@ interface AddVisitorDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const createVisitor = async (data: AddVisitorFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const visitors = JSON.parse(localStorage.getItem('asll-visitors') || '[]');
-        const newVisitor = {
-          id: Date.now().toString(),
-          ...data,
-          visitedAt: new Date().toLocaleDateString('fa-IR') + ' ' + new Date().toLocaleTimeString('fa-IR'),
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-        };
-        visitors.push(newVisitor);
-        localStorage.setItem('asll-visitors', JSON.stringify(visitors));
-        resolve();
-      }
-    }, 1500);
-  });
-};
-
 export function AddVisitorDialog({ open, onOpenChange, onSuccess }: AddVisitorDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
 
-  const form = useForm<AddVisitorFormData>({
-    resolver: zodResolver(addVisitorSchema),
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const response = await adminApi.getUsers({ page: 1, per_page: 100 });
+        const usersData = response.users || response.data?.users || [];
+        setUsers(usersData);
+      } catch (error: any) {
+        toast({
+          title: 'خطا',
+          description: error?.message || 'خطا در بارگذاری فهرست کاربران',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (open) {
+      loadUsers();
+    }
+  }, [open]);
+
+  const form = useForm<AddAdminVisitorFormData>({
+    resolver: zodResolver(addAdminVisitorSchema),
     defaultValues: {
-      ip: '',
-      userAgent: '',
-      browser: '',
-      os: '',
-      device: 'desktop',
-      country: '',
-      city: '',
-      page: '/',
-      referrer: '',
-      sessionId: '',
-      duration: 0,
-      isBot: false,
-      language: 'fa',
+      userId: '',
+      full_name: '',
+      national_id: '',
+      passport_number: '',
+      birth_date: '',
+      mobile: '',
+      whatsapp_number: '',
+      email: '',
+      residence_address: '',
+      city_province: '',
+      destination_cities: '',
+      has_local_contact: false,
+      local_contact_details: '',
+      bank_account_iban: '',
+      bank_name: '',
+      account_holder_name: '',
+      has_marketing_experience: false,
+      marketing_experience_desc: '',
+      language_level: 'good',
+      special_skills: '',
+      interested_products: '',
+      agrees_to_use_approved_products: true,
+      agrees_to_violation_consequences: true,
+      agrees_to_submit_reports: true,
+      digital_signature: '',
+      signature_date: '',
     },
   });
 
-  const onSubmit = async (data: AddVisitorFormData) => {
+  const onSubmit = async (data: AddAdminVisitorFormData) => {
     setIsSubmitting(true);
     try {
-      await createVisitor(data);
+      await adminApi.createVisitor({
+        user_id: Number(data.userId),
+        full_name: data.full_name,
+        national_id: data.national_id,
+        passport_number: data.passport_number || '',
+        birth_date: data.birth_date,
+        mobile: data.mobile,
+        whatsapp_number: data.whatsapp_number || '',
+        email: data.email || '',
+        residence_address: data.residence_address,
+        city_province: data.city_province,
+        destination_cities: data.destination_cities,
+        has_local_contact: data.has_local_contact || false,
+        local_contact_details: data.local_contact_details || '',
+        bank_account_iban: data.bank_account_iban,
+        bank_name: data.bank_name,
+        account_holder_name: data.account_holder_name || '',
+        has_marketing_experience: data.has_marketing_experience || false,
+        marketing_experience_desc: data.marketing_experience_desc || '',
+        language_level: data.language_level,
+        special_skills: data.special_skills || '',
+        interested_products: data.interested_products || '',
+        agrees_to_use_approved_products: data.agrees_to_use_approved_products,
+        agrees_to_violation_consequences: data.agrees_to_violation_consequences,
+        agrees_to_submit_reports: data.agrees_to_submit_reports,
+        digital_signature: data.digital_signature,
+        signature_date: data.signature_date,
+      });
       toast({
         title: 'موفقیت',
-        description: 'بازدیدکننده با موفقیت ثبت شد.',
+        description: 'ویزیتور با موفقیت ایجاد شد.',
         variant: 'default',
       });
       form.reset();
@@ -120,137 +159,63 @@ export function AddVisitorDialog({ open, onOpenChange, onSuccess }: AddVisitorDi
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl">
         <DialogHeader className="text-right">
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <Eye className="w-5 h-5 text-primary" />
-            ثبت بازدیدکننده جدید
+            <User className="w-5 h-5 text-primary" />
+            ثبت ویزیتور جدید
           </DialogTitle>
           <DialogDescription>
-            اطلاعات بازدیدکننده را وارد کنید.
+            اطلاعات ویزیتور جدید را وارد کنید.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* IP Address */}
+            {/* User */}
             <FormField
               control={form.control}
-              name="ip"
+              name="userId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-muted-foreground" />
-                    آدرس IP *
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    کاربر مرتبط *
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="192.168.1.1"
-                      {...field}
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
                       disabled={isSubmitting}
-                      dir="ltr"
-                      className="text-left"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Browser */}
-              <FormField
-                control={form.control}
-                name="browser"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>مرورگر</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Chrome, Firefox, Safari..."
-                        {...field}
-                        disabled={isSubmitting}
-                        className="text-right"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* OS */}
-              <FormField
-                control={form.control}
-                name="os"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>سیستم عامل</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Windows, macOS, Linux..."
-                        {...field}
-                        disabled={isSubmitting}
-                        className="text-right"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Device */}
-            <FormField
-              control={form.control}
-              name="device"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>نوع دستگاه</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    disabled={isSubmitting}
-                  >
-                    <FormControl>
+                    >
                       <SelectTrigger className="text-right">
-                        <SelectValue placeholder="نوع دستگاه را انتخاب کنید" />
+                        <SelectValue placeholder="کاربر را انتخاب کنید" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="desktop">
-                        <div className="flex items-center gap-2">
-                          <Monitor className="w-4 h-4" />
-                          دسکتاپ
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="mobile">
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="w-4 h-4" />
-                          موبایل
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="tablet">
-                        <div className="flex items-center gap-2">
-                          <Tablet className="w-4 h-4" />
-                          تبلت
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="other">سایر</SelectItem>
-                    </SelectContent>
-                  </Select>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id.toString()}>
+                            {user.first_name && user.last_name
+                              ? `${user.first_name} ${user.last_name}`
+                              : user.name || `کاربر #${user.id}`}
+                            {user.email ? ` - ${user.email}` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Full name & National ID */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Country */}
               <FormField
                 control={form.control}
-                name="country"
+                name="full_name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>کشور</FormLabel>
+                    <FormLabel>نام و نام خانوادگی *</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="ایران"
+                        placeholder="نام و نام خانوادگی"
                         {...field}
                         disabled={isSubmitting}
                         className="text-right"
@@ -261,113 +226,21 @@ export function AddVisitorDialog({ open, onOpenChange, onSuccess }: AddVisitorDi
                 )}
               />
 
-              {/* City */}
               <FormField
                 control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>شهر</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="تهران"
-                        {...field}
-                        disabled={isSubmitting}
-                        className="text-right"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Page */}
-            <FormField
-              control={form.control}
-              name="page"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-muted-foreground" />
-                    صفحه بازدید شده *
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="/products"
-                      {...field}
-                      disabled={isSubmitting}
-                      dir="ltr"
-                      className="text-left"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Referrer */}
-            <FormField
-              control={form.control}
-              name="referrer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>مرجع (Referrer)</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://example.com"
-                      {...field}
-                      disabled={isSubmitting}
-                      dir="ltr"
-                      className="text-left"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Duration */}
-              <FormField
-                control={form.control}
-                name="duration"
+                name="national_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-muted-foreground" />
-                      مدت زمان (ثانیه)
+                      <Shield className="w-4 h-4 text-muted-foreground" />
+                      کد ملی *
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                        disabled={isSubmitting}
-                        className="text-right"
-                        min="0"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Language */}
-              <FormField
-                control={form.control}
-                name="language"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>زبان</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="fa"
+                        placeholder="کد ملی"
                         {...field}
                         disabled={isSubmitting}
                         className="text-right"
-                        maxLength={10}
                       />
                     </FormControl>
                     <FormMessage />
@@ -376,24 +249,258 @@ export function AddVisitorDialog({ open, onOpenChange, onSuccess }: AddVisitorDi
               />
             </div>
 
-            {/* Is Bot */}
+            {/* موبایل و ایمیل */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="mobile"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>شماره موبایل *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="09123456789"
+                        {...field}
+                        disabled={isSubmitting}
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ایمیل</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="example@email.com"
+                        {...field}
+                        disabled={isSubmitting}
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* شهر/استان و شهرهای مقصد */}
             <FormField
               control={form.control}
-              name="isBot"
+              name="city_province"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="isBot"
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                  <FormLabel className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    شهر و کشور محل سکونت *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="مثال: دبی - امارات متحده عربی"
+                      {...field}
                       disabled={isSubmitting}
+                      className="text-right"
                     />
-                    <Label htmlFor="isBot" className="cursor-pointer flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-muted-foreground" />
-                      ربات / Crawler
-                    </Label>
-                  </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="destination_cities"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>شهرهای مقصد *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="مثال: دبی، ابوظبی، ریاض"
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right min-h-[80px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* آدرس محل سکونت */}
+            <FormField
+              control={form.control}
+              name="residence_address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>آدرس محل سکونت *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="آدرس کامل محل سکونت..."
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right min-h-[80px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* اطلاعات بانکی */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="bank_account_iban"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>شماره شبا / حساب *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="IRxxxxxxxxxxxxxxxxxxxx"
+                        {...field}
+                        disabled={isSubmitting}
+                        dir="ltr"
+                        className="text-left"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="bank_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>نام بانک *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="نام بانک"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* سطح زبان */}
+            <FormField
+              control={form.control}
+              name="language_level"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>سطح زبان *</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger className="text-right">
+                        <SelectValue placeholder="سطح زبان را انتخاب کنید" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">عالی</SelectItem>
+                        <SelectItem value="good">خوب</SelectItem>
+                        <SelectItem value="weak">ضعیف</SelectItem>
+                        <SelectItem value="none">ندارد</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* امضای دیجیتال و تاریخ */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="digital_signature"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>امضای دیجیتال *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="نام و نام خانوادگی به‌عنوان امضا"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="signature_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>تاریخ امضا *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="مثال: 1403/01/01"
+                        {...field}
+                        disabled={isSubmitting}
+                        className="text-right"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* محصولات مورد علاقه و مهارت‌ها */}
+            <FormField
+              control={form.control}
+              name="interested_products"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>محصولات مورد علاقه</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="لیست محصولات یا دسته‌بندی‌های مورد علاقه..."
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right min-h-[80px]"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="special_skills"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>مهارت‌های ویژه</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="توضیح مهارت‌ها و تجربیات مرتبط..."
+                      {...field}
+                      disabled={isSubmitting}
+                      className="text-right min-h-[80px]"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -412,8 +519,8 @@ export function AddVisitorDialog({ open, onOpenChange, onSuccess }: AddVisitorDi
                   </>
                 ) : (
                   <>
-                    <Eye className="w-4 h-4 ml-2" />
-                    ثبت بازدیدکننده
+                    <User className="w-4 h-4 ml-2" />
+                    ثبت ویزیتور
                   </>
                 )}
               </Button>

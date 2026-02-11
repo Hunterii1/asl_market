@@ -417,6 +417,40 @@ class AdminApiService {
     });
   }
 
+  async createVisitor(data: {
+    user_id: number;
+    full_name: string;
+    national_id: string;
+    passport_number?: string;
+    birth_date: string;
+    mobile: string;
+    whatsapp_number?: string;
+    email?: string;
+    residence_address: string;
+    city_province: string;
+    destination_cities: string;
+    has_local_contact?: boolean;
+    local_contact_details?: string;
+    bank_account_iban: string;
+    bank_name: string;
+    account_holder_name?: string;
+    has_marketing_experience?: boolean;
+    marketing_experience_desc?: string;
+    language_level: string;
+    special_skills?: string;
+    interested_products?: string;
+    agrees_to_use_approved_products: boolean;
+    agrees_to_violation_consequences: boolean;
+    agrees_to_submit_reports: boolean;
+    digital_signature: string;
+    signature_date: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitors`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // ==================== Licenses Management ====================
   async generateLicenses(count: number, type: 'pro' | 'plus' | 'plus4'): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/licenses/generate`, {

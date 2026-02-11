@@ -266,6 +266,108 @@ func GetApprovedVisitors(c *gin.Context) {
 	})
 }
 
+// CreateVisitorForAdminRequest defines payload for creating a visitor from admin panel
+type CreateVisitorForAdminRequest struct {
+	UserID                      uint   `json:"user_id" binding:"required"`
+	FullName                    string `json:"full_name" binding:"required"`
+	NationalID                  string `json:"national_id" binding:"required"`
+	PassportNumber              string `json:"passport_number"`
+	BirthDate                   string `json:"birth_date" binding:"required"`
+	Mobile                      string `json:"mobile" binding:"required"`
+	WhatsappNumber              string `json:"whatsapp_number"`
+	Email                       string `json:"email"`
+	ResidenceAddress            string `json:"residence_address" binding:"required"`
+	CityProvince                string `json:"city_province" binding:"required"`
+	DestinationCities           string `json:"destination_cities" binding:"required"`
+	HasLocalContact             bool   `json:"has_local_contact"`
+	LocalContactDetails         string `json:"local_contact_details"`
+	BankAccountIBAN             string `json:"bank_account_iban" binding:"required"`
+	BankName                    string `json:"bank_name" binding:"required"`
+	AccountHolderName           string `json:"account_holder_name"`
+	HasMarketingExperience      bool   `json:"has_marketing_experience"`
+	MarketingExperienceDesc     string `json:"marketing_experience_desc"`
+	LanguageLevel               string `json:"language_level" binding:"required"`
+	SpecialSkills               string `json:"special_skills"`
+	InterestedProducts          string `json:"interested_products"`
+	AgreesToUseApprovedProducts bool   `json:"agrees_to_use_approved_products" binding:"required"`
+	AgreesToViolationConsequences bool `json:"agrees_to_violation_consequences" binding:"required"`
+	AgreesToSubmitReports         bool `json:"agrees_to_submit_reports" binding:"required"`
+	DigitalSignature              string `json:"digital_signature" binding:"required"`
+	SignatureDate                 string `json:"signature_date" binding:"required"`
+}
+
+// CreateVisitorForAdmin creates a new visitor record for a given user (admin-only)
+func CreateVisitorForAdmin(c *gin.Context) {
+	// Check if user is admin (allow web admin roles)
+	userRole, exists := c.Get("user_role")
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	var req CreateVisitorForAdminRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	db := models.GetDB()
+
+	// Ensure user exists
+	var user models.User
+	if err := db.First(&user, req.UserID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "کاربر انتخاب‌شده یافت نشد"})
+		return
+	}
+
+	// Ensure this user does not already have a visitor profile
+	if existing, err := models.GetVisitorByUserID(db, req.UserID); err == nil && existing.ID > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "برای این کاربر قبلاً پروفایل ویزیتور ثبت شده است"})
+		return
+	}
+
+	// Map request to VisitorRegistrationRequest used by model helper
+	visitorReq := models.VisitorRegistrationRequest{
+		FullName:                    req.FullName,
+		NationalID:                  req.NationalID,
+		PassportNumber:              req.PassportNumber,
+		BirthDate:                   req.BirthDate,
+		Mobile:                      req.Mobile,
+		WhatsappNumber:              req.WhatsappNumber,
+		Email:                       req.Email,
+		ResidenceAddress:            req.ResidenceAddress,
+		CityProvince:                req.CityProvince,
+		DestinationCities:           req.DestinationCities,
+		HasLocalContact:             req.HasLocalContact,
+		LocalContactDetails:         req.LocalContactDetails,
+		BankAccountIBAN:             req.BankAccountIBAN,
+		BankName:                    req.BankName,
+		AccountHolderName:           req.AccountHolderName,
+		HasMarketingExperience:      req.HasMarketingExperience,
+		MarketingExperienceDesc:     req.MarketingExperienceDesc,
+		LanguageLevel:               req.LanguageLevel,
+		SpecialSkills:               req.SpecialSkills,
+		InterestedProducts:          req.InterestedProducts,
+		AgreesToUseApprovedProducts: req.AgreesToUseApprovedProducts,
+		AgreesToViolationConsequences: req.AgreesToViolationConsequences,
+		AgreesToSubmitReports:         req.AgreesToSubmitReports,
+		DigitalSignature:              req.DigitalSignature,
+		SignatureDate:                 req.SignatureDate,
+	}
+
+	visitor, err := models.CreateVisitor(db, req.UserID, visitorReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد ویزیتور"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "ویزیتور با موفقیت ایجاد شد",
+		"visitor": visitor,
+	})
+}
+
 // GetVisitorsForAdmin returns paginated list of visitors for admin panel
 func GetVisitorsForAdmin(c *gin.Context) {
 	// Check if user is admin (allow web admin roles)
