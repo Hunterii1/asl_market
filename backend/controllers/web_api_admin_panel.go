@@ -273,6 +273,98 @@ func GetUserDetailsForAdmin(c *gin.Context) {
 	})
 }
 
+// CreateUser creates a new user (admin only)
+func CreateUser(c *gin.Context) {
+	db := models.GetDB()
+
+	var req struct {
+		Name       string  `json:"name" binding:"required"`
+		Email      string  `json:"email" binding:"required,email"`
+		Phone      string  `json:"phone" binding:"required"`
+		Password   string  `json:"password"`
+		TelegramID string  `json:"telegram_id"`
+		Balance    float64 `json:"balance"`
+		IsActive   *bool   `json:"is_active"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر", "details": err.Error()})
+		return
+	}
+
+	// Check if email already exists
+	var existingUser models.User
+	if err := db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "این ایمیل قبلاً ثبت شده است"})
+		return
+	}
+
+	// Check if phone already exists
+	if err := db.Where("phone = ?", req.Phone).First(&existingUser).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "این شماره تلفن قبلاً ثبت شده است"})
+		return
+	}
+
+	// Parse name into first_name and last_name
+	nameParts := strings.Fields(req.Name)
+	firstName := ""
+	lastName := ""
+	if len(nameParts) > 0 {
+		firstName = nameParts[0]
+		if len(nameParts) > 1 {
+			lastName = strings.Join(nameParts[1:], " ")
+		}
+	}
+
+	// Set default password if not provided
+	password := req.Password
+	if password == "" {
+		password = "123456" // Default password
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در پردازش رمز عبور"})
+		return
+	}
+
+	// Set default is_active if not provided
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+
+	// Create user
+	user := models.User{
+		FirstName:  firstName,
+		LastName:   lastName,
+		Email:      req.Email,
+		Phone:      req.Phone,
+		Password:   hashedPassword,
+		TelegramID: req.TelegramID,
+		IsActive:   isActive,
+	}
+
+	if err := db.Create(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ایجاد کاربر", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "کاربر با موفقیت ایجاد شد",
+		"data": gin.H{
+			"id":         user.ID,
+			"first_name": user.FirstName,
+			"last_name":  user.LastName,
+			"email":      user.Email,
+			"phone":      user.Phone,
+			"is_active":  user.IsActive,
+		},
+	})
+}
+
 // UpdateUser updates user information (name, email, phone, status)
 func UpdateUser(c *gin.Context) {
 	db := models.GetDB()
@@ -1175,6 +1267,206 @@ func GetAllNotificationsForAdmin(c *gin.Context) {
 // ============================================
 // EXCEL EXPORT/IMPORT
 // ============================================
+
+// ImportUsersFromExcel imports users from Excel/CSV file
+func ImportUsersFromExcel(c *gin.Context) {
+	db := models.GetDB()
+
+	// Get uploaded file
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فایل آپلود نشده است"})
+		return
+	}
+
+	// Validate file type
+	ext := strings.ToLower(file.Filename[strings.LastIndex(file.Filename, "."):])
+	if ext != ".xlsx" && ext != ".xls" && ext != ".csv" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فرمت فایل نامعتبر است. فقط Excel و CSV مجاز است"})
+		return
+	}
+
+	// Validate file size (max 5MB)
+	if file.Size > 5*1024*1024 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "حجم فایل نباید بیشتر از 5 مگابایت باشد"})
+		return
+	}
+
+	// Open uploaded file
+	src, err := file.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در باز کردن فایل"})
+		return
+	}
+	defer src.Close()
+
+	// Read file content
+	var rows [][]string
+	
+	if ext == ".csv" {
+		// Parse CSV
+		content := new(bytes.Buffer)
+		io.Copy(content, src)
+		lines := strings.Split(content.String(), "\n")
+		
+		for _, line := range lines {
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
+			// Simple CSV parsing (handle comma-separated values)
+			fields := strings.Split(line, ",")
+			for i := range fields {
+				fields[i] = strings.TrimSpace(fields[i])
+				// Remove quotes if present
+				fields[i] = strings.Trim(fields[i], "\"")
+			}
+			rows = append(rows, fields)
+		}
+	} else {
+		// Parse Excel
+		f, err := excelize.OpenReader(src)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن فایل Excel"})
+			return
+		}
+		defer f.Close()
+
+		// Get first sheet
+		sheets := f.GetSheetList()
+		if len(sheets) == 0 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "فایل Excel خالی است"})
+			return
+		}
+
+		rows, err = f.GetRows(sheets[0])
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "خطا در خواندن داده‌های Excel"})
+			return
+		}
+	}
+
+	if len(rows) < 2 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "فایل حداقل باید شامل یک ردیف داده باشد"})
+		return
+	}
+
+	// Parse and validate users
+	var successCount int
+	var failedCount int
+	var errors []string
+
+	// Skip header row
+	for i, row := range rows[1:] {
+		rowNum := i + 2 // +2 because we skip header and arrays are 0-indexed
+
+		// Validate row has enough columns (at least name, email, phone)
+		if len(row) < 3 {
+			errors = append(errors, fmt.Sprintf("ردیف %d: تعداد ستون‌ها کافی نیست", rowNum))
+			failedCount++
+			continue
+		}
+
+		// Parse fields
+		name := strings.TrimSpace(row[0])
+		email := strings.TrimSpace(row[1])
+		phone := strings.TrimSpace(row[2])
+		
+		telegramID := ""
+		if len(row) > 3 {
+			telegramID = strings.TrimSpace(row[3])
+		}
+		
+		isActive := true
+		if len(row) > 4 {
+			statusStr := strings.TrimSpace(strings.ToLower(row[4]))
+			if statusStr == "غیرفعال" || statusStr == "inactive" || statusStr == "false" || statusStr == "0" {
+				isActive = false
+			}
+		}
+
+		// Validate required fields
+		if name == "" {
+			errors = append(errors, fmt.Sprintf("ردیف %d: نام الزامی است", rowNum))
+			failedCount++
+			continue
+		}
+
+		if email == "" {
+			errors = append(errors, fmt.Sprintf("ردیف %d: ایمیل الزامی است", rowNum))
+			failedCount++
+			continue
+		}
+
+		if phone == "" {
+			errors = append(errors, fmt.Sprintf("ردیف %d: شماره تلفن الزامی است", rowNum))
+			failedCount++
+			continue
+		}
+
+		// Check if email already exists
+		var existingUser models.User
+		if err := db.Where("email = ?", email).First(&existingUser).Error; err == nil {
+			errors = append(errors, fmt.Sprintf("ردیف %d: ایمیل %s قبلاً ثبت شده است", rowNum, email))
+			failedCount++
+			continue
+		}
+
+		// Check if phone already exists
+		if err := db.Where("phone = ?", phone).First(&existingUser).Error; err == nil {
+			errors = append(errors, fmt.Sprintf("ردیف %d: شماره تلفن %s قبلاً ثبت شده است", rowNum, phone))
+			failedCount++
+			continue
+		}
+
+		// Parse name into first_name and last_name
+		nameParts := strings.Fields(name)
+		firstName := ""
+		lastName := ""
+		if len(nameParts) > 0 {
+			firstName = nameParts[0]
+			if len(nameParts) > 1 {
+				lastName = strings.Join(nameParts[1:], " ")
+			}
+		}
+
+		// Hash default password
+		hashedPassword, err := utils.HashPassword("123456")
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("ردیف %d: خطا در پردازش رمز عبور", rowNum))
+			failedCount++
+			continue
+		}
+
+		// Create user
+		user := models.User{
+			FirstName:  firstName,
+			LastName:   lastName,
+			Email:      email,
+			Phone:      phone,
+			Password:   hashedPassword,
+			TelegramID: telegramID,
+			IsActive:   isActive,
+		}
+
+		if err := db.Create(&user).Error; err != nil {
+			errors = append(errors, fmt.Sprintf("ردیف %d: خطا در ایجاد کاربر - %v", rowNum, err))
+			failedCount++
+			continue
+		}
+
+		successCount++
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("%d کاربر با موفقیت وارد شد، %d کاربر با خطا مواجه شد", successCount, failedCount),
+		"data": gin.H{
+			"success_count": successCount,
+			"failed_count":  failedCount,
+			"errors":        errors,
+		},
+	})
+}
 
 // ExportUsersToExcel exports users to Excel file
 func ExportUsersToExcel(c *gin.Context) {

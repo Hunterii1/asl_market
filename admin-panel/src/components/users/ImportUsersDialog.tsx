@@ -37,35 +37,13 @@ import {
   type ParsedUserRow,
 } from '@/lib/utils/csvParser';
 import { type AddUserFormData } from '@/lib/validations/user';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface ImportUsersDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: (count: number) => void;
 }
-
-// Mock API function for bulk import
-const importUsers = async (users: AddUserFormData[]): Promise<{ success: number; failed: number }> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate import with 95% success rate
-      const success = Math.floor(users.length * 0.95);
-      const failed = users.length - success;
-      
-      // Save to localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('asll-users') || '[]');
-      const newUsers = users.slice(0, success).map((user, index) => ({
-        id: (Date.now() + index).toString(),
-        ...user,
-        createdAt: new Date().toLocaleDateString('fa-IR'),
-      }));
-      existingUsers.push(...newUsers);
-      localStorage.setItem('asll-users', JSON.stringify(existingUsers));
-      
-      resolve({ success, failed });
-    }, 2000);
-  });
-};
 
 export function ImportUsersDialog({ open, onOpenChange, onSuccess }: ImportUsersDialogProps) {
   const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'complete'>('upload');
@@ -196,23 +174,41 @@ export function ImportUsersDialog({ open, onOpenChange, onSuccess }: ImportUsers
     }, 200);
 
     try {
-      const result = await importUsers(usersToImport);
+      // Create CSV content from selected users
+      const csvLines = ['نام,ایمیل,تلفن,تلگرام,وضعیت'];
+      usersToImport.forEach(user => {
+        const status = user.status === 'active' ? 'فعال' : user.status === 'inactive' ? 'غیرفعال' : 'مسدود';
+        csvLines.push(`${user.name},${user.email},${user.phone},${user.telegramId || ''},${status}`);
+      });
+      const csvContent = csvLines.join('\n');
+
+      // Create blob and file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const file = new File([blob], 'users_import.csv', { type: 'text/csv' });
+
+      // Upload file
+      const result = await adminApi.importUsers(file);
+      
       clearInterval(progressInterval);
       setImportProgress(100);
-      setImportResult(result);
+      
+      const successCount = result.success_count || result.data?.success_count || 0;
+      const failedCount = result.failed_count || result.data?.failed_count || 0;
+      
+      setImportResult({ success: successCount, failed: failedCount });
       setStep('complete');
       
       toast({
         title: 'موفقیت',
-        description: `${result.success} کاربر با موفقیت وارد شد.`,
+        description: `${successCount} کاربر با موفقیت وارد شد.`,
       });
       
-      onSuccess?.(result.success);
-    } catch (error) {
+      onSuccess?.(successCount);
+    } catch (error: any) {
       clearInterval(progressInterval);
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطا در واردسازی کاربران',
+        description: error?.message || 'خطا در واردسازی کاربران',
         variant: 'destructive',
       });
       setStep('preview');

@@ -167,7 +167,15 @@ class AdminApiService {
     });
   }
 
-  async createUser(data: any): Promise<any> {
+  async createUser(data: {
+    name: string;
+    email: string;
+    phone: string;
+    telegram_id?: string;
+    balance?: number;
+    is_active?: boolean;
+    password?: string;
+  }): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/users`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -178,6 +186,16 @@ class AdminApiService {
     return this.makeRequest(`${API_BASE_URL}/admin/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
+    });
+  }
+
+  async importUsers(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return this.makeRequest(`${API_BASE_URL}/admin/import/users`, {
+      method: 'POST',
+      body: formData,
     });
   }
 

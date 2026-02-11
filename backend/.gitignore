@@ -38,3 +38,4 @@ asl-market-backend
 # Coverage files
 *.cover
 *.coverprofile
+uploads/exports/*.xlsx

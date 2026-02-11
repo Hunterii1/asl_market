@@ -32,36 +32,13 @@ import {
 import { addUserSchema, type AddUserFormData } from '@/lib/validations/user';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddUserDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
 }
-
-// Mock API function - در آینده با API واقعی جایگزین می‌شود
-const createUser = async (data: AddUserFormData): Promise<void> => {
-  // شبیه‌سازی API call
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      // شبیه‌سازی خطا (10% احتمال)
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        // ذخیره در localStorage برای نمایش در لیست
-        const users = JSON.parse(localStorage.getItem('asll-users') || '[]');
-        const newUser = {
-          id: Date.now().toString(),
-          ...data,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-        };
-        users.push(newUser);
-        localStorage.setItem('asll-users', JSON.stringify(users));
-        resolve();
-      }
-    }, 1500);
-  });
-};
 
 export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -81,7 +58,18 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
   const onSubmit = async (data: AddUserFormData) => {
     setIsSubmitting(true);
     try {
-      await createUser(data);
+      // Prepare data for API
+      const apiData = {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        telegram_id: data.telegramId,
+        balance: data.balance || 0,
+        is_active: data.status === 'active',
+      };
+
+      await adminApi.createUser(apiData);
+      
       toast({
         title: 'موفقیت',
         description: 'کاربر با موفقیت افزوده شد.',
@@ -90,10 +78,10 @@ export function AddUserDialog({ open, onOpenChange, onSuccess }: AddUserDialogPr
       form.reset();
       onOpenChange(false);
       onSuccess?.();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'خطا',
-        description: error instanceof Error ? error.message : 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
+        description: error?.message || 'خطایی رخ داد. لطفا دوباره تلاش کنید.',
         variant: 'destructive',
       });
     } finally {
