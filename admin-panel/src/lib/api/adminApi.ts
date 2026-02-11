@@ -434,9 +434,35 @@ class AdminApiService {
     });
   }
 
+  async createWithdrawal(data: {
+    user_id: number;
+    amount: number;
+    account_info: string;
+    admin_notes?: string;
+  }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/withdrawal/requests`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getWithdrawal(id: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/withdrawal/request/${id}`, {
       method: 'GET',
+    });
+  }
+
+  async updateWithdrawal(
+    id: number,
+    data: {
+      amount?: number;
+      account_info?: string;
+      admin_notes?: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/withdrawal/request/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
     });
   }
 

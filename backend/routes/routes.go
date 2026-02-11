@@ -250,7 +250,11 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/admin/sliders/upload", controllers.UploadSliderImage)
 
 		// Admin withdrawal management routes
+		protected.POST("/admin/withdrawal/requests", withdrawalController.CreateWithdrawalRequestAdmin)
 		protected.GET("/admin/withdrawal/requests", withdrawalController.GetAllWithdrawalRequests)
+		protected.GET("/admin/withdrawal/request/:id", withdrawalController.GetWithdrawalRequestAdmin)
+		protected.PUT("/admin/withdrawal/request/:id", withdrawalController.UpdateWithdrawalRequestAdmin)
+		protected.DELETE("/admin/withdrawal/request/:id", withdrawalController.DeleteWithdrawalRequestAdmin)
 		protected.PUT("/admin/withdrawal/request/:id/status", withdrawalController.UpdateWithdrawalStatus)
 		protected.GET("/admin/withdrawal/stats", withdrawalController.GetAllWithdrawalStats)
 

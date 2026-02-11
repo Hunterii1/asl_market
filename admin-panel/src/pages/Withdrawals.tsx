@@ -280,14 +280,8 @@ export default function Withdrawals() {
     }
   }, [totalPages, currentPage]);
 
-  const handleWithdrawalAdded = () => {
-    const stored = localStorage.getItem('asll-withdrawals');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setWithdrawals(parsed);
-      } catch {}
-    }
+  const handleWithdrawalAdded = async () => {
+    await loadWithdrawals();
   };
 
   const toggleSelectAll = () => {

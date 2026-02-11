@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/form';
 import { addWithdrawalSchema, type AddWithdrawalFormData } from '@/lib/validations/withdrawal';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface AddWithdrawalDialogProps {
   open: boolean;
@@ -39,48 +40,33 @@ interface AddWithdrawalDialogProps {
   onSuccess?: () => void;
 }
 
-// Mock API function
-const createWithdrawal = async (data: AddWithdrawalFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const withdrawals = JSON.parse(localStorage.getItem('asll-withdrawals') || '[]');
-        const newWithdrawal = {
-          id: Date.now().toString(),
-          ...data,
-          createdAt: new Date().toLocaleDateString('fa-IR'),
-          processedAt: null,
-          processedBy: null,
-        };
-        withdrawals.push(newWithdrawal);
-        localStorage.setItem('asll-withdrawals', JSON.stringify(withdrawals));
-        resolve();
-      }
-    }, 1500);
-  });
-};
-
-// Mock users list
-const getUsers = () => {
-  const stored = localStorage.getItem('asll-users');
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
-
 export function AddWithdrawalDialog({ open, onOpenChange, onSuccess }: AddWithdrawalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<{ id: string; name: string; balance?: number }[]>([]);
 
   useEffect(() => {
-    setUsers(getUsers());
+    const loadUsers = async () => {
+      try {
+        const response = await adminApi.getUsers({ per_page: 100 });
+        const usersData = response.users || response.data?.users || [];
+        const transformed = usersData.map((u: any) => ({
+          id: u.id?.toString() || u.ID?.toString() || '',
+          name: u.name || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'بدون نام',
+          balance: u.balance || 0,
+        }));
+        setUsers(transformed);
+      } catch (error: any) {
+        toast({
+          title: 'خطا',
+          description: error?.message || 'خطا در بارگذاری کاربران',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (open) {
+      loadUsers();
+    }
   }, [open]);
 
   const form = useForm<AddWithdrawalFormData>({
@@ -112,7 +98,15 @@ export function AddWithdrawalDialog({ open, onOpenChange, onSuccess }: AddWithdr
   const onSubmit = async (data: AddWithdrawalFormData) => {
     setIsSubmitting(true);
     try {
-      await createWithdrawal(data);
+      // Map form data to API payload
+      const payload = {
+        user_id: Number(data.userId),
+        amount: data.amount,
+        account_info: data.accountInfo,
+        admin_notes: data.description || '',
+      };
+
+      await adminApi.createWithdrawal(payload);
       toast({
         title: 'موفقیت',
         description: 'درخواست برداشت با موفقیت ثبت شد.',

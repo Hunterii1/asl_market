@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/form';
 import { editWithdrawalSchema, type EditWithdrawalFormData } from '@/lib/validations/withdrawal';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Withdrawal {
   id: string;
@@ -52,25 +53,6 @@ interface EditWithdrawalDialogProps {
   withdrawal: Withdrawal | null;
   onSuccess?: () => void;
 }
-
-// Mock API function
-const updateWithdrawal = async (data: EditWithdrawalFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const withdrawals = JSON.parse(localStorage.getItem('asll-withdrawals') || '[]');
-        const index = withdrawals.findIndex((w: Withdrawal) => w.id === data.id);
-        if (index !== -1) {
-          withdrawals[index] = { ...withdrawals[index], ...data };
-          localStorage.setItem('asll-withdrawals', JSON.stringify(withdrawals));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function EditWithdrawalDialog({ open, onOpenChange, withdrawal, onSuccess }: EditWithdrawalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +96,13 @@ export function EditWithdrawalDialog({ open, onOpenChange, withdrawal, onSuccess
   const onSubmit = async (data: EditWithdrawalFormData) => {
     setIsSubmitting(true);
     try {
-      await updateWithdrawal(data);
+      const payload = {
+        amount: data.amount,
+        account_info: data.accountInfo,
+        admin_notes: data.description || '',
+      };
+
+      await adminApi.updateWithdrawal(Number(data.id), payload);
       toast({
         title: 'موفقیت',
         description: 'اطلاعات برداشت با موفقیت به‌روزرسانی شد.',

@@ -254,6 +254,151 @@ func (wc *WithdrawalController) GetAllWithdrawalStats(c *gin.Context) {
 	c.JSON(http.StatusOK, stats)
 }
 
+// CreateWithdrawalRequestAdmin creates a new withdrawal request for a user (admin only)
+func (wc *WithdrawalController) CreateWithdrawalRequestAdmin(c *gin.Context) {
+	var req struct {
+		UserID      uint    `json:"user_id" binding:"required"`
+		Amount      float64 `json:"amount" binding:"required,gt=0"`
+		AccountInfo string  `json:"account_info" binding:"required"`
+		AdminNotes  string  `json:"admin_notes"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "درخواست نامعتبر است"})
+		return
+	}
+
+	// Create withdrawal request with minimal required fields
+	withdrawalRequest := &models.WithdrawalRequest{
+		UserID:        req.UserID,
+		Amount:        req.Amount,
+		Currency:      "USD", // Default currency for admin-created requests
+		SourceCountry: "AE",  // Default source country
+		BankCardNumber: req.AccountInfo,
+		AdminNotes:    req.AdminNotes,
+	}
+
+	if err := models.CreateWithdrawalRequest(wc.db, withdrawalRequest); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ثبت درخواست"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"success": true,
+		"message": "درخواست برداشت با موفقیت ایجاد شد",
+		"request": withdrawalRequest,
+	})
+}
+
+// GetWithdrawalRequestAdmin gets a specific withdrawal request by ID (admin only)
+func (wc *WithdrawalController) GetWithdrawalRequestAdmin(c *gin.Context) {
+	requestIDStr := c.Param("id")
+
+	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	request, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"request": request,
+	})
+}
+
+// UpdateWithdrawalRequestAdmin updates basic fields of a withdrawal request (admin only)
+func (wc *WithdrawalController) UpdateWithdrawalRequestAdmin(c *gin.Context) {
+	requestIDStr := c.Param("id")
+
+	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Amount      *float64 `json:"amount"`
+		AccountInfo *string  `json:"account_info"`
+		AdminNotes  *string  `json:"admin_notes"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "درخواست نامعتبر است"})
+		return
+	}
+
+	// Ensure the request exists
+	if _, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID)); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+
+	if req.Amount != nil {
+		updates["amount"] = *req.Amount
+	}
+	if req.AccountInfo != nil {
+		updates["bank_card_number"] = *req.AccountInfo
+	}
+	if req.AdminNotes != nil {
+		updates["admin_notes"] = *req.AdminNotes
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "هیچ فیلدی برای بروزرسانی ارسال نشده است"})
+		return
+	}
+
+	if err := wc.db.Model(&models.WithdrawalRequest{}).Where("id = ?", requestID).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بروزرسانی درخواست"})
+		return
+	}
+
+	updatedRequest, _ := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "درخواست برداشت با موفقیت بروزرسانی شد",
+		"request": updatedRequest,
+	})
+}
+
+// DeleteWithdrawalRequestAdmin deletes a withdrawal request (admin only)
+func (wc *WithdrawalController) DeleteWithdrawalRequestAdmin(c *gin.Context) {
+	requestIDStr := c.Param("id")
+
+	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	if err := wc.db.Delete(&models.WithdrawalRequest{}, uint(requestID)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف درخواست"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "درخواست برداشت با موفقیت حذف شد",
+	})
+}
+
 // UploadReceipt uploads a receipt for a withdrawal request
 func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 	userID := c.GetUint("user_id")
