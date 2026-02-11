@@ -268,9 +268,10 @@ func GetApprovedVisitors(c *gin.Context) {
 
 // GetVisitorsForAdmin returns paginated list of visitors for admin panel
 func GetVisitorsForAdmin(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -363,9 +364,10 @@ func GetVisitorsForAdmin(c *gin.Context) {
 
 // ApproveVisitorByAdmin approves a visitor registration
 func ApproveVisitorByAdmin(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -398,9 +400,10 @@ func ApproveVisitorByAdmin(c *gin.Context) {
 
 // RejectVisitorByAdmin rejects a visitor registration
 func RejectVisitorByAdmin(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -498,9 +501,10 @@ func GetVisitorByID(c *gin.Context) {
 
 // GetVisitorDetails returns detailed information about a specific visitor for admin
 func GetVisitorDetails(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -577,9 +581,10 @@ func GetVisitorDetails(c *gin.Context) {
 
 // UpdateVisitorStatus allows admin to update visitor status with notes
 func UpdateVisitorStatus(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -644,9 +649,10 @@ func UpdateVisitorStatus(c *gin.Context) {
 
 // UpdateVisitorByAdmin allows admin to update visitor information
 func UpdateVisitorByAdmin(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
@@ -904,9 +910,10 @@ func DeleteMyVisitor(c *gin.Context) {
 
 // DeleteVisitorByAdmin deletes a visitor by ID (admin only)
 func DeleteVisitorByAdmin(c *gin.Context) {
-	// Check if user is admin
+	// Check if user is admin (allow web admin roles)
 	userRole, exists := c.Get("user_role")
-	if !exists || userRole != "admin" {
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
 		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
 		return
 	}
