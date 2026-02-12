@@ -18,9 +18,18 @@ import {
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-const toFarsiNumber = (num: number | string) => {
+const toFarsiNumber = (num: number | string | null | undefined) => {
+  if (num === null || num === undefined) {
+    return "۰";
+  }
   if (typeof num === "string") {
+    if (num.trim().length === 0) {
+      return "۰";
+    }
     return num.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(d)]);
+  }
+  if (Number.isNaN(num)) {
+    return "۰";
   }
   return num.toLocaleString("fa-IR");
 };

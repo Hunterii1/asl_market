@@ -17,14 +17,24 @@ import {
   Users,
   MessageCircle,
   User,
+  Trash2,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { adminApi } from "@/lib/api/adminApi";
 
-const toFarsiNumber = (num: number | string) => {
+const toFarsiNumber = (num: number | string | null | undefined) => {
+  if (num === null || num === undefined) {
+    return "۰";
+  }
   if (typeof num === "string") {
+    if (num.trim().length === 0) {
+      return "۰";
+    }
     return num.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(d)]);
+  }
+  if (Number.isNaN(num)) {
+    return "۰";
   }
   return num.toLocaleString("fa-IR");
 };
@@ -69,6 +79,8 @@ export default function AdminMatchingRequests() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -77,8 +89,20 @@ export default function AdminMatchingRequests() {
 
   const loadStats = async () => {
     try {
-      const data = await adminApi.getMatchingRequestStats();
-      setStats(data.stats || data);
+      const response = await adminApi.getAdminMatchingStats();
+      const raw = response.stats || response.data?.stats || response;
+
+      const normalized: Stats = {
+        total_requests: raw.total_requests ?? raw.TotalRequests ?? 0,
+        active_requests: raw.active_requests ?? raw.ActiveRequests ?? 0,
+        accepted_requests: raw.accepted_requests ?? raw.AcceptedRequests ?? 0,
+        expired_requests: raw.expired_requests ?? raw.ExpiredRequests ?? 0,
+        completed_requests: raw.completed_requests ?? raw.CompletedRequests ?? 0,
+        total_responses: raw.total_responses ?? raw.TotalResponses ?? 0,
+        total_chats: raw.total_chats ?? raw.TotalChats ?? 0,
+      };
+
+      setStats(normalized);
     } catch (error: any) {
       console.error("خطا در بارگذاری آمار:", error);
     }
@@ -87,13 +111,19 @@ export default function AdminMatchingRequests() {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const data = await adminApi.getMatchingRequests({
-        status: statusFilter === 'all' ? undefined : statusFilter,
+      const response = await adminApi.getAdminMatchingRequests({
+        status: statusFilter === "all" ? undefined : statusFilter,
         page,
-        limit: 20,
+        per_page: 20,
       });
-      setRequests(data.data || data.requests || []);
-      setTotalPages(data.total_pages || data.pagination?.total_pages || 1);
+      const data = response.data || response.requests || response;
+      setRequests((data as MatchingRequest[]) || []);
+      setTotalPages(
+        response.total_pages ||
+          response.data?.total_pages ||
+          response.pagination?.total_pages ||
+          1
+      );
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -314,6 +344,96 @@ export default function AdminMatchingRequests() {
                   <Button variant="outline" size="sm" className="flex-1">
                     <Eye className="w-4 h-4 mr-2" />
                     مشاهده جزئیات
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const newStatus = window.prompt(
+                        "وضعیت جدید درخواست را وارد کنید (pending, active, accepted, expired, cancelled, completed):",
+                        request.status
+                      );
+                      if (!newStatus || newStatus === request.status) {
+                        return;
+                      }
+                      const normalized = newStatus.trim();
+                      const validStatuses = [
+                        "pending",
+                        "active",
+                        "accepted",
+                        "expired",
+                        "cancelled",
+                        "completed",
+                      ];
+                      if (!validStatuses.includes(normalized)) {
+                        toast({
+                          title: "خطا",
+                          description: "وضعیت وارد شده نامعتبر است.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      try {
+                        setIsUpdating(true);
+                        await adminApi.updateAdminMatchingRequest(request.id, {
+                          status: normalized,
+                        });
+                        toast({
+                          title: "موفقیت",
+                          description:
+                            "وضعیت درخواست با موفقیت به‌روزرسانی شد.",
+                        });
+                        await loadRequests();
+                      } catch (error: any) {
+                        toast({
+                          title: "خطا",
+                          description:
+                            error.message || "خطا در به‌روزرسانی درخواست",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsUpdating(false);
+                      }
+                    }}
+                    disabled={isUpdating}
+                  >
+                    تغییر وضعیت
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-500 border-red-500/40 hover:bg-red-500/10"
+                    onClick={async () => {
+                      if (
+                        !window.confirm(
+                          `آیا از حذف درخواست برای «${request.product_name}» اطمینان دارید؟`
+                        )
+                      ) {
+                        return;
+                      }
+                      try {
+                        setIsDeleting(true);
+                        await adminApi.deleteAdminMatchingRequest(request.id);
+                        toast({
+                          title: "موفقیت",
+                          description: "درخواست با موفقیت حذف شد.",
+                        });
+                        await loadRequests();
+                      } catch (error: any) {
+                        toast({
+                          title: "خطا",
+                          description:
+                            error.message || "خطا در حذف درخواست",
+                          variant: "destructive",
+                        });
+                      } finally {
+                        setIsDeleting(false);
+                      }
+                    }}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    حذف
                   </Button>
                 </div>
               </CardContent>

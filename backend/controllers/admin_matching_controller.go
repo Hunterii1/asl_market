@@ -157,7 +157,9 @@ func (amc *AdminMatchingController) GetAllMatchingChats(c *gin.Context) {
 	}
 
 	offset := (page - 1) * perPage
-	if err := query.Offset(offset).Limit(perPage).Order("last_message_at DESC NULLS LAST").Find(&chats).Error; err != nil {
+	// Use portable ordering without database-specific NULLS LAST syntax
+	if err := query.Offset(offset).Limit(perPage).
+		Order("last_message_at DESC, created_at DESC").Find(&chats).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت چت‌ها"})
 		return
 	}
@@ -341,7 +343,9 @@ func (amc *AdminMatchingController) GetAllVisitorProjectChats(c *gin.Context) {
 	}
 
 	offset := (page - 1) * perPage
-	if err := query.Offset(offset).Limit(perPage).Order("last_message_at DESC NULLS LAST").Find(&chats).Error; err != nil {
+	// Use portable ordering without database-specific NULLS LAST syntax
+	if err := query.Offset(offset).Limit(perPage).
+		Order("last_message_at DESC, created_at DESC").Find(&chats).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت چت‌ها"})
 		return
 	}
