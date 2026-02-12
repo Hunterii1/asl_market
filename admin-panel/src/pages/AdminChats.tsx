@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,8 +13,7 @@ import {
   Package,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const API_BASE_URL = "/api/v1";
+import { adminApi } from "@/lib/api/adminApi";
 
 const toFarsiNumber = (num: number | string) => {
   if (typeof num === "string") {
@@ -97,17 +97,8 @@ export default function AdminChats() {
   const loadMatchingChats = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/admin/matching/chats?page=${page}&per_page=20`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      setMatchingChats(data.data || []);
+      const data = await adminApi.getMatchingChats({ page, limit: 20 });
+      setMatchingChats(data.data || data.chats || []);
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -121,17 +112,8 @@ export default function AdminChats() {
 
   const loadVisitorProjectChats = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/admin/visitor-projects/chats?page=${page}&per_page=20`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      setVisitorProjectChats(data.data || []);
+      const data = await adminApi.getVisitorProjectChats({ page, limit: 20 });
+      setVisitorProjectChats(data.data || data.chats || []);
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -143,17 +125,8 @@ export default function AdminChats() {
 
   const viewMatchingChatMessages = async (chatId: number, productName: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/admin/matching/chats/${chatId}/messages?per_page=100`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      setSelectedMessages(data.messages || []);
+      const data = await adminApi.getMatchingChatMessages(chatId, { per_page: 100 });
+      setSelectedMessages(data.messages || data.data || []);
       setDialogTitle(`پیام‌های چت - ${productName}`);
       setMessagesDialogOpen(true);
     } catch (error: any) {
@@ -167,17 +140,8 @@ export default function AdminChats() {
 
   const viewVisitorProjectChatMessages = async (chatId: number, projectTitle: string) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/admin/visitor-projects/chats/${chatId}/messages?per_page=100`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      setSelectedMessages(data.messages || []);
+      const data = await adminApi.getVisitorProjectChatMessages(chatId, { per_page: 100 });
+      setSelectedMessages(data.messages || data.data || []);
       setDialogTitle(`پیام‌های پروژه - ${projectTitle}`);
       setMessagesDialogOpen(true);
     } catch (error: any) {
@@ -195,7 +159,8 @@ export default function AdminChats() {
   };
 
   return (
-    <div className="space-y-6">
+    <AdminLayout>
+      <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground mb-2">مدیریت چت‌ها</h1>
@@ -382,6 +347,7 @@ export default function AdminChats() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

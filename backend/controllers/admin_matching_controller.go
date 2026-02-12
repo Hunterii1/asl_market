@@ -111,13 +111,13 @@ func (amc *AdminMatchingController) GetAllMatchingRequests(c *gin.Context) {
 // GetMatchingRequestStats gets statistics for admin dashboard
 func (amc *AdminMatchingController) GetMatchingRequestStats(c *gin.Context) {
 	var stats struct {
-		TotalRequests   int64
-		ActiveRequests  int64
-		AcceptedRequests int64
-		ExpiredRequests int64
+		TotalRequests     int64
+		ActiveRequests    int64
+		AcceptedRequests  int64
+		ExpiredRequests   int64
 		CompletedRequests int64
-		TotalResponses  int64
-		TotalChats      int64
+		TotalResponses    int64
+		TotalChats        int64
 	}
 
 	amc.db.Model(&models.MatchingRequest{}).Count(&stats.TotalRequests)
@@ -295,13 +295,13 @@ func (amc *AdminMatchingController) GetAllVisitorProjects(c *gin.Context) {
 // GetVisitorProjectStats gets statistics for admin dashboard
 func (amc *AdminMatchingController) GetVisitorProjectStats(c *gin.Context) {
 	var stats struct {
-		TotalProjects      int64
-		ActiveProjects     int64
-		AcceptedProjects   int64
-		ExpiredProjects    int64
-		CompletedProjects  int64
-		TotalProposals     int64
-		TotalChats         int64
+		TotalProjects     int64
+		ActiveProjects    int64
+		AcceptedProjects  int64
+		ExpiredProjects   int64
+		CompletedProjects int64
+		TotalProposals    int64
+		TotalChats        int64
 	}
 
 	amc.db.Model(&models.VisitorProject{}).Count(&stats.TotalProjects)
@@ -353,6 +353,172 @@ func (amc *AdminMatchingController) GetAllVisitorProjectChats(c *gin.Context) {
 		"per_page":    perPage,
 		"total_pages": (int(total) + perPage - 1) / perPage,
 	})
+}
+
+// ==================== Admin mutations for Matching Requests ====================
+
+// UpdateMatchingRequestAdmin allows admin to update basic fields of a matching request (e.g. status)
+func (amc *AdminMatchingController) UpdateMatchingRequestAdmin(c *gin.Context) {
+	// Allow only web admin roles
+	userRole, exists := c.Get("user_role")
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+
+	if req.Status != "" {
+		validStatuses := map[string]bool{
+			"pending":   true,
+			"active":    true,
+			"accepted":  true,
+			"expired":   true,
+			"cancelled": true,
+			"completed": true,
+		}
+		if !validStatuses[req.Status] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "وضعیت نامعتبر است"})
+			return
+		}
+		updates["status"] = req.Status
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "بدون تغییر"})
+		return
+	}
+
+	if err := amc.db.Model(&models.MatchingRequest{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی درخواست"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "درخواست با موفقیت به‌روزرسانی شد"})
+}
+
+// DeleteMatchingRequestAdmin allows admin to delete a matching request
+func (amc *AdminMatchingController) DeleteMatchingRequestAdmin(c *gin.Context) {
+	// Allow only web admin roles
+	userRole, exists := c.Get("user_role")
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		return
+	}
+
+	if err := amc.db.Delete(&models.MatchingRequest{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف درخواست"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "درخواست با موفقیت حذف شد"})
+}
+
+// ==================== Admin mutations for Visitor Projects ====================
+
+// UpdateVisitorProjectAdmin allows admin to update basic fields of a visitor project (e.g. status)
+func (amc *AdminMatchingController) UpdateVisitorProjectAdmin(c *gin.Context) {
+	// Allow only web admin roles
+	userRole, exists := c.Get("user_role")
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		return
+	}
+
+	var req struct {
+		Status string `json:"status"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		return
+	}
+
+	updates := make(map[string]interface{})
+
+	if req.Status != "" {
+		validStatuses := map[string]bool{
+			"pending":   true,
+			"active":    true,
+			"accepted":  true,
+			"expired":   true,
+			"cancelled": true,
+			"completed": true,
+		}
+		if !validStatuses[req.Status] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "وضعیت نامعتبر است"})
+			return
+		}
+		updates["status"] = req.Status
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "بدون تغییر"})
+		return
+	}
+
+	if err := amc.db.Model(&models.VisitorProject{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در به‌روزرسانی پروژه"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "پروژه با موفقیت به‌روزرسانی شد"})
+}
+
+// DeleteVisitorProjectAdmin allows admin to delete a visitor project
+func (amc *AdminMatchingController) DeleteVisitorProjectAdmin(c *gin.Context) {
+	// Allow only web admin roles
+	userRole, exists := c.Get("user_role")
+	roleStr, ok := userRole.(string)
+	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		return
+	}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		return
+	}
+
+	if err := amc.db.Delete(&models.VisitorProject{}, id).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در حذف پروژه"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "پروژه با موفقیت حذف شد"})
 }
 
 // GetVisitorProjectChatMessages gets messages for a specific visitor project chat (admin view)

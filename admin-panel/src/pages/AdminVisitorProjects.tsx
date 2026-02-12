@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { adminApi } from "@/lib/api/adminApi";
 import {
   Package,
@@ -16,8 +17,6 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-const API_BASE_URL = "/api/v1";
 
 const toFarsiNumber = (num: number | string) => {
   if (typeof num === "string") {
@@ -65,6 +64,10 @@ export default function AdminVisitorProjects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<VisitorProject | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -73,14 +76,8 @@ export default function AdminVisitorProjects() {
 
   const loadStats = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/admin/visitor-projects/stats`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      setStats(data.stats);
+      const data = await adminApi.getAdminVisitorProjectStats();
+      setStats(data.stats || data.data?.stats || data);
     } catch (error: any) {
       console.error("خطا در بارگذاری آمار:", error);
     }
@@ -89,18 +86,19 @@ export default function AdminVisitorProjects() {
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${API_BASE_URL}/admin/visitor-projects?status=${statusFilter}&page=${page}&per_page=20`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await adminApi.getAdminVisitorProjects({
+        status: statusFilter === "all" ? undefined : statusFilter,
+        page,
+        per_page: 20,
+      });
+      const data = response.data || response.data?.data || response.data?.projects || response;
+      setProjects((data as VisitorProject[]) || []);
+      setTotalPages(
+        response.total_pages ||
+          response.data?.total_pages ||
+          response.pagination?.total_pages ||
+          1
       );
-      const data = await response.json();
-      setProjects(data.data || []);
-      setTotalPages(data.total_pages || 1);
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -158,195 +156,384 @@ export default function AdminVisitorProjects() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">مدیریت پروژه‌های ویزیتوری</h1>
-        <p className="text-muted-foreground">مشاهده و مدیریت تمام پروژه‌های ویزیتوری</p>
-      </div>
-
-      {/* Stats */}
-      {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">کل پروژه‌ها</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.total_projects)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                  <TrendingUp className="w-5 h-5 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">فعال</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.active_projects)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">مختوم شده</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.completed_projects)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-orange-400" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">کل پیشنهادها</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {toFarsiNumber(stats.total_proposals)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">مدیریت پروژه‌های ویزیتوری</h1>
+          <p className="text-muted-foreground">
+            مشاهده و نظارت بر همه پروژه‌های ویزیتوری (بدون امکان ایجاد پروژه جدید توسط ادمین)
+          </p>
         </div>
-      )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="جستجو در عنوان، محصول، ویزیتور..."
-                className="pr-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <Filter className="w-4 h-4 ml-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                <SelectItem value="active">فعال</SelectItem>
-                <SelectItem value="accepted">پذیرفته شده</SelectItem>
-                <SelectItem value="completed">مختوم شده</SelectItem>
-                <SelectItem value="expired">منقضی شده</SelectItem>
-                <SelectItem value="cancelled">لغو شده</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Projects List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500" />
-        </div>
-      ) : filteredProjects.length === 0 ? (
-        <Card>
-          <CardContent className="py-20 text-center">
-            <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">پروژه‌ای یافت نشد</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredProjects.map((project) => (
-            <Card key={project.id} className="hover:border-purple-500/50 transition-colors">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                    <CardTitle className="text-lg">{project.project_title}</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      ویزیتور: {project.visitor?.full_name} | محصول: {project.product_name}
+        {/* Stats */}
+        {stats && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <Package className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">کل پروژه‌ها</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {toFarsiNumber(stats.total_projects)}
                     </p>
                   </div>
-                  {getStatusBadge(project.status, project.is_expired)}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">مقدار</p>
-                    <p className="text-sm font-semibold">
-                      {toFarsiNumber(project.quantity)} {project.unit}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">کشورهای مقصد</p>
-                    <p className="text-sm font-semibold">{project.target_countries}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">تعداد پیشنهادها</p>
-                    <p className="text-sm font-semibold">{toFarsiNumber(project.proposals_count)}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">زمان باقیمانده</p>
-                    <p className="text-sm font-semibold">{project.remaining_time}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
-                    <Eye className="w-4 h-4 mr-2" />
-                    مشاهده جزئیات
-                  </Button>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">فعال</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {toFarsiNumber(stats.active_projects)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <CheckCircle className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">مختوم شده</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {toFarsiNumber(stats.completed_projects)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <Users className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">کل پیشنهادها</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {toFarsiNumber(stats.total_proposals)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="جستجو در عنوان، محصول، ویزیتور..."
+                  className="pr-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[200px]">
+                  <Filter className="w-4 h-4 ml-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                  <SelectItem value="active">فعال</SelectItem>
+                  <SelectItem value="accepted">پذیرفته شده</SelectItem>
+                  <SelectItem value="completed">مختوم شده</SelectItem>
+                  <SelectItem value="expired">منقضی شده</SelectItem>
+                  <SelectItem value="cancelled">لغو شده</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Projects List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500" />
+          </div>
+        ) : filteredProjects.length === 0 ? (
+          <Card>
+            <CardContent className="py-20 text-center">
+              <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">پروژه‌ای یافت نشد</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {filteredProjects.map((project) => (
+              <Card key={project.id} className="hover:border-purple-500/50 transition-colors">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <CardTitle className="text-lg">{project.project_title}</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        ویزیتور: {project.visitor?.full_name} | محصول: {project.product_name}
+                      </p>
+                    </div>
+                    {getStatusBadge(project.status, project.is_expired)}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">مقدار</p>
+                      <p className="text-sm font-semibold">
+                        {toFarsiNumber(project.quantity)} {project.unit}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">کشورهای مقصد</p>
+                      <p className="text-sm font-semibold">{project.target_countries}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">تعداد پیشنهادها</p>
+                      <p className="text-sm font-semibold">
+                        {toFarsiNumber(project.proposals_count)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">زمان باقیمانده</p>
+                      <p className="text-sm font-semibold">{project.remaining_time}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setSelectedProject(project);
+                        setDetailsOpen(true);
+                      }}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      مشاهده جزئیات
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        const newStatus = window.prompt(
+                          "وضعیت جدید پروژه را وارد کنید (pending, active, accepted, expired, cancelled, completed):",
+                          project.status
+                        );
+                        if (!newStatus || newStatus === project.status) {
+                          return;
+                        }
+                        const normalized = newStatus.trim();
+                        const validStatuses = [
+                          "pending",
+                          "active",
+                          "accepted",
+                          "expired",
+                          "cancelled",
+                          "completed",
+                        ];
+                        if (!validStatuses.includes(normalized)) {
+                          toast({
+                            title: "خطا",
+                            description: "وضعیت وارد شده نامعتبر است.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        try {
+                          setIsUpdating(true);
+                          await adminApi.updateAdminVisitorProject(project.id, {
+                            status: normalized,
+                          });
+                          toast({
+                            title: "موفقیت",
+                            description: "وضعیت پروژه با موفقیت به‌روزرسانی شد.",
+                          });
+                          await loadProjects();
+                        } catch (error: any) {
+                          toast({
+                            title: "خطا",
+                            description:
+                              error.message || "خطا در به‌روزرسانی پروژه",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsUpdating(false);
+                        }
+                      }}
+                      disabled={isUpdating}
+                    >
+                      تغییر وضعیت
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-500 border-red-500/40 hover:bg-red-500/10"
+                      onClick={async () => {
+                        if (
+                          !window.confirm(
+                            `آیا از حذف پروژه «${project.project_title}» اطمینان دارید؟`
+                          )
+                        ) {
+                          return;
+                        }
+                        try {
+                          setIsDeleting(true);
+                          await adminApi.deleteAdminVisitorProject(project.id);
+                          toast({
+                            title: "موفقیت",
+                            description: "پروژه با موفقیت حذف شد.",
+                          });
+                          await loadProjects();
+                        } catch (error: any) {
+                          toast({
+                            title: "خطا",
+                            description:
+                              error.message || "خطا در حذف پروژه",
+                            variant: "destructive",
+                          });
+                        } finally {
+                          setIsDeleting(false);
+                        }
+                      }}
+                      disabled={isDeleting}
+                    >
+                      حذف
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              قبلی
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              صفحه {toFarsiNumber(page)} از {toFarsiNumber(totalPages)}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              بعدی
+            </Button>
+          </div>
+        )}
+
+        {/* Details Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent
+            className="max-w-2xl max-h-[90vh] overflow-y-auto"
+            dir="rtl"
           >
-            قبلی
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            صفحه {toFarsiNumber(page)} از {toFarsiNumber(totalPages)}
-          </span>
-          <Button
-            variant="outline"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            بعدی
-          </Button>
-        </div>
-      )}
-    </div>
+            {selectedProject && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-bold">
+                    {selectedProject.project_title}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">ویزیتور</p>
+                      <p className="text-sm font-semibold">
+                        {selectedProject.visitor?.full_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">محصول</p>
+                      <p className="text-sm font-semibold">
+                        {selectedProject.product_name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">مقدار</p>
+                      <p className="text-sm font-semibold">
+                        {toFarsiNumber(selectedProject.quantity)}{" "}
+                        {selectedProject.unit}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">کشورهای مقصد</p>
+                      <p className="text-sm font-semibold">
+                        {selectedProject.target_countries}
+                      </p>
+                    </div>
+                    {selectedProject.budget && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">بودجه</p>
+                        <p className="text-sm font-semibold">
+                          {toFarsiNumber(selectedProject.budget)}{" "}
+                          {selectedProject.currency}
+                        </p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-muted-foreground">وضعیت</p>
+                      <div className="mt-1">
+                        {getStatusBadge(
+                          selectedProject.status,
+                          selectedProject.is_expired
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">
+                        تعداد پیشنهادها
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {toFarsiNumber(selectedProject.proposals_count)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">زمان باقیمانده</p>
+                      <p className="text-sm font-semibold">
+                        {selectedProject.remaining_time}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
+                    <p className="text-sm font-semibold">
+                      {new Date(
+                        selectedProject.created_at
+                      ).toLocaleString("fa-IR")}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AdminLayout>
   );
 }

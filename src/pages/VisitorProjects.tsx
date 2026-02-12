@@ -103,6 +103,8 @@ export default function VisitorProjects() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingProjectId, setEditingProjectId] = useState<number | null>(null);
   const [selectedProject, setSelectedProject] = useState<VisitorProject | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -148,6 +150,11 @@ export default function VisitorProjects() {
   };
 
   const handleCreateProject = async () => {
+    if (formMode === "edit" && editingProjectId !== null) {
+      await handleUpdateProject();
+      return;
+    }
+
     if (!formData.project_title || !formData.product_name || !formData.quantity || !formData.target_countries || !formData.expires_at) {
       toast({
         title: "خطا",
@@ -172,6 +179,8 @@ export default function VisitorProjects() {
       });
 
       setCreateDialogOpen(false);
+      setFormMode("create");
+      setEditingProjectId(null);
       setFormData({
         project_title: "",
         product_name: "",
@@ -190,6 +199,60 @@ export default function VisitorProjects() {
       toast({
         title: "خطا",
         description: error.message || "خطا در ثبت پروژه",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateProject = async () => {
+    if (editingProjectId === null) return;
+
+    if (!formData.project_title || !formData.product_name || !formData.quantity || !formData.target_countries || !formData.expires_at) {
+      toast({
+        title: "خطا",
+        description: "لطفاً تمام فیلدهای ضروری را پر کنید",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const expiresAt = new Date(formData.expires_at).toISOString();
+
+      await apiService.updateVisitorProject(editingProjectId, {
+        ...formData,
+        expires_at: expiresAt,
+      });
+
+      toast({
+        title: "موفق",
+        description: "پروژه ویزیتوری با موفقیت ویرایش شد.",
+      });
+
+      setCreateDialogOpen(false);
+      setFormMode("create");
+      setEditingProjectId(null);
+      setFormData({
+        project_title: "",
+        product_name: "",
+        quantity: "",
+        unit: "kg",
+        target_countries: "",
+        budget: "",
+        currency: "USD",
+        payment_terms: "",
+        delivery_time: "",
+        description: "",
+        expires_at: "",
+      });
+      loadProjects();
+    } catch (error: any) {
+      toast({
+        title: "خطا",
+        description: error.message || "خطا در ویرایش پروژه",
         variant: "destructive",
       });
     } finally {
@@ -311,7 +374,24 @@ export default function VisitorProjects() {
               چت‌ها
             </Button>
             <Button
-              onClick={() => setCreateDialogOpen(true)}
+              onClick={() => {
+                setFormMode("create");
+                setEditingProjectId(null);
+                setFormData({
+                  project_title: "",
+                  product_name: "",
+                  quantity: "",
+                  unit: "kg",
+                  target_countries: "",
+                  budget: "",
+                  currency: "USD",
+                  payment_terms: "",
+                  delivery_time: "",
+                  description: "",
+                  expires_at: "",
+                });
+                setCreateDialogOpen(true);
+              }}
               className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -429,6 +509,34 @@ export default function VisitorProjects() {
                         <Button
                           size="sm"
                           variant="outline"
+                          onClick={() => {
+                            setFormMode("edit");
+                            setEditingProjectId(project.id);
+                            setFormData({
+                              project_title: project.project_title,
+                              product_name: project.product_name,
+                              quantity: project.quantity,
+                              unit: project.unit,
+                              target_countries: project.target_countries,
+                              budget: project.budget || "",
+                              currency: project.currency,
+                              payment_terms: project.payment_terms || "",
+                              delivery_time: project.delivery_time || "",
+                              description: project.description || "",
+                              // تبدیل expires_at به فرمت datetime-local
+                              expires_at: project.expires_at
+                                ? new Date(project.expires_at).toISOString().slice(0, 16)
+                                : "",
+                            });
+                            setCreateDialogOpen(true);
+                          }}
+                          className="rounded-2xl text-blue-400 hover:text-blue-300"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
                           onClick={() => handleCloseProject(project.id)}
                           className="rounded-2xl text-emerald-400 hover:text-emerald-300"
                         >
@@ -456,7 +564,9 @@ export default function VisitorProjects() {
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="max-w-2xl bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 border-orange-500/30 rounded-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-foreground">ثبت پروژه ویزیتوری جدید</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-foreground">
+              {formMode === "create" ? "ثبت پروژه ویزیتوری جدید" : "ویرایش پروژه ویزیتوری"}
+            </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               پروژه خود را ثبت کنید تا تأمین‌کننده‌های مناسب پیشنهاد بدهند
             </DialogDescription>
@@ -605,7 +715,13 @@ export default function VisitorProjects() {
               disabled={submitting}
               className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl"
             >
-              {submitting ? "در حال ثبت..." : "ثبت پروژه"}
+              {submitting
+                ? formMode === "create"
+                  ? "در حال ثبت..."
+                  : "در حال ویرایش..."
+                : formMode === "create"
+                  ? "ثبت پروژه"
+                  : "ثبت ویرایش"}
             </Button>
             <Button
               variant="outline"

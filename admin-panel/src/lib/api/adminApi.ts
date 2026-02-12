@@ -1228,6 +1228,127 @@ class AdminApiService {
     });
   }
 
+  // ==================== Matching & Visitor Projects (Admin) ====================
+  async getAdminMatchingRequests(params: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/requests?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminMatchingStats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/requests/stats`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminMatchingRequest(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/requests/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminMatchingRequest(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/requests/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminMatchingChats(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/chats?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminMatchingChatMessages(chatId: number, params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/chats/${chatId}/messages?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminVisitorProjects(params: {
+    status?: string;
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.status) queryParams.append('status', params.status);
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminVisitorProjectStats(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/stats`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAdminVisitorProject(id: number, data: any): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAdminVisitorProject(id: number): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminVisitorProjectChats(params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/chats?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
+  async getAdminVisitorProjectChatMessages(chatId: number, params: {
+    page?: number;
+    per_page?: number;
+  } = {}): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params.page) queryParams.append('page', params.page.toString());
+    if (params.per_page) queryParams.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/chats/${chatId}/messages?${queryParams}`, {
+      method: 'GET',
+    });
+  }
+
   // ==================== Slider Management ====================
   async getSliders(params: {
     page?: number;
@@ -1303,7 +1424,7 @@ class AdminApiService {
   }): Promise<any> {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
-    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.limit) query.append('per_page', params.limit.toString());
     if (params?.status) query.append('status', params.status);
     if (params?.search) query.append('search', params.search);
 
@@ -1333,7 +1454,7 @@ class AdminApiService {
   }): Promise<any> {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
-    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.limit) query.append('per_page', params.limit.toString());
     if (params?.status) query.append('status', params.status);
     if (params?.search) query.append('search', params.search);
 
@@ -1362,7 +1483,7 @@ class AdminApiService {
   }): Promise<any> {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
-    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.limit) query.append('per_page', params.limit.toString());
     if (params?.type) query.append('type', params.type);
 
     return this.makeRequest(`${API_BASE_URL}/admin/matching/chats?${query}`, {
@@ -1376,21 +1497,35 @@ class AdminApiService {
   }): Promise<any> {
     const query = new URLSearchParams();
     if (params?.page) query.append('page', params.page.toString());
-    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.limit) query.append('per_page', params.limit.toString());
 
     return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/chats?${query}`, {
       method: 'GET',
     });
   }
 
-  async getMatchingChatMessages(chatId: number): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/matching/chats/${chatId}/messages`, {
+  async getMatchingChatMessages(chatId: number, params?: {
+    page?: number;
+    per_page?: number;
+  }): Promise<any> {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.per_page) query.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/matching/chats/${chatId}/messages?${query}`, {
       method: 'GET',
     });
   }
 
-  async getVisitorProjectChatMessages(chatId: number): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/chats/${chatId}/messages`, {
+  async getVisitorProjectChatMessages(chatId: number, params?: {
+    page?: number;
+    per_page?: number;
+  }): Promise<any> {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.per_page) query.append('per_page', params.per_page.toString());
+
+    return this.makeRequest(`${API_BASE_URL}/admin/visitor-projects/chats/${chatId}/messages?${query}`, {
       method: 'GET',
     });
   }
