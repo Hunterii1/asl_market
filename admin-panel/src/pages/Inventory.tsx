@@ -714,14 +714,8 @@ export default function Inventory() {
         open={!!editInventory}
         onOpenChange={(open) => !open && setEditInventory(null)}
         inventory={editInventory}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-inventory');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setInventory(parsed);
-            } catch {}
-          }
+        onSuccess={async () => {
+          await reloadInventory();
           setEditInventory(null);
         }}
       />
@@ -731,14 +725,8 @@ export default function Inventory() {
         open={!!adjustInventory}
         onOpenChange={(open) => !open && setAdjustInventory(null)}
         inventory={adjustInventory}
-        onSuccess={() => {
-          const stored = localStorage.getItem('asll-inventory');
-          if (stored) {
-            try {
-              const parsed = JSON.parse(stored);
-              setInventory(parsed);
-            } catch {}
-          }
+        onSuccess={async () => {
+          await reloadInventory();
           setAdjustInventory(null);
         }}
       />

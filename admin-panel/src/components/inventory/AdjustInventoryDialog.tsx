@@ -32,12 +32,14 @@ import {
 import { adjustInventorySchema, type AdjustInventoryFormData } from '@/lib/validations/inventory';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { adminApi } from '@/lib/api/adminApi';
 
 interface Inventory {
   id: string;
   productName: string;
   quantity: number;
   availableQuantity?: number;
+  notes?: string;
 }
 
 interface AdjustInventoryDialogProps {
@@ -46,50 +48,6 @@ interface AdjustInventoryDialogProps {
   inventory: Inventory | null;
   onSuccess?: () => void;
 }
-
-// Mock API function
-const adjustInventory = async (data: AdjustInventoryFormData): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (Math.random() < 0.1) {
-        reject(new Error('خطا در ارتباط با سرور. لطفا دوباره تلاش کنید.'));
-      } else {
-        const inventories = JSON.parse(localStorage.getItem('asll-inventory') || '[]');
-        const index = inventories.findIndex((i: Inventory) => i.id === data.inventoryId);
-        if (index !== -1) {
-          const currentQuantity = inventories[index].quantity;
-          const newQuantity = data.type === 'add' 
-            ? currentQuantity + data.quantity 
-            : currentQuantity - data.quantity;
-          
-          if (newQuantity < 0) {
-            reject(new Error('تعداد نهایی نمی‌تواند منفی باشد.'));
-            return;
-          }
-
-          inventories[index].quantity = newQuantity;
-          inventories[index].availableQuantity = inventories[index].availableQuantity !== undefined
-            ? inventories[index].availableQuantity + (data.type === 'add' ? data.quantity : -data.quantity)
-            : newQuantity;
-          
-          // Update status
-          const minStock = inventories[index].minStock || 0;
-          if (newQuantity === 0) {
-            inventories[index].status = 'out_of_stock';
-          } else if (newQuantity <= minStock) {
-            inventories[index].status = 'low_stock';
-          } else {
-            inventories[index].status = 'in_stock';
-          }
-          
-          inventories[index].updatedAt = new Date().toLocaleDateString('fa-IR');
-          localStorage.setItem('asll-inventory', JSON.stringify(inventories));
-        }
-        resolve();
-      }
-    }, 1000);
-  });
-};
 
 export function AdjustInventoryDialog({ open, onOpenChange, inventory, onSuccess }: AdjustInventoryDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -121,7 +79,57 @@ export function AdjustInventoryDialog({ open, onOpenChange, inventory, onSuccess
   const onSubmit = async (data: AdjustInventoryFormData) => {
     setIsSubmitting(true);
     try {
-      await adjustInventory(data);
+      if (!inventory) {
+        throw new Error('اطلاعات موجودی یافت نشد.');
+      }
+
+      const currentQuantity =
+        typeof inventory.availableQuantity === 'number'
+          ? inventory.availableQuantity
+          : inventory.quantity;
+
+      const newQuantity =
+        data.type === 'add'
+          ? currentQuantity + data.quantity
+          : currentQuantity - data.quantity;
+
+      if (newQuantity < 0) {
+        throw new Error('تعداد نهایی نمی‌تواند منفی باشد.');
+      }
+
+      // آماده‌سازی یادداشت‌ها (ترکیب یادداشت قبلی محصول با دلیل و یادداشت جدید این تغییر)
+      const reasonText = (data.reason || '').trim();
+      const extraNotes = (data.notes || '').trim();
+      let combinedNotes = (inventory.notes || '').trim();
+
+      const noteParts: string[] = [];
+      if (reasonText) {
+        noteParts.push(`دلیل تغییر: ${reasonText}`);
+      }
+      if (extraNotes) {
+        noteParts.push(`یادداشت: ${extraNotes}`);
+      }
+
+      if (noteParts.length > 0) {
+        const logLine = `${new Date().toLocaleString('fa-IR')} - ${noteParts.join(' | ')}`;
+        combinedNotes = combinedNotes ? `${combinedNotes}\n${logLine}` : logLine;
+      }
+
+      const payload: any = {
+        available_quantity: newQuantity,
+      };
+
+      if (combinedNotes) {
+        payload.notes = combinedNotes;
+      }
+
+      // در صورت صفر شدن موجودی، وضعیت بک‌اند را به out_of_stock تنظیم می‌کنیم
+      if (newQuantity === 0) {
+        payload.status = 'out_of_stock';
+      }
+
+      await adminApi.updateAvailableProduct(parseInt(inventory.id, 10), payload);
+
       toast({
         title: 'موفقیت',
         description: `موجودی با موفقیت ${data.type === 'add' ? 'افزایش' : 'کاهش'} یافت.`,

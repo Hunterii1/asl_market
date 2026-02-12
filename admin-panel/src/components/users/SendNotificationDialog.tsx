@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -38,6 +37,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { adminApi } from '@/lib/api/adminApi';
 
 export interface UserForNotification {
   id: string;
@@ -63,36 +63,6 @@ interface SendResult {
   failed: number;
   total: number;
 }
-
-// Mock API function for sending notifications
-const sendNotifications = async (
-  users: UserForNotification[],
-  message: string,
-  types: NotificationType[]
-): Promise<SendResult> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simulate 95% success rate
-      const success = Math.floor(users.length * 0.95);
-      const failed = users.length - success;
-      
-      // Save notification history to localStorage
-      const history = JSON.parse(localStorage.getItem('asll-notifications') || '[]');
-      history.push({
-        id: Date.now().toString(),
-        message,
-        types,
-        userCount: users.length,
-        successCount: success,
-        failedCount: failed,
-        timestamp: new Date().toISOString(),
-      });
-      localStorage.setItem('asll-notifications', JSON.stringify(history));
-      
-      resolve({ success, failed, total: users.length });
-    }, 2000);
-  });
-};
 
 export function SendNotificationDialog({
   open,
@@ -198,34 +168,113 @@ export function SendNotificationDialog({
     setIsSending(true);
     setSendProgress(0);
 
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setSendProgress(prev => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        return prev + 10;
-      });
-    }, 200);
+    const startTime = Date.now();
+    const updateProgress = (completed: number, totalOps: number) => {
+      if (totalOps === 0) {
+        setSendProgress(0);
+        return;
+      }
+      // Basic progress based on completed operations, capped at 95% until finish
+      const baseProgress = Math.min(95, Math.round((completed / totalOps) * 100));
+      // Small time-based smoothing
+      const elapsed = Date.now() - startTime;
+      const timeBoost = Math.min(20, Math.floor(elapsed / 500));
+      setSendProgress(Math.min(95, Math.max(baseProgress, timeBoost)));
+    };
 
     try {
-      const result = await sendNotifications(filteredUsers, message, notificationTypes);
-      clearInterval(progressInterval);
+      let successUsers = 0;
+      let failedUsers = 0;
+      let completedOps = 0;
+
+      // Total "operations" = number of notification creations we will attempt
+      const totalOps =
+        scope === 'all'
+          ? notificationTypes.length
+          : filteredUsers.length * notificationTypes.length;
+
+      const normalizedSubject =
+        subject && subject.trim().length > 0 ? subject.trim() : 'پیام جدید از مدیریت سیستم';
+
+      if (scope === 'all') {
+        // Broadcast to all users: one notification per type
+        let anySuccess = false;
+        for (const type of notificationTypes) {
+          try {
+            await adminApi.createNotification({
+              title: normalizedSubject,
+              message: message.trim(),
+              type,
+              priority: 'normal',
+              user_id: null,
+            });
+            anySuccess = true;
+          } catch (error) {
+            console.error('Error creating broadcast notification:', error);
+          } finally {
+            completedOps += 1;
+            updateProgress(completedOps, totalOps);
+          }
+        }
+
+        if (anySuccess) {
+          successUsers = filteredCount;
+        } else {
+          failedUsers = filteredCount;
+        }
+      } else {
+        // Send per user (selected or filtered)
+        for (const user of filteredUsers) {
+          let userHasSuccess = false;
+
+          const userIdNum = Number(user.id);
+          const userId = Number.isNaN(userIdNum) ? undefined : userIdNum;
+
+          for (const type of notificationTypes) {
+            try {
+              await adminApi.createNotification({
+                title: normalizedSubject,
+                message: message.trim(),
+                type,
+                priority: 'normal',
+                user_id: userId,
+              });
+              userHasSuccess = true;
+            } catch (error) {
+              console.error('Error creating notification for user', user.id, error);
+            } finally {
+              completedOps += 1;
+              updateProgress(completedOps, totalOps);
+            }
+          }
+
+          if (userHasSuccess) {
+            successUsers += 1;
+          } else {
+            failedUsers += 1;
+          }
+        }
+      }
+
       setSendProgress(100);
+      const result: SendResult = {
+        success: successUsers,
+        failed: failedUsers,
+        total: filteredCount,
+      };
       setSendResult(result);
-      
+
       toast({
         title: 'موفقیت',
         description: `اعلان به ${result.success} کاربر با موفقیت ارسال شد.`,
       });
     } catch (error) {
-      clearInterval(progressInterval);
       toast({
         title: 'خطا',
         description: error instanceof Error ? error.message : 'خطا در ارسال اعلان',
         variant: 'destructive',
       });
+    } finally {
       setIsSending(false);
     }
   };

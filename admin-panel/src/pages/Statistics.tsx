@@ -141,14 +141,84 @@ export default function Statistics() {
 
           setStats(statsList);
 
-          // Generate simple users chart data (last 7 days)
-          const days = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
-          const chartData = days.map((day, index) => ({
-            name: day,
-            newUsers: Math.floor(Math.random() * 20) + 5, // Mock data for chart
-            activeUsers: Math.floor((statsData.users?.active || 0) / 7) + Math.floor(Math.random() * 10),
-          }));
-          setUsersData(chartData);
+          // Generate real users chart data (last 7 days) based on user creation dates
+          const generateUsersChartData = async () => {
+            try {
+              const perPage = 100;
+              let page = 1;
+              const allUsers: any[] = [];
+
+              while (true) {
+                const res = await adminApi.getUsers({ page, per_page: perPage });
+                const data = (res.data || res) as any;
+                const pageItems: any[] = data.users || res.users || [];
+                const total: number = data.total ?? res.total ?? pageItems.length;
+
+                allUsers.push(...pageItems);
+
+                if (pageItems.length < perPage || page * perPage >= total) {
+                  break;
+                }
+                page += 1;
+              }
+
+              // محدوده ۷ روز گذشته
+              const now = new Date();
+              const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6);
+
+              type DayBucket = { name: string; key: string; newUsers: number; activeUsers: number };
+              const days: DayBucket[] = [];
+              const dayNames = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+
+              for (let i = 0; i < 7; i++) {
+                const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+                  d.getDate(),
+                ).padStart(2, '0')}`;
+                const weekday = d.getDay(); // 0-6 (0 = یکشنبه در تقویم میلادی JS؟ در JS: 0=Sunday)
+                const name = dayNames[weekday] || key;
+                days.push({ name, key, newUsers: 0, activeUsers: 0 });
+              }
+
+              const dayMap: Record<string, DayBucket> = {};
+              for (const d of days) {
+                dayMap[d.key] = d;
+              }
+
+              // شمارش کاربران جدید در هر روز
+              for (const u of allUsers) {
+                const createdAtRaw = u.created_at || u.CreatedAt;
+                if (!createdAtRaw) continue;
+                const createdAt = new Date(createdAtRaw);
+                if (isNaN(createdAt.getTime())) continue;
+
+                if (createdAt < from || createdAt > today) continue;
+
+                const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(
+                  2,
+                  '0',
+                )}-${String(createdAt.getDate()).padStart(2, '0')}`;
+                const bucket = dayMap[key];
+                if (bucket) {
+                  bucket.newUsers += 1;
+                }
+              }
+
+              // کاربران فعال تجمعی تا هر روز (تقریب ساده)
+              let cumulativeActive = 0;
+              for (const day of days) {
+                cumulativeActive += day.newUsers;
+                day.activeUsers = cumulativeActive;
+              }
+
+              setUsersData(days);
+            } catch (e) {
+              console.error('Error building users chart data:', e);
+            }
+          };
+
+          await generateUsersChartData();
         }
       } catch (error: any) {
         console.error('Error loading statistics:', error);
