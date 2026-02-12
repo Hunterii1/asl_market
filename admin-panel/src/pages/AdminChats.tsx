@@ -106,8 +106,50 @@ export default function AdminChats() {
   const loadMatchingChats = async () => {
     try {
       setLoading(true);
-      const data = await adminApi.getMatchingChats({ page, limit: 20 });
-      setMatchingChats(data.data || data.chats || []);
+      // Admin endpoint: backend returns { data: [...], meta... }, but adminApi
+      // already unwraps to the inner "data" array. So here نتیجه همان آرایه‌ی چت‌هاست.
+      const result = await adminApi.getAdminMatchingChats({ page, per_page: 20 });
+      const rawChats: any[] = Array.isArray(result) ? result : (result?.chats || []);
+
+      const mapped: MatchingChat[] = rawChats.map((chat: any) => {
+        const matchingRequest = chat.matching_request || chat.MatchingRequest || {};
+        const supplier = chat.supplier || chat.Supplier || {};
+        const visitor = chat.visitor || chat.Visitor || {};
+
+        const lastMessageAt =
+          chat.last_message_at ||
+          chat.LastMessageAt ||
+          chat.updated_at ||
+          chat.UpdatedAt ||
+          chat.created_at ||
+          chat.CreatedAt;
+
+        const lastMessagePreview = chat.last_message_preview || chat.LastMessagePreview || chat.last_message || chat.LastMessage || "";
+
+        return {
+          id: chat.id,
+          matching_request: {
+            id: matchingRequest.id,
+            product_name: matchingRequest.product_name || matchingRequest.ProductName || "",
+            status: matchingRequest.status || matchingRequest.Status || "",
+          },
+          supplier: {
+            id: supplier.id,
+            full_name: supplier.full_name || supplier.FullName || "",
+            brand_name: supplier.brand_name || supplier.BrandName || "",
+          },
+          visitor: {
+            id: visitor.id,
+            full_name: visitor.full_name || visitor.FullName || "",
+          },
+          status: chat.is_active ? "active" : "closed",
+          last_message_at: lastMessageAt,
+          last_message_preview: lastMessagePreview,
+          created_at: chat.created_at || chat.CreatedAt,
+        };
+      });
+
+      setMatchingChats(mapped);
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -121,8 +163,48 @@ export default function AdminChats() {
 
   const loadVisitorProjectChats = async () => {
     try {
-      const data = await adminApi.getVisitorProjectChats({ page, limit: 20 });
-      setVisitorProjectChats(data.data || data.chats || []);
+      const result = await adminApi.getAdminVisitorProjectChats({ page, per_page: 20 });
+      const rawChats: any[] = Array.isArray(result) ? result : (result?.chats || []);
+
+      const mapped: VisitorProjectChat[] = rawChats.map((chat: any) => {
+        const visitorProject = chat.visitor_project || chat.VisitorProject || {};
+        const supplier = chat.supplier || chat.Supplier || {};
+        const visitor = chat.visitor || chat.Visitor || {};
+
+        const lastMessageAt =
+          chat.last_message_at ||
+          chat.LastMessageAt ||
+          chat.updated_at ||
+          chat.UpdatedAt ||
+          chat.created_at ||
+          chat.CreatedAt;
+
+        const lastMessagePreview = chat.last_message_preview || chat.LastMessagePreview || chat.last_message || chat.LastMessage || "";
+
+        return {
+          id: chat.id,
+          visitor_project: {
+            id: visitorProject.id,
+            project_title: visitorProject.project_title || visitorProject.ProjectTitle || "",
+            status: visitorProject.status || visitorProject.Status || "",
+          },
+          supplier: {
+            id: supplier.id,
+            full_name: supplier.full_name || supplier.FullName || "",
+            brand_name: supplier.brand_name || supplier.BrandName || "",
+          },
+          visitor: {
+            id: visitor.id,
+            full_name: visitor.full_name || visitor.FullName || "",
+          },
+          status: chat.status || "",
+          last_message_at: lastMessageAt,
+          last_message_preview: lastMessagePreview,
+          created_at: chat.created_at || chat.CreatedAt,
+        };
+      });
+
+      setVisitorProjectChats(mapped);
     } catch (error: any) {
       toast({
         title: "خطا",
@@ -134,7 +216,7 @@ export default function AdminChats() {
 
   const viewMatchingChatMessages = async (chatId: number, productName: string) => {
     try {
-      const data = await adminApi.getMatchingChatMessages(chatId, { per_page: 100 });
+      const data = await adminApi.getAdminMatchingChatMessages(chatId, { per_page: 100 });
       setSelectedMessages(data.messages || data.data || []);
       setDialogTitle(`پیام‌های چت - ${productName}`);
       setMessagesDialogOpen(true);
@@ -149,7 +231,7 @@ export default function AdminChats() {
 
   const viewVisitorProjectChatMessages = async (chatId: number, projectTitle: string) => {
     try {
-      const data = await adminApi.getVisitorProjectChatMessages(chatId, { per_page: 100 });
+      const data = await adminApi.getAdminVisitorProjectChatMessages(chatId, { per_page: 100 });
       setSelectedMessages(data.messages || data.data || []);
       setDialogTitle(`پیام‌های پروژه - ${projectTitle}`);
       setMessagesDialogOpen(true);

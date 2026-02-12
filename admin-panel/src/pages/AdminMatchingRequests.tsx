@@ -13,7 +13,6 @@ import {
   Filter,
   TrendingUp,
   CheckCircle,
-  XCircle,
   Clock,
   Users,
   MessageCircle,
@@ -85,6 +84,9 @@ export default function AdminMatchingRequests() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<MatchingRequest | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusRequest, setStatusRequest] = useState<MatchingRequest | null>(null);
+  const [statusValue, setStatusValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadStats();
@@ -360,52 +362,10 @@ export default function AdminMatchingRequests() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={async () => {
-                      const newStatus = window.prompt(
-                        "وضعیت جدید درخواست را وارد کنید (pending, active, accepted, expired, cancelled, completed):",
-                        request.status
-                      );
-                      if (!newStatus || newStatus === request.status) {
-                        return;
-                      }
-                      const normalized = newStatus.trim();
-                      const validStatuses = [
-                        "pending",
-                        "active",
-                        "accepted",
-                        "expired",
-                        "cancelled",
-                        "completed",
-                      ];
-                      if (!validStatuses.includes(normalized)) {
-                        toast({
-                          title: "خطا",
-                          description: "وضعیت وارد شده نامعتبر است.",
-                          variant: "destructive",
-                        });
-                        return;
-                      }
-                      try {
-                        setIsUpdating(true);
-                        await adminApi.updateAdminMatchingRequest(request.id, {
-                          status: normalized,
-                        });
-                        toast({
-                          title: "موفقیت",
-                          description:
-                            "وضعیت درخواست با موفقیت به‌روزرسانی شد.",
-                        });
-                        await loadRequests();
-                      } catch (error: any) {
-                        toast({
-                          title: "خطا",
-                          description:
-                            error.message || "خطا در به‌روزرسانی درخواست",
-                          variant: "destructive",
-                        });
-                      } finally {
-                        setIsUpdating(false);
-                      }
+                    onClick={() => {
+                      setStatusRequest(request);
+                      setStatusValue(request.status);
+                      setStatusDialogOpen(true);
                     }}
                     disabled={isUpdating}
                   >
@@ -476,7 +436,7 @@ export default function AdminMatchingRequests() {
           </Button>
         </div>
       )}
-      
+
       {/* Details Dialog */}
       <Dialog
         open={detailsOpen}
@@ -487,64 +447,83 @@ export default function AdminMatchingRequests() {
           }
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl">
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-slate-950/95 backdrop-blur-xl border border-slate-800" dir="rtl">
           <DialogHeader>
-            <DialogTitle>
-              جزئیات درخواست مچینگ
-              {selectedRequest ? ` - ${selectedRequest.product_name}` : ""}
+            <DialogTitle className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-400" />
+                <span>
+                  جزئیات درخواست مچینگ
+                  {selectedRequest ? ` - ${selectedRequest.product_name}` : ""}
+                </span>
+              </span>
+              {selectedRequest && getStatusBadge(selectedRequest.status, selectedRequest.is_expired)}
             </DialogTitle>
           </DialogHeader>
           {selectedRequest && (
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm text-muted-foreground">تأمین‌کننده</p>
-                  <p className="text-base font-semibold">
-                    {selectedRequest.supplier?.brand_name ||
-                      selectedRequest.supplier?.full_name ||
-                      "نامشخص"}
-                  </p>
+            <div className="space-y-6">
+              {/* Supplier & Meta */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 p-4 rounded-2xl bg-slate-900/60 border border-slate-700/60">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <User className="w-4 h-4 text-blue-300" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">تأمین‌کننده</p>
+                      <p className="text-sm font-semibold">
+                        {selectedRequest.supplier?.brand_name ||
+                          selectedRequest.supplier?.full_name ||
+                          "نامشخص"}
+                      </p>
+                    </div>
+                  </div>
                   {selectedRequest.supplier?.city && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      شهر: {selectedRequest.supplier.city}
+                    <p className="text-xs text-muted-foreground">
+                      شهر: <span className="font-medium text-foreground">{selectedRequest.supplier.city}</span>
                     </p>
                   )}
                 </div>
-                {getStatusBadge(selectedRequest.status, selectedRequest.is_expired)}
+                <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/60 space-y-2">
+                  <p className="text-xs text-muted-foreground">خلاصه وضعیت</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">زمان باقیمانده</span>
+                    <span className="text-xs font-semibold">{selectedRequest.remaining_time}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">تعداد پاسخ‌ها</span>
+                    <span className="text-xs font-semibold">
+                      {toFarsiNumber(selectedRequest.responses_count)}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">محصول</p>
-                  <p className="text-sm font-semibold">{selectedRequest.product_name}</p>
+              {/* Product & Request Info */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2 p-4 rounded-2xl bg-slate-900/60 border border-slate-700/60 space-y-3">
+                  <div>
+                    <p className="text-xs text-muted-foreground">محصول درخواستی</p>
+                    <p className="text-sm font-semibold">{selectedRequest.product_name}</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">مقدار</p>
+                      <p className="font-semibold">
+                        {toFarsiNumber(selectedRequest.quantity)} {selectedRequest.unit}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">قیمت هدف</p>
+                      <p className="font-semibold">
+                        {toFarsiNumber(selectedRequest.price)} {selectedRequest.currency}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">مقدار</p>
-                  <p className="text-sm font-semibold">
-                    {toFarsiNumber(selectedRequest.quantity)} {selectedRequest.unit}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">قیمت</p>
-                  <p className="text-sm font-semibold">
-                    {toFarsiNumber(selectedRequest.price)} {selectedRequest.currency}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">تعداد پاسخ‌ها</p>
-                  <p className="text-sm font-semibold">
-                    {toFarsiNumber(selectedRequest.responses_count)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">زمان باقیمانده / وضعیت انقضا</p>
-                  <p className="text-sm font-semibold">
-                    {selectedRequest.remaining_time}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">مقصدها</p>
-                  <p className="text-sm font-semibold">
+                <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-700/60">
+                  <p className="text-xs text-muted-foreground mb-2">کشورها / مقصدها</p>
+                  <p className="text-xs font-semibold whitespace-pre-wrap">
                     {selectedRequest.destination_countries || "نامشخص"}
                   </p>
                 </div>
@@ -578,6 +557,99 @@ export default function AdminMatchingRequests() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Change Dialog */}
+      <Dialog
+        open={statusDialogOpen}
+        onOpenChange={(open) => {
+          setStatusDialogOpen(open);
+          if (!open) {
+            setStatusRequest(null);
+            setStatusValue(undefined);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تغییر وضعیت درخواست</DialogTitle>
+          </DialogHeader>
+          {statusRequest && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/60">
+                <p className="text-xs text-muted-foreground mb-1">محصول</p>
+                <p className="text-sm font-semibold">{statusRequest.product_name}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  تأمین‌کننده:{" "}
+                  {statusRequest.supplier?.brand_name ||
+                    statusRequest.supplier?.full_name ||
+                    "نامشخص"}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">وضعیت جدید</p>
+                <Select
+                  value={statusValue}
+                  onValueChange={(v) => setStatusValue(v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="انتخاب وضعیت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">در انتظار بررسی</SelectItem>
+                    <SelectItem value="active">فعال</SelectItem>
+                    <SelectItem value="accepted">پذیرفته شده</SelectItem>
+                    <SelectItem value="completed">مختوم شده</SelectItem>
+                    <SelectItem value="expired">منقضی شده</SelectItem>
+                    <SelectItem value="cancelled">لغو شده</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusDialogOpen(false)}
+                >
+                  انصراف
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!statusValue || isUpdating || statusValue === statusRequest.status}
+                  onClick={async () => {
+                    if (!statusRequest || !statusValue || statusValue === statusRequest.status) {
+                      return;
+                    }
+                    try {
+                      setIsUpdating(true);
+                      await adminApi.updateAdminMatchingRequest(statusRequest.id, {
+                        status: statusValue,
+                      });
+                      toast({
+                        title: "موفقیت",
+                        description: "وضعیت درخواست با موفقیت به‌روزرسانی شد.",
+                      });
+                      setStatusDialogOpen(false);
+                      await loadRequests();
+                      await loadStats();
+                    } catch (error: any) {
+                      toast({
+                        title: "خطا",
+                        description:
+                          error.message || "خطا در به‌روزرسانی وضعیت درخواست",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }}
+                >
+                  ذخیره تغییرات
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

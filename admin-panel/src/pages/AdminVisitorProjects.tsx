@@ -77,6 +77,9 @@ export default function AdminVisitorProjects() {
   const [selectedProject, setSelectedProject] = useState<VisitorProject | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusProject, setStatusProject] = useState<VisitorProject | null>(null);
+  const [statusValue, setStatusValue] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     loadStats();
@@ -341,51 +344,10 @@ export default function AdminVisitorProjects() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={async () => {
-                        const newStatus = window.prompt(
-                          "وضعیت جدید پروژه را وارد کنید (pending, active, accepted, expired, cancelled, completed):",
-                          project.status
-                        );
-                        if (!newStatus || newStatus === project.status) {
-                          return;
-                        }
-                        const normalized = newStatus.trim();
-                        const validStatuses = [
-                          "pending",
-                          "active",
-                          "accepted",
-                          "expired",
-                          "cancelled",
-                          "completed",
-                        ];
-                        if (!validStatuses.includes(normalized)) {
-                          toast({
-                            title: "خطا",
-                            description: "وضعیت وارد شده نامعتبر است.",
-                            variant: "destructive",
-                          });
-                          return;
-                        }
-                        try {
-                          setIsUpdating(true);
-                          await adminApi.updateAdminVisitorProject(project.id, {
-                            status: normalized,
-                          });
-                          toast({
-                            title: "موفقیت",
-                            description: "وضعیت پروژه با موفقیت به‌روزرسانی شد.",
-                          });
-                          await loadProjects();
-                        } catch (error: any) {
-                          toast({
-                            title: "خطا",
-                            description:
-                              error.message || "خطا در به‌روزرسانی پروژه",
-                            variant: "destructive",
-                          });
-                        } finally {
-                          setIsUpdating(false);
-                        }
+                      onClick={() => {
+                        setStatusProject(project);
+                        setStatusValue(project.status);
+                        setStatusDialogOpen(true);
                       }}
                       disabled={isUpdating}
                     >
@@ -432,6 +394,96 @@ export default function AdminVisitorProjects() {
             ))}
           </div>
         )}
+
+      {/* Status Change Dialog */}
+      <Dialog
+        open={statusDialogOpen}
+        onOpenChange={(open) => {
+          setStatusDialogOpen(open);
+          if (!open) {
+            setStatusProject(null);
+            setStatusValue(undefined);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تغییر وضعیت پروژه</DialogTitle>
+          </DialogHeader>
+          {statusProject && (
+            <div className="space-y-4">
+              <div className="p-3 rounded-xl bg-slate-900/50 border border-slate-700/60">
+                <p className="text-xs text-muted-foreground mb-1">پروژه</p>
+                <p className="text-sm font-semibold">{statusProject.project_title}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  ویزیتور: {statusProject.visitor?.full_name}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">وضعیت جدید</p>
+                <Select
+                  value={statusValue}
+                  onValueChange={(v) => setStatusValue(v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="انتخاب وضعیت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">در انتظار بررسی</SelectItem>
+                    <SelectItem value="active">فعال</SelectItem>
+                    <SelectItem value="accepted">پذیرفته شده</SelectItem>
+                    <SelectItem value="completed">مختوم شده</SelectItem>
+                    <SelectItem value="expired">منقضی شده</SelectItem>
+                    <SelectItem value="cancelled">لغو شده</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setStatusDialogOpen(false)}
+                >
+                  انصراف
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={!statusValue || isUpdating || statusValue === statusProject.status}
+                  onClick={async () => {
+                    if (!statusProject || !statusValue || statusValue === statusProject.status) {
+                      return;
+                    }
+                    try {
+                      setIsUpdating(true);
+                      await adminApi.updateAdminVisitorProject(statusProject.id, {
+                        status: statusValue,
+                      });
+                      toast({
+                        title: "موفقیت",
+                        description: "وضعیت پروژه با موفقیت به‌روزرسانی شد.",
+                      });
+                      setStatusDialogOpen(false);
+                      await loadProjects();
+                      await loadStats();
+                    } catch (error: any) {
+                      toast({
+                        title: "خطا",
+                        description:
+                          error.message || "خطا در به‌روزرسانی وضعیت پروژه",
+                        variant: "destructive",
+                      });
+                    } finally {
+                      setIsUpdating(false);
+                    }
+                  }}
+                >
+                  ذخیره تغییرات
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
         {/* Pagination */}
         {totalPages > 1 && (
