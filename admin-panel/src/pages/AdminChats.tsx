@@ -15,9 +15,18 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { adminApi } from "@/lib/api/adminApi";
 
-const toFarsiNumber = (num: number | string) => {
+const toFarsiNumber = (num: number | string | null | undefined) => {
+  if (num === null || num === undefined) {
+    return "۰";
+  }
   if (typeof num === "string") {
+    if (num.trim().length === 0) {
+      return "۰";
+    }
     return num.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[parseInt(d)]);
+  }
+  if (Number.isNaN(num)) {
+    return "۰";
   }
   return num.toLocaleString("fa-IR");
 };
@@ -171,7 +180,7 @@ export default function AdminChats() {
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="matching">
             <MessageCircle className="w-4 h-4 ml-2" />
-            چت‌های مچینگ ({toFarsiNumber(matchingChats.length)})
+            چت‌های مچینگ ({toFarsiNumber(matchingChats.length + visitorProjectChats.length)})
           </TabsTrigger>
           <TabsTrigger value="visitor-projects">
             <Package className="w-4 h-4 ml-2" />
@@ -179,13 +188,13 @@ export default function AdminChats() {
           </TabsTrigger>
         </TabsList>
 
-        {/* Matching Chats */}
+        {/* Matching Chats (includes visitor project chats as well) */}
         <TabsContent value="matching">
           {loading ? (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
             </div>
-          ) : matchingChats.length === 0 ? (
+          ) : matchingChats.length === 0 && visitorProjectChats.length === 0 ? (
             <Card>
               <CardContent className="py-20 text-center">
                 <MessageCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
@@ -194,6 +203,7 @@ export default function AdminChats() {
             </Card>
           ) : (
             <div className="space-y-4 mt-4">
+              {/* Pure matching chats */}
               {matchingChats.map((chat) => (
                 <Card key={chat.id} className="hover:border-blue-500/50 transition-colors">
                   <CardHeader>
@@ -241,6 +251,63 @@ export default function AdminChats() {
                   </CardContent>
                 </Card>
               ))}
+
+              {/* Visitor project chats shown inside matching tab as requested */}
+              {visitorProjectChats.length > 0 && (
+                <div className="space-y-4 mt-8">
+                  <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    چت‌های پروژه‌های ویزیتوری
+                  </h2>
+                  {visitorProjectChats.map((chat) => (
+                    <Card key={`vp-${chat.id}`} className="hover:border-purple-500/50 transition-colors">
+                      <CardHeader>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <CardTitle className="text-lg">
+                              {chat.visitor_project?.project_title}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              تأمین‌کننده: {chat.supplier?.brand_name || chat.supplier?.full_name} | ویزیتور:{" "}
+                              {chat.visitor?.full_name}
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              chat.status === "active"
+                                ? "bg-emerald-500/20 text-emerald-300"
+                                : "bg-slate-500/20 text-slate-300"
+                            }
+                          >
+                            {chat.status === "active" ? "فعال" : "بسته شده"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {chat.last_message_preview && (
+                          <p className="text-sm text-muted-foreground mb-3 line-clamp-1">
+                            آخرین پیام: {chat.last_message_preview}
+                          </p>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            viewVisitorProjectChatMessages(
+                              chat.id,
+                              chat.visitor_project?.project_title || "پروژه"
+                            )
+                          }
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          مشاهده پیام‌ها
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </TabsContent>

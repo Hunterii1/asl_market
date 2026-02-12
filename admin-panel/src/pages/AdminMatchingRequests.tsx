@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Package,
   Eye,
@@ -59,6 +60,7 @@ interface MatchingRequest {
   remaining_time: string;
   is_expired: boolean;
   created_at: string;
+  description?: string;
 }
 
 interface Stats {
@@ -81,6 +83,8 @@ export default function AdminMatchingRequests() {
   const [totalPages, setTotalPages] = useState(1);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<MatchingRequest | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -341,7 +345,15 @@ export default function AdminMatchingRequests() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => {
+                      setSelectedRequest(request);
+                      setDetailsOpen(true);
+                    }}
+                  >
                     <Eye className="w-4 h-4 mr-2" />
                     مشاهده جزئیات
                   </Button>
@@ -464,6 +476,112 @@ export default function AdminMatchingRequests() {
           </Button>
         </div>
       )}
+      
+      {/* Details Dialog */}
+      <Dialog
+        open={detailsOpen}
+        onOpenChange={(open) => {
+          setDetailsOpen(open);
+          if (!open) {
+            setSelectedRequest(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>
+              جزئیات درخواست مچینگ
+              {selectedRequest ? ` - ${selectedRequest.product_name}` : ""}
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-muted-foreground">تأمین‌کننده</p>
+                  <p className="text-base font-semibold">
+                    {selectedRequest.supplier?.brand_name ||
+                      selectedRequest.supplier?.full_name ||
+                      "نامشخص"}
+                  </p>
+                  {selectedRequest.supplier?.city && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      شهر: {selectedRequest.supplier.city}
+                    </p>
+                  )}
+                </div>
+                {getStatusBadge(selectedRequest.status, selectedRequest.is_expired)}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">محصول</p>
+                  <p className="text-sm font-semibold">{selectedRequest.product_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">مقدار</p>
+                  <p className="text-sm font-semibold">
+                    {toFarsiNumber(selectedRequest.quantity)} {selectedRequest.unit}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">قیمت</p>
+                  <p className="text-sm font-semibold">
+                    {toFarsiNumber(selectedRequest.price)} {selectedRequest.currency}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">تعداد پاسخ‌ها</p>
+                  <p className="text-sm font-semibold">
+                    {toFarsiNumber(selectedRequest.responses_count)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">زمان باقیمانده / وضعیت انقضا</p>
+                  <p className="text-sm font-semibold">
+                    {selectedRequest.remaining_time}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">مقصدها</p>
+                  <p className="text-sm font-semibold">
+                    {selectedRequest.destination_countries || "نامشخص"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">تاریخ ایجاد</p>
+                  <p className="text-sm font-semibold">
+                    {selectedRequest.created_at
+                      ? new Date(selectedRequest.created_at).toLocaleString("fa-IR")
+                      : "نامشخص"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">آخرین به‌روزرسانی</p>
+                  <p className="text-sm font-semibold">
+                    {/* created_at را به عنوان جای‌گزین نشان می‌دهیم اگر فیلد جدا نیاید */}
+                    {selectedRequest.created_at
+                      ? new Date(selectedRequest.created_at).toLocaleString("fa-IR")
+                      : "نامشخص"}
+                  </p>
+                </div>
+              </div>
+
+              {selectedRequest.description && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">توضیحات</p>
+                  <p className="text-sm whitespace-pre-wrap">
+                    {selectedRequest.description}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       </div>
     </AdminLayout>
   );

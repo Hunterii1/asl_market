@@ -157,9 +157,9 @@ func (amc *AdminMatchingController) GetAllMatchingChats(c *gin.Context) {
 	}
 
 	offset := (page - 1) * perPage
-	// Use portable ordering without database-specific NULLS LAST syntax
+	// Order by last update time (no last_message_at column on MatchingChat)
 	if err := query.Offset(offset).Limit(perPage).
-		Order("last_message_at DESC, created_at DESC").Find(&chats).Error; err != nil {
+		Order("updated_at DESC, created_at DESC").Find(&chats).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت چت‌ها"})
 		return
 	}
