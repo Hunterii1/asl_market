@@ -4,6 +4,7 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
+import { shouldShowApiErrorOnce } from "@/lib/api/apiErrorToast"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
@@ -140,6 +141,13 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
+  // خطای شبکه / ۵۰۰ را فقط یک‌بار در بازهٔ cooldown نشان بده تا ارور تکراری روی مخ نره
+  if (props.variant === "destructive" && typeof props.description === "string") {
+    if (!shouldShowApiErrorOnce(String(props.description))) {
+      return { id: "", dismiss: () => {}, update: () => {} };
+    }
+  }
+
   const id = genId()
 
   const update = (props: ToasterToast) =>
