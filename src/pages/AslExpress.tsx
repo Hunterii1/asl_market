@@ -9,8 +9,21 @@ import {
   MapPin
 } from "lucide-react";
 
+interface Contact {
+  name?: string;
+  phone: string;
+}
+
+interface ShippingCompany {
+  id: number;
+  name: string;
+  services: string;
+  address?: string;
+  contacts: Contact[];
+}
+
 const AslExpress = () => {
-  const shippingCompanies = [
+  const shippingCompanies: ShippingCompany[] = [
     {
       id: 1,
       name: "مجموعه PSP اکسپرس",
@@ -29,6 +42,33 @@ const AslExpress = () => {
         { phone: "09395020825" },
         { phone: "09018317541" },
         { phone: "02142326" }
+      ]
+    },
+    {
+      id: 3,
+      name: "پرشین تجارت دوان",
+      services: "خدمات گمرکی و بازرگانی ترخیص کالا از گمرکات امام - بندرعباس - بازرگان - خرمشهر و بوشهر، ثبت سفارش و مجوزها، حمل و ترخیص",
+      contacts: [
+        { phone: "02142326" },
+        { phone: "09018317541" }
+      ]
+    },
+    {
+      id: 4,
+      name: "آنی بار",
+      services: "حمل بار به صورت هوایی، زمینی، دریایی، مسافری",
+      contacts: [
+        { phone: "02157669" },
+        { phone: "09223349350" }
+      ]
+    },
+    {
+      id: 5,
+      name: "سکان طلایی لیان",
+      services: "حمل و نقل بین‌المللی، ترخیص، بیمه، بارگیری کالا، بسته بندی، امور گمرکی، حمل کالاهای صادراتی به صورت درب به درب، حمل و نقل کالا به صورت مستقیم و غیر مستقیم از مبادی مختلف به مقصد ایران و بالعکس، حمل خرده بار و کامیون دربست، حمل زمینی برای محمولات ترافیکی سنگین و نیمه سنگین، حمل دریایی به صورت کانتینری از کلیه بنادر، انجام تشریفات ری اکسپورتینگ، حمل محمولات به صورت برک بالک، فرایند ترانزیت از کلیه مبادی ورودی کشور به گمرکات داخلی و مقاصد خارجی",
+      address: "خ مطهری، خیابان علی اکبری، کوچه آزادی، پلاک ۵۳",
+      contacts: [
+        { phone: "02188522933" }
       ]
     }
   ];
@@ -73,6 +113,14 @@ const AslExpress = () => {
                     <p className="text-muted-foreground text-sm">{company.services}</p>
               </div>
             </div>
+
+                {/* Address (if available) */}
+                {company.address && (
+                  <div className="flex items-start gap-3 bg-blue-500/10 rounded-2xl p-3">
+                    <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-muted-foreground text-sm">{company.address}</div>
+                  </div>
+                )}
 
                 {/* Contact Information */}
                 <div className="bg-muted/30 rounded-2xl p-4 space-y-3">
