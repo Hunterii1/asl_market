@@ -52,6 +52,7 @@ export default function Sliders() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedSlider, setSelectedSlider] = useState<Slider | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
@@ -346,6 +347,17 @@ export default function Sliders() {
                         <td className="p-4">
                           <div className="flex items-center gap-2">
                             <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedSlider(slider);
+                                setIsViewDialogOpen(true);
+                              }}
+                              title="مشاهده جزئیات"
+                            >
+                              <Eye className="w-4 h-4 ml-1" />
+                            </Button>
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => openEditDialog(slider)}
@@ -446,6 +458,171 @@ export default function Sliders() {
             )}
           </CardContent>
         </Card>
+
+        {/* View Dialog */}
+        <Dialog
+          open={isViewDialogOpen}
+          onOpenChange={(open) => {
+            setIsViewDialogOpen(open);
+            if (!open) {
+              setSelectedSlider(null);
+            }
+          }}
+        >
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-slate-950/95 backdrop-blur-xl border border-slate-800">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2">
+                  <ImageIcon className="w-5 h-5 text-primary" />
+                  <span>جزئیات اسلایدر</span>
+                </span>
+                {selectedSlider && (
+                  <Badge
+                    className={cn(
+                      "border-0 text-xs px-3 py-1 rounded-full",
+                      selectedSlider.is_active
+                        ? "bg-emerald-500/20 text-emerald-300"
+                        : "bg-slate-600/40 text-slate-200"
+                    )}
+                  >
+                    {selectedSlider.is_active ? (
+                      <>
+                        <CheckCircle className="w-3 h-3 ml-1" />
+                        فعال
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-3 h-3 ml-1" />
+                        غیرفعال
+                      </>
+                    )}
+                  </Badge>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+
+            {selectedSlider && (
+              <div className="space-y-6">
+                {/* Hero Image */}
+                <div className="rounded-2xl overflow-hidden border border-slate-800/80">
+                  <img
+                    src={getImageUrl(selectedSlider.image_url)}
+                    alt={`Slider ${selectedSlider.id}`}
+                    className="w-full max-h-[260px] object-cover"
+                  />
+                </div>
+
+                {/* Link & Meta */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-slate-900/60 border-slate-700/70">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-muted-foreground">
+                        لینک اسلایدر
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Badge variant="outline" className="bg-slate-800/60 border-slate-600/80 text-xs">
+                          {selectedSlider.link_type === "internal" ? "داخلی" : "خارجی"}
+                        </Badge>
+                        <span className="text-muted-foreground">|</span>
+                        <span
+                          className={cn(
+                            "font-mono text-xs break-all",
+                            selectedSlider.link_type === "external" ? "text-blue-300" : "text-slate-200"
+                          )}
+                          dir="ltr"
+                        >
+                          {selectedSlider.link || "بدون لینک"}
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-slate-900/60 border-slate-700/70">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-muted-foreground">
+                        ترتیب و شناسه
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">شناسه</p>
+                        <p className="font-semibold text-foreground mt-1">
+                          {selectedSlider.id}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">ترتیب نمایش</p>
+                        <p className="font-semibold text-foreground mt-1">
+                          {selectedSlider.order}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Stats */}
+                <Card className="bg-slate-900/60 border-slate-700/70">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">
+                      آمار عملکرد
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-900/80 rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground mb-1">تعداد نمایش</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedSlider.view_count.toLocaleString("fa-IR")}
+                      </p>
+                    </div>
+                    <div className="bg-slate-900/80 rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground mb-1">تعداد کلیک</p>
+                      <p className="text-lg font-bold text-foreground">
+                        {selectedSlider.click_count.toLocaleString("fa-IR")}
+                      </p>
+                    </div>
+                    <div className="bg-slate-900/80 rounded-xl p-4">
+                      <p className="text-xs text-muted-foreground mb-1">نرخ کلیک (CTR)</p>
+                      <p className="text-lg font-bold text-primary">
+                        {selectedSlider.view_count > 0
+                          ? (
+                              (selectedSlider.click_count / selectedSlider.view_count) *
+                              100
+                            ).toFixed(2)
+                          : "0.00"}
+                        %
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Dates */}
+                <Card className="bg-slate-900/60 border-slate-700/70">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">
+                      زمان‌بندی
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">تاریخ ایجاد</p>
+                      <p className="font-medium text-foreground">
+                        {new Date(selectedSlider.created_at).toLocaleString("fa-IR")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">آخرین بروزرسانی</p>
+                      <p className="font-medium text-foreground">
+                        {new Date(selectedSlider.updated_at).toLocaleString("fa-IR")}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Add Dialog */}
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>

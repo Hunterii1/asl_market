@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# NPM cache
+.npm-cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
