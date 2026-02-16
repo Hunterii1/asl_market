@@ -539,22 +539,37 @@ func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 
 	log.Printf("[AffiliateRegister] User registered: ID=%d, Phone=%s, AffiliateID=%d", user.ID, user.Phone, affiliateID)
 
-	// Send SMS notification if pattern code is configured
-	go func() {
-		settings, err := models.GetAffiliateSettings(c.db)
-		if err == nil && settings.SMSPatternCode != "" {
+	// Get settings before creating goroutine to avoid database connection issues
+	settings, settingsErr := models.GetAffiliateSettings(c.db)
+	
+	// Send SMS notification if pattern code is configured (in background, don't block registration)
+	if settingsErr == nil && settings != nil && settings.SMSPatternCode != "" {
+		go func(patternCode, phone, firstName, lastName string) {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[AffiliateRegister] Panic in SMS goroutine: %v", r)
+				}
+			}()
+			
 			// Format phone number for SMS (convert to international format)
-			formattedPhone := services.ValidateIranianPhoneNumber(user.Phone)
-			userName := req.FirstName + " " + req.LastName
+			formattedPhone := services.ValidateIranianPhoneNumber(phone)
+			userName := firstName + " " + lastName
 			
 			smsService := services.GetSMSService()
-			if smsService != nil {
-				if err := smsService.SendAffiliateRegistrationSMS(formattedPhone, userName, settings.SMSPatternCode); err != nil {
-					log.Printf("[AffiliateRegister] Failed to send SMS to %s: %v", formattedPhone, err)
-				}
+			if smsService == nil {
+				log.Printf("[AffiliateRegister] SMS service not initialized")
+				return
 			}
-		}
-	}()
+			
+			if err := smsService.SendAffiliateRegistrationSMS(formattedPhone, userName, patternCode); err != nil {
+				log.Printf("[AffiliateRegister] Failed to send SMS to %s: %v", formattedPhone, err)
+			} else {
+				log.Printf("[AffiliateRegister] SMS sent successfully to %s", formattedPhone)
+			}
+		}(settings.SMSPatternCode, user.Phone, req.FirstName, req.LastName)
+	} else if settingsErr != nil {
+		log.Printf("[AffiliateRegister] Failed to get affiliate settings: %v", settingsErr)
+	}
 
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "ثبت‌نام با موفقیت انجام شد",

@@ -9,10 +9,15 @@ import (
 // AffiliateSettings represents global affiliate settings (singleton)
 type AffiliateSettings struct {
 	ID            uint           `json:"id" gorm:"primaryKey"`
-	SMSPatternCode string         `json:"sms_pattern_code" gorm:"size:100"` // Pattern code for SMS after registration
+	SMSPatternCode string         `json:"sms_pattern_code" gorm:"column:sms_pattern_code;size:100"` // Pattern code for SMS after registration
 	CreatedAt     time.Time      `json:"created_at"`
 	UpdatedAt     time.Time      `json:"updated_at"`
 	DeletedAt     gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+// TableName specifies the table name for AffiliateSettings
+func (AffiliateSettings) TableName() string {
+	return "affiliate_settings"
 }
 
 // GetAffiliateSettings retrieves or creates the singleton settings

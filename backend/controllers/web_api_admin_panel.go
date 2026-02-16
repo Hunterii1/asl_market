@@ -3126,9 +3126,13 @@ func UpdateAffiliateSettings(c *gin.Context) {
 	updates := make(map[string]interface{})
 	if req.SMSPatternCode != "" {
 		updates["sms_pattern_code"] = req.SMSPatternCode
+	} else {
+		// Allow empty string to clear the pattern code
+		updates["sms_pattern_code"] = ""
 	}
 	if err := models.UpdateAffiliateSettings(db, updates); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره تنظیمات"})
+		log.Printf("[UpdateAffiliateSettings] Error: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره تنظیمات: " + err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "تنظیمات با موفقیت ذخیره شد"})
