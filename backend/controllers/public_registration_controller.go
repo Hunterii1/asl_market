@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"asl-market-backend/config"
 	"asl-market-backend/models"
 	"asl-market-backend/services"
+	"asl-market-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -439,5 +441,109 @@ func (ctrl *PublicRegistrationController) GetRegistrationStatus(ctx *gin.Context
 	ctx.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    registrationData,
+	})
+}
+
+// AffiliateRegisterRequest represents the request for affiliate registration
+type AffiliateRegisterRequest struct {
+	FirstName  string `json:"first_name" binding:"required,min=2,max=100"`
+	LastName   string `json:"last_name" binding:"required,min=2,max=100"`
+	Email      string `json:"email" binding:"omitempty,email"`
+	Phone      string `json:"phone" binding:"required"`
+	Password   string `json:"password" binding:"required,min=6"`
+	PromoterID uint   `json:"promoter_id" binding:"required"`
+}
+
+// RegisterAffiliate handles user registration through affiliate landing page
+func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
+	var req AffiliateRegisterRequest
+
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Invalid request data",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	// Check if affiliate exists and is active
+	var affiliate models.Affiliate
+	if err := c.db.Where("id = ? AND is_active = ? AND deleted_at IS NULL", req.PromoterID, true).First(&affiliate).Error; err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "افیلیت یافت نشد یا غیرفعال است",
+		})
+		return
+	}
+
+	// Check if user already exists by phone
+	var existingUser models.User
+	if err := c.db.Where("phone = ?", req.Phone).First(&existingUser).Error; err == nil {
+		ctx.JSON(http.StatusConflict, gin.H{
+			"error": "کاربری با این شماره موبایل قبلاً ثبت‌نام کرده است",
+		})
+		return
+	}
+
+	// Check if user already exists by email (if email is provided)
+	if req.Email != "" {
+		if err := c.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+			ctx.JSON(http.StatusConflict, gin.H{
+				"error": "کاربری با این ایمیل قبلاً ثبت‌نام کرده است",
+			})
+			return
+		}
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(req.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در رمزگذاری رمز عبور",
+		})
+		return
+	}
+
+	affiliateID := affiliate.ID
+
+	// Create user with affiliate_id
+	user := models.User{
+		FirstName:   req.FirstName,
+		LastName:     req.LastName,
+		Email:       req.Email,
+		Password:    hashedPassword,
+		Phone:       req.Phone,
+		IsActive:    true,
+		AffiliateID: &affiliateID,
+	}
+
+	if err := c.db.Create(&user).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": "خطا در ایجاد کاربر",
+		})
+		return
+	}
+
+	// Register in affiliate_registered_users table
+	now := time.Now()
+	registeredUser := models.AffiliateRegisteredUser{
+		AffiliateID: affiliateID,
+		Name:        req.FirstName + " " + req.LastName,
+		Phone:       req.Phone,
+		RegisteredAt: &now,
+	}
+
+	if err := c.db.Create(&registeredUser).Error; err != nil {
+		log.Printf("[AffiliateRegister] Error creating registered user: %v", err)
+		// Don't fail the registration if this fails, just log it
+	}
+
+	log.Printf("[AffiliateRegister] User registered: ID=%d, Phone=%s, AffiliateID=%d", user.ID, user.Phone, affiliateID)
+
+	ctx.JSON(http.StatusCreated, gin.H{
+		"message": "ثبت‌نام با موفقیت انجام شد",
+		"data": gin.H{
+			"user_id":      user.ID,
+			"affiliate_id": affiliateID,
+		},
 	})
 }

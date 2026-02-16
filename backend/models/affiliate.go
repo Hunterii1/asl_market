@@ -3,6 +3,7 @@ package models
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"strings"
 	"time"
 
@@ -125,7 +126,23 @@ func CreateAffiliate(db *gorm.DB, a *Affiliate) error {
 		}
 		a.ReferralCode = code
 	}
-	return db.Create(a).Error
+	
+	// Create affiliate first to get the ID
+	if err := db.Create(a).Error; err != nil {
+		return err
+	}
+	
+	// If ReferralLink is empty, set default link with promoter parameter
+	if a.ReferralLink == "" {
+		baseURL := "https://asllmarket.com"
+		defaultLink := baseURL + "/affiliate/register?promoter=" + fmt.Sprintf("%d", a.ID)
+		if err := db.Model(a).Update("referral_link", defaultLink).Error; err != nil {
+			return err
+		}
+		a.ReferralLink = defaultLink
+	}
+	
+	return nil
 }
 
 // UpdateAffiliate updates an affiliate

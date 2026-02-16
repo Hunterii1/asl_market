@@ -2429,6 +2429,12 @@ func CreateAffiliate(c *gin.Context) {
 		return
 	}
 
+	// Reload affiliate to get updated referral_link
+	if err := db.First(aff, aff.ID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بارگذاری افیلیت"})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"success": true,
 		"message": "افیلیت با موفقیت ایجاد شد",

@@ -94,6 +94,20 @@ export const affiliateApi = {
     });
     return data;
   },
+  async registerWithPromoter(data: {
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone: string;
+    password: string;
+    promoter_id: number;
+  }) {
+    const response = await request("/public/affiliate/register", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return response;
+  },
   async getDashboard() {
     const raw = await request("/affiliate/dashboard");
     return unwrapData(raw) ?? raw;

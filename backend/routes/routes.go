@@ -80,6 +80,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		public.POST("/supplier/register", publicRegistrationController.RegisterPublicSupplier)
 		public.POST("/visitor/register", publicRegistrationController.RegisterPublicVisitor)
 		public.GET("/registration-status", publicRegistrationController.GetRegistrationStatus)
+		public.POST("/affiliate/register", publicRegistrationController.RegisterAffiliate)
 	}
 
 	// Public routes with optional authentication
