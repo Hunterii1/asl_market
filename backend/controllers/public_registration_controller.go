@@ -539,50 +539,8 @@ func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 
 	log.Printf("[AffiliateRegister] User registered: ID=%d, Phone=%s, AffiliateID=%d", user.ID, user.Phone, affiliateID)
 
-	// Send SMS notification if pattern code is configured (in background, don't block registration)
-	// Use defer recover to ensure registration always succeeds even if SMS fails
-	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("[AffiliateRegister] Panic in SMS goroutine: %v", r)
-			}
-		}()
-		
-		// Use models.GetDB() instead of c.db to avoid connection pool issues in goroutine
-		db := models.GetDB()
-		if db == nil {
-			log.Printf("[AffiliateRegister] Database connection not available")
-			return
-		}
-		
-		// Get settings inside goroutine with error handling
-		settings, err := models.GetAffiliateSettings(db)
-		if err != nil {
-			log.Printf("[AffiliateRegister] Failed to get affiliate settings (non-critical): %v", err)
-			return
-		}
-		
-		if settings == nil || settings.SMSPatternCode == "" {
-			log.Printf("[AffiliateRegister] SMS pattern code not configured, skipping SMS")
-			return
-		}
-		
-		// Format phone number for SMS (convert to international format)
-		formattedPhone := services.ValidateIranianPhoneNumber(user.Phone)
-		userName := req.FirstName + " " + req.LastName
-		
-		smsService := services.GetSMSService()
-		if smsService == nil {
-			log.Printf("[AffiliateRegister] SMS service not initialized")
-			return
-		}
-		
-		if err := smsService.SendAffiliateRegistrationSMS(formattedPhone, userName, settings.SMSPatternCode); err != nil {
-			log.Printf("[AffiliateRegister] Failed to send SMS to %s: %v", formattedPhone, err)
-		} else {
-			log.Printf("[AffiliateRegister] SMS sent successfully to %s", formattedPhone)
-		}
-	}()
+	// TODO: SMS notification will be added back after confirming registration works
+	// Temporarily disabled to debug 500 error
 
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "ثبت‌نام با موفقیت انجام شد",
