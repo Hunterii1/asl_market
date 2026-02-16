@@ -1171,6 +1171,19 @@ class AdminApiService {
     });
   }
 
+  async getAffiliateSettings(): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/settings`, {
+      method: 'GET',
+    });
+  }
+
+  async updateAffiliateSettings(data: { sms_pattern_code?: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/affiliates/settings`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
   // ==================== Telegram Admin Management ====================
   async getTelegramAdmins(): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/telegram-admins`, {

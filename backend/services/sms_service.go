@@ -98,6 +98,40 @@ func (s *SMSService) SendSimpleSMS(phoneNumber, message string) error {
 	return nil
 }
 
+// SendAffiliateRegistrationSMS sends SMS after affiliate registration
+func (s *SMSService) SendAffiliateRegistrationSMS(phoneNumber, userName, patternCode string) error {
+	if s == nil || s.client == nil {
+		return fmt.Errorf("SMS service not initialized")
+	}
+
+	// If pattern code is not provided, don't send SMS
+	if patternCode == "" {
+		log.Printf("SMS pattern code not configured, skipping SMS to %s", phoneNumber)
+		return nil
+	}
+
+	// Prepare pattern values with user name
+	patternValues := map[string]string{
+		"name": userName,
+	}
+
+	// Send SMS with pattern
+	messageID, err := s.client.SendPattern(
+		patternCode, // Pattern code from settings
+		s.originator, // originator number
+		phoneNumber,  // recipient
+		patternValues, // pattern values with name
+	)
+
+	if err != nil {
+		log.Printf("Error sending affiliate registration SMS to %s: %v", phoneNumber, err)
+		return fmt.Errorf("failed to send SMS: %v", err)
+	}
+
+	log.Printf("Affiliate registration SMS sent successfully to %s with message ID: %d", phoneNumber, messageID)
+	return nil
+}
+
 // Check SMS credit
 func (s *SMSService) GetCredit() (float64, error) {
 	if s == nil || s.client == nil {

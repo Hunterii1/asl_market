@@ -539,6 +539,23 @@ func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 
 	log.Printf("[AffiliateRegister] User registered: ID=%d, Phone=%s, AffiliateID=%d", user.ID, user.Phone, affiliateID)
 
+	// Send SMS notification if pattern code is configured
+	go func() {
+		settings, err := models.GetAffiliateSettings(c.db)
+		if err == nil && settings.SMSPatternCode != "" {
+			// Format phone number for SMS (convert to international format)
+			formattedPhone := services.ValidateIranianPhoneNumber(user.Phone)
+			userName := req.FirstName + " " + req.LastName
+			
+			smsService := services.GetSMSService()
+			if smsService != nil {
+				if err := smsService.SendAffiliateRegistrationSMS(formattedPhone, userName, settings.SMSPatternCode); err != nil {
+					log.Printf("[AffiliateRegister] Failed to send SMS to %s: %v", formattedPhone, err)
+				}
+			}
+		}
+	}()
+
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "ثبت‌نام با موفقیت انجام شد",
 		"data": gin.H{

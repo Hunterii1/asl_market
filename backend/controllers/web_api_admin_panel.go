@@ -3096,3 +3096,40 @@ func UpdateAffiliateWithdrawalStatus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "وضعیت به‌روزرسانی شد"})
 }
+
+// GetAffiliateSettings returns affiliate settings (singleton)
+func GetAffiliateSettings(c *gin.Context) {
+	db := models.GetDB()
+	settings, err := models.GetAffiliateSettings(db)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت تنظیمات"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"sms_pattern_code": settings.SMSPatternCode,
+		},
+	})
+}
+
+// UpdateAffiliateSettings updates affiliate settings (singleton)
+func UpdateAffiliateSettings(c *gin.Context) {
+	db := models.GetDB()
+	var req struct {
+		SMSPatternCode string `json:"sms_pattern_code"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های نامعتبر"})
+		return
+	}
+	updates := make(map[string]interface{})
+	if req.SMSPatternCode != "" {
+		updates["sms_pattern_code"] = req.SMSPatternCode
+	}
+	if err := models.UpdateAffiliateSettings(db, updates); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در ذخیره تنظیمات"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "تنظیمات با موفقیت ذخیره شد"})
+}

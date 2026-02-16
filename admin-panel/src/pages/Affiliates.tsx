@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { adminApi } from '@/lib/api/adminApi';
-import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck, Percent, Banknote } from 'lucide-react';
+import { Loader2, Link2, Plus, Pencil, Trash2, Copy, Check, Eye, Upload, FileText, Users, ShoppingCart, Wallet, UserCheck, Percent, Banknote, Settings } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -103,6 +103,13 @@ export default function Affiliates() {
   const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
   const [loadingWithdrawals, setLoadingWithdrawals] = useState(false);
   const [withdrawalNote, setWithdrawalNote] = useState<Record<number, string>>({});
+  
+  // Settings modal states
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [smsPatternCode, setSmsPatternCode] = useState('');
+  const [loadingSettings, setLoadingSettings] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  
   const perPage = 10;
 
   const load = async () => {
@@ -417,6 +424,34 @@ export default function Affiliates() {
     }
   };
 
+  const loadSettings = async () => {
+    setLoadingSettings(true);
+    try {
+      const res = await adminApi.getAffiliateSettings();
+      const data = res?.data ?? res;
+      setSmsPatternCode(data?.sms_pattern_code ?? '');
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'بارگذاری تنظیمات ناموفق بود' });
+    } finally {
+      setLoadingSettings(false);
+    }
+  };
+
+  const saveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await adminApi.updateAffiliateSettings({
+        sms_pattern_code: smsPatternCode.trim(),
+      });
+      toast({ title: 'ذخیره شد', description: 'تنظیمات با موفقیت ذخیره شد' });
+      setSettingsOpen(false);
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'ذخیره تنظیمات ناموفق بود' });
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / perPage) || 1;
 
   return (
@@ -427,10 +462,16 @@ export default function Affiliates() {
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت افیلیت‌ها</h1>
             <p className="text-sm text-muted-foreground">افزودن و مدیریت کاربران پنل افیلیت (لینک اختصاصی و ورود به پنل افیلیت)</p>
           </div>
-          <Button onClick={() => { setAddOpen(true); setAddName(''); setAddUsername(''); setAddPassword(''); }}>
-            <Plus className="w-4 h-4 ml-2" />
-            افیلیت جدید
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { setSettingsOpen(true); loadSettings(); }}>
+              <Settings className="w-4 h-4 ml-2" />
+              تنظیمات
+            </Button>
+            <Button onClick={() => { setAddOpen(true); setAddName(''); setAddUsername(''); setAddPassword(''); }}>
+              <Plus className="w-4 h-4 ml-2" />
+              افیلیت جدید
+            </Button>
+          </div>
         </div>
 
         {stats != null && (
@@ -846,6 +887,53 @@ export default function Affiliates() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteOpen(false)}>انصراف</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={submitting}>{submitting ? <Loader2 className="w-4 h-4 animate-spin ml-2" /> : null}حذف</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>تنظیمات افیلیت</DialogTitle>
+            <DialogDescription>تنظیمات ثبت‌نام و پیامک برای افیلیت‌ها</DialogDescription>
+          </DialogHeader>
+          {loadingSettings ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="sms_pattern_code">کد پترن پیامک ثبت‌نام</Label>
+                <Input
+                  id="sms_pattern_code"
+                  value={smsPatternCode}
+                  onChange={(e) => setSmsPatternCode(e.target.value)}
+                  placeholder="مثال: 9i276pvpwvuj40w"
+                  dir="ltr"
+                />
+                <p className="text-xs text-muted-foreground">
+                  کد پترن پیامک که بعد از ثبت‌نام هر کاربر از طریق لینک افیلیت ارسال می‌شود. 
+                  متغیر %name% برای نام کاربر استفاده می‌شود.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettingsOpen(false)} disabled={savingSettings}>
+              انصراف
+            </Button>
+            <Button onClick={saveSettings} disabled={savingSettings || loadingSettings}>
+              {savingSettings ? (
+                <>
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  در حال ذخیره...
+                </>
+              ) : (
+                'ذخیره'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
