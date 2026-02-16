@@ -7,6 +7,22 @@ import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { affiliateApi } from "@/lib/affiliateApi";
 
+// Helper function to get image URL based on environment
+const getImageUrl = (path: string): string => {
+  if (typeof window === "undefined") return path;
+  
+  const hostname = window.location.hostname;
+  const protocol = window.location.protocol;
+  
+  // Development
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return `${protocol}//localhost:8080${path}`;
+  }
+  
+  // Production - use relative path (nginx will serve it)
+  return path;
+};
+
 export default function Register() {
   const [searchParams] = useSearchParams();
   const promoterId = searchParams.get("promoter");
@@ -136,7 +152,7 @@ export default function Register() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: "url('/images/hero-image.png')",
+            backgroundImage: `url('${getImageUrl("/uploads/videos/IMG_6747.JPG")}')`,
           }}
         />
         
