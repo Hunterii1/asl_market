@@ -146,61 +146,29 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-black" dir="rtl">
-      {/* Hero Section with Image and Gradient */}
+      {/* Hero Section with Image */}
       <div className="relative w-full" style={{ minHeight: "60vh" }}>
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
+            minHeight: "60vh",
             backgroundImage: `url('${getImageUrl("/uploads/videos/IMG_6747.JPG")}')`,
           }}
         />
-        
-        {/* Black Gradient Overlay - from bottom (opaque) to top (transparent) */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(to top, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.8) 30%, rgba(0, 0, 0, 0) 70%)",
-          }}
-        />
-
-        {/* Content Overlay */}
-        <div className="relative z-10 flex flex-col justify-end h-full min-h-[60vh] px-4 pb-8">
-          {/* Course Title */}
-          <div className="text-center mb-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-              دوره چهار قدم
-            </h1>
-            <h2 className="text-3xl md:text-4xl font-bold text-purple-400 mb-6">
-              صادرات آسان
-            </h2>
-
-            {/* Price Badges */}
-            <div className="flex items-center justify-center gap-3 mb-4">
-              {/* Original Price with Strikethrough */}
-              <div className="bg-purple-600 px-4 py-2 rounded-lg relative">
-                <span className="text-white text-sm md:text-base font-semibold relative">
-                  قیمت ۴/۰۰۰/۰۰۰ تومان
-                  <span className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 transform -translate-y-1/2"></span>
-                </span>
-              </div>
-              
-              {/* Free Badge */}
-              <div className="bg-purple-600 px-4 py-2 rounded-lg">
-                <span className="text-white text-sm md:text-base font-bold">رایگان</span>
-              </div>
-            </div>
-
-            {/* Instructor Quote */}
-            <p className="text-white text-sm md:text-base">
-              « چهار روز آموزش هدیه با علیرضا اصل »
-            </p>
-          </div>
-        </div>
       </div>
 
+      {/* Black Gradient - below image, transitioning to black */}
+      <div 
+        className="w-full"
+        style={{
+          height: "200px",
+          background: "linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 1) 100%)",
+        }}
+      />
+
       {/* Registration Form Card */}
-      <div className="relative -mt-8 px-4 pb-8">
+      <div className="relative px-4 pb-8 -mt-32">
         <div className="bg-white rounded-t-3xl rounded-b-2xl shadow-2xl p-6 md:p-8 max-w-md mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Field */}
