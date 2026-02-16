@@ -116,7 +116,7 @@ export default function Affiliates() {
         name: a.name ?? '',
         username: a.username ?? '',
         referral_code: a.referral_code ?? '',
-        referral_link: a.referral_link ?? '',
+        referral_link: a.referral_link || `https://asllmarket.com/affiliate/register?promoter=${a.id}`,
         balance: Number(a.balance) ?? 0,
         total_earnings: Number(a.total_earnings) ?? 0,
         commission_percent: Number(a.commission_percent) ?? 100,
@@ -163,7 +163,9 @@ export default function Affiliates() {
 
   const openDetail = async (row: AffiliateRow) => {
     setSelected(row);
-    setCustomReferralLink(row.referral_link || '');
+    // اگر لینک خالی است، به صورت خودکار تولید کن
+    const defaultLink = row.referral_link || `https://asllmarket.com/affiliate/register?promoter=${row.id}`;
+    setCustomReferralLink(defaultLink);
     setDetailCommissionPercent(row.commission_percent != null ? String(row.commission_percent) : '100');
     setCsvFile(null);
     setSalesListText('');
@@ -224,13 +226,34 @@ export default function Affiliates() {
     }
     setSubmitting(true);
     try {
-      await adminApi.createAffiliate({ name: addName.trim(), username: addUsername.trim(), password: addPassword });
+      const res = await adminApi.createAffiliate({ name: addName.trim(), username: addUsername.trim(), password: addPassword });
+      const data = res?.data ?? res;
+      const newAffiliateId = data?.id;
       toast({ title: 'افزوده شد', description: 'افیلیت با موفقیت ایجاد شد' });
       setAddOpen(false);
       setAddName('');
       setAddUsername('');
       setAddPassword('');
-      load();
+      await load();
+      // اگر افیلیت ایجاد شد، modal detail را باز کن و لینک را نمایش بده
+      if (newAffiliateId) {
+        // از داده‌های برگشتی از API استفاده کن
+        const affiliateData: AffiliateRow = {
+          id: newAffiliateId,
+          name: addName.trim(),
+          username: addUsername.trim(),
+          referral_code: data?.referral_code || '',
+          referral_link: data?.referral_link || `https://asllmarket.com/affiliate/register?promoter=${newAffiliateId}`,
+          balance: 0,
+          total_earnings: 0,
+          commission_percent: 100,
+          is_active: true,
+          last_login: null,
+          login_count: 0,
+          created_at: data?.created_at || new Date().toISOString(),
+        };
+        openDetail(affiliateData);
+      }
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'خطا', description: e?.message ?? 'ایجاد افیلیت ناموفق بود' });
     } finally {
