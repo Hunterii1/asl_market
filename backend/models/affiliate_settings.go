@@ -1,6 +1,7 @@
 package models
 
 import (
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,14 +33,18 @@ func GetAffiliateSettings(db *gorm.DB) (*AffiliateSettings, error) {
 		settings = AffiliateSettings{
 			SMSPatternCode: "",
 		}
-		if err := db.Create(&settings).Error; err != nil {
-			return nil, err
+		if createErr := db.Create(&settings).Error; createErr != nil {
+			// If table doesn't exist or creation fails, return empty settings instead of error
+			log.Printf("[GetAffiliateSettings] Failed to create settings (table may not exist): %v", createErr)
+			return &AffiliateSettings{SMSPatternCode: ""}, nil
 		}
 		return &settings, nil
 	}
 	
 	if err != nil {
-		return nil, err
+		// If any other error, return empty settings instead of failing
+		log.Printf("[GetAffiliateSettings] Error getting settings: %v", err)
+		return &AffiliateSettings{SMSPatternCode: ""}, nil
 	}
 	
 	return &settings, nil
