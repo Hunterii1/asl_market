@@ -152,7 +152,7 @@ export default function Register() {
         <div 
           className="w-full h-full bg-cover bg-center bg-no-repeat"
           style={{
-            minHeight: "60vh",
+            height: "821px",
             backgroundImage: `url('${getImageUrl("/uploads/videos/IMG_6747.JPG")}')`,
           }}
         />
@@ -162,18 +162,28 @@ export default function Register() {
       <div 
         className="w-full"
         style={{
-          height: "200px",
+          height: "118px",
           background: "linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.5) 50%, rgba(0, 0, 0, 1) 100%)",
         }}
       />
 
       {/* Registration Form Card */}
-      <div className="relative px-4 pb-8 -mt-32">
-        <div className="bg-white rounded-t-3xl rounded-b-2xl shadow-2xl p-6 md:p-8 max-w-md mx-auto">
+      <div className="relative px-4 pb-8 -mt-32" style={{ backgroundColor: "rgba(7, 7, 7, 1)" }}>
+        <div 
+          className="bg-white rounded-t-3xl rounded-b-2xl shadow-2xl p-6 md:p-8 max-w-md mx-auto"
+          style={{
+            paddingTop: "24px",
+            paddingBottom: "24px",
+            borderWidth: "1px",
+            borderColor: "rgba(0, 0, 0, 1)",
+            fontSize: "8px",
+            lineHeight: "21px",
+          }}
+        >
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name Field */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700" style={{ fontWeight: 800 }}>
                 نام و نام خانوادگی
               </Label>
               <Input
@@ -190,7 +200,7 @@ export default function Register() {
 
             {/* Phone Field */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
+              <Label className="text-sm font-medium text-gray-700" style={{ fontSize: "16px" }}>
                 شماره موبایل (اعداد به انگلیسی وارد شود)
               </Label>
               <Input
@@ -201,7 +211,7 @@ export default function Register() {
                 onChange={handleChange}
                 disabled={loading}
                 maxLength={11}
-                className="h-12 text-left dir-ltr border-gray-300 focus:border-purple-500 focus:ring-purple-500"
+                className="h-12 text-right text-[13px] dir-ltr border-gray-300 focus:border-purple-500 focus:ring-purple-500"
                 dir="ltr"
                 required
               />
@@ -215,52 +225,6 @@ export default function Register() {
             >
               {loading ? "در حال ثبت‌نام..." : "ثبت نام"}
             </Button>
-
-            {/* eNAMAD Trust Seal */}
-            <div className="pt-6 border-t border-gray-200">
-              <div className="flex flex-col items-center justify-center space-y-2">
-                {/* eNAMAD Logo */}
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">e</span>
-                  </div>
-                  <span className="text-blue-500 font-semibold text-sm">eNAMAD.ir</span>
-                </div>
-                
-                {/* Star Rating */}
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4].map((star) => (
-                    <svg
-                      key={star}
-                      className="w-5 h-5 text-yellow-400 fill-current"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.564-.955L10 0l2.947 5.955 6.564.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                  ))}
-                  <svg
-                    className="w-5 h-5 text-yellow-400 fill-current"
-                    viewBox="0 0 20 20"
-                  >
-                    <defs>
-                      <linearGradient id="half">
-                        <stop offset="50%" stopColor="currentColor" />
-                        <stop offset="50%" stopColor="transparent" stopOpacity="1" />
-                      </linearGradient>
-                    </defs>
-                    <path
-                      fill="url(#half)"
-                      d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.564-.955L10 0l2.947 5.955 6.564.955-4.756 4.635 1.123 6.545z"
-                    />
-                  </svg>
-                </div>
-
-                {/* Trust Text */}
-                <p className="text-xs text-gray-500 text-center">
-                  جهت اطمینان کلیک نمایید
-                </p>
-              </div>
-            </div>
           </form>
         </div>
       </div>
