@@ -94,13 +94,14 @@ export const affiliateApi = {
     });
     return data;
   },
+  /** ثبت لید افیلیت (فقط نام و موبایل — کاربر سایت ساخته نمی‌شود) */
   async registerWithPromoter(data: {
     first_name: string;
     last_name: string;
-    email?: string;
     phone: string;
-    password: string;
     promoter_id: number;
+    email?: string;
+    password?: string;
   }) {
     const response = await request("/public/affiliate/register", {
       method: "POST",

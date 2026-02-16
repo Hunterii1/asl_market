@@ -72,19 +72,15 @@ export default function Register() {
 
     setLoading(true);
     try {
-      // Split full name into first and last name
+      // فقط لید ثبت می‌شود (نام + موبایل) — کاربر سایت ساخته نمی‌شود
       const nameParts = formData.full_name.trim().split(/\s+/);
       const first_name = nameParts[0] || "";
-      const last_name = nameParts.slice(1).join(" ") || "";
-
-      // Generate a random password (user can reset it later)
-      const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const last_name = nameParts.slice(1).join(" ") || formData.full_name.trim();
 
       await affiliateApi.registerWithPromoter({
         first_name,
         last_name,
         phone: formData.phone.trim(),
-        password: randomPassword,
         promoter_id: parseInt(promoterId),
       });
       

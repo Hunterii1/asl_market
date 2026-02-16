@@ -41,21 +41,22 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 		return
 	}
 
-	// Total registrations (referred users)
+	// Total registrations = لیدها (فقط از affiliate_registered_users، نه users)
 	var totalSignups int64
-	db.Model(&models.User{}).Where("affiliate_id = ?", affID).Count(&totalSignups)
+	db.Model(&models.AffiliateRegisteredUser{}).Where("affiliate_id = ? AND deleted_at IS NULL", affID).Count(&totalSignups)
 
-	// Registrations chart (last 30 days, grouped by date)
+	// Registrations chart (last 30 days) — از جدول لیدها
 	type dateCount struct {
 		Date  string
 		Count int64
 	}
 	var regChart []dateCount
 	db.Raw(`
-		SELECT DATE(created_at) as date, COUNT(*) as count
-		FROM users
-		WHERE affiliate_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-		GROUP BY DATE(created_at)
+		SELECT DATE(COALESCE(registered_at, created_at)) as date, COUNT(*) as count
+		FROM affiliate_registered_users
+		WHERE affiliate_id = ? AND deleted_at IS NULL
+		  AND COALESCE(registered_at, created_at) >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+		GROUP BY DATE(COALESCE(registered_at, created_at))
 		ORDER BY date ASC
 	`, affID).Scan(&regChart)
 

@@ -10,7 +10,6 @@ import (
 	"asl-market-backend/config"
 	"asl-market-backend/models"
 	"asl-market-backend/services"
-	"asl-market-backend/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -444,17 +443,21 @@ func (ctrl *PublicRegistrationController) GetRegistrationStatus(ctx *gin.Context
 	})
 }
 
-// AffiliateRegisterRequest represents the request for affiliate registration
+// AffiliateRegisterRequest represents the request for affiliate lead registration (لید افیلیت).
+// Only name and phone are used; this is NOT a site user — just a lead for the affiliate panel.
 type AffiliateRegisterRequest struct {
-	FirstName  string `json:"first_name" binding:"required,min=2,max=100"`
-	LastName   string `json:"last_name" binding:"required,min=2,max=100"`
-	Email      string `json:"email" binding:"omitempty,email"`
+	FirstName  string `json:"first_name" binding:"required,min=1,max=100"`
+	LastName   string `json:"last_name" binding:"required,min=1,max=100"`
 	Phone      string `json:"phone" binding:"required"`
-	Password   string `json:"password" binding:"required,min=6"`
 	PromoterID uint   `json:"promoter_id" binding:"required"`
+	// Optional/ignored for backward compatibility with frontend
+	Email    string `json:"email" binding:"omitempty,email"`
+	Password string `json:"password" binding:"omitempty,min=6"`
 }
 
-// RegisterAffiliate handles user registration through affiliate landing page
+// RegisterAffiliate registers a lead (لید) for the affiliate — NOT a site user.
+// Only creates a row in affiliate_registered_users. Name is used for SMS variable, phone for sending.
+// List is shown in affiliate panel at /affiliate/users (registered-users).
 func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 	var req AffiliateRegisterRequest
 
@@ -475,77 +478,67 @@ func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 		return
 	}
 
-	// Check if user already exists by phone
-	var existingUser models.User
-	if err := c.db.Where("phone = ?", req.Phone).First(&existingUser).Error; err == nil {
+	// Duplicate lead: same phone for this affiliate already registered
+	var existingLead models.AffiliateRegisteredUser
+	if err := c.db.Where("affiliate_id = ? AND phone = ? AND deleted_at IS NULL", req.PromoterID, req.Phone).First(&existingLead).Error; err == nil {
 		ctx.JSON(http.StatusConflict, gin.H{
-			"error": "کاربری با این شماره موبایل قبلاً ثبت‌نام کرده است",
-		})
-		return
-	}
-
-	// Check if user already exists by email (if email is provided)
-	if req.Email != "" {
-		if err := c.db.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
-			ctx.JSON(http.StatusConflict, gin.H{
-				"error": "کاربری با این ایمیل قبلاً ثبت‌نام کرده است",
-			})
-			return
-		}
-	}
-
-	// Hash password
-	hashedPassword, err := utils.HashPassword(req.Password)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در رمزگذاری رمز عبور",
+			"error": "این شماره قبلاً برای این لینک ثبت شده است",
 		})
 		return
 	}
 
 	affiliateID := affiliate.ID
+	fullName := strings.TrimSpace(req.FirstName + " " + req.LastName)
+	if fullName == "" {
+		fullName = strings.TrimSpace(req.FirstName) + " " + strings.TrimSpace(req.LastName)
+	}
+	now := time.Now()
 
-	// Create user with affiliate_id
-	user := models.User{
-		FirstName:   req.FirstName,
-		LastName:     req.LastName,
-		Email:       req.Email,
-		Password:    hashedPassword,
-		Phone:       req.Phone,
-		IsActive:    true,
-		AffiliateID: &affiliateID,
+	// Only create lead in affiliate_registered_users (no user in users table)
+	lead := models.AffiliateRegisteredUser{
+		AffiliateID:  affiliateID,
+		Name:         fullName,
+		Phone:        strings.TrimSpace(req.Phone),
+		RegisteredAt: &now,
 	}
 
-	if err := c.db.Create(&user).Error; err != nil {
+	if err := c.db.Create(&lead).Error; err != nil {
+		log.Printf("[AffiliateRegister] create lead failed: phone=%s promoter_id=%d err=%v", req.Phone, req.PromoterID, err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در ایجاد کاربر",
+			"error": "خطا در ثبت لید",
 		})
 		return
 	}
 
-	// Register in affiliate_registered_users table
-	now := time.Now()
-	registeredUser := models.AffiliateRegisteredUser{
-		AffiliateID: affiliateID,
-		Name:        req.FirstName + " " + req.LastName,
-		Phone:       req.Phone,
-		RegisteredAt: &now,
-	}
+	log.Printf("[AffiliateRegister] Lead registered: id=%d name=%s phone=%s affiliate_id=%d", lead.ID, lead.Name, lead.Phone, affiliateID)
 
-	if err := c.db.Create(&registeredUser).Error; err != nil {
-		log.Printf("[AffiliateRegister] Error creating registered user: %v", err)
-		// Don't fail the registration if this fails, just log it
-	}
-
-	log.Printf("[AffiliateRegister] User registered: ID=%d, Phone=%s, AffiliateID=%d", user.ID, user.Phone, affiliateID)
-
-	// TODO: SMS notification will be added back after confirming registration works
-	// Temporarily disabled to debug 500 error
+	// Send SMS if pattern is configured (name and phone used for SMS)
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("[AffiliateRegister] Panic in SMS goroutine: %v", r)
+			}
+		}()
+		db := models.GetDB()
+		if db == nil {
+			return
+		}
+		settings, err := models.GetAffiliateSettings(db)
+		if err != nil || settings == nil || settings.SMSPatternCode == "" {
+			return
+		}
+		formattedPhone := services.ValidateIranianPhoneNumber(lead.Phone)
+		smsService := services.GetSMSService()
+		if smsService == nil {
+			return
+		}
+		_ = smsService.SendAffiliateRegistrationSMS(formattedPhone, lead.Name, settings.SMSPatternCode)
+	}()
 
 	ctx.JSON(http.StatusCreated, gin.H{
 		"message": "ثبت‌نام با موفقیت انجام شد",
 		"data": gin.H{
-			"user_id":      user.ID,
+			"id":           lead.ID,
 			"affiliate_id": affiliateID,
 		},
 	})
