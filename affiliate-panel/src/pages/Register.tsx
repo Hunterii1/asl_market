@@ -147,12 +147,13 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-black" dir="rtl">
       {/* Hero Section with Image */}
-      <div className="relative w-full" style={{ minHeight: "60vh" }}>
+      <div className="relative w-full overflow-hidden">
         {/* Background Image */}
         <div 
-          className="w-full h-full bg-cover bg-center bg-no-repeat"
+          className="w-full bg-cover bg-center bg-no-repeat"
           style={{
-            height: "821px",
+            height: "60vh",
+            maxHeight: "821px",
             backgroundImage: `url('${getImageUrl("/uploads/videos/IMG_6747.JPG")}')`,
           }}
         />
