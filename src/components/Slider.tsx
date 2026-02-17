@@ -13,7 +13,12 @@ interface Slider {
   order: number;
 }
 
-export default function Slider() {
+interface SliderProps {
+  /** نام بخش برای فیلتر بنرها (dashboard, aslsupplier, aslexpress, ...) */
+  section?: string;
+}
+
+export default function Slider({ section }: SliderProps) {
   const [sliders, setSliders] = useState<Slider[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,12 +26,12 @@ export default function Slider() {
 
   useEffect(() => {
     loadSliders();
-  }, []);
+  }, [section]);
 
   const loadSliders = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getActiveSliders();
+      const response = await apiService.getActiveSliders(section);
       if (response && response.sliders) {
         setSliders(response.sliders);
         // Track view for first slider

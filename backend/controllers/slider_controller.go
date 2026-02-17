@@ -15,6 +15,7 @@ func GetSliders(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
 	activeOnly, _ := strconv.ParseBool(c.DefaultQuery("active_only", "false"))
+	section := c.Query("section")
 
 	if page < 1 {
 		page = 1
@@ -24,7 +25,7 @@ func GetSliders(c *gin.Context) {
 	}
 
 	db := models.GetDB()
-	sliders, total, err := models.GetSliders(db, page, perPage, activeOnly)
+	sliders, total, err := models.GetSliders(db, page, perPage, activeOnly, section)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sliders"})
 		return
@@ -38,6 +39,7 @@ func GetSliders(c *gin.Context) {
 			ImageURL:   slider.ImageURL,
 			Link:       slider.Link,
 			LinkType:   slider.LinkType,
+			Section:    slider.Section,
 			IsActive:   slider.IsActive,
 			Order:      slider.Order,
 			ClickCount: slider.ClickCount,
@@ -65,7 +67,8 @@ func GetSliders(c *gin.Context) {
 // GetActiveSliders gets all active sliders for display
 func GetActiveSliders(c *gin.Context) {
 	db := models.GetDB()
-	sliders, err := models.GetActiveSliders(db)
+	section := c.Query("section")
+	sliders, err := models.GetActiveSliders(db, section)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch sliders"})
 		return
@@ -79,6 +82,7 @@ func GetActiveSliders(c *gin.Context) {
 			ImageURL:   slider.ImageURL,
 			Link:       slider.Link,
 			LinkType:   slider.LinkType,
+			Section:    slider.Section,
 			IsActive:   slider.IsActive,
 			Order:      slider.Order,
 			ClickCount: slider.ClickCount,
@@ -111,6 +115,7 @@ func GetSlider(c *gin.Context) {
 		ImageURL:   slider.ImageURL,
 		Link:       slider.Link,
 		LinkType:   slider.LinkType,
+		Section:    slider.Section,
 		IsActive:   slider.IsActive,
 		Order:      slider.Order,
 		ClickCount: slider.ClickCount,
@@ -181,6 +186,7 @@ func CreateSlider(c *gin.Context) {
 		ImageURL:   slider.ImageURL,
 		Link:       slider.Link,
 		LinkType:   slider.LinkType,
+		Section:    slider.Section,
 		IsActive:   slider.IsActive,
 		Order:      slider.Order,
 		ClickCount: slider.ClickCount,

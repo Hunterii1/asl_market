@@ -60,6 +60,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import Slider from "@/components/Slider";
 import { GlobalSearchBar } from "@/components/GlobalSearchBar";
 import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
+import { useAutoHorizontalScroll } from "@/hooks/useAutoHorizontalScroll";
 
 const SITE_ONBOARDING_DELAY_MS = 1000;
 
@@ -80,6 +81,16 @@ const Index = () => {
   // Supplier preview dialog state (برای اسلایدر داشبورد)
   const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // اسکرول خودکار برای اسلایدر تأمین‌کنندگان برتر داشبورد
+  const dashboardFeaturedSliderRef = useAutoHorizontalScroll<HTMLDivElement>(
+    !loadingFeaturedSuppliers && featuredSuppliers.length > 0,
+    {
+      stepPx: 1.2,
+      intervalMs: 40,
+      pauseOnHover: true,
+    }
+  );
 
   // اولین بازدید سایت: یک بار استوری‌لاین معرفی کل سایت را نشان بده.
   useEffect(() => {
@@ -305,7 +316,7 @@ const Index = () => {
 
           {/* Slider - Right side on desktop, full width on mobile */}
           <div className="w-full lg:w-2/3">
-            <Slider />
+            <Slider section="dashboard" />
           </div>
         </div>
       </div>
@@ -414,7 +425,10 @@ const Index = () => {
                   {toFarsiNumber(featuredSuppliers.length)} تأمین‌کننده برگزیده
                 </Badge>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
+              <div
+                ref={dashboardFeaturedSliderRef}
+                className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1"
+              >
                 {featuredSuppliers.map((supplier) => (
                   <div
                     key={supplier.id}

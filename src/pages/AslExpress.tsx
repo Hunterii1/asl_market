@@ -8,6 +8,7 @@ import {
   Mail,
   MapPin
 } from "lucide-react";
+import Slider from "@/components/Slider";
 
 interface Contact {
   name?: string;
@@ -90,6 +91,9 @@ const AslExpress = () => {
           </div>
         </CardContent>
       </Card>
+
+        {/* Section Banner Slider */}
+        <Slider section="aslexpress" />
 
         {/* Main Content */}
         <Card className="bg-card/80 border-border rounded-3xl">

@@ -29,6 +29,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import Slider from "@/components/Slider";
 
 const AslPay = () => {
   const [activeTab, setActiveTab] = useState("request");
@@ -291,6 +292,9 @@ const AslPay = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section Banner Slider */}
+      <Slider section="aslpay" />
 
       {/* Navigation Tabs */}
       <div className="flex gap-4">

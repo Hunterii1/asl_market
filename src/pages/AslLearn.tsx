@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { LicenseGate } from '@/components/LicenseGate';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import Slider from "@/components/Slider";
 
 const AslLearn = () => {
   const [spotPlayerLicense, setSpotPlayerLicense] = useState<any>(null);
@@ -214,6 +215,9 @@ const AslLearn = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Section Banner Slider */}
+        <Slider section="asllearn" />
 
         {/* Platform Tutorial Video - Mobile Optimized */}
         <Card className="bg-gradient-to-br from-indigo-100/40 via-purple-100/40 to-pink-100/40 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 border-indigo-200/70 dark:border-indigo-700/50 rounded-3xl overflow-hidden shadow-xl">

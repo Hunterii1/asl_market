@@ -26,6 +26,7 @@ import {
   History
 } from "lucide-react";
 import HeaderAuth from "@/components/ui/HeaderAuth";
+import Slider from "@/components/Slider";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 const AslAI = () => {
@@ -490,6 +491,9 @@ const AslAI = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Section Banner Slider */}
+        <Slider section="aslai" />
 
         <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4 sm:gap-6 h-[calc(100vh-200px)] sm:h-[600px]">
           {/* Mobile: New Chat Button */}

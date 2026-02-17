@@ -1805,8 +1805,12 @@ class ApiService {
   }
 
   // Slider API methods
-  async getActiveSliders(): Promise<any> {
-    return this.makeRequest(`${API_BASE_URL}/sliders/active`, {
+  async getActiveSliders(section?: string): Promise<any> {
+    const url = section
+      ? `${API_BASE_URL}/sliders/active?section=${encodeURIComponent(section)}`
+      : `${API_BASE_URL}/sliders/active`;
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: {
         ...this.getAuthHeaders(),

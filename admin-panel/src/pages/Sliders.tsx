@@ -31,6 +31,7 @@ interface Slider {
   image_url: string;
   link: string;
   link_type: 'internal' | 'external';
+  section: string;
   is_active: boolean;
   order: number;
   click_count: number;
@@ -61,9 +62,25 @@ export default function Sliders() {
     image_url: '',
     link: '',
     link_type: 'internal' as 'internal' | 'external',
+    section: 'dashboard',
     is_active: true,
     order: 0,
   });
+
+  const sectionOptions = [
+    { value: 'dashboard', label: 'داشبورد', description: 'بنر اصلی صفحه نخست / داشبورد' },
+    { value: 'asllearn', label: 'آموزش (ASL LEARN)', description: 'بنر مخصوص صفحه آموزش' },
+    { value: 'products', label: 'محصولات تحقیقی', description: 'بنر بخش محصولات تحقیقی' },
+    { value: 'aslsupplier', label: 'تأمین‌کنندگان (ASL SUPPLIER)', description: 'بنر صفحه تأمین‌کنندگان' },
+    { value: 'aslvisit', label: 'ویزیتورها (ASL VISIT)', description: 'بنر صفحه ویزیتورها' },
+    { value: 'aslpay', label: 'دریافت پول (ASL PAY)', description: 'بنر صفحه پرداخت و تسویه' },
+    { value: 'aslexpress', label: 'ارسال (ASL EXPRESS)', description: 'بنر صفحه حمل‌ونقل و ارسال' },
+    { value: 'aslai', label: 'هوش مصنوعی (ASL AI)', description: 'بنر صفحه هوش مصنوعی' },
+    { value: 'aslavailable', label: 'کالاهای موجود (ASL AVAILABLE)', description: 'بنر صفحه کالاهای موجود' },
+  ] as const;
+
+  const getSectionLabel = (section: string) =>
+    sectionOptions.find((opt) => opt.value === section)?.label || 'داشبورد';
 
   // Load sliders from API
   const loadSliders = async () => {
@@ -205,6 +222,7 @@ export default function Sliders() {
       image_url: '',
       link: '',
       link_type: 'internal',
+      section: 'dashboard',
       is_active: true,
       order: 0,
     });
@@ -217,6 +235,7 @@ export default function Sliders() {
       image_url: slider.image_url,
       link: slider.link,
       link_type: slider.link_type,
+      section: slider.section || 'dashboard',
       is_active: slider.is_active,
       order: slider.order,
     });
@@ -294,6 +313,7 @@ export default function Sliders() {
                     <tr className="border-b border-border">
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">تصویر</th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">لینک</th>
+                      <th className="p-4 text-right text-sm font-medium text-muted-foreground">بخش</th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">وضعیت</th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">ترتیب</th>
                       <th className="p-4 text-right text-sm font-medium text-muted-foreground">آمار</th>
@@ -314,6 +334,11 @@ export default function Sliders() {
                           <span className="text-sm">{slider.link || '-'}</span>
                           <Badge variant="outline" className="mr-2">
                             {slider.link_type === 'internal' ? 'داخلی' : 'خارجی'}
+                          </Badge>
+                        </td>
+                        <td className="p-4">
+                          <Badge variant="outline" className="bg-slate-800/40 border-slate-600/60 text-xs">
+                            {getSectionLabel(slider.section)}
                           </Badge>
                         </td>
                         <td className="p-4">
@@ -672,6 +697,29 @@ export default function Sliders() {
                 />
               </div>
               <div>
+                <Label>بخش نمایش</Label>
+                <Select
+                  value={formData.section}
+                  onValueChange={(value: string) =>
+                    setFormData((prev) => ({ ...prev, section: value as (typeof sectionOptions)[number]['value'] }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب بخش" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectionOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col items-start">
+                          <span>{opt.label}</span>
+                          <span className="text-[11px] text-muted-foreground">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>نوع لینک</Label>
                 <Select
                   value={formData.link_type}
@@ -765,6 +813,29 @@ export default function Sliders() {
                   onChange={(e) => setFormData(prev => ({ ...prev, link: e.target.value }))}
                   placeholder="مثال: /aslsupplier یا https://example.com"
                 />
+              </div>
+              <div>
+                <Label>بخش نمایش</Label>
+                <Select
+                  value={formData.section}
+                  onValueChange={(value: string) =>
+                    setFormData((prev) => ({ ...prev, section: value as (typeof sectionOptions)[number]['value'] }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب بخش" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectionOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        <div className="flex flex-col items-start">
+                          <span>{opt.label}</span>
+                          <span className="text-[11px] text-muted-foreground">{opt.description}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>نوع لینک</Label>

@@ -16,6 +16,8 @@ import { PRODUCT_CATEGORIES, SUPPLIER_SERVICES_DISCLAIMER } from '@/constants/pr
 import { Pagination } from "@/components/ui/pagination";
 import HeaderAuth from '@/components/ui/HeaderAuth';
 import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
+import Slider from "@/components/Slider";
+import { useAutoHorizontalScroll } from "@/hooks/useAutoHorizontalScroll";
 import { 
   Users, 
   User,
@@ -220,6 +222,18 @@ const AslSupplier = () => {
   const sliderSuppliers = (nearFullSuppliers.length > 0 ? nearFullSuppliers : midSuppliers).slice(0, 9);
 
   const hasSlider = !loadingCapacity && sliderSuppliers.length > 0;
+
+  // اسکرول خودکار برای اسلایدرهای افقی تأمین‌کننده‌ها
+  const capacitySliderRef = useAutoHorizontalScroll<HTMLDivElement>(hasSlider, {
+    stepPx: 1.2,
+    intervalMs: 40,
+    pauseOnHover: true,
+  });
+  const featuredSliderRef = useAutoHorizontalScroll<HTMLDivElement>(hasFeaturedSlider, {
+    stepPx: 1.2,
+    intervalMs: 40,
+    pauseOnHover: true,
+  });
 
   // Supplier preview dialog state (برای اسلایدرها)
   const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
@@ -429,7 +443,10 @@ const AslSupplier = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1">
+            <div
+              ref={capacitySliderRef}
+              className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1"
+            >
               {sliderSuppliers.map((item) => {
                 const supplier = item.supplier || item.Supplier || item;
                 const remainingSlots = item.remaining_slots ?? Math.max(0, capacity - (item.active_requests ?? 0));
@@ -629,7 +646,10 @@ const AslSupplier = () => {
             </div>
           </CardHeader>
           <CardContent className="pt-2">
-            <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1">
+            <div
+              ref={featuredSliderRef}
+              className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory -mx-1 px-1"
+            >
               {featuredSliderSuppliers.map((supplier) => (
                 <div
                   key={supplier.id}
@@ -1016,6 +1036,9 @@ const AslSupplier = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Section Banner Slider */}
+        <Slider section="aslsupplier" />
 
       {/* Content */}
       <SupplierBrowser />

@@ -8,6 +8,7 @@ import { LicenseGate } from '@/components/LicenseGate';
 import { VisitorLimitsDisplay } from '@/components/VisitorLimitsDisplay';
 import { ContactViewButton } from '@/components/ContactViewButton';
 import HeaderAuth from '@/components/ui/HeaderAuth';
+import Slider from "@/components/Slider";
 import { Badge } from "@/components/ui/badge";
 import { Pagination } from "@/components/ui/pagination";
 import { 
@@ -467,6 +468,9 @@ const AslVisit = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Section Banner Slider */}
+      <Slider section="aslvisit" />
 
       {/* Quick Actions */}
       <div className="flex gap-4">

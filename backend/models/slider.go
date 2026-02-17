@@ -6,12 +6,12 @@ import (
 	"gorm.io/gorm"
 )
 
-// Slider represents a slider image for the main platform
 type Slider struct {
 	ID         uint           `json:"id" gorm:"primaryKey"`
 	ImageURL   string         `json:"image_url" gorm:"size:500;not null"`
 	Link       string         `json:"link" gorm:"size:500"`                        // Link to a section or external URL
 	LinkType   string         `json:"link_type" gorm:"size:50;default:'internal'"` // internal, external
+	Section    string         `json:"section" gorm:"size:50;default:'dashboard'"`  // dashboard, aslsupplier, aslexpress, ...
 	IsActive   bool           `json:"is_active" gorm:"default:true"`
 	Order      int            `json:"order" gorm:"default:0"` // Order for display
 	ClickCount int            `json:"click_count" gorm:"default:0"`
@@ -28,6 +28,7 @@ type SliderRequest struct {
 	ImageURL string `json:"image_url" binding:"required"`
 	Link     string `json:"link"`
 	LinkType string `json:"link_type"` // internal, external
+	Section  string `json:"section"`   // dashboard, aslsupplier, aslexpress, ...
 	IsActive bool   `json:"is_active"`
 	Order    int    `json:"order"`
 }
@@ -38,6 +39,7 @@ type SliderResponse struct {
 	ImageURL   string       `json:"image_url"`
 	Link       string       `json:"link"`
 	LinkType   string       `json:"link_type"`
+	Section    string       `json:"section"`
 	IsActive   bool         `json:"is_active"`
 	Order      int          `json:"order"`
 	ClickCount int          `json:"click_count"`
@@ -53,6 +55,7 @@ func CreateSlider(db *gorm.DB, userID uint, req SliderRequest) (*Slider, error) 
 		ImageURL:  req.ImageURL,
 		Link:      req.Link,
 		LinkType:  req.LinkType,
+		Section:   req.Section,
 		IsActive:  req.IsActive,
 		Order:     req.Order,
 		AddedByID: userID,
@@ -60,6 +63,9 @@ func CreateSlider(db *gorm.DB, userID uint, req SliderRequest) (*Slider, error) 
 
 	if slider.LinkType == "" {
 		slider.LinkType = "internal"
+	}
+	if slider.Section == "" {
+		slider.Section = "dashboard"
 	}
 
 	if err := db.Create(&slider).Error; err != nil {
@@ -75,7 +81,7 @@ func CreateSlider(db *gorm.DB, userID uint, req SliderRequest) (*Slider, error) 
 }
 
 // GetSliders retrieves sliders with pagination and filters
-func GetSliders(db *gorm.DB, page, perPage int, activeOnly bool) ([]Slider, int64, error) {
+func GetSliders(db *gorm.DB, page, perPage int, activeOnly bool, section string) ([]Slider, int64, error) {
 	var sliders []Slider
 	var total int64
 
@@ -83,6 +89,16 @@ func GetSliders(db *gorm.DB, page, perPage int, activeOnly bool) ([]Slider, int6
 
 	if activeOnly {
 		query = query.Where("is_active = ?", true)
+	}
+	if section != "" {
+		// برای سازگاری با اسلایدرهای قدیمی که section خالی دارند:
+		// - برای داشبورد: هم rows با section='dashboard' و هم خالی/NULL را برگردان
+		// - برای سایر سکشن‌ها: فقط همان سکشن
+		if section == "dashboard" {
+			query = query.Where("(section = ? OR section = '' OR section IS NULL)", section)
+		} else {
+			query = query.Where("section = ?", section)
+		}
 	}
 
 	// Count total
@@ -100,10 +116,19 @@ func GetSliders(db *gorm.DB, page, perPage int, activeOnly bool) ([]Slider, int6
 }
 
 // GetActiveSliders gets all active sliders ordered by order field
-func GetActiveSliders(db *gorm.DB) ([]Slider, error) {
+func GetActiveSliders(db *gorm.DB, section string) ([]Slider, error) {
 	var sliders []Slider
+	query := db.Where("is_active = ?", true)
+	if section != "" {
+		// همان منطق سازگاری: داشبورد، اسلایدرهای بدون section را هم می‌بیند
+		if section == "dashboard" {
+			query = query.Where("(section = ? OR section = '' OR section IS NULL)", section)
+		} else {
+			query = query.Where("section = ?", section)
+		}
+	}
 
-	err := db.Where("is_active = ?", true).
+	err := query.
 		Order("`order` ASC, created_at DESC").
 		Find(&sliders).Error
 
@@ -134,6 +159,9 @@ func UpdateSlider(db *gorm.DB, id uint, req SliderRequest) (*Slider, error) {
 	slider.ImageURL = req.ImageURL
 	slider.Link = req.Link
 	slider.LinkType = req.LinkType
+	if req.Section != "" {
+		slider.Section = req.Section
+	}
 	slider.IsActive = req.IsActive
 	slider.Order = req.Order
 

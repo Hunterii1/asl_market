@@ -1367,11 +1367,13 @@ class AdminApiService {
     page?: number;
     per_page?: number;
     active_only?: boolean;
+    section?: string;
   } = {}): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params.page) queryParams.append('page', params.page.toString());
     if (params.per_page) queryParams.append('per_page', params.per_page.toString());
     if (params.active_only) queryParams.append('active_only', params.active_only.toString());
+    if (params.section) queryParams.append('section', params.section);
 
     return this.makeRequest(`${API_BASE_URL}/admin/sliders?${queryParams}`, {
       method: 'GET',
@@ -1388,6 +1390,7 @@ class AdminApiService {
     image_url: string;
     link?: string;
     link_type?: 'internal' | 'external';
+    section?: string;
     is_active?: boolean;
     order?: number;
   }): Promise<any> {
@@ -1401,6 +1404,7 @@ class AdminApiService {
     image_url?: string;
     link?: string;
     link_type?: 'internal' | 'external';
+    section?: string;
     is_active?: boolean;
     order?: number;
   }): Promise<any> {

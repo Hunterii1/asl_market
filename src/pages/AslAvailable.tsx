@@ -13,6 +13,8 @@ import { PRODUCT_CATEGORIES } from '@/constants/productCategories';
 import { Pagination } from "@/components/ui/pagination";
 import { ContactViewButton } from '@/components/ContactViewButton';
 import { SupplierPreviewDialog } from "@/components/SupplierPreviewDialog";
+import { useAutoHorizontalScroll } from "@/hooks/useAutoHorizontalScroll";
+import Slider from "@/components/Slider";
 import { 
   Package, 
   Search, 
@@ -122,6 +124,16 @@ const AslAvailable = () => {
   // Supplier preview dialog state برای اسلایدر صادراتی
   const [previewSupplier, setPreviewSupplier] = useState<any | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  // اسکرول خودکار برای اسلایدر تأمین‌کنندگان صادراتی
+  const exportSliderRef = useAutoHorizontalScroll<HTMLDivElement>(
+    !loadingExportSuppliers && exportSuppliers.length > 0,
+    {
+      stepPx: 1.2,
+      intervalMs: 40,
+      pauseOnHover: true,
+    }
+  );
 
   // Load data from API - load all products for client-side filtering and pagination
   useEffect(() => {
@@ -313,6 +325,9 @@ const AslAvailable = () => {
         </CardContent>
       </Card>
 
+      {/* Section Banner Slider */}
+      <Slider section="aslavailable" />
+
       {/* Export-focused Suppliers Slider */}
       {!loadingExportSuppliers && exportSuppliers.length > 0 && (
         <Card className="bg-gradient-to-r from-sky-900/20 via-blue-900/20 to-emerald-900/20 border-sky-500/40 rounded-3xl">
@@ -335,7 +350,10 @@ const AslAvailable = () => {
                 {toFarsiNumber(exportSuppliers.length)} تأمین‌کننده صادراتی
               </Badge>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1">
+            <div
+              ref={exportSliderRef}
+              className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory -mx-1 px-1"
+            >
               {exportSuppliers.map((supplier) => (
                 <div
                   key={supplier.id}
