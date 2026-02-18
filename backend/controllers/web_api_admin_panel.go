@@ -3124,8 +3124,9 @@ func UpdateAffiliateSettings(c *gin.Context) {
 		return
 	}
 	updates := make(map[string]interface{})
-	if req.SMSPatternCode != "" {
-		updates["sms_pattern_code"] = req.SMSPatternCode
+	trimmedPattern := strings.TrimSpace(req.SMSPatternCode)
+	if trimmedPattern != "" {
+		updates["sms_pattern_code"] = trimmedPattern
 	} else {
 		// Allow empty string to clear the pattern code
 		updates["sms_pattern_code"] = ""

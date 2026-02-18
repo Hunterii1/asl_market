@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"log"
+	"strings"
 )
 
 // SMS service for sending notifications
@@ -104,22 +105,26 @@ func (s *SMSService) SendAffiliateRegistrationSMS(phoneNumber, userName, pattern
 		return fmt.Errorf("SMS service not initialized")
 	}
 
-	// If pattern code is not provided, don't send SMS
+	patternCode = strings.TrimSpace(patternCode)
 	if patternCode == "" {
 		log.Printf("SMS pattern code not configured, skipping SMS to %s", phoneNumber)
 		return nil
 	}
 
+	if strings.TrimSpace(phoneNumber) == "" {
+		return fmt.Errorf("invalid phone number for affiliate SMS")
+	}
+
 	// Prepare pattern values with user name
 	patternValues := map[string]string{
-		"name": userName,
+		"name": strings.TrimSpace(userName),
 	}
 
 	// Send SMS with pattern
 	messageID, err := s.client.SendPattern(
-		patternCode, // Pattern code from settings
-		s.originator, // originator number
-		phoneNumber,  // recipient
+		patternCode,   // Pattern code from settings
+		s.originator,  // originator number
+		phoneNumber,   // recipient
 		patternValues, // pattern values with name
 	)
 
@@ -149,6 +154,7 @@ func (s *SMSService) GetCredit() (float64, error) {
 
 // Validate Iranian phone number
 func ValidateIranianPhoneNumber(phoneNumber string) string {
+	phoneNumber = strings.TrimSpace(phoneNumber)
 	// Remove any non-digit characters
 	cleanNumber := ""
 	for _, char := range phoneNumber {
@@ -167,9 +173,9 @@ func ValidateIranianPhoneNumber(phoneNumber string) string {
 	} else if len(cleanNumber) == 13 && cleanNumber[:2] == "98" {
 		// 989123456789 -> keep as is
 		return cleanNumber
-	} else if len(cleanNumber) == 14 && cleanNumber[:3] == "+98" {
-		// +989123456789 -> 989123456789
-		return cleanNumber[1:]
+	} else if len(cleanNumber) >= 13 && strings.HasPrefix(cleanNumber, "0098") {
+		// 00989123456789 -> 989123456789
+		return cleanNumber[2:]
 	}
 
 	// If none of the above, assume it's already in correct format or invalid

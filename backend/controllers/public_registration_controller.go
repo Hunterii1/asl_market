@@ -521,18 +521,32 @@ func (c *PublicRegistrationController) RegisterAffiliate(ctx *gin.Context) {
 		}()
 		db := models.GetDB()
 		if db == nil {
+			log.Printf("[AffiliateRegister] Cannot send SMS: database not connected")
 			return
 		}
 		settings, err := models.GetAffiliateSettings(db)
-		if err != nil || settings == nil || settings.SMSPatternCode == "" {
+		if err != nil {
+			log.Printf("[AffiliateRegister] Cannot load affiliate settings: %v", err)
+			return
+		}
+		if settings == nil || strings.TrimSpace(settings.SMSPatternCode) == "" {
+			log.Printf("[AffiliateRegister] SMS pattern code is not configured, skipping SMS for lead=%d", lead.ID)
 			return
 		}
 		formattedPhone := services.ValidateIranianPhoneNumber(lead.Phone)
-		smsService := services.GetSMSService()
-		if smsService == nil {
+		if formattedPhone == "" {
+			log.Printf("[AffiliateRegister] Invalid phone number for SMS: raw=\"%s\"", lead.Phone)
 			return
 		}
-		_ = smsService.SendAffiliateRegistrationSMS(formattedPhone, lead.Name, settings.SMSPatternCode)
+		smsService := services.GetSMSService()
+		if smsService == nil {
+			log.Printf("[AffiliateRegister] SMS service is not initialized, skipping SMS for lead=%d", lead.ID)
+			return
+		}
+		log.Printf("[AffiliateRegister] Sending SMS to %s using pattern %s", formattedPhone, settings.SMSPatternCode)
+		if err := smsService.SendAffiliateRegistrationSMS(formattedPhone, lead.Name, settings.SMSPatternCode); err != nil {
+			log.Printf("[AffiliateRegister] Error sending SMS to lead=%d: %v", lead.ID, err)
+		}
 	}()
 
 	ctx.JSON(http.StatusCreated, gin.H{
