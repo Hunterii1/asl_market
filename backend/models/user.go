@@ -7,28 +7,28 @@ import (
 )
 
 type User struct {
-	ID               uint           `json:"id" gorm:"primaryKey"`
-	FirstName        string         `json:"first_name" gorm:"size:100;not null"`
-	LastName         string         `json:"last_name" gorm:"size:100;not null"`
-	Email            string         `json:"email" gorm:"size:255"`
-	Password         string         `json:"-" gorm:"size:255;not null"`
-	Phone            string         `json:"phone" gorm:"size:255;not null"`
-	IsActive         bool           `json:"is_active" gorm:"default:true"`
-	IsAdmin          bool           `json:"is_admin" gorm:"default:false"`
-	AffiliateID      *uint          `json:"affiliate_id" gorm:"index"` // who referred this user (?ref=)
-	Affiliate        *Affiliate     `json:"affiliate,omitempty" gorm:"foreignKey:AffiliateID"`
-	
+	ID          uint       `json:"id" gorm:"primaryKey"`
+	FirstName   string     `json:"first_name" gorm:"size:100;not null"`
+	LastName    string     `json:"last_name" gorm:"size:100;not null"`
+	Email       string     `json:"email" gorm:"size:255"`
+	Password    string     `json:"-" gorm:"size:255;not null"`
+	Phone       string     `json:"phone" gorm:"size:255;not null"`
+	IsActive    bool       `json:"is_active" gorm:"default:true"`
+	IsAdmin     bool       `json:"is_admin" gorm:"default:false"`
+	AffiliateID *uint      `json:"affiliate_id" gorm:"index"` // who referred this user (?ref=)
+	Affiliate   *Affiliate `json:"affiliate,omitempty" gorm:"foreignKey:AffiliateID"`
+
 	// Profile fields
-	ProfileImageURL     string `json:"profile_image_url" gorm:"size:500"`
-	CoverImageURL       string `json:"cover_image_url" gorm:"size:500"`
-	Bio                 string `json:"bio" gorm:"type:text"`
-	Location            string `json:"location" gorm:"size:255"`
-	Website             string `json:"website" gorm:"size:500"`
-	SocialMediaLinks    string `json:"social_media_links" gorm:"type:text"` // JSON: {instagram, telegram, linkedin, etc}
-	
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `json:"-" gorm:"index"`
+	ProfileImageURL  string `json:"profile_image_url" gorm:"size:500"`
+	CoverImageURL    string `json:"cover_image_url" gorm:"size:500"`
+	Bio              string `json:"bio" gorm:"type:text"`
+	Location         string `json:"location" gorm:"size:255"`
+	Website          string `json:"website" gorm:"size:500"`
+	SocialMediaLinks string `json:"social_media_links" gorm:"type:text"` // JSON: {instagram, telegram, linkedin, etc}
+
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
 // Helper methods for User
