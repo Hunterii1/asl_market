@@ -401,7 +401,7 @@ func (ac *AffiliateController) GetWithdrawalRequests(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateWithdrawalRequests(ac.DB, affID, perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	out := make([]map[string]interface{}, 0, len(list))
@@ -450,7 +450,7 @@ func (ac *AffiliateController) GetRegisteredUsers(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateRegisteredUsers(ac.DB, affID, perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	log.Printf("[Affiliate] GetRegisteredUsers affiliate_id=%d page=%d per_page=%d total=%d", affID, page, perPage, total)
@@ -496,7 +496,7 @@ func (ac *AffiliateController) GetBuyers(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateBuyers(ac.DB, affID, perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	out := make([]map[string]interface{}, 0, len(list))

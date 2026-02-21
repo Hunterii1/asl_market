@@ -26,7 +26,7 @@ func NewVisitorProjectController(db *gorm.DB) *VisitorProjectController {
 func (vpc *VisitorProjectController) CreateVisitorProject(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -69,7 +69,7 @@ func (vpc *VisitorProjectController) CreateVisitorProject(c *gin.Context) {
 func (vpc *VisitorProjectController) GetMyVisitorProjects(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -159,7 +159,7 @@ func (vpc *VisitorProjectController) GetMyVisitorProjects(c *gin.Context) {
 func (vpc *VisitorProjectController) GetAvailableVisitorProjects(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -262,20 +262,20 @@ func (vpc *VisitorProjectController) GetAvailableVisitorProjects(c *gin.Context)
 func (vpc *VisitorProjectController) GetVisitorProjectDetails(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	// Get visitor project
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 
@@ -398,7 +398,7 @@ func (vpc *VisitorProjectController) GetVisitorProjectDetails(c *gin.Context) {
 func (vpc *VisitorProjectController) SubmitProposal(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -415,7 +415,7 @@ func (vpc *VisitorProjectController) SubmitProposal(c *gin.Context) {
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -431,7 +431,7 @@ func (vpc *VisitorProjectController) SubmitProposal(c *gin.Context) {
 	// Check if project exists and is active
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 
@@ -492,20 +492,20 @@ func (vpc *VisitorProjectController) GetSupplierCapacityForVisitorProjects(c *gi
 func (vpc *VisitorProjectController) UpdateVisitorProject(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	// Get project
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 
@@ -517,7 +517,7 @@ func (vpc *VisitorProjectController) UpdateVisitorProject(c *gin.Context) {
 
 	var req models.UpdateVisitorProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -533,20 +533,20 @@ func (vpc *VisitorProjectController) UpdateVisitorProject(c *gin.Context) {
 func (vpc *VisitorProjectController) DeleteVisitorProject(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	// Get project
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 
@@ -568,20 +568,20 @@ func (vpc *VisitorProjectController) DeleteVisitorProject(c *gin.Context) {
 func (vpc *VisitorProjectController) CloseVisitorProject(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	// Get project
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 
@@ -603,7 +603,7 @@ func (vpc *VisitorProjectController) CloseVisitorProject(c *gin.Context) {
 func (vpc *VisitorProjectController) GetVisitorProjectChats(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -629,7 +629,7 @@ func (vpc *VisitorProjectController) GetVisitorProjectChats(c *gin.Context) {
 func (vpc *VisitorProjectController) GetVisitorProjectChatMessages(c *gin.Context) {
 	_, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -668,7 +668,7 @@ func (vpc *VisitorProjectController) GetVisitorProjectChatMessages(c *gin.Contex
 func (vpc *VisitorProjectController) SendVisitorProjectChatMessage(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -712,13 +712,13 @@ func (vpc *VisitorProjectController) SendVisitorProjectChatMessage(c *gin.Contex
 func (vpc *VisitorProjectController) StartVisitorProjectChat(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	projectID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -735,7 +735,7 @@ func (vpc *VisitorProjectController) StartVisitorProjectChat(c *gin.Context) {
 	// Get project
 	project, err := models.GetVisitorProjectByID(vpc.db, uint(projectID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "پروژه مورد نظر یافت نشد. ممکن است حذف شده یا دسترسی شما محدود شده باشد."})
 		return
 	}
 

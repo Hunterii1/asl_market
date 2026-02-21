@@ -122,7 +122,7 @@ func GetAvailableProduct(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -209,7 +209,7 @@ func CreateAvailableProduct(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
@@ -234,13 +234,13 @@ func UpdateAvailableProduct(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -265,13 +265,13 @@ func DeleteAvailableProduct(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -364,7 +364,7 @@ func GetUserAvailableProduct(c *gin.Context) {
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -428,7 +428,7 @@ func UpdateUserAvailableProduct(c *gin.Context) {
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -498,7 +498,7 @@ func DeleteUserAvailableProduct(c *gin.Context) {
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -517,13 +517,13 @@ func UpdateAvailableProductStatus(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
 	productID, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه محصول معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 

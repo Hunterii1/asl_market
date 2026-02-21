@@ -16,7 +16,7 @@ import (
 func RegisterSupplier(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -34,7 +34,7 @@ func RegisterSupplier(c *gin.Context) {
 
 	var req models.SupplierRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -67,7 +67,7 @@ func RegisterSupplier(c *gin.Context) {
 func GetMySupplierStatus(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -133,7 +133,7 @@ func GetMySupplierStatus(c *gin.Context) {
 func GetApprovedSuppliers(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -329,7 +329,7 @@ func GetFeaturedSuppliersPublic(c *gin.Context) {
 func GetSuppliersMatchingCapacity(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -453,13 +453,13 @@ func ApproveSupplier(c *gin.Context) {
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
@@ -484,13 +484,13 @@ func RejectSupplier(c *gin.Context) {
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
@@ -517,13 +517,13 @@ func RejectSupplier(c *gin.Context) {
 func FeatureSupplier(c *gin.Context) {
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if err := models.SetSupplierFeatured(models.GetDB(), uint(supplierID), adminID.(uint), true); err != nil {
@@ -537,13 +537,13 @@ func FeatureSupplier(c *gin.Context) {
 func UnfeatureSupplier(c *gin.Context) {
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if err := models.SetSupplierFeatured(models.GetDB(), uint(supplierID), adminID.(uint), false); err != nil {
@@ -557,7 +557,7 @@ func UnfeatureSupplier(c *gin.Context) {
 func UpdateMySupplier(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -572,7 +572,7 @@ func UpdateMySupplier(c *gin.Context) {
 
 	var req models.SupplierRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -673,7 +673,7 @@ func UpdateMySupplier(c *gin.Context) {
 func DeleteMySupplier(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -700,7 +700,7 @@ func GetSupplierForAdmin(c *gin.Context) {
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -798,7 +798,7 @@ func UpdateSupplierForAdmin(c *gin.Context) {
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -837,7 +837,7 @@ func UpdateSupplierForAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -1001,7 +1001,7 @@ func DeleteSupplierForAdmin(c *gin.Context) {
 	supplierIDStr := c.Param("id")
 	supplierID, err := strconv.ParseUint(supplierIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تأمین‌کننده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 

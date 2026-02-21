@@ -41,7 +41,7 @@ func UpdateUserProgress(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 

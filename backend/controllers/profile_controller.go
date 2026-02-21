@@ -26,14 +26,14 @@ func NewProfileController(db *gorm.DB) *ProfileController {
 func (pc *ProfileController) GetUserProfile(c *gin.Context) {
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	// Get user
 	user, err := models.GetUserByID(pc.db, uint(userID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 		return
 	}
 
@@ -199,7 +199,7 @@ func (pc *ProfileController) GetUserProfile(c *gin.Context) {
 func (pc *ProfileController) UpdateProfileImages(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -224,7 +224,7 @@ func (pc *ProfileController) UpdateProfileImages(c *gin.Context) {
 func (pc *ProfileController) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -269,7 +269,7 @@ func (pc *ProfileController) UpdateProfile(c *gin.Context) {
 func (pc *ProfileController) UploadProfileImage(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -307,7 +307,7 @@ func (pc *ProfileController) UploadProfileImage(c *gin.Context) {
 func (pc *ProfileController) UploadCoverImage(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 

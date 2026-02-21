@@ -54,7 +54,7 @@ func (amc *AdminMatchingController) GetAllMatchingRequests(c *gin.Context) {
 
 	offset := (page - 1) * perPage
 	if err := query.Offset(offset).Limit(perPage).Order("created_at DESC").Find(&requests).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -367,14 +367,14 @@ func (amc *AdminMatchingController) UpdateMatchingRequestAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -382,7 +382,7 @@ func (amc *AdminMatchingController) UpdateMatchingRequestAdmin(c *gin.Context) {
 		Status string `json:"status"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -423,14 +423,14 @@ func (amc *AdminMatchingController) DeleteMatchingRequestAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -450,14 +450,14 @@ func (amc *AdminMatchingController) UpdateVisitorProjectAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -465,7 +465,7 @@ func (amc *AdminMatchingController) UpdateVisitorProjectAdmin(c *gin.Context) {
 		Status string `json:"status"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -506,14 +506,14 @@ func (amc *AdminMatchingController) DeleteVisitorProjectAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه پروژه معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 

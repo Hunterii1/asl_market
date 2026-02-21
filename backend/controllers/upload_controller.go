@@ -14,7 +14,7 @@ func UploadSupplierImage(c *gin.Context) {
 	// Check if user is authenticated
 	_, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -46,7 +46,7 @@ func UploadChatImage(c *gin.Context) {
 	// Check if user is authenticated
 	_, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -85,7 +85,7 @@ func UploadProductImage(c *gin.Context) {
 		keys := c.Keys
 		fmt.Printf("🔍 Upload Debug - Context keys: %+v\n", keys)
 		fmt.Printf("🔍 Upload Debug - Headers: %+v\n", c.Request.Header)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -119,7 +119,7 @@ func DeleteImage(c *gin.Context) {
 	// Check if user is authenticated
 	_, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -149,7 +149,7 @@ func UploadMultipleProductImages(c *gin.Context) {
 	// Check if user is authenticated
 	_, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 

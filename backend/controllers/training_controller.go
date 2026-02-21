@@ -62,7 +62,7 @@ func GetAllTrainingVideos(c *gin.Context) {
 func GetTrainingVideo(c *gin.Context) {
 	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -123,7 +123,7 @@ func CreateTrainingVideo(c *gin.Context) {
 	var video models.TrainingVideo
 
 	if err := c.ShouldBindJSON(&video); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید.", "details": err.Error()})
 		return
 	}
 
@@ -142,13 +142,13 @@ func CreateTrainingVideo(c *gin.Context) {
 func UpdateTrainingVideo(c *gin.Context) {
 	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	var updates models.TrainingVideo
 	if err := c.ShouldBindJSON(&updates); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -166,7 +166,7 @@ func UpdateTrainingVideo(c *gin.Context) {
 func DeleteTrainingVideo(c *gin.Context) {
 	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -185,7 +185,7 @@ func CreateTrainingCategory(c *gin.Context) {
 	var category models.TrainingCategory
 
 	if err := c.ShouldBindJSON(&category); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -229,7 +229,7 @@ func MarkVideoAsWatched(c *gin.Context) {
 
 	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -297,7 +297,7 @@ func GetUserWatchStats(c *gin.Context) {
 func StreamVideo(c *gin.Context) {
 	videoID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویدیو معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 

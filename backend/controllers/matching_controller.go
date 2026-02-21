@@ -31,7 +31,7 @@ func NewMatchingController(db *gorm.DB) *MatchingController {
 func (mc *MatchingController) CreateMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -98,7 +98,7 @@ func (mc *MatchingController) CreateMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -129,7 +129,7 @@ func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 	requests, total, err := models.GetMatchingRequestsBySupplier(mc.db, supplier.ID, status, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در دریافت درخواست‌ها",
+			"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید.",
 		})
 		return
 	}
@@ -188,20 +188,20 @@ func (mc *MatchingController) GetMyMatchingRequests(c *gin.Context) {
 func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	// Get matching request
 	request, err := models.GetMatchingRequestByID(mc.db, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -319,7 +319,7 @@ func (mc *MatchingController) GetMatchingRequestDetails(c *gin.Context) {
 func (mc *MatchingController) UpdateMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -327,14 +327,14 @@ func (mc *MatchingController) UpdateMatchingRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	// Get matching request
 	request, err := models.GetMatchingRequestByID(mc.db, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -416,7 +416,7 @@ func (mc *MatchingController) UpdateMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) CancelMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -424,13 +424,13 @@ func (mc *MatchingController) CancelMatchingRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	if err := models.CancelMatchingRequest(mc.db, uint(requestID), userIDUint); err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
 		if err == gorm.ErrInvalidValue {
@@ -454,7 +454,7 @@ func (mc *MatchingController) CancelMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) CloseMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -462,13 +462,13 @@ func (mc *MatchingController) CloseMatchingRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	if err := models.CloseMatchingRequest(mc.db, uint(requestID), userIDUint); err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
 		if err == gorm.ErrInvalidValue {
@@ -492,7 +492,7 @@ func (mc *MatchingController) CloseMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) ExtendMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -500,7 +500,7 @@ func (mc *MatchingController) ExtendMatchingRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -526,7 +526,7 @@ func (mc *MatchingController) ExtendMatchingRequest(c *gin.Context) {
 
 	if err := models.ExtendMatchingRequest(mc.db, uint(requestID), userIDUint, expiresAt); err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
 		if err == gorm.ErrInvalidValue {
@@ -550,7 +550,7 @@ func (mc *MatchingController) ExtendMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -580,7 +580,7 @@ func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 	requests, total, err := models.GetAvailableMatchingRequestsForVisitor(mc.db, visitor.ID, page, perPage)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در دریافت درخواست‌ها",
+			"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید.",
 		})
 		return
 	}
@@ -655,7 +655,7 @@ func (mc *MatchingController) GetAvailableMatchingRequests(c *gin.Context) {
 func (mc *MatchingController) RespondToMatchingRequest(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -672,14 +672,14 @@ func (mc *MatchingController) RespondToMatchingRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	// Check if request exists and is still active
 	request, err := models.GetMatchingRequestByID(mc.db, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -748,7 +748,7 @@ func (mc *MatchingController) RespondToMatchingRequest(c *gin.Context) {
 func (mc *MatchingController) CreateMatchingRating(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -756,14 +756,14 @@ func (mc *MatchingController) CreateMatchingRating(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	// Get matching request
 	request, err := models.GetMatchingRequestByID(mc.db, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -836,20 +836,20 @@ func (mc *MatchingController) CreateMatchingRating(c *gin.Context) {
 func (mc *MatchingController) GetSuggestedVisitors(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	// Get matching request
 	request, err := models.GetMatchingRequestByID(mc.db, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -918,7 +918,7 @@ func (mc *MatchingController) GetSuggestedVisitors(c *gin.Context) {
 func (mc *MatchingController) GetMatchingChatMessages(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -926,7 +926,7 @@ func (mc *MatchingController) GetMatchingChatMessages(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -995,7 +995,7 @@ func (mc *MatchingController) GetMatchingChatMessages(c *gin.Context) {
 func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -1003,7 +1003,7 @@ func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -1095,7 +1095,7 @@ func (mc *MatchingController) SendMatchingChatMessage(c *gin.Context) {
 func (mc *MatchingController) GetMatchingChatConversations(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -1170,7 +1170,7 @@ func (mc *MatchingController) GetMatchingChatConversations(c *gin.Context) {
 func (mc *MatchingController) GetMatchingRatingsByUser(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 

@@ -233,13 +233,13 @@ func GetUserDetailsForAdmin(c *gin.Context) {
 
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
 	user, err := models.GetUserByID(db, uint(userID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 		return
 	}
 
@@ -288,7 +288,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید.", "details": err.Error()})
 		return
 	}
 
@@ -370,7 +370,7 @@ func UpdateUser(c *gin.Context) {
 
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -382,7 +382,7 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -390,7 +390,7 @@ func UpdateUser(c *gin.Context) {
 	var user models.User
 	if err := db.First(&user, userID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در بازیابی اطلاعات کاربر"})
@@ -457,7 +457,7 @@ func UpdateUserStatus(c *gin.Context) {
 
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -466,7 +466,7 @@ func UpdateUserStatus(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -487,7 +487,7 @@ func DeleteUser(c *gin.Context) {
 
 	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه کاربر معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -584,7 +584,7 @@ func GenerateLicensesForAdmin(c *gin.Context) {
 
 	var req models.LicenseGenerateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -743,7 +743,7 @@ func GetTicketDetailsForAdmin(c *gin.Context) {
 
 	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -817,7 +817,7 @@ func UpdateTicketStatusForAdmin(c *gin.Context) {
 
 	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -827,7 +827,7 @@ func UpdateTicketStatusForAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -886,7 +886,7 @@ func AddAdminMessageToTicket(c *gin.Context) {
 
 	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -1009,7 +1009,7 @@ func UpdateTicketForAdmin(c *gin.Context) {
 
 	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -1021,7 +1021,7 @@ func UpdateTicketForAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -1124,7 +1124,7 @@ func DeleteTicketForAdmin(c *gin.Context) {
 
 	ticketID, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه تیکت معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -1841,7 +1841,7 @@ func AddTelegramAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -2175,7 +2175,7 @@ func UpdateWebAdmin(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
@@ -2356,12 +2356,12 @@ func GetAffiliate(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	aff, err := models.GetAffiliateByID(db, uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -2456,12 +2456,12 @@ func UpdateAffiliate(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	_, err = models.GetAffiliateByID(db, uint(id))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	var req struct {
@@ -2473,7 +2473,7 @@ func UpdateAffiliate(c *gin.Context) {
 		CommissionPercent *float64 `json:"commission_percent"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 	updates := make(map[string]interface{})
@@ -2517,11 +2517,11 @@ func DeleteAffiliate(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	if err := models.DeleteAffiliate(db, uint(id)); err != nil {
@@ -2537,11 +2537,11 @@ func GetAffiliateRegisteredUsers(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -2555,7 +2555,7 @@ func GetAffiliateRegisteredUsers(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateRegisteredUsers(db, uint(id), perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	out := make([]gin.H, 0, len(list))
@@ -2645,11 +2645,11 @@ func ImportAffiliateRegisteredUsers(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	file, fileHeader, err := c.Request.FormFile("file")
@@ -2848,16 +2848,16 @@ func MatchAffiliateSales(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	var req MatchAffiliateSalesRequestBody
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 	normalizePhone := func(s string) string {
@@ -2917,16 +2917,16 @@ func ConfirmAffiliateBuyers(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	var req ConfirmAffiliateBuyersRequestBody
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 	var purchasedAt *time.Time
@@ -2970,11 +2970,11 @@ func GetAffiliateBuyers(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -2988,7 +2988,7 @@ func GetAffiliateBuyers(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateBuyers(db, uint(id), perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	out := make([]gin.H, 0, len(list))
@@ -3012,11 +3012,11 @@ func GetAffiliateWithdrawalRequests(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه وارد شده معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if _, err = models.GetAffiliateByID(db, uint(id)); err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "افیلیت مورد نظر یافت نشد. ممکن است حذف شده یا غیرفعال باشد."})
 		return
 	}
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -3030,7 +3030,7 @@ func GetAffiliateWithdrawalRequests(c *gin.Context) {
 	offset := (page - 1) * perPage
 	list, total, err := models.GetAffiliateWithdrawalRequests(db, uint(id), perPage, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت لیست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری اطلاعات پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	out := make([]gin.H, 0, len(list))
@@ -3064,12 +3064,12 @@ func UpdateAffiliateWithdrawalStatus(c *gin.Context) {
 	}
 	reqID, err := strconv.ParseUint(reqIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 	req, err := models.GetAffiliateWithdrawalByID(db, uint(reqID))
 	if err != nil || req.AffiliateID != uint(affID) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 	var body struct {

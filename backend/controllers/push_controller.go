@@ -36,7 +36,7 @@ type SubscribeRequest struct {
 func (pc *PushController) Subscribe(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -124,7 +124,7 @@ func (pc *PushController) Subscribe(c *gin.Context) {
 func (pc *PushController) Unsubscribe(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -136,7 +136,7 @@ func (pc *PushController) Unsubscribe(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "اطلاعات ارسالی نامعتبر است",
+			"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید.",
 		})
 		return
 	}
@@ -157,7 +157,7 @@ func (pc *PushController) Unsubscribe(c *gin.Context) {
 func (pc *PushController) SendTestPush(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 

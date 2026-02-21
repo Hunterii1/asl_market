@@ -68,7 +68,7 @@ func (wc *WithdrawalController) GetUserWithdrawalRequests(c *gin.Context) {
 
 	requests, err := models.GetUserWithdrawalRequests(wc.db, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -84,17 +84,17 @@ func (wc *WithdrawalController) GetWithdrawalRequest(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	request, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -172,7 +172,7 @@ func (wc *WithdrawalController) GetAllWithdrawalRequests(c *gin.Context) {
 
 	requests, total, err := models.GetWithdrawalRequests(wc.db, nil, status, limit, offset, searchStr)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -202,7 +202,7 @@ func (wc *WithdrawalController) UpdateWithdrawalStatus(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -221,10 +221,10 @@ func (wc *WithdrawalController) UpdateWithdrawalStatus(c *gin.Context) {
 	_, err = models.GetWithdrawalRequestByID(wc.db, uint(requestID))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -296,17 +296,17 @@ func (wc *WithdrawalController) GetWithdrawalRequestAdmin(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
 	request, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -322,7 +322,7 @@ func (wc *WithdrawalController) UpdateWithdrawalRequestAdmin(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -340,10 +340,10 @@ func (wc *WithdrawalController) UpdateWithdrawalRequestAdmin(c *gin.Context) {
 	// Ensure the request exists
 	if _, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID)); err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -384,7 +384,7 @@ func (wc *WithdrawalController) DeleteWithdrawalRequestAdmin(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -406,7 +406,7 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -414,10 +414,10 @@ func (wc *WithdrawalController) UploadReceipt(c *gin.Context) {
 	request, err := models.GetWithdrawalRequestByID(wc.db, uint(requestID))
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 

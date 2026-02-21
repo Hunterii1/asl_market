@@ -24,7 +24,7 @@ func (cc *ContactController) GetContactLimits(c *gin.Context) {
 
 	var user models.User
 	if err := cc.db.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 		return
 	}
 
@@ -43,13 +43,13 @@ func (cc *ContactController) ViewContactInfo(c *gin.Context) {
 
 	var req models.ContactViewRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "داده‌های ورودی نامعتبر"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید."})
 		return
 	}
 
 	var user models.User
 	if err := cc.db.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 		return
 	}
 
@@ -187,7 +187,7 @@ func (cc *ContactController) CheckCanViewContact(c *gin.Context) {
 
 	var user models.User
 	if err := cc.db.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "کاربر مورد نظر یافت نشد. لطفاً اطلاعات ورود خود را بررسی کنید."})
 		return
 	}
 

@@ -148,7 +148,7 @@ func CreateMarketingPopup(c *gin.Context) {
 
 	// Check if user is admin
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 		return
 	}
 
@@ -203,7 +203,7 @@ func UpdateMarketingPopup(c *gin.Context) {
 
 	// Check if user is admin
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 		return
 	}
 
@@ -264,7 +264,7 @@ func DeleteMarketingPopup(c *gin.Context) {
 
 	// Check if user is admin
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 		return
 	}
 

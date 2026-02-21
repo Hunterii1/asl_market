@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"asl-market-backend/middleware"
 	"asl-market-backend/models"
 	"asl-market-backend/services"
 	"asl-market-backend/utils"
@@ -89,9 +90,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 	}
 
 	if err := ac.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در ایجاد کاربر",
-		})
+		middleware.RespondWithError(c, http.StatusInternalServerError, "خطا در ایجاد کاربر", err, "register_user")
 		return
 	}
 
@@ -104,7 +103,7 @@ func (ac *AuthController) Register(c *gin.Context) {
 	token, err := utils.GenerateToken(user.ID, identifier)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در تولید توکن",
+			"error": "مشکلی در ایجاد نشست کاربری پیش آمد. لطفاً دوباره تلاش کنید.",
 		})
 		return
 	}
@@ -187,7 +186,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 	token, err := utils.GenerateToken(user.ID, identifier)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در تولید توکن",
+			"error": "مشکلی در ایجاد نشست کاربری پیش آمد. لطفاً دوباره تلاش کنید.",
 		})
 		return
 	}
@@ -279,7 +278,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 			if !utils.CheckPassword(req.Password, user.Password) {
 				log.Printf("AdminLogin: Password check failed for alireza")
 				c.JSON(http.StatusUnauthorized, gin.H{
-					"error": "نام کاربری یا رمز عبور اشتباه است",
+					"error": "نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید یا از گزینه فراموشی رمز عبور استفاده کنید.",
 				})
 				return
 			}
@@ -295,7 +294,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 			token, err := utils.GenerateToken(user.ID, identifier)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "خطا در تولید توکن",
+					"error": "مشکلی در ایجاد نشست کاربری پیش آمد. لطفاً دوباره تلاش کنید.",
 				})
 				return
 			}
@@ -322,7 +321,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 	if !found {
 		log.Printf("AdminLogin: WebAdmin not found for username/email: %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "نام کاربری یا رمز عبور اشتباه است",
+			"error": "نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید یا از گزینه فراموشی رمز عبور استفاده کنید.",
 		})
 		return
 	}
@@ -334,7 +333,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 	if !utils.CheckPassword(req.Password, webAdmin.Password) {
 		log.Printf("AdminLogin: Password check failed for username: %s", req.Username)
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "نام کاربری یا رمز عبور اشتباه است",
+			"error": "نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید یا از گزینه فراموشی رمز عبور استفاده کنید.",
 		})
 		return
 	}
@@ -370,7 +369,7 @@ func (ac *AuthController) AdminLogin(c *gin.Context) {
 	token, err := utils.GenerateToken(webAdmin.ID, webAdmin.Username)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "خطا در تولید توکن",
+			"error": "مشکلی در ایجاد نشست کاربری پیش آمد. لطفاً دوباره تلاش کنید.",
 		})
 		return
 	}
@@ -399,7 +398,7 @@ func (ac *AuthController) AffiliateLogin(c *gin.Context) {
 		Password string `json:"password" binding:"required,min=6"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data", "details": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید.", "details": err.Error()})
 		return
 	}
 
@@ -416,7 +415,7 @@ func (ac *AuthController) AffiliateLogin(c *gin.Context) {
 	aff, err := models.GetAffiliateByUsername(ac.DB, usernameNormalized)
 	if err != nil {
 		log.Printf("AffiliateLogin: Affiliate not found for username: '%s'", usernameNormalized)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید یا از گزینه فراموشی رمز عبور استفاده کنید."})
 		return
 	}
 
@@ -425,7 +424,7 @@ func (ac *AuthController) AffiliateLogin(c *gin.Context) {
 	// Check password
 	if !utils.CheckPassword(req.Password, aff.Password) {
 		log.Printf("AffiliateLogin: Password check failed for username: '%s'", usernameNormalized)
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید یا از گزینه فراموشی رمز عبور استفاده کنید."})
 		return
 	}
 
@@ -447,7 +446,7 @@ func (ac *AuthController) AffiliateLogin(c *gin.Context) {
 	token, err := utils.GenerateAffiliateToken(aff.ID, aff.Username)
 	if err != nil {
 		log.Printf("AffiliateLogin: Error generating token: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در تولید توکن"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در ایجاد نشست کاربری پیش آمد. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -471,7 +470,7 @@ func (ac *AuthController) Me(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}
@@ -586,7 +585,7 @@ func (ac *AuthController) ResetPassword(c *gin.Context) {
 func (ac *AuthController) UpdateProfile(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 

@@ -18,7 +18,7 @@ import (
 func RegisterVisitor(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -36,7 +36,7 @@ func RegisterVisitor(c *gin.Context) {
 
 	var req models.VisitorRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -122,7 +122,7 @@ func RegisterVisitor(c *gin.Context) {
 func GetMyVisitorStatus(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -302,13 +302,13 @@ func CreateVisitorForAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	var req CreateVisitorForAdminRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -374,7 +374,7 @@ func GetVisitorsForAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
@@ -470,14 +470,14 @@ func ApproveVisitorByAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -506,14 +506,14 @@ func RejectVisitorByAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -543,13 +543,13 @@ func RejectVisitorByAdmin(c *gin.Context) {
 func FeatureVisitor(c *gin.Context) {
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if err := models.SetVisitorFeatured(models.GetDB(), uint(visitorID), adminID.(uint), true); err != nil {
@@ -563,13 +563,13 @@ func FeatureVisitor(c *gin.Context) {
 func UnfeatureVisitor(c *gin.Context) {
 	adminID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 	if err := models.SetVisitorFeatured(models.GetDB(), uint(visitorID), adminID.(uint), false); err != nil {
@@ -584,7 +584,7 @@ func GetVisitorByID(c *gin.Context) {
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -607,14 +607,14 @@ func GetVisitorDetails(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -687,14 +687,14 @@ func UpdateVisitorStatus(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -703,7 +703,7 @@ func UpdateVisitorStatus(c *gin.Context) {
 		AdminNotes string `json:"admin_notes"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -755,14 +755,14 @@ func UpdateVisitorByAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 
@@ -776,7 +776,7 @@ func UpdateVisitorByAdmin(c *gin.Context) {
 		Status            string `json:"status"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -847,7 +847,7 @@ func UpdateVisitorByAdmin(c *gin.Context) {
 func UpdateMyVisitor(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -862,7 +862,7 @@ func UpdateMyVisitor(c *gin.Context) {
 
 	var req models.VisitorRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات ارسالی نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "اطلاعات وارد شده صحیح نیست. لطفاً فرم را با دقت تکمیل کنید."})
 		return
 	}
 
@@ -988,7 +988,7 @@ func UpdateMyVisitor(c *gin.Context) {
 func DeleteMyVisitor(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -1016,14 +1016,14 @@ func DeleteVisitorByAdmin(c *gin.Context) {
 	userRole, exists := c.Get("user_role")
 	roleStr, ok := userRole.(string)
 	if !exists || !ok || (roleStr != "admin" && roleStr != "super_admin" && roleStr != "moderator") {
-		c.JSON(http.StatusForbidden, gin.H{"error": "دسترسی غیرمجاز"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای مشاهده این صفحه را ندارید."})
 		return
 	}
 
 	visitorIDStr := c.Param("id")
 	visitorID, err := strconv.ParseUint(visitorIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه ویزیتور معتبر نیست. لطفاً دوباره تلاش کنید."})
 		return
 	}
 

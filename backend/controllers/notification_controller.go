@@ -196,7 +196,7 @@ func CreateNotification(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
@@ -273,7 +273,7 @@ func UpdateNotification(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
@@ -330,7 +330,7 @@ func DeleteNotification(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 
@@ -355,7 +355,7 @@ func GetNotificationStats(c *gin.Context) {
 	user := c.MustGet("user").(models.User)
 
 	if !user.IsAdmin {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "شما دسترسی لازم برای انجام این عملیات را ندارید."})
 		return
 	}
 

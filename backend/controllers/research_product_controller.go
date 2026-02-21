@@ -264,7 +264,7 @@ func CreateResearchProduct(c *gin.Context) {
 	var req models.ResearchProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "داده‌های ورودی نامعتبر است",
+			"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید.",
 		})
 		return
 	}
@@ -562,7 +562,7 @@ func UpdateResearchProduct(c *gin.Context) {
 	var req models.ResearchProductRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "داده‌های ورودی نامعتبر است",
+			"error": "اطلاعات وارد شده صحیح نیست. لطفاً تمام فیلدهای الزامی را پر کنید.",
 		})
 		return
 	}

@@ -18,7 +18,7 @@ func Chat(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}
@@ -203,7 +203,7 @@ func GetChats(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}
@@ -239,7 +239,7 @@ func GetChat(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}
@@ -284,7 +284,7 @@ func DeleteChat(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}
@@ -329,7 +329,7 @@ func GetAIUsage(c *gin.Context) {
 	userInterface, exists := c.Get("user")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "User not authenticated",
+			"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید.",
 		})
 		return
 	}

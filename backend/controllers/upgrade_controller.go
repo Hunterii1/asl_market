@@ -98,7 +98,7 @@ func (uc *UpgradeController) GetUserUpgradeRequests(c *gin.Context) {
 
 	requests, err := models.GetUserUpgradeRequests(models.DB, userID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -110,7 +110,7 @@ func (uc *UpgradeController) ApproveUpgradeRequest(c *gin.Context) {
 	requestIDStr := c.Param("id")
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -122,7 +122,7 @@ func (uc *UpgradeController) ApproveUpgradeRequest(c *gin.Context) {
 	// Get the upgrade request
 	request, err := models.GetUpgradeRequestByID(models.DB, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -157,7 +157,7 @@ func (uc *UpgradeController) RejectUpgradeRequest(c *gin.Context) {
 	requestIDStr := c.Param("id")
 	requestID, err := strconv.ParseUint(requestIDStr, 10, 32)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست نامعتبر است"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "شناسه درخواست معتبر نیست. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 
@@ -172,7 +172,7 @@ func (uc *UpgradeController) RejectUpgradeRequest(c *gin.Context) {
 	// Get the upgrade request
 	request, err := models.GetUpgradeRequestByID(models.DB, uint(requestID))
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست یافت نشد"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "درخواست مورد نظر یافت نشد. ممکن است حذف شده باشد."})
 		return
 	}
 
@@ -199,7 +199,7 @@ func (uc *UpgradeController) RejectUpgradeRequest(c *gin.Context) {
 func (uc *UpgradeController) GetPendingUpgradeRequests(c *gin.Context) {
 	requests, err := models.GetPendingUpgradeRequests(models.DB)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "خطا در دریافت درخواست‌ها"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "مشکلی در بارگذاری درخواست‌ها پیش آمد. لطفاً صفحه را رفرش کنید."})
 		return
 	}
 

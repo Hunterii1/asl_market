@@ -76,6 +76,10 @@ class ErrorHandler {
         } else if (statusCode >= 500) {
           errorType = 'server';
           errorTitle = 'خطای سرور';
+          // برای خطاهای 500، پیغام دقیق‌تری نمایش می‌دهیم
+          if (errorMessage === 'خطا در دریافت پاسخ از سرور' || errorMessage === 'Internal server error') {
+            errorMessage = 'مشکلی در پردازش درخواست شما پیش آمد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.';
+          }
         } else if (statusCode >= 400) {
           errorType = 'validation';
           errorTitle = 'خطای اعتبارسنجی';
@@ -83,8 +87,7 @@ class ErrorHandler {
       }
       // اگر خطا از fetch API آمده باشد
       else if (error?.message) {
-        // TODO: Remove this custom network error message after network issues are resolved
-        // Show general network error message for all network-related errors
+        // خطاهای شبکه را به صورت silent مدیریت می‌کنیم
         if (error.message.includes('fetch') || 
             error.message.includes('NetworkError') || 
             error.message.includes('timeout') ||
@@ -92,8 +95,9 @@ class ErrorHandler {
             error.message.includes('Network request failed')) {
           errorType = 'network';
           errorTitle = 'خطای اتصال';
-          errorMessage = 'با توجه به اختلالات گسترده در سطح اینترنت کشور و محدودیت اعمال شده انجام این کار در حال حاضر امکان پذیر نیست !';
-          duration = 10000;
+          // فقط event dispatch می‌کنیم برای indicator، toast نمایش نمی‌دهیم
+          this.dispatchErrorEvent(errorType, 'خطای شبکه', 0);
+          return 'خطای شبکه'; // بدون نمایش toast
         } else {
           errorMessage = this.translateErrorMessage(error.message) || fallbackMessage;
         }
@@ -107,13 +111,15 @@ class ErrorHandler {
       errorMessage = fallbackMessage;
     }
 
-    // نمایش toast
-    toast({
-      variant: "destructive",
-      title: errorTitle,
-      description: errorMessage,
-      duration: duration,
-    });
+    // نمایش toast فقط برای خطاهای غیر شبکه
+    if (errorType !== 'network') {
+      toast({
+        variant: "destructive",
+        title: errorTitle,
+        description: errorMessage,
+        duration: duration,
+      });
+    }
 
     // Dispatch error event for ErrorDisplay
     this.dispatchErrorEvent(errorType, errorMessage, statusCode);

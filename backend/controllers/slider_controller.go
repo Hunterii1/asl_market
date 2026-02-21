@@ -138,7 +138,7 @@ func CreateSlider(c *gin.Context) {
 	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
 	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -159,11 +159,11 @@ func CreateSlider(c *gin.Context) {
 		// Also check if it's a regular User with IsAdmin flag
 		userInterface, userExists := c.Get("user")
 		if !userExists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 	}
@@ -209,7 +209,7 @@ func UpdateSlider(c *gin.Context) {
 	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
 	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -218,11 +218,11 @@ func UpdateSlider(c *gin.Context) {
 		// Also check if it's a regular User with IsAdmin flag
 		userInterface, userExists := c.Get("user")
 		if !userExists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 	}
@@ -273,7 +273,7 @@ func DeleteSlider(c *gin.Context) {
 	// Check if user is admin (works for both WebAdmin and regular User with IsAdmin)
 	userRole, exists := c.Get("user_role")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "لطفا ابتدا وارد شوید"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "برای دسترسی به این بخش، لطفاً ابتدا وارد حساب کاربری خود شوید."})
 		return
 	}
 
@@ -282,11 +282,11 @@ func DeleteSlider(c *gin.Context) {
 		// Also check if it's a regular User with IsAdmin flag
 		userInterface, userExists := c.Get("user")
 		if !userExists {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 		if user, ok := userInterface.(models.User); !ok || !user.IsAdmin {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "این بخش فقط برای مدیران سیستم قابل دسترسی است."})
 			return
 		}
 	}
