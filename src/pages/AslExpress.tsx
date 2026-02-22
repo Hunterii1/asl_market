@@ -4,9 +4,10 @@ import {
   Truck, 
   Phone,
   Building,
-  Users,
-  Mail,
-  MapPin
+  MapPin,
+  Clock,
+  ExternalLink,
+  FileText
 } from "lucide-react";
 import Slider from "@/components/Slider";
 
@@ -20,6 +21,10 @@ interface ShippingCompany {
   name: string;
   services: string;
   address?: string;
+  postalCode?: string;
+  workingHours?: string;
+  mapLinks?: { label: string; url: string }[];
+  notes?: string[];
   contacts: Contact[];
 }
 
@@ -70,6 +75,30 @@ const AslExpress = () => {
       address: "خ مطهری، خیابان علی اکبری، کوچه آزادی، پلاک ۵۳",
       contacts: [
         { phone: "02188522933" }
+      ]
+    },
+    {
+      id: 6,
+      name: "اسدی اکسپرس کارگو",
+      services: "خرده بار و بارهای بزرگ به مسقط (عمان)، دبی و جبل‌علی (امارات)، استانبول (ترکیه)، گوانجو (چین). انبار تحویل، ترخیص در گمرک، حمل و ترخیص در مقصد، تحویل به گیرنده نهایی. دفتر و انبار در تهران و شیراز. پکینگ کارتن و پالت‌بندی حرفه‌ای در انبار تهران.",
+      address: "تهران، کهریزک، ۶۰متری شوراباد (بلوار امام حسین)، خیابان حمزه‌آباد (یکم شمالی-معدن یکم)، خیابان کشاورز، کوچه ایثار (سمت راست اولین کوچه)، پلاک ۲",
+      postalCode: "۱۸۱۸۱۵۰۱۵۱",
+      workingHours: "شنبه تا چهارشنبه: ۸ صبح الی ۱۷ | پنج‌شنبه: ۸ صبح الی ۱۲ | ایام تعطیل رسمی تعطیل",
+      mapLinks: [
+        { label: "Google Map", url: "https://maps.app.goo.gl/jsbNKqubz1xACJzK8?g_st=awb" },
+        { label: "بلد", url: "https://balad.ir/location?latitude=35.480949&longitude=51.361805&zoom=16.500000" },
+        { label: "نشان", url: "https://nshn.ir/rbQMY_Qx4sx6" }
+      ],
+      notes: [
+        "لطفاً قبل از تحویل بار به انبار حتماً برگه باسکول را همراه داشته باشید.",
+        "قبل از ارسال بار به انبار جهت تأیید امکان ارسال، محاسبه قیمت حمل و ترخیص یا تحویل بار با مشاور هماهنگ کنید.",
+        "قابلیت پکینگ کارتن و پالت‌بندی کامل و حرفه‌ای کالاها در انبار تهران."
+      ],
+      contacts: [
+        { name: "دفتر تهران — آقای علیرضا نامداری", phone: "+989981118990" },
+        { name: "دفتر تهران — آقای علیرضا نامداری", phone: "+989106735256" },
+        { name: "انبار تهران — آقای مهدی نوری", phone: "+989106735351" },
+        { name: "انبار تهران — آقای محمدامین راستین", phone: "+989109355505" }
       ]
     }
   ];
@@ -122,7 +151,50 @@ const AslExpress = () => {
                 {company.address && (
                   <div className="flex items-start gap-3 bg-blue-500/10 rounded-2xl p-3">
                     <MapPin className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-muted-foreground text-sm">{company.address}</div>
+                    <div className="text-muted-foreground text-sm">
+                      {company.address}
+                      {company.postalCode && (
+                        <span className="block mt-1 font-medium text-foreground/80">کد پستی: {company.postalCode}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Working hours */}
+                {company.workingHours && (
+                  <div className="flex items-start gap-3 bg-amber-500/10 rounded-2xl p-3">
+                    <Clock className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-muted-foreground text-sm">{company.workingHours}</div>
+                  </div>
+                )}
+
+                {/* Map links */}
+                {company.mapLinks && company.mapLinks.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {company.mapLinks.map((link, i) => (
+                      <a
+                        key={i}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500/15 text-green-700 dark:text-green-400 rounded-xl text-sm hover:bg-green-500/25 transition-colors"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        {link.label}
+                      </a>
+                    ))}
+                  </div>
+                )}
+
+                {/* Notes */}
+                {company.notes && company.notes.length > 0 && (
+                  <div className="space-y-2">
+                    {company.notes.map((note, i) => (
+                      <div key={i} className="flex items-start gap-3 bg-muted/50 rounded-2xl p-3">
+                        <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <div className="text-muted-foreground text-sm">{note}</div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
