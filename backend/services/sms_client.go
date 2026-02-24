@@ -297,9 +297,14 @@ func (sms *IPPanelClient) SendPattern(patternCode string, originator string, rec
 		return 0, err
 	}
 
+	// اگر سرور به جای JSON صفحه HTML برگرداند (۵۰۲، ۴۰۴، و غیره)
+	if len(responseBody) > 0 && (responseBody[0] == '<' || bytes.Contains(responseBody, []byte("<!DOCTYPE"))) {
+		return 0, fmt.Errorf("SMS API returned HTML instead of JSON (HTTP %d). URL: %s — اگر ۵۰۲/۵۰۳ است چند دقیقه بعد دوباره تلاش کنید؛ اگر ۴۰۴ است آدرس API را در پنل IPPanel بررسی کنید", res.StatusCode, req.URL.String())
+	}
+
 	var out edgeSendRes
 	if err := json.Unmarshal(responseBody, &out); err != nil {
-		return 0, fmt.Errorf("SMS API response invalid JSON: %v", err)
+		return 0, fmt.Errorf("SMS API response invalid JSON (HTTP %d): %v", res.StatusCode, err)
 	}
 
 	if out.Meta != nil && !out.Meta.Status {
