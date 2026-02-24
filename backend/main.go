@@ -31,13 +31,15 @@ func main() {
 		log.Println("Running in Iran environment - Telegram bot is disabled")
 	}
 
-	// Initialize SMS service
+	// Initialize SMS service (با username/password برای لاگین خودکار Edge)
 	if config.AppConfig.SMS.APIKey != "" {
 		services.InitSMSService(
 			config.AppConfig.SMS.APIKey,
 			config.AppConfig.SMS.Originator,
 			config.AppConfig.SMS.PatternCode,
 			config.AppConfig.SMS.PasswordRecoveryPattern,
+			config.AppConfig.SMS.Username,
+			config.AppConfig.SMS.Password,
 		)
 		log.Println("SMS service initialized")
 	} else {

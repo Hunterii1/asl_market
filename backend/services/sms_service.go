@@ -16,9 +16,9 @@ type SMSService struct {
 
 var smsService *SMSService
 
-// Initialize SMS service
-func InitSMSService(apiKey, originator, patternCode, passwordRecoveryPattern string) {
-	client := NewIPPanelClient(apiKey)
+// Initialize SMS service. اگر username/password داده شود، برای Edge از لاگین خودکار و توکن استفاده می‌شود.
+func InitSMSService(apiKey, originator, patternCode, passwordRecoveryPattern, username, password string) {
+	client := NewIPPanelClient(apiKey, username, password)
 	smsService = &SMSService{
 		client:                  client,
 		originator:              originator,

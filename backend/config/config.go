@@ -54,6 +54,9 @@ type SMSConfig struct {
 	Originator              string `mapstructure:"originator"`
 	PatternCode             string `mapstructure:"pattern_code"`
 	PasswordRecoveryPattern string `mapstructure:"password_recovery_pattern"`
+	// برای لاگین خودکار و گرفتن توکن (روشی که جواب می‌دهد)
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
 }
 
 type PushConfig struct {

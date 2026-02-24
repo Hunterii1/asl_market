@@ -33,6 +33,8 @@ func main() {
 		config.AppConfig.SMS.Originator,
 		config.AppConfig.SMS.PatternCode,
 		config.AppConfig.SMS.PasswordRecoveryPattern,
+		config.AppConfig.SMS.Username,
+		config.AppConfig.SMS.Password,
 	)
 
 	sms := services.GetSMSService()

@@ -6,19 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 )
 
 const (
 	ClientVersion     = "2.0.0"
 	Endpoint          = "https://edge.ippanel.com/v1"
-	EndpointAPI2      = "https://api2.ippanel.com/api/v1"   // Python SDK
-	EndpointRest      = "http://rest.ippanel.com"          // Laravel/SmartRaya
 	httpClientTimeout = 30 * time.Second
 )
 
@@ -83,11 +83,25 @@ type BaseResponse struct {
 	ErrorMessage string          `json:"error_message"`
 }
 
-// IPPanelClient - Ippanel client based on official SDK
+// IPPanelClient - Ippanel client
 type IPPanelClient struct {
-	Apikey  string
-	Client  *http.Client
-	BaseURL *url.URL
+	Apikey   string
+	Username string
+	Password string
+	Client   *http.Client
+	BaseURL  *url.URL
+	token    string
+	tokenMu  sync.Mutex
+}
+
+// پاسخ لاگین Edge: POST /api/acl/auth/login
+type edgeLoginRes struct {
+	Data *struct {
+		Token string `json:"token"`
+	} `json:"data"`
+	Meta *struct {
+		Status bool `json:"status"`
+	} `json:"meta"`
 }
 
 // --- Edge API (edge.ippanel.com) ---
@@ -109,31 +123,6 @@ type edgeSendRes struct {
 	} `json:"meta"`
 }
 
-// --- API2 (api2.ippanel.com - Python SDK) ---
-type api2SendPatternReq struct {
-	Code      string            `json:"code"`
-	Sender    string            `json:"sender"`
-	Recipient string            `json:"recipient"`
-	Variable  map[string]string `json:"variable"`
-}
-type api2SendRes struct {
-	Data *struct {
-		MessageID int64 `json:"message_id"`
-	} `json:"data"`
-}
-
-// --- Rest (rest.ippanel.com - Laravel/SmartRaya) ---
-type restSendPatternReq struct {
-	PatternCode string            `json:"pattern_code"`
-	Originator  string            `json:"originator"`
-	Recipient   string            `json:"recipient"`
-	Values      map[string]string `json:"values"`
-}
-type restSendRes struct {
-	Data *struct {
-		BulkID int64 `json:"bulk_id"`
-	} `json:"data"`
-}
 
 // getCreditResType get credit response type (قدیمی)
 type getCreditResType struct {
@@ -157,18 +146,80 @@ type defaultErrsRes struct {
 	Errors string `json:"error"`
 }
 
-// NewIPPanelClient create new ippanel sms instance
-func NewIPPanelClient(apikey string) *IPPanelClient {
+// NewIPPanelClient create new ippanel sms instance. اگر username/password داده شود، برای Edge از توکن لاگین استفاده می‌شود.
+func NewIPPanelClient(apikey, username, password string) *IPPanelClient {
 	u, _ := url.Parse(Endpoint)
 	client := &http.Client{
 		Transport: http.DefaultTransport,
 		Timeout:   httpClientTimeout,
 	}
 	return &IPPanelClient{
-		Apikey:  apikey,
-		Client:  client,
-		BaseURL: u,
+		Apikey:   apikey,
+		Username: strings.TrimSpace(username),
+		Password: password,
+		Client:   client,
+		BaseURL:  u,
 	}
+}
+
+// login توکن از Edge می‌گیرد (POST /api/acl/auth/login)
+func (sms *IPPanelClient) login() (string, error) {
+	u := *sms.BaseURL
+	u.Path = path.Join(sms.BaseURL.Path, "api", "acl", "auth", "login")
+	body := map[string]string{"username": sms.Username, "password": sms.Password}
+	marshaled, _ := json.Marshal(body)
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(marshaled))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := sms.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	responseBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return "", err
+	}
+	if isHTMLResponse(responseBody) {
+		return "", fmt.Errorf("login returned HTML (HTTP %d)", res.StatusCode)
+	}
+	var out edgeLoginRes
+	if err := json.Unmarshal(responseBody, &out); err != nil {
+		return "", err
+	}
+	if out.Data == nil || out.Data.Token == "" {
+		return "", fmt.Errorf("login: no token in response")
+	}
+	return out.Data.Token, nil
+}
+
+// getEdgeAuthToken برای Edge یا توکن لاگین برمی‌گرداند یا همان API key
+func (sms *IPPanelClient) getEdgeAuthToken() string {
+	if sms.Username == "" {
+		return sms.Apikey
+	}
+	sms.tokenMu.Lock()
+	defer sms.tokenMu.Unlock()
+	if sms.token != "" {
+		return sms.token
+	}
+	token, err := sms.login()
+	if err != nil {
+		log.Printf("SMS Edge login failed (will use API key for fallback): %v", err)
+		return sms.Apikey
+	}
+	sms.token = token
+	log.Printf("SMS Edge: logged in, token obtained")
+	return sms.token
+}
+
+// clearToken بعد از خطای 401 می‌توان صدا زد تا بار بعد دوباره لاگین شود
+func (sms *IPPanelClient) clearToken() {
+	sms.tokenMu.Lock()
+	sms.token = ""
+	sms.tokenMu.Unlock()
 }
 
 // request preform http request
@@ -294,7 +345,7 @@ func isHTMLResponse(body []byte) bool {
 	return body[0] == '<' || bytes.Contains(body, []byte("<!DOCTYPE"))
 }
 
-// sendPatternEdge — Edge API
+// sendPatternEdge — Edge API (با توکن لاگین اگر username تنظیم شده باشد)
 func (sms *IPPanelClient) sendPatternEdge(patternCode, originator, recipientE164 string, values map[string]string) (int64, error) {
 	body := edgeSendPatternReq{
 		SendingType: "pattern",
@@ -308,7 +359,7 @@ func (sms *IPPanelClient) sendPatternEdge(patternCode, originator, recipientE164
 	u.Path = path.Join(sms.BaseURL.Path, "api", "send")
 	req, _ := http.NewRequest("POST", u.String(), bytes.NewReader(marshaled))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", sms.Apikey)
+	req.Header.Set("Authorization", sms.getEdgeAuthToken())
 	res, err := sms.Client.Do(req)
 	if err != nil {
 		return 0, err
@@ -317,6 +368,10 @@ func (sms *IPPanelClient) sendPatternEdge(patternCode, originator, recipientE164
 	responseBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return 0, err
+	}
+	if res.StatusCode == http.StatusUnauthorized {
+		sms.clearToken()
+		return 0, fmt.Errorf("unauthorized")
 	}
 	if isHTMLResponse(responseBody) {
 		return 0, fmt.Errorf("html")
@@ -334,108 +389,13 @@ func (sms *IPPanelClient) sendPatternEdge(patternCode, originator, recipientE164
 	return out.Data.MessageOutboxIDs[0], nil
 }
 
-// sendPatternAPI2 — Python SDK: api2.ippanel.com
-func (sms *IPPanelClient) sendPatternAPI2(patternCode, originator, recipient string, values map[string]string) (int64, error) {
-	if values == nil {
-		values = make(map[string]string)
-	}
-	body := api2SendPatternReq{
-		Code:      patternCode,
-		Sender:    originator,
-		Recipient: recipient,
-		Variable:  values,
-	}
-	marshaled, _ := json.Marshal(body)
-	url := EndpointAPI2 + "/sms/pattern/normal/send"
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(marshaled))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Apikey", sms.Apikey)
-	res, err := sms.Client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer res.Body.Close()
-	responseBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return 0, err
-	}
-	if isHTMLResponse(responseBody) {
-		return 0, fmt.Errorf("html")
-	}
-	var out api2SendRes
-	if err := json.Unmarshal(responseBody, &out); err != nil {
-		return 0, err
-	}
-	if out.Data == nil || out.Data.MessageID == 0 {
-		return 0, fmt.Errorf("no message_id")
-	}
-	return out.Data.MessageID, nil
-}
-
-// sendPatternRest — Laravel/SmartRaya: rest.ippanel.com، هدر Authorization: AccessKey <key>
-func (sms *IPPanelClient) sendPatternRest(patternCode, originator, recipient string, values map[string]string) (int64, error) {
-	if values == nil {
-		values = make(map[string]string)
-	}
-	body := restSendPatternReq{
-		PatternCode: patternCode,
-		Originator:  originator,
-		Recipient:   recipient,
-		Values:      values,
-	}
-	marshaled, _ := json.Marshal(body)
-	url := EndpointRest + "/v1/messages/patterns/send"
-	req, _ := http.NewRequest("POST", url, bytes.NewReader(marshaled))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "AccessKey "+sms.Apikey)
-	res, err := sms.Client.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer res.Body.Close()
-	responseBody, err := io.ReadAll(res.Body)
-	if err != nil {
-		return 0, err
-	}
-	if isHTMLResponse(responseBody) {
-		return 0, fmt.Errorf("html")
-	}
-	var out restSendRes
-	if err := json.Unmarshal(responseBody, &out); err != nil {
-		return 0, err
-	}
-	if out.Data == nil || out.Data.BulkID == 0 {
-		return 0, fmt.Errorf("no bulk_id")
-	}
-	return out.Data.BulkID, nil
-}
-
-// SendPattern ارسال پیامک با الگو — اول Edge، اگر خطا/HTML شد API2، بعد Rest (پشتیبانی هر سه سورس)
+// SendPattern ارسال پیامک با الگو — فقط Edge (لاگین خودکار + توکن)
 func (sms *IPPanelClient) SendPattern(patternCode string, originator string, recipient string, values map[string]string) (int64, error) {
 	if values == nil {
 		values = make(map[string]string)
 	}
 	recipientE164 := normalizeE164(recipient)
-
-	// ۱) Edge
-	id, err := sms.sendPatternEdge(patternCode, originator, recipientE164, values)
-	if err == nil {
-		return id, nil
-	}
-
-	// ۲) API2 (Python SDK)
-	id, err2 := sms.sendPatternAPI2(patternCode, originator, recipientE164, values)
-	if err2 == nil {
-		return id, nil
-	}
-
-	// ۳) Rest (Laravel/SmartRaya)
-	id, err3 := sms.sendPatternRest(patternCode, originator, recipientE164, values)
-	if err3 == nil {
-		return id, nil
-	}
-
-	return 0, fmt.Errorf("هر سه API ناموفق (Edge: %v | API2: %v | Rest: %v)", err, err2, err3)
+	return sms.sendPatternEdge(patternCode, originator, recipientE164, values)
 }
 
 // GetCredit اعتبار حساب — طبق apidoc.ippanel.com: GET {base_url}/api/payment/credit/mine
@@ -448,7 +408,7 @@ func (sms *IPPanelClient) GetCredit() (float64, error) {
 		return 0, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", sms.Apikey)
+	req.Header.Set("Authorization", sms.getEdgeAuthToken())
 
 	res, err := sms.Client.Do(req)
 	if err != nil {
