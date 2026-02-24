@@ -5,19 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
 	"runtime"
+	"strings"
 	"time"
 )
 
 const (
 	// ClientVersion is used in User-Agent request header to provide server with API level.
 	ClientVersion = "2.0.0"
-	// Endpoint points you to Ippanel REST API.
-	Endpoint = "https://api2.ippanel.com/api/v1"
+	// Endpoint: طبق داک IPPanel — آدرس پایه edge.ippanel.com/v1
+	Endpoint = "https://edge.ippanel.com/v1"
 	// httpClientTimeout is used to limit http.Client waiting time.
 	httpClientTimeout = 30 * time.Second
 )
@@ -90,17 +91,25 @@ type IPPanelClient struct {
 	BaseURL *url.URL
 }
 
-// sendPatternReqType send sms with pattern request template
-type sendPatternReqType struct {
-	Code      string            `json:"code"`
-	Sender    string            `json:"sender"`
-	Recipient string            `json:"recipient"`
-	Variable  map[string]string `json:"variable"`
+// ارسال با پترن — طبق داک edge.ippanel.com: POST /api/send
+type edgeSendPatternReq struct {
+	SendingType string            `json:"sending_type"` // "pattern"
+	FromNumber  string            `json:"from_number"`
+	Code        string            `json:"code"`
+	Recipients  []string          `json:"recipients"`
+	Params      map[string]string `json:"params"`
 }
 
-// sendResType response type for send sms
-type sendResType struct {
-	MessageId int64 `json:"message_id"`
+// پاسخ موفق ارسال — طبق داک
+type edgeSendResData struct {
+	MessageOutboxIDs []int64 `json:"message_outbox_ids"`
+}
+type edgeSendRes struct {
+	Data *edgeSendResData `json:"data"`
+	Meta *struct {
+		Status  bool   `json:"status"`
+		Message string `json:"message"`
+	} `json:"meta"`
 }
 
 // getCreditResType get credit response type
@@ -157,7 +166,8 @@ func (sms IPPanelClient) request(method string, uri string, params map[string]st
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Apikey", sms.Apikey)
+	// طبق داک: احراز هویت با هدر Authorization (توکن یا کلید API)
+	req.Header.Set("Authorization", sms.Apikey)
 	req.Header.Set("User-Agent", "Ippanel/ApiClient/"+ClientVersion+" Go/"+runtime.Version())
 
 	res, err := sms.Client.Do(req)
@@ -166,7 +176,7 @@ func (sms IPPanelClient) request(method string, uri string, params map[string]st
 	}
 	defer res.Body.Close()
 
-	responseBody, err := ioutil.ReadAll(res.Body)
+	responseBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -222,46 +232,89 @@ func (sms IPPanelClient) parseErrors(res *BaseResponse) error {
 	return e
 }
 
-// SendPattern send a message with pattern
+// normalizeE164 ensures number is in E.164 for IPPanel (e.g. +989123456789)
+func normalizeE164(phone string) string {
+	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return phone
+	}
+	if len(phone) > 0 && phone[0] == '+' {
+		return phone
+	}
+	var b strings.Builder
+	for _, r := range phone {
+		if r >= '0' && r <= '9' {
+			b.WriteRune(r)
+		}
+	}
+	s := b.String()
+	if len(s) >= 2 && s[:2] == "98" {
+		return "+" + s
+	}
+	if len(s) == 10 && s[0] == '9' {
+		return "+98" + s
+	}
+	return "+98" + s
+}
+
+// SendPattern ارسال پیامک با الگو — طبق داک: POST {base_url}/api/send
 func (sms *IPPanelClient) SendPattern(patternCode string, originator string, recipient string, values map[string]string) (int64, error) {
-	data := sendPatternReqType{
-		Code:      patternCode,
-		Sender:    originator,
-		Recipient: recipient,
-		Variable:  values,
+	if values == nil {
+		values = make(map[string]string)
 	}
 
-	// Debug logging
-	jsonData, _ := json.Marshal(data)
-	fmt.Printf("🔍 SMS Request: %s\n", string(jsonData))
+	recipientE164 := normalizeE164(recipient)
+	body := edgeSendPatternReq{
+		SendingType: "pattern",
+		FromNumber:  originator,
+		Code:        patternCode,
+		Recipients:  []string{recipientE164},
+		Params:      values,
+	}
 
-	_res, err := sms.post("/sms/pattern/normal/send", "application/json", data)
+	u := *sms.BaseURL
+	u.Path = path.Join(sms.BaseURL.Path, "api", "send")
+	marshaled, err := json.Marshal(body)
+	if err != nil {
+		return 0, err
+	}
+
+	req, err := http.NewRequest("POST", u.String(), bytes.NewReader(marshaled))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", sms.Apikey)
+
+	res, err := sms.Client.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("SMS API request failed: %v", err)
 	}
+	defer res.Body.Close()
 
-	if _res == nil {
-		return 0, fmt.Errorf("SMS API returned empty response")
+	responseBody, err := io.ReadAll(res.Body)
+	if err != nil {
+		return 0, err
 	}
 
-	// Debug logging
-	fmt.Printf("🔍 SMS Response Status: %s, Code: %d\n", _res.Status, _res.Code)
-	fmt.Printf("🔍 SMS Response Data: %s\n", string(_res.Data))
-
-	if _res.Data == nil {
-		return 0, fmt.Errorf("SMS API returned null data")
+	var out edgeSendRes
+	if err := json.Unmarshal(responseBody, &out); err != nil {
+		return 0, fmt.Errorf("SMS API response invalid JSON: %v", err)
 	}
 
-	res := sendResType{}
-	if err = json.Unmarshal(_res.Data, &res); err != nil {
-		return 0, fmt.Errorf("Failed to parse SMS API response: %v. Raw data: %s", err, string(_res.Data))
+	if out.Meta != nil && !out.Meta.Status {
+		msg := out.Meta.Message
+		if msg == "" {
+			msg = string(responseBody)
+		}
+		return 0, fmt.Errorf("SMS API error: %s", msg)
 	}
 
-	if res.MessageId == 0 {
-		return 0, fmt.Errorf("SMS API returned invalid message ID. Raw response: %s", string(_res.Data))
+	if out.Data == nil || len(out.Data.MessageOutboxIDs) == 0 {
+		return 0, fmt.Errorf("SMS API returned no message_outbox_ids")
 	}
 
-	return res.MessageId, nil
+	return out.Data.MessageOutboxIDs[0], nil
 }
 
 // GetCredit get credit for user
