@@ -12,7 +12,7 @@ import (
 	"asl-market-backend/models"
 )
 
-func main() {
+func main777779() {
 	// This function seeds sliders from assets folder
 	// Load configuration
 	config.LoadConfig()
