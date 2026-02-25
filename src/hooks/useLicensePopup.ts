@@ -34,19 +34,25 @@ export function useLicensePopup() {
 
       if (response.ok) {
         const data: PopupStatus = await response.json();
-        
+
+        if (data.has_license) {
+          // کاربر لایسنس داره — پاپ‌آپی که احتمالی نشون دادیم رو ببند
+          setShowPopup(false);
+          return;
+        }
+
         if (data.should_show_popup && !data.has_license) {
-          // Show popup based on type
           if (data.popup_type === 'post_login') {
-            // Show immediately after login
+            // همین الان نشون بده (احتمالاً از قبل نشون داده شده)
             setShowLoginOption(false);
             setShowPopup(true);
           } else if (data.popup_type === 'browsing') {
-            // Show after 2 minutes
+            // پاپ‌آپ اول رو ببند، بعد از ۲ دقیقه یکی جدید
+            setShowPopup(false);
             setTimeout(() => {
               setShowLoginOption(false);
               setShowPopup(true);
-            }, 2 * 60 * 1000); // 2 minutes
+            }, 2 * 60 * 1000);
           }
         }
       }
@@ -121,10 +127,14 @@ export function useLicensePopup() {
     }
   }, [isAuthenticated, user]);
 
-  // Check for logged-in users
+  // کاربر لاگین شده: به‌محض ورود پاپ‌آپ رو نشون بده، بعد با API تأیید کن
   useEffect(() => {
     if (isAuthenticated && user && !hasCheckedStatus) {
       setHasCheckedStatus(true);
+      // بلافاصله پاپ‌آپ رو نشون بده (کاربر بدون لایسنس به‌محض ورود ببینه)
+      setShowLoginOption(false);
+      setShowPopup(true);
+      // بعد وضعیت واقعی رو از API بگیر؛ اگه لایسنس داشت پاپ‌آپ بسته میشه
       checkPopupStatus();
     }
   }, [isAuthenticated, user, hasCheckedStatus, checkPopupStatus]);
