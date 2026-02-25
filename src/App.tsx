@@ -11,6 +11,7 @@ import { LicenseRequiredRoute } from "@/components/LicenseRequiredRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ErrorTestPanel } from "@/components/ErrorTestPanel";
 import { NotificationPermissionPrompt } from "@/components/NotificationPermissionPrompt";
+import { LicensePopupManager } from "@/components/LicensePopupManager";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -78,6 +79,7 @@ const App = () => (
           <AuthProvider>
             <PushNotificationInitializer />
             <NotificationPermissionPrompt />
+            <LicensePopupManager />
             <Toaster />
             <Sonner />
             <ConnectionStatus />

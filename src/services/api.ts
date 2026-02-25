@@ -71,6 +71,20 @@ export interface PushSubscription {
   };
 }
 
+// Popup tracking interfaces
+export type PopupType = 'license' | 'post_login' | 'browsing';
+
+export interface PopupStatus {
+  should_show_popup: boolean;
+  popup_type?: PopupType;
+  has_license: boolean;
+  message?: string;
+}
+
+export interface MarkPopupSeenRequest {
+  popup_type: PopupType;
+}
+
 // Chat interfaces
 export interface Message {
   id: number;

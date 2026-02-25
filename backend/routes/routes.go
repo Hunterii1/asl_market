@@ -26,6 +26,7 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 	visitorProjectController := controllers.NewVisitorProjectController(models.GetDB())
 	adminMatchingController := controllers.NewAdminMatchingController(models.GetDB())
 	profileController := controllers.NewProfileController(models.GetDB())
+	popupTrackingController := controllers.NewPopupTrackingController(models.GetDB())
 
 	// Initialize OpenAI monitor
 	openaiMonitor := services.NewOpenAIMonitor(telegramService)
@@ -387,6 +388,11 @@ func SetupRoutes(router *gin.Engine, telegramService *services.TelegramService) 
 		protected.POST("/notifications/:id/read", controllers.MarkNotificationAsRead)
 		protected.POST("/notifications/read-all", controllers.MarkAllNotificationsAsRead)
 		protected.GET("/notifications/unread-count", controllers.GetUnreadNotificationCount)
+
+		// Popup tracking routes
+		protected.GET("/popup/status", popupTrackingController.GetPopupStatus)
+		protected.POST("/popup/mark-seen", popupTrackingController.MarkPopupSeen)
+		protected.POST("/popup/reset", popupTrackingController.ResetPopupStatus) // For testing
 
 		// Push Notification routes
 		protected.GET("/push/vapid-key", pushController.GetVAPIDPublicKey)

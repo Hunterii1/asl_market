@@ -26,6 +26,14 @@ type User struct {
 	Website          string `json:"website" gorm:"size:500"`
 	SocialMediaLinks string `json:"social_media_links" gorm:"type:text"` // JSON: {instagram, telegram, linkedin, etc}
 
+	// Popup tracking fields
+	HasSeenLicensePopup       bool       `json:"has_seen_license_popup" gorm:"default:false"`
+	LicensePopupShownAt       *time.Time `json:"license_popup_shown_at"`
+	HasSeenPostLoginPopup     bool       `json:"has_seen_post_login_popup" gorm:"default:false"`
+	PostLoginPopupShownAt     *time.Time `json:"post_login_popup_shown_at"`
+	HasSeenBrowsingPopup      bool       `json:"has_seen_browsing_popup" gorm:"default:false"`
+	BrowsingPopupShownAt      *time.Time `json:"browsing_popup_shown_at"`
+
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
