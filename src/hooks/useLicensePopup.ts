@@ -26,7 +26,7 @@ export function useLicensePopup() {
     if (!token) return;
 
     try {
-      const response = await fetch('/api/v1/popup/status', {
+      const response = await fetch('backend/api/v1/popup/status', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -67,7 +67,7 @@ export function useLicensePopup() {
     if (!token) return;
 
     try {
-      await fetch('/api/v1/popup/mark-seen', {
+      await fetch('backend/api/v1/popup/mark-seen', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ export function useLicensePopup() {
     if (!token) return;
 
     try {
-      await fetch('/api/v1/popup/reset', {
+      await fetch('backend/api/v1/popup/reset', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
