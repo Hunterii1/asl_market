@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func main() {
+func main765() {
 	// Load config
 	config.LoadConfig()
 

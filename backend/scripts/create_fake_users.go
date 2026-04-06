@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func main() {
+func main55() {
 	fmt.Println("🚀 Creating fake users for video recording...")
 
 	// Database connection

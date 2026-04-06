@@ -6,9 +6,11 @@
 //	go run scripts/send_sms_registration_success.go 09123456789
 //
 // با نام و طرح (اختیاری):
+//
 //	go run scripts/send_sms_registration_success.go 09123456789 "علی محمد" "طرح طلایی"
 //
 // یا با متغیر محیطی:
+//
 //	SMS_PHONE=09123456789 go run scripts/send_sms_registration_success.go
 package main
 
@@ -21,7 +23,7 @@ import (
 	"asl-market-backend/services"
 )
 
-func main() {
+func main5566() {
 	config.LoadConfig()
 
 	if config.AppConfig.SMS.APIKey == "" {

@@ -5,28 +5,16 @@ import (
 	"log"
 	"strings"
 
-	"asl-market-backend/config"
 	"asl-market-backend/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
-func main() {
-	// Load config
-	cfg, err := config.LoadConfig("config/config.yaml")
-	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
-	}
+func main43() {
 
 	// Connect to database
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.Name,
-	)
+	dsn := ""
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -48,7 +36,7 @@ func main() {
 	for _, aff := range affiliates {
 		// Normalize username: trim spaces and convert to lowercase
 		normalizedUsername := strings.TrimSpace(strings.ToLower(aff.Username))
-		
+
 		// Skip if already normalized
 		if normalizedUsername == aff.Username {
 			skipped++
@@ -58,7 +46,7 @@ func main() {
 		// Check if normalized username already exists (conflict)
 		var existing models.Affiliate
 		if err := db.Where("username = ? AND id != ? AND deleted_at IS NULL", normalizedUsername, aff.ID).First(&existing).Error; err == nil {
-			log.Printf("WARNING: Cannot normalize username '%s' to '%s' for affiliate ID %d - conflict with affiliate ID %d", 
+			log.Printf("WARNING: Cannot normalize username '%s' to '%s' for affiliate ID %d - conflict with affiliate ID %d",
 				aff.Username, normalizedUsername, aff.ID, existing.ID)
 			errors++
 			continue

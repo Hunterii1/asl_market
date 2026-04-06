@@ -4,6 +4,7 @@
 //	go run scripts/send_sms_password_recovery.go 09123456789 123456
 //
 // یا با متغیر محیطی:
+//
 //	SMS_PHONE=09123456789 SMS_CODE=123456 go run scripts/send_sms_password_recovery.go
 package main
 
@@ -16,7 +17,7 @@ import (
 	"asl-market-backend/services"
 )
 
-func main() {
+func main123() {
 	config.LoadConfig()
 
 	if config.AppConfig.SMS.APIKey == "" {
