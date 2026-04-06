@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Asll Market</string>
+    <string name="title_activity_main">Asll Market</string>
+    <string name="package_name">com.rapexa.asllmarket</string>
+    <string name="custom_url_scheme">com.rapexa.asllmarket</string>
+    <string name="bridge_load_error_message">اتصال برقرار نشد. اینترنت را بررسی کنید و دوباره تلاش کنید.</string>
+    <string name="bridge_retry">تلاش مجدد</string>
+</resources>

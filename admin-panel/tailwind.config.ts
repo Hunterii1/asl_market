@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Vazirmatn', 'system-ui', 'sans-serif'],
+        sans: ['system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
