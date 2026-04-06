@@ -153,14 +153,14 @@ func (ac *AffiliateController) GetDashboard(c *gin.Context) {
 	}
 
 	// Base URL for referral link: main site (not admin/api subdomain)
-	baseURL := "https://asllmarket.com"
+	baseURL := "https://asllmarket.ir"
 	if c.Request.Host != "" {
 		scheme := "https"
 		if c.GetHeader("X-Forwarded-Proto") == "http" {
 			scheme = "http"
 		}
 		host := c.Request.Host
-		// Use main domain for referral (e.g. admin.asllmarket.com -> asllmarket.com)
+		// Use main domain for referral (e.g. admin.asllmarket.ir -> asllmarket.ir)
 		if strings.HasPrefix(host, "admin.") || strings.HasPrefix(host, "api.") {
 			if idx := strings.Index(host, "."); idx >= 0 && idx+1 < len(host) {
 				host = host[idx+1:]

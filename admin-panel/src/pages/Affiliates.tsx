@@ -123,7 +123,7 @@ export default function Affiliates() {
         name: a.name ?? '',
         username: a.username ?? '',
         referral_code: a.referral_code ?? '',
-        referral_link: a.referral_link || `https://asllmarket.com/affiliate/register?promoter=${a.id}`,
+        referral_link: a.referral_link || `https://asllmarket.ir/affiliate/register?promoter=${a.id}`,
         balance: Number(a.balance) ?? 0,
         total_earnings: Number(a.total_earnings) ?? 0,
         commission_percent: Number(a.commission_percent) ?? 100,
@@ -171,7 +171,7 @@ export default function Affiliates() {
   const openDetail = async (row: AffiliateRow) => {
     setSelected(row);
     // اگر لینک خالی است، به صورت خودکار تولید کن
-    const defaultLink = row.referral_link || `https://asllmarket.com/affiliate/register?promoter=${row.id}`;
+    const defaultLink = row.referral_link || `https://asllmarket.ir/affiliate/register?promoter=${row.id}`;
     setCustomReferralLink(defaultLink);
     setDetailCommissionPercent(row.commission_percent != null ? String(row.commission_percent) : '100');
     setCsvFile(null);
@@ -250,7 +250,7 @@ export default function Affiliates() {
           name: addName.trim(),
           username: addUsername.trim(),
           referral_code: data?.referral_code || '',
-          referral_link: data?.referral_link || `https://asllmarket.com/affiliate/register?promoter=${newAffiliateId}`,
+          referral_link: data?.referral_link || `https://asllmarket.ir/affiliate/register?promoter=${newAffiliateId}`,
           balance: 0,
           total_earnings: 0,
           commission_percent: 100,
@@ -624,7 +624,7 @@ export default function Affiliates() {
                     <Input
                       value={customReferralLink || ''}
                       onChange={(e) => setCustomReferralLink(e.target.value)}
-                      placeholder="https://asllmarket.com/signup?ref=..."
+                      placeholder="https://asllmarket.ir/signup?ref=..."
                       className="flex-1 font-mono text-sm dir-ltr"
                       dir="ltr"
                     />

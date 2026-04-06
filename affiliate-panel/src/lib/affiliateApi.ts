@@ -3,8 +3,8 @@ const getApiBaseUrl = () => {
   if (typeof window !== "undefined") {
     const hostname = window.location.hostname;
     // Global (.com) — همان دامنهٔ API ادمین تا دادهٔ import شده در پنل افیلیت دیده شود
-    if (hostname === "asllmarket.com" || hostname === "www.asllmarket.com") {
-      return "https://admin.asllmarket.com/api/v1";
+    if (hostname === "asllmarket.ir" || hostname === "www.asllmarket.ir") {
+      return "https://admin.asllmarket.ir/api/v1";
     }
     // Iran (.ir)
     if (hostname === "asllmarket.ir" || hostname === "www.asllmarket.ir") {

@@ -112,7 +112,7 @@ func (c *PublicRegistrationController) RegisterPublicSupplier(ctx *gin.Context) 
 	tempUser := models.User{
 		FirstName: "Temp",
 		LastName:  "User",
-		Email:     req.Mobile + "@temp.asllmarket.com", // Temporary email
+		Email:     req.Mobile + "@temp.asllmarket.ir", // Temporary email
 		Password:  "temp_password",                     // Temporary password
 		Phone:     req.Mobile,
 		IsActive:  false, // Will be activated after admin approval
@@ -275,7 +275,7 @@ func (c *PublicRegistrationController) RegisterPublicVisitor(ctx *gin.Context) {
 	tempUser := models.User{
 		FirstName: "Temp",
 		LastName:  "User",
-		Email:     req.Mobile + "@temp.asllmarket.com", // Temporary email
+		Email:     req.Mobile + "@temp.asllmarket.ir", // Temporary email
 		Password:  "temp_password",                     // Temporary password
 		Phone:     req.Mobile,
 		IsActive:  false, // Will be activated after admin approval

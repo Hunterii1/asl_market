@@ -134,7 +134,7 @@ func CreateAffiliate(db *gorm.DB, a *Affiliate) error {
 	
 	// If ReferralLink is empty, set default link with promoter parameter
 	if a.ReferralLink == "" {
-		baseURL := "https://asllmarket.com"
+		baseURL := "https://asllmarket.ir"
 		defaultLink := baseURL + "/affiliate/register?promoter=" + fmt.Sprintf("%d", a.ID)
 		if err := db.Model(a).Update("referral_link", defaultLink).Error; err != nil {
 			return err

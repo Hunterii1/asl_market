@@ -60,7 +60,7 @@ func (s *TelegramService) promptAddMarketingPopup(chatID int64) {
 		"```\n" +
 		"عنوان: تخفیف ویژه نوروز\n" +
 		"متن: با خرید محصولات ما ۳۰٪ تخفیف بگیرید!\n" +
-		"لینک: https://asllmarket.com/discount/nowruz\n" +
+		"لینک: https://asllmarket.ir/discount/nowruz\n" +
 		"دکمه: دریافت تخفیف\n" +
 		"اولویت: 5\n" +
 		"```\n\n" +

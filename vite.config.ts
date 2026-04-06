@@ -4,7 +4,7 @@ import path from "path";
 import { VitePWA } from 'vite-plugin-pwa';
 
 // دامنه برای بیلد: ایران = asllmarket.ir ، خارج = asllmarket.com...
-const BASE_DOMAIN = process.env.VITE_BASE_DOMAIN || "asllmarket.com";
+const BASE_DOMAIN = process.env.VITE_BASE_DOMAIN || "asllmarket.ir";
 
 // https://vitejs.dev/config/
 export default defineConfig({

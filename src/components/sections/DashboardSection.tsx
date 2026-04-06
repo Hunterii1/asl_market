@@ -467,7 +467,7 @@ const DashboardSection = () => {
                 <XAxis 
                   dataKey="name" 
                   stroke="hsl(var(--muted-foreground))" 
-                  tick={{ fontSize: 12, fontFamily: 'Vazirmatn', fill: 'hsl(var(--muted-foreground))' }} 
+                  tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} 
                   axisLine={false} 
                   tickLine={false} 
                   interval={0} 
@@ -475,7 +475,7 @@ const DashboardSection = () => {
                   angle={-30}
                   dy={16}
                 />
-                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14, fontFamily: 'Vazirmatn', fill: 'hsl(var(--muted-foreground))', dx: 8 }} axisLine={false} tickLine={false} width={48} tickFormatter={toFarsiNumber} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 14, fill: 'hsl(var(--muted-foreground))', dx: 8 }} axisLine={false} tickLine={false} width={48} tickFormatter={toFarsiNumber} />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--accent)/0.08)' }} />
                 <Area 
                   type="monotone" 

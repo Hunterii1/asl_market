@@ -219,7 +219,7 @@ func (pns *PushNotificationService) sendWebPushNotification(subscription models.
 	}
 
 	if vapidSubject == "" {
-		vapidSubject = "mailto:admin@asllmarket.com"
+		vapidSubject = "mailto:admin@asllmarket.ir"
 	}
 
 	// Create subscription object for webpush

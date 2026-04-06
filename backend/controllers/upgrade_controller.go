@@ -79,12 +79,13 @@ func (uc *UpgradeController) CreateUpgradeRequest(c *gin.Context) {
 		return
 	}
 
+	// TODO: add upgrade request to admin panel
 	// Get user info for notification
-	user, err := models.GetUserByID(models.DB, userID)
-	if err == nil {
-		// Notify admin via Telegram
-		go uc.telegramService.NotifyUpgradeRequest(request, user)
-	}
+	//user, err := models.GetUserByID(models.DB, userID)
+	//if err == nil {
+	// Notify admin via Telegram
+	// go uc.telegramService.NotifyUpgradeRequest(request, user)
+	//}
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "درخواست ارتقا با موفقیت ثبت شد",
@@ -146,8 +147,9 @@ func (uc *UpgradeController) ApproveUpgradeRequest(c *gin.Context) {
 		return
 	}
 
+	// TODO: add upgrade request to admin panel
 	// Notify user via Telegram (if possible)
-	go uc.telegramService.NotifyUpgradeResult(request.UserID, true, dto.AdminNote)
+	// go uc.telegramService.NotifyUpgradeResult(request.UserID, true, dto.AdminNote)
 
 	c.JSON(http.StatusOK, gin.H{"message": "درخواست ارتقا تایید شد"})
 }
@@ -189,8 +191,9 @@ func (uc *UpgradeController) RejectUpgradeRequest(c *gin.Context) {
 		return
 	}
 
+	// TODO: add upgrade request to admin panel
 	// Notify user via Telegram (if possible)
-	go uc.telegramService.NotifyUpgradeResult(request.UserID, false, dto.AdminNote)
+	// go uc.telegramService.NotifyUpgradeResult(request.UserID, false, dto.AdminNote)
 
 	c.JSON(http.StatusOK, gin.H{"message": "درخواست ارتقا رد شد"})
 }
