@@ -40,6 +40,25 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+/** درخواست ارتقای لایسنس (کاربر پلاس → پرو) */
+export interface UpgradeRequestApi {
+  id: number;
+  user_id: number;
+  user?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email?: string;
+    phone?: string;
+  };
+  from_plan: string;
+  to_plan: string;
+  status: string;
+  request_note: string;
+  admin_note?: string;
+  created_at: string;
+}
+
 class AdminApiService {
   getApiBaseUrl() {
     return API_BASE_URL;
@@ -485,6 +504,30 @@ class AdminApiService {
   async deleteLicense(id: number): Promise<any> {
     return this.makeRequest(`${API_BASE_URL}/admin/licenses/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // ==================== License upgrade requests (پلاس → پرو) ====================
+  async getPendingUpgradeRequests(): Promise<{ requests: UpgradeRequestApi[] }> {
+    return this.makeRequest(`${API_BASE_URL}/admin/upgrade/requests`, {
+      method: 'GET',
+    });
+  }
+
+  async approveUpgradeRequest(
+    id: number,
+    data: { admin_note?: string } = {}
+  ): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/upgrade/requests/${id}/approve`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async rejectUpgradeRequest(id: number, data: { admin_note: string }): Promise<any> {
+    return this.makeRequest(`${API_BASE_URL}/admin/upgrade/requests/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   }
 

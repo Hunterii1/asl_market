@@ -21,11 +21,16 @@ import {
   ArrowUp,
   ArrowDown,
   Copy,
+  List,
+  ArrowUpCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AddLicenseDialog } from '@/components/licenses/AddLicenseDialog';
 import { ViewLicenseDialog } from '@/components/licenses/ViewLicenseDialog';
 import { LicensesFilters } from '@/components/licenses/LicensesFilters';
+import { UpgradeRequestsPanel } from '@/components/licenses/UpgradeRequestsPanel';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -108,6 +113,16 @@ export default function Licenses() {
   const [loading, setLoading] = useState(true);
   const [totalLicenses, setTotalLicenses] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [mainTab, setMainTab] = useState<'licenses' | 'upgrades'>('licenses');
+  const [upgradePendingCount, setUpgradePendingCount] = useState(0);
+
+  // تعداد درخواست ارتقا برای نشان روی تب (بدون باز کردن تب)
+  useEffect(() => {
+    adminApi
+      .getPendingUpgradeRequests()
+      .then((r) => setUpgradePendingCount((r?.requests ?? []).length))
+      .catch(() => setUpgradePendingCount(0));
+  }, []);
 
   // Load licenses from API
   const loadLicenses = async () => {
@@ -241,9 +256,33 @@ export default function Licenses() {
         <div className="flex flex-col gap-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت لایسنس‌ها</h1>
-            <p className="text-sm md:text-base text-muted-foreground">لیست تمامی لایسنس‌های سیستم</p>
+            <p className="text-sm md:text-base text-muted-foreground">
+              لایسنس‌های سیستم و درخواست‌های ارتقا از پلاس به پرو
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <Tabs
+            value={mainTab}
+            onValueChange={(v) => setMainTab(v as 'licenses' | 'upgrades')}
+            className="w-full"
+          >
+            <TabsList className="grid w-full max-w-xl grid-cols-2 h-auto p-1">
+              <TabsTrigger value="licenses" className="gap-2 py-2">
+                <List className="h-4 w-4" />
+                لیست لایسنس‌ها
+              </TabsTrigger>
+              <TabsTrigger value="upgrades" className="gap-2 py-2">
+                <ArrowUpCircle className="h-4 w-4" />
+                درخواست ارتقا
+                {upgradePendingCount > 0 && (
+                  <Badge variant="destructive" className="mr-1 px-1.5 py-0 text-xs">
+                    {upgradePendingCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="licenses" className="mt-6 space-y-6">
+        <div className="flex items-center gap-2">
             <Button 
               size="sm" 
               onClick={() => setIsAddDialogOpen(true)}
@@ -253,7 +292,6 @@ export default function Licenses() {
               <span className="hidden sm:inline">تولید لایسنس</span>
               <span className="sm:hidden">تولید</span>
             </Button>
-          </div>
         </div>
 
         {/* Filters & Search */}
@@ -521,6 +559,13 @@ export default function Licenses() {
             )}
           </CardContent>
         </Card>
+            </TabsContent>
+
+            <TabsContent value="upgrades" className="mt-6">
+              <UpgradeRequestsPanel onPendingCountChange={setUpgradePendingCount} />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
 
       {/* Dialog افزودن لایسنس */}
