@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   User, 
   LogOut, 
@@ -233,6 +233,12 @@ const HeaderAuth = () => {
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <ThemeToggle />
+              <Link
+                to="/privacy"
+                className="max-[380px]:hidden text-xs text-muted-foreground hover:text-orange-500 transition-colors sm:text-sm shrink-0"
+              >
+                حریم خصوصی
+              </Link>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -513,6 +519,14 @@ const HeaderAuth = () => {
                     <Shield className="w-4 h-4 ml-2 flex-shrink-0" />
                   </DropdownMenuItem>
                 )}
+
+                <DropdownMenuItem 
+                  className="text-foreground hover:bg-muted rounded-xl cursor-pointer flex items-center"
+                  onClick={() => navigate('/privacy')}
+                >
+                  <span className="flex-1 text-right">حریم خصوصی و امنیت</span>
+                  <FileText className="w-4 h-4 ml-2 flex-shrink-0" />
+                </DropdownMenuItem>
                 
                 <DropdownMenuSeparator className="bg-border" />
                 <DropdownMenuItem 

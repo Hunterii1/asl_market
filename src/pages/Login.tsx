@@ -249,6 +249,15 @@ const Login = () => {
 
 							<div className="text-center">
 								<Link
+									to="/privacy"
+									className="text-xs text-muted-foreground hover:text-orange-500 transition-colors"
+								>
+									حریم خصوصی و امنیت داده‌ها
+								</Link>
+							</div>
+
+							<div className="text-center">
+								<Link
 									to="/"
 									className="text-muted-foreground hover:text-foreground transition-colors text-sm"
 								>

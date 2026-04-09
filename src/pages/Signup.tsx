@@ -218,6 +218,18 @@ const Signup = () => {
                 </div>
               </div>
 
+              <p className="text-center text-xs leading-relaxed text-muted-foreground">
+                با ثبت‌نام،{" "}
+                <Link
+                  to="/privacy"
+                  className="font-medium text-orange-500 underline underline-offset-2 hover:text-orange-400"
+                >
+                  سیاست حفظ حریم خصوصی و امنیت داده‌ها
+                </Link>{" "}
+                را مطالعه کرده و با جمع‌آوری و استفاده از اطلاعات طبق همان سند
+                موافقم.
+              </p>
+
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl h-12 font-medium"

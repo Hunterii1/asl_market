@@ -22,7 +22,46 @@ export interface ErrorResponse {
   statusCode?: number;
 }
 
+/** پیام یکدست برای اختلال موقت سرویس AI (بدون نمایش خطای فنی به کاربر) */
+const AI_CHAT_SOFT_TITLE = 'اختلال موقت سرویس هوش مصنوعی';
+const AI_CHAT_SOFT_DESCRIPTION =
+  'به‌دلیل ملی بودن بستر اینترنت و محدودیت‌های اتصال به سرویس‌های هوش مصنوعی، گاهی ساخت گفت‌وگوی جدید یا دریافت پاسخ با تأخیر یا اختلال همراه است. بابت این موضوع پوزش می‌خواهیم؛ تیم در حال بهبود است و به‌زودی وضعیت پایدارتر می‌شود. لطفاً کمی بعد دوباره تلاش کنید.';
+
 class ErrorHandler {
+  /** فقط برای endpoint چت AI؛ خطاهای فنی را به پیام «اختلال موقت» تبدیل می‌کند */
+  private shouldUseAiChatSoftMessage(
+    errorSource: string | undefined,
+    rawMessage: string,
+    statusCode: number | undefined,
+    isNetworkFailure: boolean
+  ): boolean {
+    // فقط endpoint ارسال پیام (POST .../ai/chat) — نه بارگذاری لیست/تک چت (.../ai/chats/...)
+    if (
+      !errorSource ||
+      errorSource.includes('/ai/chats') ||
+      !errorSource.includes('/ai/chat')
+    ) {
+      return false;
+    }
+    if (statusCode === 401 || statusCode === 403 || statusCode === 429) return false;
+
+    if (isNetworkFailure) return true;
+
+    const m = rawMessage.toLowerCase();
+    if (statusCode !== undefined && statusCode >= 500) return true;
+
+    return (
+      m.includes('failed to create chat') ||
+      m.includes('failed to get ai') ||
+      m.includes('failed to save user message') ||
+      rawMessage.includes('ایجاد مکالمه') ||
+      m.includes('internal server error') ||
+      m.includes('service unavailable') ||
+      m.includes('bad gateway') ||
+      m.includes('gateway timeout')
+    );
+  }
+
   // Dispatch error event for ErrorDisplay component
   private dispatchErrorEvent(type: string, message: string, statusCode?: number) {
     const errorEvent = new CustomEvent('asl-error', {
@@ -95,6 +134,17 @@ class ErrorHandler {
             error.message.includes('Network request failed')) {
           errorType = 'network';
           errorTitle = 'خطای اتصال';
+          const urlNet = errorSource || '';
+          if (this.shouldUseAiChatSoftMessage(urlNet, '', undefined, true)) {
+            toast({
+              variant: 'default',
+              title: AI_CHAT_SOFT_TITLE,
+              description: AI_CHAT_SOFT_DESCRIPTION,
+              duration: 9000,
+            });
+            this.dispatchErrorEvent('network', AI_CHAT_SOFT_DESCRIPTION, 0);
+            return AI_CHAT_SOFT_DESCRIPTION;
+          }
           // فقط event dispatch می‌کنیم برای indicator، toast نمایش نمی‌دهیم
           this.dispatchErrorEvent(errorType, 'خطای شبکه', 0);
           return 'خطای شبکه'; // بدون نمایش toast
@@ -111,13 +161,21 @@ class ErrorHandler {
       errorMessage = fallbackMessage;
     }
 
+    const url = errorSource || error?.config?.url || error?.request?.url || '';
+    const useAiSoft =
+      this.shouldUseAiChatSoftMessage(url, errorMessage, statusCode, false);
+    if (useAiSoft) {
+      errorTitle = AI_CHAT_SOFT_TITLE;
+      errorMessage = AI_CHAT_SOFT_DESCRIPTION;
+    }
+
     // نمایش toast فقط برای خطاهای غیر شبکه
     if (errorType !== 'network') {
       toast({
-        variant: "destructive",
+        variant: useAiSoft ? 'default' : 'destructive',
         title: errorTitle,
         description: errorMessage,
-        duration: duration,
+        duration: useAiSoft ? 9000 : duration,
       });
     }
 

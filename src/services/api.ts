@@ -231,8 +231,8 @@ class ApiService {
     } catch (error) {
       console.error(`❌ Network error for ${url}:`, error);
       
-      // استفاده از error handler برای خطاهای شبکه
-      const errorMessage = errorHandler.handleApiError(error, 'خطا در ارتباط با سرور');
+      // استفاده از error handler برای خطاهای شبکه (url برای پیام‌های اختصاصی مثل هوش مصنوعی)
+      const errorMessage = errorHandler.handleApiError(error, 'خطا در ارتباط با سرور', url);
       
       throw new Error(errorMessage);
     }

@@ -14,6 +14,8 @@ import { NotificationPermissionPrompt } from "@/components/NotificationPermissio
 import { LicensePopupManager } from "@/components/LicensePopupManager";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import Index from "./pages/Index";
+import Landing from "./pages/Landing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -97,6 +99,10 @@ const App = () => (
                   <Route path="withdrawals" element={<AffiliateWithdrawals />} />
                 </Route>
               </Route>
+
+              {/* Landing page */}
+              <Route path="/landing" element={<Landing />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
 
               {/* Public routes */}
               <Route path="/login" element={<Login />} />

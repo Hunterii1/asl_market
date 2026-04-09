@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -401,13 +401,25 @@ export default function UserProfile() {
             </div>
 
             {isOwnProfile && (
-              <Button
-                onClick={() => navigate("/edit-profile")}
-                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                ویرایش پروفایل
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button
+                  onClick={() => navigate("/edit-profile")}
+                  className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-2xl"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  ویرایش پروفایل
+                </Button>
+                <Button
+                  variant="outline"
+                  asChild
+                  className="rounded-2xl border-border"
+                >
+                  <Link to="/privacy">
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    حریم خصوصی و امنیت
+                  </Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>

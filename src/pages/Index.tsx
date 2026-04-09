@@ -11,7 +11,7 @@ import HeaderAuth from "@/components/ui/HeaderAuth";
 import { useAuth } from "@/hooks/useAuth";
 import AuthRequiredModal from "@/components/AuthRequiredModal";
 import { Logo } from "@/components/ui/Logo";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -553,6 +553,20 @@ const Index = () => {
         <div className="animate-fade-in">
           {renderActiveSection()}
         </div>
+
+        <footer className="mt-16 border-t border-border pt-8 pb-10">
+          <div className="mx-auto max-w-4xl px-2 text-center text-sm text-muted-foreground">
+            <Link
+              to="/privacy"
+              className="font-medium text-orange-500 hover:text-orange-400 hover:underline"
+            >
+              حریم خصوصی و امنیت داده‌ها
+            </Link>
+            <p className="mt-3 text-xs text-muted-foreground/80">
+              اصل مارکت — پلتفرم تجارت B2B
+            </p>
+          </div>
+        </footer>
 
         {/* Auth Required Modal */}
         <AuthRequiredModal 

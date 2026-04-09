@@ -15,8 +15,11 @@ const errorTranslations: Record<string, string> = {
   'Chat not found': 'مکالمه یافت نشد',
   'Invalid request format': 'فرمت درخواست نامعتبر است',
   'Failed to save user message': 'ذخیره پیام کاربر انجام نشد',
-  'Failed to get AI response': 'دریافت پاسخ هوش مصنوعی انجام نشد',
-  'Failed to create chat': 'ایجاد مکالمه انجام نشد',
+  'Failed to get AI response':
+    'به‌دلیل شرایط بستر اینترنت داخل کشور، سرویس هوش مصنوعی ممکن است موقتاً در دسترس نباشد. بابت اختلال پوزش می‌خواهیم؛ به‌زودی پایدارتر می‌شود.',
+  // متن خام؛ برای چت AI معمولاً در errorHandler پیام ملایم جایگزین می‌شود
+  'Failed to create chat':
+    'به‌دلیل شرایط بستر اینترنت داخل کشور، سرویس هوش مصنوعی ممکن است موقتاً در دسترس نباشد. بابت اختلال پوزش می‌خواهیم؛ به‌زودی پایدارتر می‌شود.',
   'Failed to load chat': 'بارگذاری مکالمه انجام نشد',
   'Failed to delete chat': 'حذف مکالمه انجام نشد',
   'Failed to load chats': 'بارگذاری لیست مکالمات انجام نشد',

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { apiService } from "@/services/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import HeaderAuth from "@/components/ui/HeaderAuth";
 import { getImageUrl } from "@/utils/imageUrl";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, Save, User, Camera } from "lucide-react";
+import { ArrowLeft, Save, User, Camera, Shield } from "lucide-react";
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -441,6 +441,22 @@ export default function EditProfile() {
                 <p className="text-xs text-muted-foreground">
                   فقط فیلدهایی را که می‌خواهید نمایش داده شود پر کنید.
                 </p>
+              </div>
+
+              <div className="rounded-2xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Shield className="h-4 w-4 shrink-0 text-orange-500" />
+                  <span>
+                    نحوهٔ ذخیره و استفاده از اطلاعات شما در{" "}
+                    <Link
+                      to="/privacy"
+                      className="font-medium text-orange-500 hover:underline"
+                    >
+                      سیاست حفظ حریم خصوصی و امنیت
+                    </Link>{" "}
+                    توضیح داده شده است.
+                  </span>
+                </div>
               </div>
 
               <div className="flex gap-4 pt-4">
