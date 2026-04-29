@@ -29,7 +29,7 @@ export const addProductSchema = z.object({
     .min(0, "موجودی نمی‌تواند منفی باشد")
     .default(0),
   
-  status: z.enum(["active", "inactive", "out_of_stock"], {
+  status: z.enum(["active", "pending", "inactive", "out_of_stock"], {
     required_error: "وضعیت محصول را انتخاب کنید",
   }),
   

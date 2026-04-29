@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  Clock,
   Image as ImageIcon,
   Tag,
   Percent,
@@ -26,28 +27,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { productCategories } from '@/lib/validations/product';
-
-interface ProductData {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  stock: number;
-  status: 'active' | 'inactive' | 'out_of_stock';
-  tags?: string[];
-  imageUrl?: string;
-  discount?: number;
-  sku?: string;
-  createdAt: string;
-  sales?: number;
-  revenue?: number;
-}
+import type { AdminProduct } from '@/types/product';
 
 interface ViewProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: ProductData | null;
+  product: AdminProduct | null;
 }
 
 const statusConfig = {
@@ -55,6 +40,11 @@ const statusConfig = {
     label: 'فعال',
     className: 'bg-success/10 text-success border-success/20',
     icon: CheckCircle,
+  },
+  pending: {
+    label: 'در انتظار',
+    className: 'bg-warning/10 text-warning border-warning/20',
+    icon: Clock,
   },
   inactive: {
     label: 'غیرفعال',

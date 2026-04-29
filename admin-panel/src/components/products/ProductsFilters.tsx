@@ -17,8 +17,8 @@ import { Filter, X } from 'lucide-react';
 import { productCategories } from '@/lib/validations/product';
 
 interface ProductsFiltersProps {
-  statusFilter: ('active' | 'inactive' | 'out_of_stock')[];
-  onStatusFilterChange: (status: ('active' | 'inactive' | 'out_of_stock')[]) => void;
+  statusFilter: ('active' | 'inactive' | 'out_of_stock' | 'pending')[];
+  onStatusFilterChange: (status: ('active' | 'inactive' | 'out_of_stock' | 'pending')[]) => void;
   categoryFilter: string[];
   onCategoryFilterChange: (category: string[]) => void;
   minPrice: string;
@@ -49,7 +49,7 @@ export function ProductsFilters({
 }: ProductsFiltersProps) {
   const [open, setOpen] = useState(false);
 
-  const handleToggleStatus = (status: 'active' | 'inactive' | 'out_of_stock') => {
+  const handleToggleStatus = (status: 'active' | 'inactive' | 'out_of_stock' | 'pending') => {
     if (statusFilter.includes(status)) {
       onStatusFilterChange(statusFilter.filter(s => s !== status));
     } else {
@@ -95,6 +95,7 @@ export function ProductsFilters({
             <div className="space-y-2">
               {([
                 { value: 'active', label: 'فعال' },
+                { value: 'pending', label: 'در انتظار' },
                 { value: 'inactive', label: 'غیرفعال' },
                 { value: 'out_of_stock', label: 'ناموجود' },
               ] as const).map(({ value, label }) => (

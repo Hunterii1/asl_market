@@ -48,28 +48,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { adminApi } from '@/lib/api/adminApi';
-
-interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  stock: number;
-  status: 'active' | 'inactive' | 'out_of_stock';
-  tags?: string[];
-  imageUrl?: string;
-  discount?: number;
-  sku?: string;
-  createdAt: string;
-  sales?: number;
-  revenue?: number;
-}
+import type { AdminProduct } from '@/types/product';
 
 interface EditProductDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: Product | null;
+  product: AdminProduct | null;
   onSuccess?: () => void;
 }
 
@@ -456,6 +440,7 @@ export function EditProductDialog({ open, onOpenChange, product, onSuccess }: Ed
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="active">فعال</SelectItem>
+                          <SelectItem value="pending">در انتظار</SelectItem>
                           <SelectItem value="inactive">غیرفعال</SelectItem>
                           <SelectItem value="out_of_stock">ناموجود</SelectItem>
                         </SelectContent>

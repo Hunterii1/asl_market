@@ -334,6 +334,7 @@ export function AddProductDialog({ open, onOpenChange, onSuccess }: AddProductDi
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="active">فعال</SelectItem>
+                          <SelectItem value="pending">در انتظار</SelectItem>
                           <SelectItem value="inactive">غیرفعال</SelectItem>
                           <SelectItem value="out_of_stock">ناموجود</SelectItem>
                         </SelectContent>

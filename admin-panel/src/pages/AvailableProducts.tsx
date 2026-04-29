@@ -28,10 +28,12 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { productCategories } from '@/lib/validations/product';
 import { toast } from '@/hooks/use-toast';
+import type { AdminProduct } from '@/types/product';
 import {
   Select,
   SelectContent,
@@ -40,22 +42,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  stock: number;
-  status: 'active' | 'inactive' | 'out_of_stock';
-  tags?: string[];
-  imageUrl?: string;
-  discount?: number;
-  sku?: string;
-  createdAt: string;
-  sales?: number;
-  revenue?: number;
-}
+type Product = AdminProduct;
 
 const initialProducts: Product[] = [
   {
@@ -95,6 +82,11 @@ const statusConfig = {
     className: 'bg-success/10 text-success',
     icon: CheckCircle,
   },
+  pending: {
+    label: 'در انتظار',
+    className: 'bg-warning/10 text-warning',
+    icon: Clock,
+  },
   inactive: {
     label: 'غیرفعال',
     className: 'bg-muted text-muted-foreground',
@@ -118,7 +110,7 @@ export default function AvailableProducts() {
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive' | 'out_of_stock')[]>([]);
+  const [statusFilter, setStatusFilter] = useState<('active' | 'inactive' | 'out_of_stock' | 'pending')[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -133,13 +125,15 @@ export default function AvailableProducts() {
   const [loading, setLoading] = useState(true);
   const [totalProducts, setTotalProducts] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [isApprovingPending, setIsApprovingPending] = useState(false);
 
   // Load products from API
   useEffect(() => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : undefined;
+        // در ادمین پنل، اگر فیلتر تعیین نشده باشد "all" می‌فرستیم تا pending هم دیده شود
+        const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : 'all';
         const categoryFilterValue = categoryFilter.length === 1 ? categoryFilter[0] : undefined;
 
         const response = await adminApi.getAvailableProducts({
@@ -223,7 +217,7 @@ export default function AvailableProducts() {
               price: price,
               category: p.category || 'other',
               stock: p.available_quantity || 0,
-              status: (p.status || 'active') as 'active' | 'inactive' | 'out_of_stock',
+              status: (p.status || 'active') as 'active' | 'inactive' | 'out_of_stock' | 'pending',
               tags: tags,
               imageUrl: imageUrls[0] || '',
               discount: 0, // discount not in backend model
@@ -484,6 +478,63 @@ export default function AvailableProducts() {
     return product.price;
   };
 
+  const pendingProducts = products.filter(p => (p.status || 'active') === 'pending' || (p.status || 'active') === 'inactive');
+  const handleApproveAllPending = async () => {
+    if (isApprovingPending || pendingProducts.length === 0) return;
+    if (!confirm(`آیا از تأیید ${pendingProducts.length} کالای در انتظار (در همین صفحه) اطمینان دارید؟`)) return;
+
+    try {
+      setIsApprovingPending(true);
+      const results = await Promise.allSettled(
+        pendingProducts.map(p => adminApi.updateAvailableProductStatus(Number(p.id), 'active'))
+      );
+      const ok = results.filter(r => r.status === 'fulfilled').length;
+      const fail = results.length - ok;
+      toast({
+        title: 'انجام شد',
+        description: fail === 0
+          ? `${ok} کالا فعال شد.`
+          : `${ok} مورد فعال شد و ${fail} مورد ناموفق بود. دوباره تلاش کنید.`,
+        variant: fail === 0 ? 'default' : 'destructive',
+      });
+      // Reload by re-triggering useEffect (page/filter state unchanged) via a manual refresh
+      const statusFilterValue = statusFilter.length === 1 ? statusFilter[0] : 'all';
+      const categoryFilterValue = categoryFilter.length === 1 ? categoryFilter[0] : undefined;
+      const response = await adminApi.getAvailableProducts({
+        page: currentPage,
+        per_page: itemsPerPage,
+        status: statusFilterValue,
+        category: categoryFilterValue,
+      });
+      const productsData = response.products || [];
+      const transformedProducts: Product[] = productsData.map((p: any) => ({
+        id: p.id?.toString() || '',
+        name: p.name || 'بدون نام',
+        description: p.description || '',
+        price: p.price || 0,
+        category: p.category || 'other',
+        stock: p.stock || 0,
+        status: (p.status || 'active') as 'active' | 'inactive' | 'out_of_stock' | 'pending',
+        tags: p.tags || [],
+        imageUrl: p.image_url || p.imageUrl || '',
+        discount: p.discount || 0,
+        sku: p.sku || '',
+        createdAt: p.created_at || new Date().toISOString(),
+        sales: p.sales || 0,
+        revenue: p.revenue || 0,
+      }));
+      setProducts(transformedProducts);
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تایید کلی کالاها',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApprovingPending(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -493,7 +544,23 @@ export default function AvailableProducts() {
             <h1 className="text-2xl font-bold text-foreground">مدیریت کالاهای موجود</h1>
             <p className="text-muted-foreground">لیست تمامی کالاهای موجود در سیستم</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {pendingProducts.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleApproveAllPending}
+                disabled={loading || isApprovingPending}
+                className="border-success/40 hover:bg-success/10"
+              >
+                {isApprovingPending ? (
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                )}
+                تأیید همه در انتظار ({pendingProducts.length})
+              </Button>
+            )}
             <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
               <Plus className="w-4 h-4 ml-2" />
               محصول جدید

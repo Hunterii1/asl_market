@@ -112,6 +112,7 @@ export default function Visitors() {
   const [loading, setLoading] = useState(true);
   const [totalVisitors, setTotalVisitors] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [isApprovingPending, setIsApprovingPending] = useState(false);
 
   const reloadVisitors = async () => {
     try {
@@ -297,6 +298,37 @@ export default function Visitors() {
     }
   };
 
+  const pendingVisitors = visitors.filter(v => (v.status || 'pending') === 'pending');
+  const handleApproveAllPending = async () => {
+    if (isApprovingPending || pendingVisitors.length === 0) return;
+    if (!confirm(`آیا از تأیید ${pendingVisitors.length} ویزیتورِ در انتظار (در همین صفحه) اطمینان دارید؟`)) return;
+
+    try {
+      setIsApprovingPending(true);
+      const results = await Promise.allSettled(
+        pendingVisitors.map(v => adminApi.approveVisitor(parseInt(v.id), { admin_notes: v.admin_notes || '' }))
+      );
+      const ok = results.filter(r => r.status === 'fulfilled').length;
+      const fail = results.length - ok;
+      toast({
+        title: 'انجام شد',
+        description: fail === 0
+          ? `${ok} ویزیتور تأیید شد.`
+          : `${ok} مورد تأیید شد و ${fail} مورد ناموفق بود. دوباره تلاش کنید.`,
+        variant: fail === 0 ? 'default' : 'destructive',
+      });
+      await reloadVisitors();
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تأیید کلی ویزیتورها',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApprovingPending(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -307,9 +339,27 @@ export default function Visitors() {
             <p className="text-sm md:text-base text-muted-foreground">لیست تمامی ویزیتورهای سیستم</p>
           </div>
           <div className="flex items-center justify-end">
-            <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
-              ثبت ویزیتور جدید
-            </Button>
+            <div className="flex items-center gap-2">
+              {pendingVisitors.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleApproveAllPending}
+                  disabled={loading || isApprovingPending}
+                  className="border-success/40 hover:bg-success/10"
+                >
+                  {isApprovingPending ? (
+                    <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-4 h-4 ml-2" />
+                  )}
+                  تأیید همه در انتظار ({pendingVisitors.length})
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+                ثبت ویزیتور جدید
+              </Button>
+            </div>
           </div>
         </div>
 

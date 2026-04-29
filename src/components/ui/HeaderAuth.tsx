@@ -233,12 +233,6 @@ const HeaderAuth = () => {
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <ThemeToggle />
-              <Link
-                to="/privacy"
-                className="max-[380px]:hidden text-xs text-muted-foreground hover:text-orange-500 transition-colors sm:text-sm shrink-0"
-              >
-                حریم خصوصی
-              </Link>
               <Button 
                 variant="outline" 
                 size="sm" 

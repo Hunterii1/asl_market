@@ -212,6 +212,7 @@ export default function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [totalSuppliers, setTotalSuppliers] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [isApprovingPending, setIsApprovingPending] = useState(false);
 
   // Helper function to reload suppliers
   const reloadSuppliers = async () => {
@@ -412,6 +413,38 @@ export default function Suppliers() {
     );
   };
 
+  // در این صفحه: inactive = در انتظار (pending در بک‌اند)
+  const pendingSuppliers = suppliers.filter(s => s.status === 'inactive');
+  const handleApproveAllPending = async () => {
+    if (isApprovingPending || pendingSuppliers.length === 0) return;
+    if (!confirm(`آیا از تأیید ${pendingSuppliers.length} تامین‌کنندهٔ در انتظار (در همین صفحه) اطمینان دارید؟`)) return;
+
+    try {
+      setIsApprovingPending(true);
+      const results = await Promise.allSettled(
+        pendingSuppliers.map(s => adminApi.approveSupplier(parseInt(s.id), { admin_notes: s.notes || '' }))
+      );
+      const ok = results.filter(r => r.status === 'fulfilled').length;
+      const fail = results.length - ok;
+      toast({
+        title: 'انجام شد',
+        description: fail === 0
+          ? `${ok} تامین‌کننده تأیید شد.`
+          : `${ok} مورد تأیید شد و ${fail} مورد ناموفق بود. دوباره تلاش کنید.`,
+        variant: fail === 0 ? 'default' : 'destructive',
+      });
+      await reloadSuppliers();
+    } catch (error: any) {
+      toast({
+        title: 'خطا',
+        description: error.message || 'خطا در تأیید کلی تامین‌کنندگان',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsApprovingPending(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -421,7 +454,26 @@ export default function Suppliers() {
             <h1 className="text-xl md:text-2xl font-bold text-foreground">مدیریت تامین‌کنندگان</h1>
             <p className="text-sm md:text-base text-muted-foreground">لیست تمامی تامین‌کنندگان سیستم</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {pendingSuppliers.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleApproveAllPending}
+                disabled={loading || isApprovingPending}
+                className="border-success/40 hover:bg-success/10"
+              >
+                {isApprovingPending ? (
+                  <Loader2 className="w-4 h-4 md:ml-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="w-4 h-4 md:ml-2" />
+                )}
+                <span className="hidden sm:inline">
+                  تأیید همه در انتظار ({pendingSuppliers.length})
+                </span>
+                <span className="sm:hidden">تأیید همه ({pendingSuppliers.length})</span>
+              </Button>
+            )}
             <Button 
               size="sm" 
               onClick={() => setIsAddDialogOpen(true)}
